@@ -8,7 +8,6 @@
 #include "seat.h"
 #include "egl.h"
 #include "binding.h"
-#include "event_listener.h"
 #include "renderer.h"
 
 struct swc_compositor
