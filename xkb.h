@@ -1,0 +1,28 @@
+#include <stdbool.h>
+#include <xkbcommon/xkbcommon.h>
+
+struct swc_xkb
+{
+    struct xkb_context * context;
+    struct xkb_state * state;
+
+    struct
+    {
+        struct xkb_keymap * map;
+        int fd;
+        uint32_t size;
+        char * area;
+    } keymap;
+
+    struct
+    {
+        uint32_t ctrl, alt, super, shift;
+    } indices;
+};
+
+bool swc_xkb_initialize(struct swc_xkb * xkb);
+
+void swc_xkb_finish(struct swc_xkb * xkb);
+
+bool swc_xkb_update_keymap(struct swc_xkb * xkb);
+
