@@ -22,10 +22,18 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
 
     resource = wl_client_add_object(client, &wl_seat_interface,
                                     &swc_seat_interface, id, seat);
-    wl_list_insert(&seat->wayland.base_resource_list, &resource->link);
-    resource->destroy = &swc_unbind_resource;
+    wl_list_insert(&seat->resources, &resource->link);
+    wl_resource_set_destructor(resource, &swc_unbind_resource);
 
     wl_seat_send_capabilities(resource, seat->capabilities);
+}
+
+static void update_capabilities(struct swc_seat * seat)
+{
+    struct wl_resource * resource;
+
+    wl_list_for_each(resource, &seat->resources, link)
+        wl_seat_send_capabilities(resource, seat->capabilities);
 }
 
 static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
@@ -55,16 +63,18 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
         && evdev_device->capabilities & WL_SEAT_CAPABILITY_POINTER)
     {
         printf("initializing pointer\n");
-        wl_pointer_init(&seat->pointer);
-        wl_seat_set_pointer(&seat->wayland, &seat->pointer);
+        swc_pointer_initialize(&seat->pointer);
+        seat->capabilities |= WL_SEAT_CAPABILITY_POINTER;
+        update_capabilities(seat);
     }
 
     if (!(seat->capabilities & WL_SEAT_CAPABILITY_KEYBOARD)
         && evdev_device->capabilities & WL_SEAT_CAPABILITY_KEYBOARD)
     {
         printf("initializing keyboard\n");
-        wl_keyboard_init(&seat->keyboard);
-        wl_seat_set_keyboard(&seat->wayland, &seat->keyboard);
+        swc_keyboard_initialize(&seat->keyboard);
+        seat->capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
+        update_capabilities(seat);
     }
 
     seat->capabilities |= evdev_device->capabilities;
@@ -75,11 +85,8 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
 bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
                          const char * seat_name)
 {
-    wl_seat_init(&seat->wayland);
-
     seat->name = strdup(seat_name);
     seat->capabilities = 0;
-    seat->active_modifiers = 0;
 
     if (!swc_xkb_initialize(&seat->xkb))
     {
@@ -87,6 +94,8 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
         goto error_name;
     }
 
+    wl_list_init(&seat->resources);
+    wl_signal_init(&seat->destroy_signal);
     wl_list_init(&seat->devices);
     swc_seat_add_devices(seat, udev);
 
@@ -102,7 +111,14 @@ void swc_seat_finish(struct swc_seat * seat)
 {
     struct swc_evdev_device * device, * tmp;
 
-    wl_seat_release(&seat->wayland);
+    wl_signal_emit(&seat->destroy_signal, seat);
+
+    if (seat->capabilities & WL_SEAT_CAPABILITY_KEYBOARD)
+        swc_keyboard_finish(&seat->keyboard);
+
+    if (seat->capabilities & WL_SEAT_CAPABILITY_POINTER)
+        swc_pointer_finish(&seat->pointer);
+
     free(seat->name);
     swc_xkb_finish(&seat->xkb);
 
@@ -157,8 +173,10 @@ void swc_seat_handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
                          uint32_t state)
 {
     uint32_t * pressed_key;
-    struct wl_keyboard * keyboard = &seat->keyboard;
+    struct swc_keyboard * keyboard = &seat->keyboard;
     struct swc_xkb * xkb = &seat->xkb;
+    struct wl_display * display;
+    uint32_t serial;
     enum xkb_key_direction direction;
 
     /* Update XKB state */
@@ -170,8 +188,8 @@ void swc_seat_handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
-        keyboard->grab_key = key;
-        keyboard->grab_time = time;
+        //keyboard->grab_key = key;
+        //keyboard->grab_time = time;
         pressed_key = wl_array_add(&keyboard->keys, sizeof key);
         *pressed_key = key;
     }
@@ -191,10 +209,21 @@ void swc_seat_handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
         }
     }
 
-    keyboard->grab->interface->key(keyboard->grab, time, key, state);
+    /* See if the key press is not handled by the compositor */
+    if (!(keyboard->handler && keyboard->handler->key)
+        || !keyboard->handler->key(keyboard, time, key, state))
+    {
+        if (keyboard->focus.resource)
+        {
+            serial = wl_display_next_serial(display);
+            wl_keyboard_send_key(keyboard->focus.resource, serial, time, key, state);
+
+            if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+                printf("\t-> sent to client\n");
+        }
+    }
 
     {
-        struct wl_keyboard * keyboard = &seat->keyboard;
         uint32_t mods_depressed, mods_latched, mods_locked, mods_active;
         uint32_t layout;
 
@@ -216,17 +245,6 @@ void swc_seat_handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
         keyboard->modifiers.mods_latched = mods_latched;
         keyboard->modifiers.mods_locked = mods_locked;
         keyboard->modifiers.group = layout;
-
-        seat->active_modifiers = 0;
-
-        if (mods_active & (1 << xkb->indices.ctrl))
-            seat->active_modifiers |= MOD_CTRL;
-        if (mods_active & (1 << xkb->indices.alt))
-            seat->active_modifiers |= MOD_ALT;
-        if (mods_active & (1 << xkb->indices.super))
-            seat->active_modifiers |= MOD_SUPER;
-        if (mods_active & (1 << xkb->indices.shift))
-            seat->active_modifiers |= MOD_SHIFT;
     }
 }
 
@@ -239,20 +257,15 @@ void swc_seat_handle_button(struct swc_seat * seat, uint32_t time,
 void swc_seat_get_pointer(struct wl_client * client,
                           struct wl_resource * resource, uint32_t id)
 {
-    struct wl_resource * client_resource;
     struct swc_seat * seat = resource->data;
-    struct wl_pointer * pointer = &seat->pointer;
+    struct swc_pointer * pointer = &seat->pointer;
 
-    /* pointer interface? */
-    client_resource = wl_client_add_object(client, &wl_pointer_interface,
-                                           NULL, id, seat);
-    client_resource->destroy = &swc_unbind_resource;
+    swc_pointer_bind(pointer, client, id);
 
-    wl_list_insert(&pointer->resource_list, &client_resource->link);
-
-    if (pointer->focus && pointer->focus->resource.client == client)
+    if (pointer->focus.surface
+        && wl_resource_get_client(pointer->focus.surface->resource) == client)
     {
-        //wl_pointer_set_focus(pointer, pointer->focus);
+        swc_pointer_set_focus(pointer, pointer->focus.surface);
     }
 }
 
@@ -260,20 +273,20 @@ void swc_seat_get_keyboard(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
 {
     struct wl_resource * client_resource;
-    struct swc_seat * seat = resource->data;
-    struct wl_keyboard * keyboard = &seat->keyboard;
+    struct swc_seat * seat = wl_resource_get_user_data(resource);
+    struct swc_keyboard * keyboard = &seat->keyboard;
 
-    client_resource = wl_client_add_object(client, &wl_keyboard_interface,
-                                           NULL, id, seat);
-    client_resource->destroy = &swc_unbind_resource;
-
-    wl_list_insert(&keyboard->resource_list, &client_resource->link);
+    client_resource = swc_keyboard_bind(keyboard, client, id);
 
     wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                             seat->xkb.keymap.fd, seat->xkb.keymap.size);
 
-    if (keyboard->focus && keyboard->focus->resource.client == client)
-        wl_keyboard_set_focus(keyboard, keyboard->focus);
+    if (keyboard->focus.surface
+        && wl_resource_get_client(keyboard->focus.surface->resource) == client)
+    {
+        printf("focusing\n");
+        swc_keyboard_set_focus(keyboard, keyboard->focus.surface);
+    }
 }
 
 void swc_seat_get_touch(struct wl_client * client,

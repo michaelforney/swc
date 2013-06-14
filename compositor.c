@@ -8,6 +8,8 @@
 #include "output.h"
 #include "surface.h"
 #include "event.h"
+#include "region.h"
+#include "data_device_manager.h"
 
 const char default_seat[] = "seat0";
 
@@ -52,12 +54,10 @@ static void schedule_repaint_for_output(struct swc_compositor * compositor,
     output->repaint_scheduled = true;
 }
 
-static void handle_key(struct wl_keyboard_grab * grab, uint32_t time,
+static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
                        uint32_t key, uint32_t state)
 {
-    struct wl_keyboard * keyboard = grab->keyboard;
     struct swc_seat * seat;
-    struct wl_resource * resource = keyboard->focus_resource;
     struct swc_binding * binding;
     struct swc_compositor * compositor;
     char keysym_name[64];
@@ -73,37 +73,43 @@ static void handle_key(struct wl_keyboard_grab * grab, uint32_t time,
 
         wl_array_for_each(binding, &compositor->key_bindings)
         {
-            if (binding->value == keysym && (binding->modifiers == SWC_MOD_ANY
-                || binding->modifiers == seat->active_modifiers))
+            if (binding->value == keysym)
             {
-                binding->handler(time, keysym, binding->data);
-                return;
+                xkb_mod_mask_t mod_mask;
+                uint32_t modifiers = 0;
+                mod_mask = xkb_state_serialize_mods(seat->xkb.state,
+                                                    XKB_STATE_MODS_EFFECTIVE);
+                mod_mask = xkb_state_mod_mask_remove_consumed(seat->xkb.state, key + 8,
+                                                              mod_mask);
+
+                if (mod_mask & (1 << seat->xkb.indices.ctrl))
+                    modifiers |= SWC_MOD_CTRL;
+                if (mod_mask & (1 << seat->xkb.indices.alt))
+                    modifiers |= SWC_MOD_ALT;
+                if (mod_mask & (1 << seat->xkb.indices.super))
+                    modifiers |= SWC_MOD_SUPER;
+                if (mod_mask & (1 << seat->xkb.indices.shift))
+                    modifiers |= SWC_MOD_SHIFT;
+
+                if (binding->modifiers == SWC_MOD_ANY
+                    || binding->modifiers == modifiers)
+                {
+                    binding->handler(time, keysym, binding->data);
+                    printf("\t-> handled\n");
+                    return true;
+                }
             }
         }
     }
 
-    if (resource)
-    {
-        struct wl_display * display;
-        uint32_t serial;
-
-        display = wl_client_get_display(resource->client);
-        serial = wl_display_next_serial(display);
-        wl_keyboard_send_key(resource, serial, time, key, state);
-    }
+    return false;
 }
 
-static void handle_modifiers(struct wl_keyboard_grab * grab, uint32_t serial,
-                             uint32_t mods_depressed, uint32_t mods_latched,
-                             uint32_t mods_locked, uint32_t group)
-{
-    //wl_keyboard_send_modifiers
-}
-
-struct wl_keyboard_grab_interface binding_grab_interface = {
+struct swc_keyboard_handler keyboard_handler = {
     .key = &handle_key,
-    .modifiers = &handle_modifiers
 };
+
+
 
 /* XXX: maybe this should go in swc_drm */
 static void handle_tty_event(struct wl_listener * listener, void * data)
@@ -196,19 +202,10 @@ static void create_surface(struct wl_client * client,
     wl_list_insert(&compositor->surfaces, &surface->link);
     surface->output_mask |= 1 << output->id;
 
-    /* For some reason there is no Wayland method to initialize a preallocated
-     * resource. */
-    surface->wayland.resource = (struct wl_resource) {
-        .object = {
-            .interface = &wl_surface_interface,
-            .implementation = (void (**)()) &swc_surface_interface,
-            .id = id
-        },
-        .destroy = &destroy_surface,
-        .data = surface
-    };
-
-    wl_client_add_resource(client, &surface->wayland.resource);
+    surface->resource
+        = wl_client_add_object(client, &wl_surface_interface,
+                               &swc_surface_interface, id, surface);
+    wl_resource_set_destructor(surface->resource, &destroy_surface);
 }
 
 static void create_region(struct wl_client * client,
@@ -284,7 +281,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     }
 
     swc_seat_add_event_sources(&compositor->seat, event_loop);
-    compositor->seat.keyboard.default_grab.interface = &binding_grab_interface;
+    compositor->seat.keyboard.handler = &keyboard_handler;
 
     /* TODO: configurable seat */
     if (!swc_drm_initialize(&compositor->drm, compositor->udev, default_seat))
@@ -393,6 +390,7 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
     wl_display_add_global(display, &wl_compositor_interface, compositor,
                           &bind_compositor);
 
+    swc_data_device_manager_add_globals(display);
     swc_seat_add_globals(&compositor->seat, display);
 
     wl_list_for_each(output, &compositor->outputs, link)

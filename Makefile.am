@@ -14,7 +14,11 @@ libswc_la_SOURCES = \
 	surface.c surface.h \
 	region.c region.h \
 	renderer.c renderer.h \
+	keyboard.c keyboard.h \
+	pointer.c pointer.h \
 	seat.c seat.h \
+	data_device_manager.c data_device_manager.h \
+	data_device.c data_device.h \
 	mode.c mode.h \
 	tty.c tty.h \
 	evdev_device.c evdev_device.h \

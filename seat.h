@@ -2,6 +2,8 @@
 #define SWC_SEAT_H 1
 
 #include "xkb.h"
+#include "keyboard.h"
+#include "pointer.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -10,17 +12,16 @@
 
 struct swc_seat
 {
-    struct wl_seat wayland;
-
     char * name;
+    uint32_t capabilities;
 
     struct swc_xkb xkb;
 
-    struct wl_keyboard keyboard;
-    struct wl_pointer pointer;
+    struct wl_list resources;
+    struct wl_signal destroy_signal;
 
-    uint32_t active_modifiers;
-    uint32_t capabilities;
+    struct swc_keyboard keyboard;
+    struct swc_pointer pointer;
 
     struct wl_list devices;
 };

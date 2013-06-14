@@ -31,7 +31,7 @@ struct swc_surface_state
 
 struct swc_surface
 {
-    struct wl_surface wayland;
+    struct wl_resource * resource;
 
     struct swc_surface_state state;
 
@@ -46,6 +46,7 @@ struct swc_surface
 
     struct
     {
+        uint32_t x, y;
         uint32_t width, height;
     } geometry;
 
