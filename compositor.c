@@ -169,6 +169,22 @@ static void destroy_surface(struct wl_resource * resource)
     free(surface);
 }
 
+static void handle_terminate(uint32_t time, uint32_t value, void * data)
+{
+    struct wl_display * display = data;
+    printf("handling terminate\n");
+    wl_display_terminate(display);
+}
+
+static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
+{
+    struct swc_tty * tty = data;
+    uint8_t vt = value - XKB_KEY_XF86Switch_VT_1 + 1;
+    printf("handle switch vt%u\n", vt);
+    if (vt != tty->vt)
+        swc_tty_switch_vt(tty, vt);
+}
+
 static void create_surface(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
 {
@@ -244,12 +260,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     struct wl_event_loop * event_loop;
     struct udev_device * drm_device;
     struct wl_list * outputs;
-
-    if (compositor == NULL)
-    {
-        printf("could not allocate compositor\n");
-        return NULL;
-    }
+    xkb_keysym_t keysym;
 
     compositor->display = display;
     compositor->tty_listener.notify = &handle_tty_event;
@@ -337,6 +348,18 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     wl_list_init(&compositor->surfaces);
     wl_array_init(&compositor->key_bindings);
     wl_signal_init(&compositor->destroy_signal);
+
+    swc_compositor_add_key_binding(compositor,
+        SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace, &handle_terminate, display);
+
+    for (keysym = XKB_KEY_XF86Switch_VT_1;
+         keysym <= XKB_KEY_XF86Switch_VT_12;
+         ++keysym)
+    {
+        swc_compositor_add_key_binding(compositor, SWC_MOD_ANY, keysym,
+                                       &handle_switch_vt, &compositor->tty);
+    }
+
 
     return true;
 
