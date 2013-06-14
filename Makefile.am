@@ -2,7 +2,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-noinst_LTLIBRARIES = libswc.la
+lib_LTLIBRARIES = libswc.la
 
 AM_CFLAGS = $(pixman_CFLAGS)
 
