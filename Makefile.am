@@ -29,5 +29,5 @@ libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
 # 
 # testclient_LDADD = $(wayland_client_LIBS)
 
-SUBDIRS = i915 testwm
+SUBDIRS = i915
 

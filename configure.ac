@@ -32,6 +32,6 @@ PKG_CHECK_MODULES([wayland_client], [wayland-client])
 dnl }}}
 
 #AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile i915/Makefile testwm/Makefile])
+AC_CONFIG_FILES([Makefile i915/Makefile])
 AC_OUTPUT
 
