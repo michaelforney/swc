@@ -12,6 +12,7 @@ libswc_la_SOURCES = \
 	output.c output.h \
 	buffer.c buffer.h \
 	surface.c surface.h \
+	region.c region.h \
 	renderer.c renderer.h \
 	seat.c seat.h \
 	mode.c mode.h \

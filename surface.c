@@ -1,5 +1,6 @@
 #include "surface.h"
 #include "event.h"
+#include "region.h"
 
 #include <stdio.h>
 
@@ -102,17 +103,30 @@ void swc_surface_set_opaque_region(struct wl_client * client,
 
     if (region_resource)
     {
+        struct swc_region * region = region_resource->data;
+
+        pixman_region32_copy(&surface->pending.state.opaque, &region->region);
     }
     else
-    {
-    }
+        pixman_region32_clear(&surface->pending.state.opaque);
 }
 
 void swc_surface_set_input_region(struct wl_client * client,
                                   struct wl_resource * resource,
-                                  struct wl_resource * region)
+                                  struct wl_resource * region_resource)
 {
+    struct swc_surface * surface = resource->data;
+
     printf("surface_set_input_region\n");
+
+    if (region_resource)
+    {
+        struct swc_region * region = region_resource->data;
+
+        pixman_region32_copy(&surface->pending.state.input, &region->region);
+    }
+    else
+        pixman_region32_clear(&surface->pending.state.input);
 }
 
 void swc_surface_commit(struct wl_client * client,
@@ -145,6 +159,8 @@ void swc_surface_commit(struct wl_client * client,
 
     /* Reset pending state */
     pixman_region32_clear(&surface->pending.state.damage);
+    pixman_region32_clear(&surface->pending.state.opaque);
+    pixman_region32_clear(&surface->pending.state.input);
     surface->pending.state.buffer = surface->state.buffer;
     wl_list_init(&surface->pending.state.frame_callbacks);
 
