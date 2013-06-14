@@ -61,6 +61,9 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
 {
     struct swc_buffer * back_buffer = swc_output_get_back_buffer(output);
 
+    if (!surface->state.buffer)
+        return;
+
     if (wl_buffer_is_shm(surface->state.buffer))
     {
         pixman_image_t * buffer_image;
@@ -174,6 +177,9 @@ void swc_renderer_attach(struct swc_renderer * renderer,
                          struct wl_buffer * buffer)
 {
     struct gbm_bo * bo;
+
+    if (!buffer)
+        return;
 
     /* SHM buffer */
     if (wl_buffer_is_shm(buffer))

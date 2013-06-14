@@ -31,16 +31,27 @@ static void attach(struct wl_client * client, struct wl_resource * resource,
                    struct wl_resource * buffer_resource, int32_t x, int32_t y)
 {
     struct swc_surface * surface = resource->data;
-    struct wl_buffer * buffer = buffer_resource->data;
 
     printf("surface_attach\n");
 
-    surface->pending.state.buffer = buffer;
     surface->pending.x = x;
     surface->pending.y = y;
 
-    surface->geometry.width = buffer->width;
-    surface->geometry.height = buffer->height;
+    if (buffer_resource)
+    {
+        struct wl_buffer * buffer = buffer_resource->data;
+
+        surface->pending.state.buffer = buffer;
+        surface->geometry.width = buffer->width;
+        surface->geometry.height = buffer->height;
+    }
+    else
+    {
+        surface->pending.state.buffer = NULL;
+
+        surface->geometry.width = 0;
+        surface->geometry.height = 0;
+    }
 }
 
 static void damage(struct wl_client * client, struct wl_resource * resource,
