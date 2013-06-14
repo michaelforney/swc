@@ -27,7 +27,8 @@ libswc_la_SOURCES = \
 	egl.c egl.h
 
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
-	$(drm_LIBS) $(gbm_LIBS) $(egl_LIBS) $(pixman_LIBS) intel/libintel.la
+	$(drm_LIBS) $(drm_intel_LIBS) $(gbm_LIBS) $(egl_LIBS) $(pixman_LIBS) \
+	intel/libintel.la
 
 # testclient_SOURCES = \
 # 	testclient.c

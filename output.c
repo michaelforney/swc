@@ -110,7 +110,7 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
         uint32_t line[output->width];
         uint32_t x, y;
         struct drm_i915_gem_pwrite arg = {
-            .handle = output->buffers[0].bo.handle,
+            .handle = output->buffers[0].bo->handle,
             .size = sizeof line,
             .data_ptr = (uint64_t) line
         };
@@ -127,7 +127,7 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
         color = 0x00333399;
 
         arg.offset = 0;
-        arg.handle = output->buffers[1].bo.handle;
+        arg.handle = output->buffers[1].bo->handle;
 
         for (x = 0; x < output->width; ++x)
             line[x] = color;

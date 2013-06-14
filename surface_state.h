@@ -1,7 +1,7 @@
 #ifndef SWC_SURFACE_STATE_H
 #define SWC_SURFACE_STATE_H 1
 
-#include "intel/bo.h"
+#include <libdrm/intel_bufmgr.h>
 
 #include <wayland-server.h>
 #include <pixman.h>
@@ -14,7 +14,7 @@ union swc_renderer_surface_state
     } shm;
     struct
     {
-        struct intel_bo bo;
+        drm_intel_bo * bo;
         uint32_t pitch;
     } drm;
 };

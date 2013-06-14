@@ -7,35 +7,34 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-#include <libdrm/i915_drm.h>
+#include <libdrm/intel_bufmgr.h>
 
-#define I915_MAX_COMMANDS (1 << 15)
-#define I915_MAX_RELOCATIONS (1 << 11)
-#define I915_MAX_EXEC_OBJECTS (1 << 11)
+#define INTEL_MAX_COMMANDS (1 << 13)
 
 struct intel_batch
 {
-    int drm;
-
-    struct drm_i915_gem_relocation_entry relocations[I915_MAX_RELOCATIONS];
-    uint64_t * offsets[I915_MAX_RELOCATIONS];
-    uint32_t relocation_count;
-
-    struct drm_i915_gem_exec_object2 exec_objects[I915_MAX_EXEC_OBJECTS];
-    uint32_t exec_object_count;
+    drm_intel_bufmgr * bufmgr;
+    drm_intel_bo * bo;
 
     //uint32_t header[13];
-    uint32_t commands[I915_MAX_COMMANDS];
+    uint32_t commands[INTEL_MAX_COMMANDS];
     uint32_t command_count;
 };
 
-void intel_batch_initialize(struct intel_batch * batch, int drm);
+void intel_batch_initialize(struct intel_batch * batch, drm_intel_bufmgr * bufmgr);
+
+void intel_batch_finalize(struct intel_batch * batch);
 
 void intel_batch_flush(struct intel_batch * batch);
 
 void intel_batch_ensure_space(struct intel_batch * batch, uint32_t size);
 
-uint32_t intel_batch_space(struct intel_batch * batch);
+static inline uint32_t intel_batch_space(struct intel_batch * batch)
+{
+    /* XXX: reserved space */
+    return INTEL_MAX_COMMANDS - batch->command_count;
+}
+
 
 static inline void intel_batch_add_dword(struct intel_batch * batch,
                                         uint32_t dword)
@@ -52,11 +51,12 @@ static inline void intel_batch_add_dwords(struct intel_batch * batch, uint32_t c
     va_end(dwords);
 }
 
-uint64_t intel_batch_add_relocation(struct intel_batch * batch,
-                                   uint32_t batch_offset, struct intel_bo * bo,
-                                   uint32_t read_domains, uint32_t write_domain);
-
-void intel_batch_add_exec_object(struct intel_batch * batch, struct intel_bo * bo);
+static inline uint32_t intel_batch_offset(struct intel_batch * batch,
+                                         uint32_t command_index)
+{
+    //printf("intel_batch_offset(4): %u\n", (batch->command_count + command_index) << 2);
+    return (batch->command_count + command_index) << 2;
+}
 
 #endif
 

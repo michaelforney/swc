@@ -6,6 +6,7 @@
 #include <libudev.h>
 #include <gbm.h>
 #include <wayland-server.h>
+#include <libdrm/intel_bufmgr.h>
 
 enum swc_drm_event
 {
@@ -16,6 +17,8 @@ struct swc_drm
 {
     int fd;
     uint32_t id;
+
+    drm_intel_bufmgr * bufmgr;
 
     uint32_t taken_output_ids;
 

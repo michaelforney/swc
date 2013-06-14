@@ -7,12 +7,14 @@
 #include <libdrm/drm.h>
 #include <xf86drm.h>
 #include <libdrm/i915_drm.h>
+#include <libdrm/intel_bufmgr.h>
 //#include <xf86drmMode.h>
 #include <wayland-util.h>
 
 #include "drm.h"
 #include "output.h"
 #include "event.h"
+#include "intel/batch.h"
 
 static struct udev_device * find_primary_drm_device(struct udev * udev,
                                                     const char * seat)
@@ -213,10 +215,23 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
         printf("has blt: %u\n", ret);
     }
 
+    drm->bufmgr = drm_intel_bufmgr_gem_init(drm->fd, INTEL_MAX_COMMANDS << 2);
+
+    if (!drm->bufmgr)
+    {
+        printf("could not create bufmgr\n");
+        goto error_fd;
+    }
+
+    //drm_intel_bufmgr_set_debug(drm->bufmgr, true);
+    drm_intel_bufmgr_gem_enable_fenced_relocs(drm->bufmgr);
+
     udev_device_unref(drm_device);
 
     return true;
 
+  error_fd:
+    close(drm->fd);
   error_device:
     udev_device_unref(drm_device);
   error_base:
@@ -225,6 +240,7 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
 
 void swc_drm_finish(struct swc_drm * drm)
 {
+    drm_intel_bufmgr_destroy(drm->bufmgr);
     close(drm->fd);
 }
 

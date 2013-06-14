@@ -66,11 +66,16 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
 
     if (wl_buffer_is_shm(surface->state.buffer))
     {
+        pixman_image_t * buffer_image;
+
         printf("repainting shm surface\n");
+        buffer_image = pixman_image_create_bits_no_clear
+            (PIXMAN_x8r8g8b8, back_buffer->width, back_buffer->height,
+             back_buffer->bo->virtual, back_buffer->pitch);
+
         pixman_image_composite32(PIXMAN_OP_SRC,
                                  surface->renderer_state.shm.image, NULL,
-                                 back_buffer->image,
-                                 0, 0, 0, 0, 0, 0,
+                                 buffer_image, 0, 0, 0, 0, 0, 0,
                                  surface->geometry.width,
                                  surface->geometry.height);
     }
@@ -92,13 +97,14 @@ bool swc_renderer_initialize(struct swc_renderer * renderer,
 {
     renderer->drm = drm;
 
-    intel_batch_initialize(&renderer->batch, drm->fd);
+    intel_batch_initialize(&renderer->batch, drm->bufmgr);
 
     return true;
 }
 
 void swc_renderer_finalize(struct swc_renderer * renderer)
 {
+    intel_batch_finalize(&renderer->batch);
 }
 
 void swc_renderer_repaint_output(struct swc_renderer * renderer,
@@ -117,7 +123,7 @@ void swc_renderer_repaint_output(struct swc_renderer * renderer,
         }
     }
 
-    xy_color_blt(&renderer->batch, &swc_output_get_back_buffer(output)->bo,
+    xy_color_blt(&renderer->batch, swc_output_get_back_buffer(output)->bo,
                  swc_output_get_back_buffer(output)->pitch, 0, 0, 500, 500,
                  0xffffffff);
 
@@ -147,8 +153,8 @@ void swc_renderer_attach(struct swc_renderer * renderer,
         {
             if (surface->output_mask & (1 << output->id))
             {
-                swc_buffer_ref_image(&output->buffers[0], renderer->drm);
-                swc_buffer_ref_image(&output->buffers[1], renderer->drm);
+                swc_buffer_ref_image(&output->buffers[0]);
+                swc_buffer_ref_image(&output->buffers[1]);
             }
         }
     }
@@ -159,9 +165,9 @@ void swc_renderer_attach(struct swc_renderer * renderer,
         struct intel_region * region = image->region;
         drm_intel_bo * bo = region->bo;
 
-        surface->renderer_state.drm.bo = (struct intel_bo) {
-            .handle = bo->handle
-        };
+        surface->renderer_state.drm.bo
+            = drm_intel_bo_gem_create_from_name(renderer->drm->bufmgr,
+                                                "surface", region->name);
 
         surface->renderer_state.drm.pitch = region->pitch;
 
