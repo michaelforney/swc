@@ -29,9 +29,6 @@ static void repaint_output(void * data)
 
     swc_output_switch_buffer(operation->output);
 
-    /* XXX: should go in page flip handler */
-    operation->output->repaint_scheduled = false;
-
     free(operation);
 }
 
@@ -157,8 +154,22 @@ static void handle_surface_event(struct wl_listener * listener, void * data)
 static void handle_drm_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct swc_compositor * compositor = wl_container_of(listener, compositor,
-                                                         drm_listener);
+    struct swc_compositor * compositor;
+
+    compositor = wl_container_of(listener, compositor, drm_listener);
+
+    switch (event->type)
+    {
+        case SWC_DRM_PAGE_FLIP:
+        {
+            struct swc_output * output = event->data;
+
+            output->repaint_scheduled = false;
+            output->front_buffer ^= 1;
+
+            break;
+        }
+    }
 }
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
@@ -266,6 +277,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
     compositor->display = display;
     compositor->tty_listener.notify = &handle_tty_event;
+    compositor->drm_listener.notify = &handle_drm_event;
 
     compositor->udev = udev_new();
 
@@ -303,6 +315,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         goto error_seat;
     }
 
+    wl_signal_add(&compositor->drm.event_signal, &compositor->drm_listener);
     swc_drm_add_event_sources(&compositor->drm, event_loop);
 
     compositor->gbm = gbm_create_device(compositor->drm.fd);
