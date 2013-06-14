@@ -11,7 +11,7 @@
 #include "region.h"
 #include "data_device_manager.h"
 
-const char default_seat[] = "seat0";
+static const char default_seat[] = "seat0";
 
 struct repaint_operation
 {
@@ -141,11 +141,13 @@ static void handle_surface_event(struct wl_listener * listener, void * data)
         case SWC_SURFACE_REPAINT:
         {
             struct swc_output * output;
+
             wl_list_for_each(output, &compositor->outputs, link)
             {
                 if (surface->output_mask & (1 << output->id))
                     schedule_repaint_for_output(compositor, output);
             }
+
             break;
         }
     }
@@ -216,7 +218,6 @@ static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
 static void create_surface(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
 {
-    printf("compositor_create_surface\n");
     struct swc_compositor * compositor = resource->data;
     struct swc_surface * surface;
     struct swc_output * output;
@@ -229,12 +230,14 @@ static void create_surface(struct wl_client * client,
         return;
     }
 
+    printf("compositor_create_surface: %p\n", surface);
+
     output = wl_container_of(compositor->outputs.next, output, link);
 
     /* Initialize compositor state */
     surface->compositor_state = (struct swc_compositor_surface_state) {
         .compositor = compositor,
-        .event_listener = (struct wl_listener) {
+        .event_listener = {
             .notify = &handle_surface_event
         },
         .destroy_listener = {
