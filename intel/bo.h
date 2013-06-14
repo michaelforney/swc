@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-struct i915_bo
+struct intel_bo
 {
     uint32_t handle;
     uint32_t size;
@@ -13,11 +13,11 @@ struct i915_bo
     uint64_t last_offset;
 };
 
-bool i915_bo_initialize(int drm, struct i915_bo * bo, uint32_t size);
+bool intel_bo_initialize(int drm, struct intel_bo * bo, uint32_t size);
 
-void i915_bo_finalize(int drm, struct i915_bo * bo);
+void intel_bo_finalize(int drm, struct intel_bo * bo);
 
-void i915_bo_write(int drm, struct i915_bo * bo, uint32_t offset,
+void intel_bo_write(int drm, struct intel_bo * bo, uint32_t offset,
                    void * data, size_t size);
 
 #endif

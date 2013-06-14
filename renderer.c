@@ -1,6 +1,6 @@
 #include "renderer.h"
-#include "i915/blt.h"
-#include "i915/mi.h"
+#include "intel/blt.h"
+#include "intel/mi.h"
 
 #include <stdio.h>
 #include <GLES2/gl2.h>
@@ -77,7 +77,7 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
     else
     {
         /*
-        struct i915_bo * src = &surface->renderer_state.drm.bo;
+        struct intel_bo * src = &surface->renderer_state.drm.bo;
         uint32_t src_pitch = surface->renderer_state.drm.pitch;
 
         xy_src_copy_blt(&renderer->batch, src, src_pitch, 0, 0,
@@ -92,7 +92,7 @@ bool swc_renderer_initialize(struct swc_renderer * renderer,
 {
     renderer->drm = drm;
 
-    i915_batch_initialize(&renderer->batch, drm->fd);
+    intel_batch_initialize(&renderer->batch, drm->fd);
 
     return true;
 }
@@ -123,7 +123,7 @@ void swc_renderer_repaint_output(struct swc_renderer * renderer,
 
     //mi_flush(&renderer->batch, false, false, false, false, false, false);
 
-    i915_batch_flush(&renderer->batch);
+    intel_batch_flush(&renderer->batch);
 }
 
 void swc_renderer_attach(struct swc_renderer * renderer,
@@ -159,7 +159,7 @@ void swc_renderer_attach(struct swc_renderer * renderer,
         struct intel_region * region = image->region;
         drm_intel_bo * bo = region->bo;
 
-        surface->renderer_state.drm.bo = (struct i915_bo) {
+        surface->renderer_state.drm.bo = (struct intel_bo) {
             .handle = bo->handle
         };
 

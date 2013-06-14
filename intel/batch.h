@@ -13,7 +13,7 @@
 #define I915_MAX_RELOCATIONS (1 << 11)
 #define I915_MAX_EXEC_OBJECTS (1 << 11)
 
-struct i915_batch
+struct intel_batch
 {
     int drm;
 
@@ -29,34 +29,34 @@ struct i915_batch
     uint32_t command_count;
 };
 
-void i915_batch_initialize(struct i915_batch * batch, int drm);
+void intel_batch_initialize(struct intel_batch * batch, int drm);
 
-void i915_batch_flush(struct i915_batch * batch);
+void intel_batch_flush(struct intel_batch * batch);
 
-void i915_batch_ensure_space(struct i915_batch * batch, uint32_t size);
+void intel_batch_ensure_space(struct intel_batch * batch, uint32_t size);
 
-uint32_t i915_batch_space(struct i915_batch * batch);
+uint32_t intel_batch_space(struct intel_batch * batch);
 
-static inline void i915_batch_add_dword(struct i915_batch * batch,
+static inline void intel_batch_add_dword(struct intel_batch * batch,
                                         uint32_t dword)
 {
     batch->commands[batch->command_count++] = dword;
 }
 
-static inline void i915_batch_add_dwords(struct i915_batch * batch, uint32_t count, ...)
+static inline void intel_batch_add_dwords(struct intel_batch * batch, uint32_t count, ...)
 {
     va_list dwords;
     va_start(dwords, count);
     while (count--)
-        i915_batch_add_dword(batch, va_arg(dwords, int));
+        intel_batch_add_dword(batch, va_arg(dwords, int));
     va_end(dwords);
 }
 
-uint64_t i915_batch_add_relocation(struct i915_batch * batch,
-                                   uint32_t batch_offset, struct i915_bo * bo,
+uint64_t intel_batch_add_relocation(struct intel_batch * batch,
+                                   uint32_t batch_offset, struct intel_bo * bo,
                                    uint32_t read_domains, uint32_t write_domain);
 
-void i915_batch_add_exec_object(struct i915_batch * batch, struct i915_bo * bo);
+void intel_batch_add_exec_object(struct intel_batch * batch, struct intel_bo * bo);
 
 #endif
 

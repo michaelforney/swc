@@ -4,7 +4,7 @@
 #include <xf86drm.h>
 #include <libdrm/i915_drm.h>
 
-bool i915_bo_initialize(int drm, struct i915_bo * bo, uint32_t size)
+bool intel_bo_initialize(int drm, struct intel_bo * bo, uint32_t size)
 {
     struct drm_i915_gem_create create_arg = { .size = size };
 
@@ -26,14 +26,14 @@ bool i915_bo_initialize(int drm, struct i915_bo * bo, uint32_t size)
     return false;
 }
 
-void i915_bo_finalize(int drm, struct i915_bo * bo)
+void intel_bo_finalize(int drm, struct intel_bo * bo)
 {
     struct drm_gem_close close_arg = { .handle = bo->handle };
 
     drmIoctl(drm, DRM_IOCTL_GEM_CLOSE, &close_arg);
 }
 
-void i915_bo_write(int drm, struct i915_bo * bo, uint32_t offset,
+void intel_bo_write(int drm, struct intel_bo * bo, uint32_t offset,
                    void * data, size_t size)
 {
     struct drm_i915_gem_pwrite pwrite_arg = {

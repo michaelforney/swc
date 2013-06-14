@@ -2,7 +2,7 @@
 #define SWC_BUFFER_H 1
 
 #include "drm.h"
-#include "i915/bo.h"
+#include "intel/bo.h"
 
 #include <stdbool.h>
 #include <pixman.h>
@@ -11,7 +11,7 @@ struct swc_buffer
 {
     uint32_t id;
 
-    struct i915_bo bo;
+    struct intel_bo bo;
 
     /* Pixman image using the mapped buffer for use with SHM. */
     pixman_image_t * image;

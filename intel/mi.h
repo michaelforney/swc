@@ -14,11 +14,11 @@
 #define MI_OPCODE_FLUSH_DW              0x04
 #define MI_OPCODE_BATCH_BUFFER_START    0x31
 
-static inline void mi_noop(struct i915_batch * batch,
+static inline void mi_noop(struct intel_batch * batch,
                            bool identification_number_write_enable,
                            uint32_t identification_number)
 {
-    i915_batch_add_dword(batch,
+    intel_batch_add_dword(batch,
         COMMAND_TYPE_MI << 29                           /* 31:29 */
             | MI_OPCODE_NOOP << 23                      /* 28:23 */
             | identification_number_write_enable << 22  /* 22 */
@@ -26,7 +26,7 @@ static inline void mi_noop(struct i915_batch * batch,
     );
 }
 
-static inline void mi_flush(struct i915_batch * batch,
+static inline void mi_flush(struct intel_batch * batch,
                             bool protected_memory_enable,
                             bool indirect_state_pointers_disable,
                             bool generic_media_state_clear,
@@ -34,7 +34,7 @@ static inline void mi_flush(struct i915_batch * batch,
                             bool render_cache_flush_inhibit,
                             bool state_cache_invalidate)
 {
-    i915_batch_add_dword(batch,
+    intel_batch_add_dword(batch,
         COMMAND_TYPE_MI << 29                       /* 31:29 */
             | MI_OPCODE_FLUSH << 23                 /* 28:23 */
                                                     /* 22:7 */
@@ -48,9 +48,9 @@ static inline void mi_flush(struct i915_batch * batch,
     );
 }
 
-static inline void mi_flush_dw(struct i915_batch * batch)
+static inline void mi_flush_dw(struct intel_batch * batch)
 {
-    i915_batch_add_dwords(batch, 4,
+    intel_batch_add_dwords(batch, 4,
         COMMAND_TYPE_MI << 29
             | MI_OPCODE_FLUSH_DW << 23
             | 2
@@ -61,25 +61,25 @@ static inline void mi_flush_dw(struct i915_batch * batch)
     );
 }
 
-static inline void mi_batch_buffer_end(struct i915_batch * batch)
+static inline void mi_batch_buffer_end(struct intel_batch * batch)
 {
     /* XXX: semaphore data dword / semaphore address */
-    i915_batch_add_dword(batch,
+    intel_batch_add_dword(batch,
         COMMAND_TYPE_MI << 29                   /* 31:29 */
             | MI_OPCODE_BATCH_BUFFER_END << 23  /* 28:23 */
                                                 /* 22:0 */
     );
 }
 
-static inline void mi_batch_buffer_start(struct i915_batch * batch,
+static inline void mi_batch_buffer_start(struct intel_batch * batch,
                                          bool encrypted_memory_enable,
                                          bool clear_command_buffer_enable,
                                          bool buffer_non_secure,
                                          uint32_t buffer_address)
 {
-    i915_batch_ensure_space(batch, 2);
+    intel_batch_ensure_space(batch, 2);
 
-    i915_batch_add_dwords(batch, 2,
+    intel_batch_add_dwords(batch, 2,
         COMMAND_TYPE_MI << 29                       /* 31:29 */
             | MI_OPCODE_BATCH_BUFFER_START << 23    /* 28:23 */
                                                     /* 22:13 */

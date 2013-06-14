@@ -37,7 +37,7 @@ bool swc_buffer_initialize(struct swc_buffer * buffer, struct swc_drm * drm,
 
     printf("width: %u, height: %u, pitch: %u, size: %u\n", width, height, buffer->pitch, size);
 
-    i915_bo_initialize(drm->fd, &buffer->bo, size);
+    intel_bo_initialize(drm->fd, &buffer->bo, size);
 
     if (drmModeAddFB(drm->fd, width, height, 24, 32, buffer->pitch,
                      buffer->bo.handle, &buffer->id) != 0)
@@ -60,7 +60,7 @@ bool swc_buffer_initialize(struct swc_buffer * buffer, struct swc_drm * drm,
 void swc_buffer_finish(struct swc_buffer * buffer, struct swc_drm * drm)
 {
     drmModeRmFB(drm->fd, buffer->id);
-    i915_bo_finalize(drm->fd, &buffer->bo);
+    intel_bo_finalize(drm->fd, &buffer->bo);
 }
 
 void swc_buffer_ref_image(struct swc_buffer * buffer, struct swc_drm * drm)

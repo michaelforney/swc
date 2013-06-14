@@ -1,7 +1,7 @@
 #ifndef SWC_SURFACE_STATE_H
 #define SWC_SURFACE_STATE_H 1
 
-#include "i915/bo.h"
+#include "intel/bo.h"
 
 #include <wayland-server.h>
 #include <pixman.h>
@@ -14,7 +14,7 @@ union swc_renderer_surface_state
     } shm;
     struct
     {
-        struct i915_bo bo;
+        struct intel_bo bo;
         uint32_t pitch;
     } drm;
 };

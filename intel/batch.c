@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <xf86drm.h>
 
-void i915_batch_initialize(struct i915_batch * batch, int drm)
+void intel_batch_initialize(struct intel_batch * batch, int drm)
 {
     batch->relocation_count = 0;
     batch->exec_object_count = 0;
@@ -13,9 +13,9 @@ void i915_batch_initialize(struct i915_batch * batch, int drm)
     batch->drm = drm;
 }
 
-void i915_batch_flush(struct i915_batch * batch)
+void intel_batch_flush(struct intel_batch * batch)
 {
-    struct i915_bo bo;
+    struct intel_bo bo;
     uint32_t index = batch->exec_object_count++;
 
     mi_batch_buffer_end(batch);
@@ -26,8 +26,8 @@ void i915_batch_flush(struct i915_batch * batch)
 
     printf("command count: %u\n", batch->command_count);
 
-    i915_bo_initialize(batch->drm, &bo, batch->command_count << 2);
-    i915_bo_write(batch->drm, &bo, 0, batch->commands, batch->command_count << 2);
+    intel_bo_initialize(batch->drm, &bo, batch->command_count << 2);
+    intel_bo_write(batch->drm, &bo, 0, batch->commands, batch->command_count << 2);
 
     printf("adding exec object with handle: %u\n", bo.handle);
 
@@ -55,7 +55,7 @@ void i915_batch_flush(struct i915_batch * batch)
         }
     }
 
-    i915_bo_finalize(batch->drm, &bo);
+    intel_bo_finalize(batch->drm, &bo);
 
     /* Set offsets for all our execution objects (except the last one, our
      * command object). */
@@ -68,12 +68,12 @@ void i915_batch_flush(struct i915_batch * batch)
 }
 
 #if 0
-uint32_t * i915_batch_alloc(struct i915_batch * batch, uint32_t size)
+uint32_t * intel_batch_alloc(struct intel_batch * batch, uint32_t size)
 {
     uint32_t * commands;
 
-    if (i915_batch_space(batch) < size)
-        i915_batch_flush(batch);
+    if (intel_batch_space(batch) < size)
+        intel_batch_flush(batch);
 
     commands = &batch->commands[batch->size];
     batch->command_count += command_count;
@@ -82,25 +82,25 @@ uint32_t * i915_batch_alloc(struct i915_batch * batch, uint32_t size)
 }
 #endif
 
-void i915_batch_ensure_space(struct i915_batch * batch, uint32_t size)
+void intel_batch_ensure_space(struct intel_batch * batch, uint32_t size)
 {
-    if (i915_batch_space(batch) < size)
-        i915_batch_flush(batch);
+    if (intel_batch_space(batch) < size)
+        intel_batch_flush(batch);
 }
 
-uint32_t i915_batch_space(struct i915_batch * batch)
+uint32_t intel_batch_space(struct intel_batch * batch)
 {
     /* XXX: reserved space */
     return I915_MAX_COMMANDS - batch->command_count;
 }
 
-uint64_t i915_batch_add_relocation(struct i915_batch * batch,
-                                   uint32_t batch_offset, struct i915_bo * bo,
+uint64_t intel_batch_add_relocation(struct intel_batch * batch,
+                                   uint32_t batch_offset, struct intel_bo * bo,
                                    uint32_t read_domains, uint32_t write_domain)
 {
     uint32_t index = batch->relocation_count++;
 
-    i915_batch_add_exec_object(batch, bo);
+    intel_batch_add_exec_object(batch, bo);
 
     printf("offset: %u\n", (batch->command_count + batch_offset) << 2);
     printf("current: %u\n", *((uint32_t *)(((void *) batch->commands) + ((batch->command_count + batch_offset) << 2))));
@@ -119,7 +119,7 @@ uint64_t i915_batch_add_relocation(struct i915_batch * batch,
     return bo->last_offset;
 }
 
-void i915_batch_add_exec_object(struct i915_batch * batch, struct i915_bo * bo)
+void intel_batch_add_exec_object(struct intel_batch * batch, struct intel_bo * bo)
 {
     uint32_t index = batch->exec_object_count++;
 

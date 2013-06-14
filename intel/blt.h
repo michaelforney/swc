@@ -1,8 +1,8 @@
 #ifndef SWC_I915_BLT_H
 #define SWC_I915_BLT_H 1
 
-#include "i915/bo.h"
-#include "i915/batch.h"
+#include "intel/bo.h"
+#include "intel/batch.h"
 
 #define BR00_CLIENT_2D 0x2
 
@@ -99,16 +99,16 @@ static inline uint32_t br26(uint16_t source_y1, uint16_t source_x1)
         ;
 };
 
-static inline void xy_src_copy_blt(struct i915_batch * batch,
-                                   struct i915_bo * src, uint16_t src_pitch,
+static inline void xy_src_copy_blt(struct intel_batch * batch,
+                                   struct intel_bo * src, uint16_t src_pitch,
                                    uint16_t src_x, uint16_t src_y,
-                                   struct i915_bo * dst, uint16_t dst_pitch,
+                                   struct intel_bo * dst, uint16_t dst_pitch,
                                    uint16_t dst_x, uint16_t dst_y,
                                    uint16_t width, uint16_t height)
 {
 #if 0
-    i915_batch_add_dword(batch, 
-    uint32_t * commands = i915_batch_alloc(batch, 8);
+    intel_batch_add_dword(batch, 
+    uint32_t * commands = intel_batch_alloc(batch, 8);
     commands = (uint32_t *)
     *commands++ = br00(BR00_CLIENT_2D, BR00_OPCODE_XY_SRC_COPY_BLT,
                        BR00_32BPP_BYTE_MASK_ALPHA | BR00_32BPP_BYTE_MASK_COLOR,
@@ -126,15 +126,15 @@ static inline void xy_src_copy_blt(struct i915_batch * batch,
 
     uint32_t dst_address, src_address;
 
-    i915_batch_ensure_space(batch, 8);
+    intel_batch_ensure_space(batch, 8);
 
-    dst_address = i915_batch_add_relocation(batch, 4, dst,
+    dst_address = intel_batch_add_relocation(batch, 4, dst,
                                             I915_GEM_DOMAIN_RENDER,
                                             I915_GEM_DOMAIN_RENDER);
-    src_address = i915_batch_add_relocation(batch, 7, src,
+    src_address = intel_batch_add_relocation(batch, 7, src,
                                             I915_GEM_DOMAIN_RENDER, 0);
 
-    i915_batch_add_dwords(batch, 8,
+    intel_batch_add_dwords(batch, 8,
         br00(BR00_CLIENT_2D, BR00_OPCODE_XY_SRC_COPY_BLT,
              BR00_32BPP_BYTE_MASK_ALPHA | BR00_32BPP_BYTE_MASK_COLOR,
              false, false, 6),
@@ -149,21 +149,21 @@ static inline void xy_src_copy_blt(struct i915_batch * batch,
     );
 }
 
-static inline void xy_color_blt(struct i915_batch * batch,
-                                struct i915_bo * dst, uint16_t dst_pitch,
+static inline void xy_color_blt(struct intel_batch * batch,
+                                struct intel_bo * dst, uint16_t dst_pitch,
                                 uint16_t dst_x, uint16_t dst_y,
                                 uint16_t width, uint16_t height,
                                 uint32_t color)
 {
     uint32_t dst_address;
 
-    i915_batch_ensure_space(batch, 6);
+    intel_batch_ensure_space(batch, 6);
 
-    dst_address = i915_batch_add_relocation(batch, 4, dst,
+    dst_address = intel_batch_add_relocation(batch, 4, dst,
                                             I915_GEM_DOMAIN_RENDER,
                                             I915_GEM_DOMAIN_RENDER);
 
-    i915_batch_add_dwords(batch, 6,
+    intel_batch_add_dwords(batch, 6,
         br00(BR00_CLIENT_2D, BR00_OPCODE_XY_COLOR_BLT,
              BR00_32BPP_BYTE_MASK_ALPHA | BR00_32BPP_BYTE_MASK_COLOR,
              false, false, 4),

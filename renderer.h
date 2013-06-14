@@ -4,13 +4,13 @@
 #include "output.h"
 #include "surface.h"
 #include "drm.h"
-#include "i915/batch.h"
+#include "intel/batch.h"
 
 struct swc_renderer
 {
     struct swc_drm * drm;
 
-    struct i915_batch batch;
+    struct intel_batch batch;
 };
 
 bool swc_renderer_initialize(struct swc_renderer * renderer,

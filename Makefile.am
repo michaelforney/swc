@@ -22,12 +22,12 @@ libswc_la_SOURCES = \
 	egl.c egl.h
 
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
-	$(drm_LIBS) $(gbm_LIBS) $(egl_LIBS) $(pixman_LIBS) i915/libi915.la
+	$(drm_LIBS) $(gbm_LIBS) $(egl_LIBS) $(pixman_LIBS) intel/libintel.la
 
 # testclient_SOURCES = \
 # 	testclient.c
 # 
 # testclient_LDADD = $(wayland_client_LIBS)
 
-SUBDIRS = i915
+SUBDIRS = intel
 
