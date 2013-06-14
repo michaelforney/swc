@@ -73,7 +73,7 @@ static void handle_key(struct wl_keyboard_grab * grab, uint32_t time,
 
         wl_array_for_each(binding, &compositor->key_bindings)
         {
-            if (binding->value == keysym && (binding->modifiers == MOD_ANY
+            if (binding->value == keysym && (binding->modifiers == SWC_MOD_ANY
                 || binding->modifiers == seat->active_modifiers))
             {
                 binding->handler(time, keysym, binding->data);
