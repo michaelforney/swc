@@ -15,17 +15,17 @@ const char default_seat[] = "seat0";
 
 struct repaint_operation
 {
-    struct swc_renderer * renderer;
+    struct swc_compositor * compositor;
     struct swc_output * output;
-    struct wl_list * surfaces;
 };
 
 static void repaint_output(void * data)
 {
     struct repaint_operation * operation = data;
+    struct swc_compositor * compositor = operation->compositor;
 
-    swc_renderer_repaint_output(operation->renderer, operation->output,
-                                operation->surfaces);
+    swc_renderer_repaint_output(&compositor->renderer, operation->output,
+                                &compositor->surfaces);
 
     swc_output_switch_buffer(operation->output);
 
@@ -45,9 +45,8 @@ static void schedule_repaint_for_output(struct swc_compositor * compositor,
         return;
 
     operation = malloc(sizeof *operation);
-    operation->renderer = &compositor->renderer;
+    operation->compositor = compositor;
     operation->output = output;
-    operation->surfaces = &compositor->surfaces;
 
     event_loop = wl_display_get_event_loop(compositor->display);
     wl_event_loop_add_idle(event_loop, &repaint_output, operation);
