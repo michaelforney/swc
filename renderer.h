@@ -6,11 +6,18 @@
 #include "drm.h"
 #include "intel/batch.h"
 
+enum swc_renderer_context
+{
+    SWC_RENDERER_CONTEXT_NONE,
+    SWC_RENDERER_CONTEXT_SHM,
+    SWC_RENDERER_CONTEXT_BATCH
+};
+
 struct swc_renderer
 {
     struct swc_drm * drm;
     struct gbm_device * gbm;
-
+    enum swc_renderer_context context;
     struct intel_batch batch;
 };
 

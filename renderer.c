@@ -21,6 +21,40 @@ static inline uint32_t format_wayland_to_pixman(uint32_t wayland_format)
     return 0;
 }
 
+static inline void switch_context(struct swc_renderer * renderer,
+                                  uint32_t context, struct swc_buffer * buffer)
+{
+    if (renderer->context != context)
+    {
+        /* Leave old context */
+        switch (renderer->context)
+        {
+            case SWC_RENDERER_CONTEXT_NONE:
+                break;
+            case SWC_RENDERER_CONTEXT_BATCH:
+                intel_batch_flush(&renderer->batch);
+                break;
+            case SWC_RENDERER_CONTEXT_SHM:
+                drm_intel_gem_bo_unmap_gtt(buffer->bo);
+                break;
+        }
+
+        /* Enter new context */
+        switch (context)
+        {
+            case SWC_RENDERER_CONTEXT_NONE:
+                break;
+            case SWC_RENDERER_CONTEXT_BATCH:
+                break;
+            case SWC_RENDERER_CONTEXT_SHM:
+                drm_intel_gem_bo_map_gtt(buffer->bo);
+                break;
+        }
+
+        renderer->context = context;
+    }
+}
+
 static void repaint_surface_for_output(struct swc_renderer * renderer,
                                        struct swc_surface * surface,
                                        struct swc_output * output)
@@ -31,7 +65,10 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
     {
         pixman_image_t * buffer_image;
 
+        switch_context(renderer, SWC_RENDERER_CONTEXT_SHM, back_buffer);
+
         printf("repainting shm surface\n");
+
         buffer_image = pixman_image_create_bits_no_clear
             (PIXMAN_x8r8g8b8, back_buffer->width, back_buffer->height,
              back_buffer->bo->virtual, back_buffer->pitch);
@@ -44,14 +81,17 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
     }
     else
     {
-        /*
-        struct intel_bo * src = &surface->renderer_state.drm.bo;
+        switch_context(renderer, SWC_RENDERER_CONTEXT_BATCH, back_buffer);
+
+        printf("repainting drm surface\n");
+
+        drm_intel_bo * src = surface->renderer_state.drm.bo;
         uint32_t src_pitch = surface->renderer_state.drm.pitch;
 
         xy_src_copy_blt(&renderer->batch, src, src_pitch, 0, 0,
-                        &back_buffer->bo, back_buffer->pitch, 0, 0,
+                        back_buffer->bo, back_buffer->pitch,
+                        surface->geometry.x, surface->geometry.y,
                         surface->geometry.width, surface->geometry.height);
-        */
     }
 }
 
@@ -77,8 +117,11 @@ void swc_renderer_repaint_output(struct swc_renderer * renderer,
                                  struct wl_list * surfaces)
 {
     struct swc_surface * surface;
+    struct swc_buffer * back_buffer;
 
-    printf("repainting output %u\n", output->id);
+    back_buffer = swc_output_get_back_buffer(output);
+
+    switch_context(renderer, SWC_RENDERER_CONTEXT_BATCH, back_buffer);
 
     wl_list_for_each(surface, surfaces, link)
     {
@@ -88,13 +131,7 @@ void swc_renderer_repaint_output(struct swc_renderer * renderer,
         }
     }
 
-    xy_color_blt(&renderer->batch, swc_output_get_back_buffer(output)->bo,
-                 swc_output_get_back_buffer(output)->pitch, 0, 0, 500, 500,
-                 0xffffffff);
-
-    //mi_flush(&renderer->batch, false, false, false, false, false, false);
-
-    intel_batch_flush(&renderer->batch);
+    switch_context(renderer, SWC_RENDERER_CONTEXT_NONE, back_buffer);
 }
 
 void swc_renderer_attach(struct swc_renderer * renderer,
@@ -116,15 +153,6 @@ void swc_renderer_attach(struct swc_renderer * renderer,
                                        wl_shm_buffer_get_height(buffer),
                                        wl_shm_buffer_get_data(buffer),
                                        wl_shm_buffer_get_stride(buffer));
-
-        wl_list_for_each(output, outputs, link)
-        {
-            if (surface->output_mask & (1 << output->id))
-            {
-                swc_buffer_ref_image(&output->buffers[0]);
-                swc_buffer_ref_image(&output->buffers[1]);
-            }
-        }
     }
     /* DRM buffer */
     else if ((bo = gbm_bo_import(renderer->gbm, GBM_BO_IMPORT_WL_BUFFER, buffer,
