@@ -38,17 +38,5 @@ void swc_seat_add_event_sources(struct swc_seat * seat,
 
 void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev);
 
-/* Wayland Seat Interface */
-extern struct wl_seat_interface swc_seat_interface;
-
-void swc_seat_get_pointer(struct wl_client * client,
-                          struct wl_resource * resource, uint32_t id);
-
-void swc_seat_get_keyboard(struct wl_client * client,
-                           struct wl_resource * resource, uint32_t id);
-
-void swc_seat_get_touch(struct wl_client * client,
-                        struct wl_resource * resource, uint32_t id);
-
 #endif
 

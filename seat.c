@@ -17,12 +17,6 @@ struct evdev_device_entry
     struct wl_list link;
 };
 
-struct wl_seat_interface swc_seat_interface = {
-    .get_pointer = &swc_seat_get_pointer,
-    .get_keyboard = &swc_seat_get_keyboard,
-    .get_touch = &swc_seat_get_touch
-};
-
 static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
                        uint32_t state)
 {
@@ -161,6 +155,64 @@ static void handle_evdev_event(struct wl_listener * listener, void * data)
     }
 }
 
+/* Wayland Seat Interface */
+static void get_pointer(struct wl_client * client, struct wl_resource * resource,
+                        uint32_t id)
+{
+    struct swc_seat * seat = resource->data;
+    struct swc_pointer * pointer = &seat->pointer;
+
+    swc_pointer_bind(pointer, client, id);
+
+    if (pointer->focus.surface
+        && wl_resource_get_client(pointer->focus.surface->resource) == client)
+    {
+        swc_pointer_set_focus(pointer, pointer->focus.surface);
+    }
+}
+
+static void get_keyboard(struct wl_client * client, struct wl_resource * resource,
+                         uint32_t id)
+{
+    struct wl_resource * client_resource;
+    struct swc_seat * seat = wl_resource_get_user_data(resource);
+    struct swc_keyboard * keyboard = &seat->keyboard;
+
+    client_resource = swc_keyboard_bind(keyboard, client, id);
+
+    wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
+                            seat->xkb.keymap.fd, seat->xkb.keymap.size);
+
+    if (keyboard->focus.surface
+        && wl_resource_get_client(keyboard->focus.surface->resource) == client)
+    {
+        printf("focusing\n");
+        swc_keyboard_set_focus(keyboard, keyboard->focus.surface);
+    }
+}
+
+static void get_touch(struct wl_client * client, struct wl_resource * resource,
+               uint32_t id)
+{
+    /*
+    struct wl_resource * client_resource;
+    struct swc_seat * seat = resource->data;
+    struct wl_touch * touch = &seat->touch;
+
+    client_resource = wl_client_add_object(client, &wl_touch_interface,
+                                           NULL, id, seat);
+    client_resource->destroy = &swc_unbind_resource;
+
+    wl_list_insert(&touch->resources, &client_resource->link);
+    */
+}
+
+struct wl_seat_interface seat_implementation = {
+    .get_pointer = &get_pointer,
+    .get_keyboard = &get_keyboard,
+    .get_touch = &get_touch
+};
+
 static void bind_seat(struct wl_client * client, void * data, uint32_t version,
                       uint32_t id)
 {
@@ -168,7 +220,7 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
     struct wl_resource * resource;
 
     resource = wl_client_add_object(client, &wl_seat_interface,
-                                    &swc_seat_interface, id, seat);
+                                    &seat_implementation, id, seat);
     wl_list_insert(&seat->resources, &resource->link);
     wl_resource_set_destructor(resource, &swc_unbind_resource);
 
@@ -325,57 +377,5 @@ void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev)
     }
 
     udev_enumerate_unref(enumerate);
-}
-
-/* Wayland Seat Interface */
-void swc_seat_get_pointer(struct wl_client * client,
-                          struct wl_resource * resource, uint32_t id)
-{
-    struct swc_seat * seat = resource->data;
-    struct swc_pointer * pointer = &seat->pointer;
-
-    swc_pointer_bind(pointer, client, id);
-
-    if (pointer->focus.surface
-        && wl_resource_get_client(pointer->focus.surface->resource) == client)
-    {
-        swc_pointer_set_focus(pointer, pointer->focus.surface);
-    }
-}
-
-void swc_seat_get_keyboard(struct wl_client * client,
-                           struct wl_resource * resource, uint32_t id)
-{
-    struct wl_resource * client_resource;
-    struct swc_seat * seat = wl_resource_get_user_data(resource);
-    struct swc_keyboard * keyboard = &seat->keyboard;
-
-    client_resource = swc_keyboard_bind(keyboard, client, id);
-
-    wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
-                            seat->xkb.keymap.fd, seat->xkb.keymap.size);
-
-    if (keyboard->focus.surface
-        && wl_resource_get_client(keyboard->focus.surface->resource) == client)
-    {
-        printf("focusing\n");
-        swc_keyboard_set_focus(keyboard, keyboard->focus.surface);
-    }
-}
-
-void swc_seat_get_touch(struct wl_client * client,
-                        struct wl_resource * resource, uint32_t id)
-{
-    /*
-    struct wl_resource * client_resource;
-    struct swc_seat * seat = resource->data;
-    struct wl_touch * touch = &seat->touch;
-
-    client_resource = wl_client_add_object(client, &wl_touch_interface,
-                                           NULL, id, seat);
-    client_resource->destroy = &swc_unbind_resource;
-
-    wl_list_insert(&touch->resource_list, &client_resource->link);
-    */
 }
 
