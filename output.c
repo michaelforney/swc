@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <libdrm/i915_drm.h>
+#include <libdrm/drm.h>
 #include <xf86drm.h>
 
 static void bind_output(struct wl_client * client, void * data,
@@ -103,40 +103,6 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
     {
         printf("could not initialize buffer 1 for output\n");
         goto error_buffer0;
-    }
-
-    {
-        uint32_t color = 0x00339933;
-        uint32_t line[output->width];
-        uint32_t x, y;
-        struct drm_i915_gem_pwrite arg = {
-            .handle = output->buffers[0].bo->handle,
-            .size = sizeof line,
-            .data_ptr = (uint64_t) line
-        };
-
-        for (x = 0; x < output->width; ++x)
-            line[x] = color;
-
-        for (y = 0; y < output->height; ++y)
-        {
-            arg.offset += output->buffers[0].pitch;
-            drmCommandWrite(drm->fd, DRM_I915_GEM_PWRITE, &arg, sizeof arg);
-        }
-
-        color = 0x00333399;
-
-        arg.offset = 0;
-        arg.handle = output->buffers[1].bo->handle;
-
-        for (x = 0; x < output->width; ++x)
-            line[x] = color;
-
-        for (y = 0; y < output->height; ++y)
-        {
-            arg.offset += output->buffers[1].pitch;
-            drmCommandWrite(drm->fd, DRM_I915_GEM_PWRITE, &arg, sizeof arg);
-        }
     }
 
     output->original_state.crtc = current_crtc;
