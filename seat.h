@@ -38,12 +38,6 @@ void swc_seat_add_event_sources(struct swc_seat * seat,
 
 void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev);
 
-void swc_seat_handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
-                         uint32_t state);
-
-void swc_seat_handle_button(struct swc_seat * seat, uint32_t time,
-                            uint32_t button, uint32_t state);
-
 /* Wayland Seat Interface */
 extern struct wl_seat_interface swc_seat_interface;
 
