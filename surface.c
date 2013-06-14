@@ -164,6 +164,8 @@ bool swc_surface_initialize(struct swc_surface * surface,
     wl_signal_init(&surface->event_signal);
 
     surface->output_mask = 0;
+    surface->border.width = 0;
+    surface->border.color = 0x000000;
 
     return true;
 }

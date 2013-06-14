@@ -50,6 +50,12 @@ struct swc_surface
         uint32_t width, height;
     } geometry;
 
+    struct
+    {
+        uint32_t width;
+        uint32_t color;
+    } border;
+
     uint32_t output_mask;
 
     struct wl_signal event_signal;

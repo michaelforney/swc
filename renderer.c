@@ -90,8 +90,42 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
 
         xy_src_copy_blt(&renderer->batch, src, src_pitch, 0, 0,
                         back_buffer->bo, back_buffer->pitch,
-                        surface->geometry.x, surface->geometry.y,
+                        surface->geometry.x + surface->border.width,
+                        surface->geometry.y + surface->border.width,
                         surface->geometry.width, surface->geometry.height);
+    }
+
+    /* Draw border */
+    {
+        switch_context(renderer, SWC_RENDERER_CONTEXT_BATCH, back_buffer);
+
+        /* Top */
+        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
+                     surface->geometry.x, surface->geometry.y,
+                     surface->geometry.x + surface->geometry.width + 2 * surface->border.width,
+                     surface->geometry.y + surface->border.width,
+                     surface->border.color);
+        /* Bottom */
+        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
+                     surface->geometry.x,
+                     surface->geometry.y + surface->border.width + surface->geometry.height,
+                     surface->geometry.x + surface->geometry.width + 2 * surface->border.width,
+                     surface->geometry.y + surface->geometry.height + 2 * surface->border.width,
+                     surface->border.color);
+        /* Left */
+        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
+                     surface->geometry.x, surface->geometry.y + surface->border.width,
+                     surface->geometry.x + surface->border.width,
+                     surface->geometry.y + + surface->border.width + surface->geometry.height,
+                     surface->border.color);
+        /* Right */
+        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
+                     surface->geometry.x + surface->border.width + surface->geometry.width,
+                     surface->geometry.y + surface->border.width,
+                     surface->geometry.x + surface->geometry.width + 2 * surface->border.width,
+                     surface->geometry.y + surface->border.width + surface->geometry.height,
+                     surface->border.color);
+
     }
 }
 
