@@ -165,6 +165,10 @@ bool swc_surface_initialize(struct swc_surface * surface,
     wl_signal_init(&surface->event_signal);
 
     surface->output_mask = 0;
+    surface->geometry.x = 0;
+    surface->geometry.y = 0;
+    surface->geometry.width = 0;
+    surface->geometry.height = 0;
     surface->border.width = 0;
     surface->border.color = 0x000000;
 
