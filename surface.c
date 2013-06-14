@@ -64,7 +64,8 @@ static void frame(struct wl_client * client, struct wl_resource * resource,
 
     callback_resource = wl_client_add_object(client, &wl_callback_interface,
                                              NULL, id, NULL);
-    wl_list_insert(surface->pending.state.frame_callbacks.prev, &resource->link);
+    wl_list_insert(surface->pending.state.frame_callbacks.prev,
+                   &callback_resource->link);
 }
 
 static void set_opaque_region(struct wl_client * client,
@@ -174,4 +175,17 @@ void swc_surface_finish(struct swc_surface * surface)
 {
 }
 
+void swc_surface_send_frame_callbacks(struct swc_surface * surface,
+                                      uint32_t time)
+{
+    struct wl_resource * callback;
+
+    wl_list_for_each(callback, &surface->state.frame_callbacks, link)
+    {
+        wl_callback_send_done(callback, time);
+        wl_resource_destroy(callback);
+    }
+
+    wl_list_init(&surface->state.frame_callbacks);
+}
 

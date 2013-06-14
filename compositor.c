@@ -163,9 +163,24 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
         case SWC_DRM_PAGE_FLIP:
         {
             struct swc_output * output = event->data;
+            struct swc_surface * surface;
+            struct timeval timeval;
+            uint32_t time;
 
             output->repaint_scheduled = false;
             output->front_buffer ^= 1;
+
+            gettimeofday(&timeval, NULL);
+            time = timeval.tv_sec * 1000 + timeval.tv_usec / 1000;
+
+            /* Handle all frame callbacks for surfaces on this output. */
+            wl_list_for_each(surface, &compositor->surfaces, link)
+            {
+                swc_surface_send_frame_callbacks(surface, time);
+
+                if (surface->state.buffer)
+                    wl_buffer_send_release(&surface->state.buffer->resource);
+            }
 
             break;
         }

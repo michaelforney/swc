@@ -67,5 +67,8 @@ bool swc_surface_initialize(struct swc_surface * surface,
 
 void swc_surface_finish(struct swc_surface * surface);
 
+void swc_surface_send_frame_callbacks(struct swc_surface * surface,
+                                      uint32_t time);
+
 #endif
 
