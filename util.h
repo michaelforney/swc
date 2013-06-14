@@ -16,5 +16,8 @@ void swc_client_add_object(struct wl_clientstruct wl_resource * resource, );
 
 void swc_unbind_resource(struct wl_resource * resource);
 
+struct wl_resource * swc_find_resource_for_client(struct wl_list * resources,
+                                                  struct wl_client * client);
+
 #endif
 
