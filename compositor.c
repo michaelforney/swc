@@ -248,7 +248,7 @@ static void create_surface(struct wl_client * client,
     wl_resource_add_destroy_listener(surface->resource,
                   &surface->compositor_state.destroy_listener);
 
-    wl_list_insert(&compositor->surfaces, &surface->link);
+    wl_list_insert(compositor->surfaces.prev, &surface->link);
     surface->output_mask |= 1 << output->id;
 }
 
