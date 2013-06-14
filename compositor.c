@@ -313,7 +313,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         goto error_gbm;
     }
 
-    if (!swc_renderer_initialize(&compositor->renderer, &compositor->drm))
+    if (!swc_renderer_initialize(&compositor->renderer, &compositor->drm,
+                                 compositor->gbm))
     {
         printf("could not initialize renderer\n");
         goto error_egl;

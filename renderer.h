@@ -9,12 +9,13 @@
 struct swc_renderer
 {
     struct swc_drm * drm;
+    struct gbm_device * gbm;
 
     struct intel_batch batch;
 };
 
 bool swc_renderer_initialize(struct swc_renderer * renderer,
-                             struct swc_drm * drm);
+                             struct swc_drm * drm, struct gbm_device * gbm);
 
 void swc_renderer_finalize(struct swc_renderer * renderer);
 

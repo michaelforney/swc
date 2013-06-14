@@ -15,7 +15,7 @@ union swc_renderer_surface_state
     struct
     {
         drm_intel_bo * bo;
-        uint32_t pitch;
+        uint32_t width, height, pitch;
     } drm;
 };
 

@@ -5,45 +5,8 @@
 #include <stdio.h>
 #include <GLES2/gl2.h>
 #include <libdrm/intel_bufmgr.h>
-
-struct wl_drm_buffer
-{
-    struct wl_buffer buffer;
-    struct wl_drm * drm;
-    uint32_t format;
-    const void * driver_format;
-    int32_t offset[3];
-    int32_t stride[3];
-    void * driver_buffer;
-};
-
-struct __DRIimageRec
-{
-    struct intel_region * region;
-    GLenum internal_format;
-    uint32_t dri_format;
-    GLuint format;
-    uint32_t offset;
-    uint32_t strides[3];
-    uint32_t offsets[3];
-    struct intel_image_format * planar_format;
-    void * data;
-};
-
-struct intel_region
-{
-    drm_intel_bo * bo;
-    GLuint refcount;
-    GLuint cpp;
-    GLuint width;
-    GLuint height;
-    GLuint pitch;
-    GLubyte * map;
-    GLuint map_refcount;
-    uint32_t tiling;
-    uint32_t name;
-    struct intel_screen * screen;
-};
+#include <libdrm/drm.h>
+#include <xf86drm.h>
 
 static inline uint32_t format_wayland_to_pixman(uint32_t wayland_format)
 {
@@ -93,9 +56,11 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
 }
 
 bool swc_renderer_initialize(struct swc_renderer * renderer,
-                             struct swc_drm * drm)
+                             struct swc_drm * drm,
+                             struct gbm_device * gbm)
 {
     renderer->drm = drm;
+    renderer->gbm = gbm;
 
     intel_batch_initialize(&renderer->batch, drm->bufmgr);
 
@@ -137,6 +102,9 @@ void swc_renderer_attach(struct swc_renderer * renderer,
                          struct swc_surface * surface,
                          struct wl_buffer * buffer)
 {
+    struct gbm_bo * bo;
+
+    /* SHM buffer */
     if (wl_buffer_is_shm(buffer))
     {
         struct swc_output * output;
@@ -158,24 +126,28 @@ void swc_renderer_attach(struct swc_renderer * renderer,
             }
         }
     }
-    else
+    /* DRM buffer */
+    else if ((bo = gbm_bo_import(renderer->gbm, GBM_BO_IMPORT_WL_BUFFER, buffer,
+                                 GBM_BO_USE_RENDERING)))
     {
-        struct wl_drm_buffer * drm_buffer = (void *) surface->state.buffer;
-        struct __DRIimageRec * image = drm_buffer->driver_buffer;
-        struct intel_region * region = image->region;
-        drm_intel_bo * bo = region->bo;
+        int handle = gbm_bo_get_handle(bo).s32;
+        struct drm_gem_flink flink = { .handle = handle };
+
+        if (drmIoctl(renderer->drm->fd, DRM_IOCTL_GEM_FLINK, &flink) != 0)
+        {
+            printf("could not flink handle\n");
+            return;
+        }
 
         surface->renderer_state.drm.bo
             = drm_intel_bo_gem_create_from_name(renderer->drm->bufmgr,
-                                                "surface", region->name);
+                                                "surface", flink.name);
+        surface->renderer_state.drm.pitch = gbm_bo_get_stride(bo);
+        surface->renderer_state.drm.width = gbm_bo_get_width(bo);
+        surface->renderer_state.drm.height = gbm_bo_get_height(bo);
 
-        surface->renderer_state.drm.pitch = region->pitch;
-
-        printf("buffer width: %u, height: %u\n", buffer->width, buffer->height);
-
-        printf("bo width: %u, height: %u, stride: %u, handle: %u\n",
-               region->width, region->height,
-               region->pitch, bo->handle);
+        printf("pitch: %u, width: %u, height: %u\n", surface->renderer_state.drm.pitch,
+            surface->renderer_state.drm.width, surface->renderer_state.drm.height);
     }
 }
 
