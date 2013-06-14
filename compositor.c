@@ -409,7 +409,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
   error_udev:
     udev_unref(compositor->udev);
   error_base:
-    free(compositor);
     return false;
 }
 
