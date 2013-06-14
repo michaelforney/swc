@@ -162,9 +162,12 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
                                                          drm_listener);
 }
 
-static void destroy_surface(struct wl_resource * resource)
+static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
+    struct wl_resource * resource = data;
     struct swc_surface * surface = resource->data;
+
+    wl_list_remove(&surface->link);
 
     free(surface);
 }
@@ -208,20 +211,20 @@ static void create_surface(struct wl_client * client,
         .compositor = compositor,
         .event_listener = (struct wl_listener) {
             .notify = &handle_surface_event
+        },
+        .destroy_listener = {
+            .notify = &handle_surface_destroy
         }
     };
 
-    swc_surface_initialize(surface);
+    swc_surface_initialize(surface, client, id);
     wl_signal_add(&surface->event_signal,
                   &surface->compositor_state.event_listener);
+    wl_resource_add_destroy_listener(surface->resource,
+                  &surface->compositor_state.destroy_listener);
 
     wl_list_insert(&compositor->surfaces, &surface->link);
     surface->output_mask |= 1 << output->id;
-
-    surface->resource
-        = wl_client_add_object(client, &wl_surface_interface,
-                               &swc_surface_interface, id, surface);
-    wl_resource_set_destructor(surface->resource, &destroy_surface);
 }
 
 static void create_region(struct wl_client * client,

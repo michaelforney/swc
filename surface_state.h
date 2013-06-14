@@ -22,6 +22,7 @@ union swc_renderer_surface_state
 struct swc_compositor_surface_state
 {
     struct swc_compositor * compositor;
+    struct wl_listener destroy_listener;
     struct wl_listener event_listener;
 };
 

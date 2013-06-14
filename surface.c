@@ -4,16 +4,6 @@
 
 #include <stdio.h>
 
-struct wl_surface_interface swc_surface_interface = {
-    .destroy = &swc_surface_destroy,
-    .attach = &swc_surface_attach,
-    .damage = &swc_surface_damage,
-    .frame = &swc_surface_frame,
-    .set_opaque_region = &swc_surface_set_opaque_region,
-    .set_input_region = &swc_surface_set_input_region,
-    .commit = &swc_surface_commit,
-};
-
 static void state_initialize(struct swc_surface_state * state)
 {
     state->buffer = NULL;
@@ -25,33 +15,20 @@ static void state_initialize(struct swc_surface_state * state)
     wl_list_init(&state->frame_callbacks);
 }
 
-bool swc_surface_initialize(struct swc_surface * surface)
+static void destroy_surface_resource(struct wl_resource * resource)
 {
-    state_initialize(&surface->state);
-    state_initialize(&surface->pending.state);
+    struct swc_surface * surface = resource->data;
 
-    wl_signal_init(&surface->event_signal);
-
-    surface->output_mask = 0;
-
-    return true;
+    swc_surface_finish(surface);
 }
 
-void swc_surface_finish(struct swc_surface * surface)
-{
-}
-
-void swc_surface_destroy(struct wl_client * client,
-                         struct wl_resource * resource)
+static void destroy(struct wl_client * client, struct wl_resource * resource)
 {
     wl_resource_destroy(resource);
 }
 
-void swc_surface_attach(struct wl_client * client,
-                        struct wl_resource * resource,
-                        struct wl_resource * buffer_resource,
-                        int32_t x,
-                        int32_t y)
+static void attach(struct wl_client * client, struct wl_resource * resource,
+                   struct wl_resource * buffer_resource, int32_t x, int32_t y)
 {
     struct swc_surface * surface = resource->data;
     struct wl_buffer * buffer = buffer_resource->data;
@@ -66,10 +43,8 @@ void swc_surface_attach(struct wl_client * client,
     surface->geometry.height = buffer->height;
 }
 
-void swc_surface_damage(struct wl_client * client,
-                        struct wl_resource * resource,
-                        int32_t x, int32_t y,
-                        int32_t width, int32_t height)
+static void damage(struct wl_client * client, struct wl_resource * resource,
+                   int32_t x, int32_t y, int32_t width, int32_t height)
 {
     printf("surface_damage\n");
     struct swc_surface * surface = resource->data;
@@ -79,9 +54,8 @@ void swc_surface_damage(struct wl_client * client,
                                x, y, width, height);
 }
 
-void swc_surface_frame(struct wl_client * client,
-                       struct wl_resource * resource,
-                       uint32_t id)
+static void frame(struct wl_client * client, struct wl_resource * resource,
+                  uint32_t id)
 {
     struct swc_surface * surface = resource->data;
     struct wl_resource * callback_resource;
@@ -93,9 +67,9 @@ void swc_surface_frame(struct wl_client * client,
     wl_list_insert(surface->pending.state.frame_callbacks.prev, &resource->link);
 }
 
-void swc_surface_set_opaque_region(struct wl_client * client,
-                                   struct wl_resource * resource,
-                                   struct wl_resource * region_resource)
+static void set_opaque_region(struct wl_client * client,
+                              struct wl_resource * resource,
+                              struct wl_resource * region_resource)
 {
     struct swc_surface * surface = resource->data;
 
@@ -111,9 +85,9 @@ void swc_surface_set_opaque_region(struct wl_client * client,
         pixman_region32_clear(&surface->pending.state.opaque);
 }
 
-void swc_surface_set_input_region(struct wl_client * client,
-                                  struct wl_resource * resource,
-                                  struct wl_resource * region_resource)
+static void set_input_region(struct wl_client * client,
+                             struct wl_resource * resource,
+                             struct wl_resource * region_resource)
 {
     struct swc_surface * surface = resource->data;
 
@@ -129,8 +103,7 @@ void swc_surface_set_input_region(struct wl_client * client,
         pixman_region32_clear(&surface->pending.state.input);
 }
 
-void swc_surface_commit(struct wl_client * client,
-                        struct wl_resource * resource)
+static void commit(struct wl_client * client, struct wl_resource * resource)
 {
     struct swc_surface * surface = resource->data;
     struct swc_event event;
@@ -167,4 +140,36 @@ void swc_surface_commit(struct wl_client * client,
     event.type = SWC_SURFACE_REPAINT;
     wl_signal_emit(&surface->event_signal, &event);
 }
+
+struct wl_surface_interface surface_implementation = {
+    .destroy = &destroy,
+    .attach = &attach,
+    .damage = &damage,
+    .frame = &frame,
+    .set_opaque_region = &set_opaque_region,
+    .set_input_region = &set_input_region,
+    .commit = &commit,
+};
+
+bool swc_surface_initialize(struct swc_surface * surface,
+                            struct wl_client * client, uint32_t id)
+{
+    state_initialize(&surface->state);
+    state_initialize(&surface->pending.state);
+
+    surface->resource = wl_client_add_object(client, &wl_surface_interface,
+                                             &surface_implementation, id, surface);
+    wl_resource_set_destructor(surface->resource, &destroy_surface_resource);
+
+    wl_signal_init(&surface->event_signal);
+
+    surface->output_mask = 0;
+
+    return true;
+}
+
+void swc_surface_finish(struct swc_surface * surface)
+{
+}
+
 

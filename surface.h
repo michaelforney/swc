@@ -56,39 +56,10 @@ struct swc_surface
     struct wl_list link;
 };
 
-bool swc_surface_initialize(struct swc_surface * surface);
+bool swc_surface_initialize(struct swc_surface * surface,
+                            struct wl_client * client, uint32_t id);
 
 void swc_surface_finish(struct swc_surface * surface);
-
-extern struct wl_surface_interface swc_surface_interface;
-
-void swc_surface_destroy(struct wl_client * client,
-                         struct wl_resource * resource);
-
-void swc_surface_attach(struct wl_client * client,
-                        struct wl_resource * resource,
-                        struct wl_resource * buffer_resource,
-                        int32_t x, int32_t y);
-
-void swc_surface_damage(struct wl_client * client,
-                        struct wl_resource * resource,
-                        int32_t x, int32_t y,
-                        int32_t width, int32_t height);
-
-void swc_surface_frame(struct wl_client * client,
-                       struct wl_resource * resource,
-                       uint32_t callback);
-
-void swc_surface_set_opaque_region(struct wl_client * client,
-                                   struct wl_resource * resource,
-                                   struct wl_resource * region_resource);
-
-void swc_surface_set_input_region(struct wl_client * client,
-                                  struct wl_resource * resource,
-                                  struct wl_resource * region_resource);
-
-void swc_surface_commit(struct wl_client * client,
-                        struct wl_resource * resource);
 
 #endif
 
