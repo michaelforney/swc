@@ -29,5 +29,5 @@ libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
 	$(drm_LIBS) $(drm_intel_LIBS) $(gbm_LIBS) $(egl_LIBS) $(pixman_LIBS) \
 	intel/libintel.la
 
-SUBDIRS = intel
+SUBDIRS = launch intel
 
