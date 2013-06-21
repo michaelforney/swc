@@ -1,6 +1,7 @@
 #include "surface.h"
 #include "event.h"
 #include "region.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -123,6 +124,7 @@ static void frame(struct wl_client * client, struct wl_resource * resource,
 
     callback_resource = wl_client_add_object(client, &wl_callback_interface,
                                              NULL, id, NULL);
+    wl_resource_set_destructor(callback_resource, &swc_remove_resource);
     wl_list_insert(surface->pending.state.frame_callbacks.prev,
                    wl_resource_get_link(callback_resource));
 }
