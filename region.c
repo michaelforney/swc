@@ -10,7 +10,7 @@ static void destroy(struct wl_client * client, struct wl_resource * resource)
 static void add(struct wl_client * client, struct wl_resource * resource,
                 int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    struct swc_region * region = resource->data;
+    struct swc_region * region = wl_resource_get_user_data(resource);
 
     pixman_region32_union_rect(&region->region, &region->region,
                                x, y, width, height);
@@ -19,7 +19,7 @@ static void add(struct wl_client * client, struct wl_resource * resource,
 static void subtract(struct wl_client * client, struct wl_resource * resource,
                      int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    struct swc_region * region = resource->data;
+    struct swc_region * region = wl_resource_get_user_data(resource);
     pixman_region32_t operand;
 
     pixman_region32_init_rect(&operand, x, y, width, height);

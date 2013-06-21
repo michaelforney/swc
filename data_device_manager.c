@@ -12,7 +12,7 @@ static void get_data_device(struct wl_client * client,
                             struct wl_resource * resource, uint32_t id,
                             struct wl_resource * seat_resource)
 {
-    struct swc_seat * seat = seat_resource->data;
+    struct swc_seat * seat = wl_resource_get_user_data(seat_resource);
 
     printf("get_data_device\n");
 

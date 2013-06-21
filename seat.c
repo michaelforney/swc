@@ -159,7 +159,7 @@ static void handle_evdev_event(struct wl_listener * listener, void * data)
 static void get_pointer(struct wl_client * client, struct wl_resource * resource,
                         uint32_t id)
 {
-    struct swc_seat * seat = resource->data;
+    struct swc_seat * seat = wl_resource_get_user_data(resource);
     struct swc_pointer * pointer = &seat->pointer;
 
     swc_pointer_bind(pointer, client, id);
@@ -210,7 +210,7 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
 
     resource = wl_client_add_object(client, &wl_seat_interface,
                                     &seat_implementation, id, seat);
-    wl_list_insert(&seat->resources, &resource->link);
+    wl_list_insert(&seat->resources, wl_resource_get_link(resource));
     wl_resource_set_destructor(resource, &swc_unbind_resource);
 
     wl_seat_send_capabilities(resource, seat->capabilities);

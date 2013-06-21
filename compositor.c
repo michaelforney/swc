@@ -192,7 +192,7 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
     struct wl_resource * resource = data;
-    struct swc_surface * surface = resource->data;
+    struct swc_surface * surface = wl_resource_get_user_data(resource);
 
     wl_list_remove(&surface->link);
 
@@ -218,7 +218,7 @@ static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
 static void create_surface(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
 {
-    struct swc_compositor * compositor = resource->data;
+    struct swc_compositor * compositor = wl_resource_get_user_data(resource);
     struct swc_surface * surface;
     struct swc_output * output;
 

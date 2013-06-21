@@ -78,8 +78,8 @@ static void set_cursor(struct wl_client * client,
                        struct wl_resource * surface_resource,
                        int32_t hotspot_x, int32_t hotspot_y)
 {
-    struct swc_pointer * pointer = resource->data;
-    struct swc_surface * surface = surface_resource->data;
+    struct swc_pointer * pointer = wl_resource_get_user_data(resource);
+    struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
     struct swc_event event;
 
     printf("set_cursor\n");
@@ -108,7 +108,8 @@ struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
     client_resource = wl_client_add_object(client, &wl_pointer_interface,
                                            &pointer_implementation, id, pointer);
     wl_resource_set_destructor(client_resource, &swc_unbind_resource);
-    wl_list_insert(&pointer->resources, &client_resource->link);
+    wl_list_insert(&pointer->resources,
+                   wl_resource_get_user_data(client_resource));
 
     return client_resource;
 }
