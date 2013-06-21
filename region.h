@@ -11,10 +11,7 @@ struct swc_region
     pixman_region32_t region;
 };
 
-bool swc_region_initialize(struct swc_region * region, struct wl_client * client,
-                           uint32_t id);
-
-void swc_region_finish(struct swc_region * region);
+struct swc_region * swc_region_new(struct wl_client * client, uint32_t id);
 
 #endif
 

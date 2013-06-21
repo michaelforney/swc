@@ -259,15 +259,10 @@ static void create_region(struct wl_client * client,
 {
     struct swc_region * region;
 
-    region = malloc(sizeof *region);
+    region = swc_region_new(client, id);
 
     if (!region)
-    {
         wl_resource_post_no_memory(resource);
-        return;
-    }
-
-    swc_region_initialize(region, client, id);
 }
 
 struct wl_compositor_interface compositor_implementation = {

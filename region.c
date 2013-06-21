@@ -2,18 +2,7 @@
 
 #include <stdlib.h>
 
-static void destroy_region_resource(struct wl_resource * resource)
-{
-    struct swc_region * region;
-
-    region = resource->data;
-    swc_region_finish(region);
-
-    free(region);
-}
-
-static void destroy(struct wl_client * client,
-                           struct wl_resource * resource)
+static void destroy(struct wl_client * client, struct wl_resource * resource)
 {
     wl_resource_destroy(resource);
 }
@@ -43,20 +32,33 @@ static const struct wl_region_interface region_implementation = {
     .subtract = &subtract
 };
 
-bool swc_region_initialize(struct swc_region * region, struct wl_client * client,
-                          uint32_t id)
+static void region_destroy(struct wl_resource * resource)
 {
-    pixman_region32_init(&region->region);
+    struct swc_region * region = wl_resource_get_user_data(resource);
 
-    region->resource = wl_client_add_object(client, &wl_region_interface,
-                                             &region_implementation, id, region);
-    wl_resource_set_destructor(region->resource, &destroy_region_resource);
+    /* Finish the region. */
+    pixman_region32_fini(&region->region);
 
-    return true;
+    free(region);
 }
 
-void swc_region_finish(struct swc_region * region)
+struct swc_region * swc_region_new(struct wl_client * client, uint32_t id)
 {
-    pixman_region32_fini(&region->region);
+    struct swc_region * region;
+
+    region = malloc(sizeof *region);
+
+    if (!region)
+        return NULL;
+
+    /* Initialize the region. */
+    pixman_region32_init(&region->region);
+
+    /* Add the region to the client. */
+    region->resource = wl_client_add_object(client, &wl_region_interface,
+                                            &region_implementation, id, region);
+    wl_resource_set_destructor(region->resource, &region_destroy);
+
+    return region;
 }
 
