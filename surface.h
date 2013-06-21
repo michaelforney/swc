@@ -27,6 +27,7 @@ struct swc_surface_state
     pixman_region32_t input;
 
     struct wl_list frame_callbacks;
+    struct wl_listener buffer_destroy_listener;
 };
 
 struct swc_surface
