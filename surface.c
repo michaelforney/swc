@@ -4,13 +4,18 @@
 
 #include <stdio.h>
 
+static pixman_box32_t infinite_extents = {
+    .x1 = INT32_MIN, .y1 = INT32_MIN,
+    .x2 = INT32_MAX, .y2 = INT32_MAX
+};
+
 static void state_initialize(struct swc_surface_state * state)
 {
     state->buffer = NULL;
 
     pixman_region32_init(&state->damage);
     pixman_region32_init(&state->opaque);
-    pixman_region32_init(&state->input);
+    pixman_region32_init_with_extents(&state->input, &infinite_extents);
 
     wl_list_init(&state->frame_callbacks);
 }
@@ -112,7 +117,7 @@ static void set_input_region(struct wl_client * client,
         pixman_region32_copy(&surface->pending.state.input, &region->region);
     }
     else
-        pixman_region32_clear(&surface->pending.state.input);
+        pixman_region32_reset(&surface->pending.state.input, &infinite_extents);
 }
 
 static void commit(struct wl_client * client, struct wl_resource * resource)
@@ -138,6 +143,12 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
                                    surface->geometry.width,
                                    surface->geometry.height);
 
+    /* Input */
+    pixman_region32_copy(&surface->state.input, &surface->pending.state.input);
+    pixman_region32_intersect_rect(&surface->state.input,
+                                   &surface->state.input, 0, 0,
+                                   surface->geometry.width,
+                                   surface->geometry.height);
 
     wl_list_insert_list(&surface->state.frame_callbacks,
                         &surface->pending.state.frame_callbacks);
@@ -145,7 +156,6 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     /* Reset pending state */
     pixman_region32_clear(&surface->pending.state.damage);
     pixman_region32_clear(&surface->pending.state.opaque);
-    pixman_region32_clear(&surface->pending.state.input);
     surface->pending.state.buffer = surface->state.buffer;
     wl_list_init(&surface->pending.state.frame_callbacks);
 
