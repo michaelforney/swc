@@ -105,7 +105,50 @@ struct swc_keyboard_handler keyboard_handler = {
     .key = &handle_key,
 };
 
+static void handle_focus(struct swc_pointer * pointer)
+{
+    struct swc_seat * seat;
+    struct swc_compositor * compositor;
+    struct swc_surface * surface;
+    int32_t surface_x, surface_y;
 
+    wl_list_for_each(surface, &compositor->surfaces, link)
+    {
+        pixman_region32_t region;
+
+        pixman_region32_init_rect
+            (&region, surface->geometry.x, surface->geometry.y,
+             surface->geometry.width, surface->geometry.height);
+
+        surface_x = wl_fixed_to_int(pointer->x) - surface->geometry.x;
+        surface_y = wl_fixed_to_int(pointer->y) - surface->geometry.y;
+
+        if (pixman_region32_contains_point(&surface->state.input,
+                                           surface_x, surface_y, NULL))
+        {
+            swc_pointer_set_focus(pointer, surface);
+            return;
+        }
+    }
+
+    swc_pointer_set_focus(pointer, NULL);
+}
+
+static bool handle_motion(struct swc_pointer * pointer, uint32_t time)
+{
+    struct swc_seat * seat;
+    struct swc_compositor * compositor;
+
+    seat = wl_container_of(pointer, seat, pointer);
+    compositor = wl_container_of(seat, compositor, seat);
+
+    return false;
+}
+
+struct swc_pointer_handler pointer_handler = {
+    .focus = &handle_focus,
+    .motion = &handle_motion
+};
 
 /* XXX: maybe this should go in swc_drm */
 static void handle_tty_event(struct wl_listener * listener, void * data)
@@ -319,6 +362,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
     swc_seat_add_event_sources(&compositor->seat, event_loop);
     compositor->seat.keyboard.handler = &keyboard_handler;
+    compositor->seat.pointer.handler = &pointer_handler;
 
     /* TODO: configurable seat */
     if (!swc_drm_initialize(&compositor->drm, compositor->udev, default_seat))
