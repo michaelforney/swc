@@ -17,7 +17,7 @@ static void get_data_device(struct wl_client * client,
     printf("get_data_device\n");
 
     // TODO: keep track of resource?
-    swc_data_device_initialize(client, id, seat);
+    swc_data_device_new(client, id);
 }
 
 static struct wl_data_device_manager_interface

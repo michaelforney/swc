@@ -3,10 +3,7 @@
 
 #include <wayland-server.h>
 
-struct swc_seat;
-
-void swc_data_device_initialize(struct wl_client * client, uint32_t id,
-                                struct swc_seat * seat);
+void swc_data_device_new(struct wl_client * client, uint32_t id);
 
 #endif
 

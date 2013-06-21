@@ -18,8 +18,7 @@ struct wl_data_device_interface data_device_implementation = {
     .set_selection = &set_selection
 };
 
-void swc_data_device_initialize(struct wl_client * client, uint32_t id,
-                                struct swc_seat * seat)
+void swc_data_device_new(struct wl_client * client, uint32_t id)
 {
     wl_client_add_object(client, &wl_data_device_interface,
                          &data_device_implementation, id, NULL);
