@@ -100,17 +100,26 @@ static void set_cursor(struct wl_client * client,
                        int32_t hotspot_x, int32_t hotspot_y)
 {
     struct swc_pointer * pointer = wl_resource_get_user_data(resource);
-    struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
+    struct swc_surface * surface;
     struct swc_event event;
 
     printf("set_cursor\n");
+
+    surface = surface_resource ? wl_resource_get_user_data(surface_resource)
+                               : NULL;
+
+    if (surface)
+    {
+        surface->geometry.x = wl_fixed_to_int(pointer->x) - hotspot_x;
+        surface->geometry.y = wl_fixed_to_int(pointer->y) - hotspot_y;
+    }
 
     pointer->cursor.surface = surface;
     pointer->cursor.hotspot_x = hotspot_x;
     pointer->cursor.hotspot_y = hotspot_y;
 
     event.type = SWC_POINTER_CURSOR_CHANGED;
-    event.data = surface;
+    event.data = pointer;
 
     wl_signal_emit(&pointer->event_signal, &event);
 }
