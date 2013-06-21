@@ -44,8 +44,6 @@ static void attach(struct wl_client * client, struct wl_resource * resource,
 {
     struct swc_surface * surface = resource->data;
 
-    printf("surface_attach\n");
-
     surface->pending.x = x;
     surface->pending.y = y;
 
@@ -69,7 +67,6 @@ static void attach(struct wl_client * client, struct wl_resource * resource,
 static void damage(struct wl_client * client, struct wl_resource * resource,
                    int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    printf("surface_damage\n");
     struct swc_surface * surface = resource->data;
 
     pixman_region32_union_rect(&surface->pending.state.damage,
@@ -83,8 +80,6 @@ static void frame(struct wl_client * client, struct wl_resource * resource,
     struct swc_surface * surface = resource->data;
     struct wl_resource * callback_resource;
 
-    printf("surface_frame\n");
-
     callback_resource = wl_client_add_object(client, &wl_callback_interface,
                                              NULL, id, NULL);
     wl_list_insert(surface->pending.state.frame_callbacks.prev,
@@ -97,7 +92,7 @@ static void set_opaque_region(struct wl_client * client,
 {
     struct swc_surface * surface = resource->data;
 
-    printf("surface_set_opaque_region\n");
+    //printf("surface_set_opaque_region\n");
 
     if (region_resource)
     {
@@ -115,7 +110,7 @@ static void set_input_region(struct wl_client * client,
 {
     struct swc_surface * surface = resource->data;
 
-    printf("surface_set_input_region\n");
+    printf("surface.set_input_region\n");
 
     if (region_resource)
     {
@@ -131,8 +126,6 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
 {
     struct swc_surface * surface = resource->data;
     struct swc_event event;
-
-    printf("surface_commit\n");
 
     event.data = surface;
 

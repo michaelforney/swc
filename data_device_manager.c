@@ -21,7 +21,7 @@ static void get_data_device(struct wl_client * client,
 }
 
 static struct wl_data_device_manager_interface
-data_device_manager_implementation = {
+    data_device_manager_implementation = {
     .create_data_source = &create_data_source,
     .get_data_device = &get_data_device
 };

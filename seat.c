@@ -194,17 +194,6 @@ static void get_keyboard(struct wl_client * client, struct wl_resource * resourc
 static void get_touch(struct wl_client * client, struct wl_resource * resource,
                uint32_t id)
 {
-    /*
-    struct wl_resource * client_resource;
-    struct swc_seat * seat = resource->data;
-    struct wl_touch * touch = &seat->touch;
-
-    client_resource = wl_client_add_object(client, &wl_touch_interface,
-                                           NULL, id, seat);
-    client_resource->destroy = &swc_unbind_resource;
-
-    wl_list_insert(&touch->resources, &client_resource->link);
-    */
 }
 
 struct wl_seat_interface seat_implementation = {

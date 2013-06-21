@@ -1,10 +1,9 @@
 # swc: Makefile.am
 
 ACLOCAL_AMFLAGS = -I m4
+AM_CFLAGS = $(pixman_CFLAGS)
 
 lib_LTLIBRARIES = libswc.la
-
-AM_CFLAGS = $(pixman_CFLAGS)
 
 libswc_la_SOURCES = \
 	compositor.c compositor.h \
@@ -29,11 +28,6 @@ libswc_la_SOURCES = \
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
 	$(drm_LIBS) $(drm_intel_LIBS) $(gbm_LIBS) $(egl_LIBS) $(pixman_LIBS) \
 	intel/libintel.la
-
-# testclient_SOURCES = \
-# 	testclient.c
-# 
-# testclient_LDADD = $(wayland_client_LIBS)
 
 SUBDIRS = intel
 
