@@ -12,13 +12,13 @@ static void destroy_region_resource(struct wl_resource * resource)
     free(region);
 }
 
-static void region_destroy(struct wl_client * client,
+static void destroy(struct wl_client * client,
                            struct wl_resource * resource)
 {
     wl_resource_destroy(resource);
 }
 
-static void region_add(struct wl_client * client,
+static void add(struct wl_client * client,
                        struct wl_resource * resource,
                        int32_t x, int32_t y, int32_t width, int32_t height)
 {
@@ -28,7 +28,7 @@ static void region_add(struct wl_client * client,
                                x, y, width, height);
 }
 
-static void region_subtract(struct wl_client * client,
+static void subtract(struct wl_client * client,
                             struct wl_resource * resource,
                             int32_t x, int32_t y, int32_t width, int32_t height)
 {
@@ -40,9 +40,9 @@ static void region_subtract(struct wl_client * client,
 }
 
 static const struct wl_region_interface region_implementation = {
-    .destroy = &region_destroy,
-    .add = &region_add,
-    .subtract = &region_subtract
+    .destroy = &destroy,
+    .add = &add,
+    .subtract = &subtract
 };
 
 bool swc_region_initialize(struct swc_region * region, struct wl_client * client,
