@@ -44,7 +44,7 @@ void swc_pointer_set_focus(struct swc_pointer * pointer,
     if (surface)
     {
         client = wl_resource_get_client(surface->resource);
-        resource = swc_find_resource_for_client(&pointer->resources, client);
+        resource = wl_resource_find_for_client(&pointer->resources, client);
 
         printf("pointer: focusing surface: %p\n", surface);
 

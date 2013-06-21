@@ -42,7 +42,7 @@ void swc_keyboard_set_focus(struct swc_keyboard * keyboard,
     if (surface)
     {
         client = wl_resource_get_client(surface->resource);
-        resource = swc_find_resource_for_client(&keyboard->resources, client);
+        resource = wl_resource_find_for_client(&keyboard->resources, client);
 
         printf("keyboard: focusing surface: %p\n", surface);
 
