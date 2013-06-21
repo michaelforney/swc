@@ -187,10 +187,19 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
         wl_signal_emit(&surface->event_signal, &event);
     }
 
+    /* Damage */
     pixman_region32_union(&surface->state.damage, &surface->state.damage,
                           &surface->pending.state.damage);
     pixman_region32_intersect_rect(&surface->state.damage,
                                    &surface->state.damage, 0, 0,
+                                   surface->geometry.width,
+                                   surface->geometry.height);
+
+    /* Opaque */
+    pixman_region32_copy(&surface->state.opaque,
+                         &surface->pending.state.opaque);
+    pixman_region32_intersect_rect(&surface->state.opaque,
+                                   &surface->state.opaque, 0, 0,
                                    surface->geometry.width,
                                    surface->geometry.height);
 
@@ -201,6 +210,7 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
                                    surface->geometry.width,
                                    surface->geometry.height);
 
+    /* Frame */
     wl_list_insert_list(&surface->state.frame_callbacks,
                         &surface->pending.state.frame_callbacks);
 
