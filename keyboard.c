@@ -3,14 +3,45 @@
 
 #include <stdio.h>
 
+static void enter(struct swc_input_handler * handler,
+                  struct wl_resource * resource, struct swc_surface * surface)
+{
+    struct swc_keyboard * keyboard;
+    struct wl_client * client;
+    struct wl_display * display;
+    uint32_t serial;
+
+    keyboard = wl_container_of(handler, keyboard, input_handler);
+    client = wl_resource_get_client(resource);
+    display = wl_client_get_display(client);
+    serial = wl_display_next_serial(display);
+
+    wl_keyboard_send_enter(resource, serial, surface->resource,
+                           &keyboard->keys);
+}
+
+static void leave(struct swc_input_handler * handler,
+                  struct wl_resource * resource, struct swc_surface * surface)
+{
+    struct wl_client * client;
+    struct wl_display * display;
+    uint32_t serial;
+
+    client = wl_resource_get_client(resource);
+    display = wl_client_get_display(client);
+    serial = wl_display_next_serial(display);
+
+    wl_keyboard_send_leave(resource, serial, surface->resource);
+}
+
 bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
 {
-    wl_list_init(&keyboard->resources);
     wl_array_init(&keyboard->keys);
-    //wl_signal_init(&keyboard->focus_signal); // ?
 
-    keyboard->focus.surface = NULL;
-    keyboard->focus.resource = NULL;
+    keyboard->input_handler.enter = &enter;
+    keyboard->input_handler.leave = &leave;
+
+    swc_input_initialize(&keyboard->input, &keyboard->input_handler);
 
     return true;
 }
@@ -18,53 +49,23 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
 void swc_keyboard_finish(struct swc_keyboard * keyboard)
 {
     wl_array_release(&keyboard->keys);
+    swc_input_finish(&keyboard->input);
 }
 
+/**
+ * Sets the focus of the keyboard to the specified surface.
+ */
 void swc_keyboard_set_focus(struct swc_keyboard * keyboard,
                             struct swc_surface * surface)
 {
-    struct wl_client * client;
-    struct wl_display * display;
-    struct wl_resource * resource;
-    uint32_t serial;
+    swc_input_set_focus(&keyboard->input, surface);
+}
 
-    /* Unfocus previously focused surface. */
-    if (keyboard->focus.resource && keyboard->focus.surface != surface)
-    {
-        client = wl_resource_get_client(keyboard->focus.surface->resource);
-        display = wl_client_get_display(client);
-        serial = wl_display_next_serial(display);
-        wl_keyboard_send_leave(keyboard->focus.resource, serial,
-                               keyboard->focus.surface->resource);
-    }
+static void unbind(struct wl_resource * resource)
+{
+    struct swc_keyboard * keyboard = wl_resource_get_user_data(resource);
 
-    /* Focus new surface, if given. */
-    if (surface)
-    {
-        client = wl_resource_get_client(surface->resource);
-        resource = wl_resource_find_for_client(&keyboard->resources, client);
-
-        printf("keyboard: focusing surface: %p\n", surface);
-
-        if (resource)
-        {
-            display = wl_client_get_display(client);
-            serial = wl_display_next_serial(display);
-            wl_keyboard_send_enter(resource, serial, surface->resource,
-                                   &keyboard->keys);
-
-            keyboard->focus.resource = resource;
-        }
-        else
-            keyboard->focus.resource = NULL;
-
-        keyboard->focus.surface = surface;
-    }
-    else
-    {
-        keyboard->focus.surface = NULL;
-        keyboard->focus.resource = NULL;
-    }
+    swc_input_remove_resource(&keyboard->input, resource);
 }
 
 struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
@@ -73,11 +74,9 @@ struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
     struct wl_resource * client_resource;
 
     client_resource = wl_client_add_object(client, &wl_keyboard_interface,
-                                           NULL, id, NULL);
-    wl_resource_set_destructor(client_resource, &swc_remove_resource);
-    wl_list_insert(&keyboard->resources, wl_resource_get_link(client_resource));
-
-    printf("keyboard: adding client %p, resource: %p\n", client, client_resource);
+                                           NULL, id, keyboard);
+    wl_resource_set_destructor(client_resource, &unbind);
+    swc_input_add_resource(&keyboard->input, client_resource);
 
     return client_resource;
 }

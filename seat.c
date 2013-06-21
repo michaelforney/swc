@@ -27,11 +27,11 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
     uint32_t serial;
     enum xkb_key_direction direction;
 
-    if (keyboard->focus.resource)
+    if (keyboard->input.focus.resource)
     {
-        struct wl_client * focus_client
-            = wl_resource_get_client(keyboard->focus.resource);
-        display = wl_client_get_display(focus_client);
+        struct wl_client * client
+            = wl_resource_get_client(keyboard->input.focus.resource);
+        display = wl_client_get_display(client);
     }
 
     /* Update keyboard state state */
@@ -70,10 +70,11 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
     if (!(keyboard->handler && keyboard->handler->key)
         || !keyboard->handler->key(keyboard, time, key, state))
     {
-        if (keyboard->focus.resource)
+        if (keyboard->input.focus.resource)
         {
             serial = wl_display_next_serial(display);
-            wl_keyboard_send_key(keyboard->focus.resource, serial, time, key, state);
+            wl_keyboard_send_key(keyboard->input.focus.resource, serial, time,
+                                 key, state);
 
             if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
                 printf("\t-> sent to client\n");
@@ -101,11 +102,11 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
             || mods_locked != keyboard->modifiers.mods_locked
             || group != keyboard->modifiers.group)
         {
-            if (keyboard->focus.resource)
+            if (keyboard->input.focus.resource)
             {
                 serial = wl_display_next_serial(display);
-                wl_keyboard_send_modifiers(keyboard->focus.resource, serial,
-                                           mods_depressed, mods_latched,
+                wl_keyboard_send_modifiers(keyboard->input.focus.resource,
+                                           serial, mods_depressed, mods_latched,
                                            mods_locked, group);
             }
         }
@@ -163,12 +164,6 @@ static void get_pointer(struct wl_client * client, struct wl_resource * resource
     struct swc_pointer * pointer = &seat->pointer;
 
     swc_pointer_bind(pointer, client, id);
-
-    if (pointer->focus.surface
-        && wl_resource_get_client(pointer->focus.surface->resource) == client)
-    {
-        swc_pointer_set_focus(pointer, pointer->focus.surface);
-    }
 }
 
 static void get_keyboard(struct wl_client * client, struct wl_resource * resource,
@@ -182,13 +177,6 @@ static void get_keyboard(struct wl_client * client, struct wl_resource * resourc
 
     wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                             seat->xkb.keymap.fd, seat->xkb.keymap.size);
-
-    if (keyboard->focus.surface
-        && wl_resource_get_client(keyboard->focus.surface->resource) == client)
-    {
-        printf("focusing\n");
-        swc_keyboard_set_focus(keyboard, keyboard->focus.surface);
-    }
 }
 
 static void get_touch(struct wl_client * client, struct wl_resource * resource,

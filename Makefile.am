@@ -13,6 +13,7 @@ libswc_la_SOURCES = \
 	surface.c surface.h \
 	region.c region.h \
 	renderer.c renderer.h \
+	input.c input.h \
 	keyboard.c keyboard.h \
 	pointer.c pointer.h \
 	seat.c seat.h \
