@@ -20,6 +20,7 @@ Makefile.in
 /missing
 
 /libswc.la
-/i915/libi915.la
-/testwm/testwm
+/intel/libintel.la
+/launch/liblaunch-protocol.la
+/launch/libswc-launch.la
 
