@@ -212,6 +212,18 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     wl_signal_emit(&surface->event_signal, &event);
 }
 
+void set_buffer_transform(struct wl_client * client,
+                          struct wl_resource * surface, int32_t transform)
+{
+    /* TODO: Implement */
+}
+
+void set_buffer_scale(struct wl_client * client, struct wl_resource * surface,
+                      int32_t scale)
+{
+    /* TODO: Implement */
+}
+
 struct wl_surface_interface surface_implementation = {
     .destroy = &destroy,
     .attach = &attach,
@@ -220,6 +232,8 @@ struct wl_surface_interface surface_implementation = {
     .set_opaque_region = &set_opaque_region,
     .set_input_region = &set_input_region,
     .commit = &commit,
+    .set_buffer_transform = &set_buffer_transform,
+    .set_buffer_scale = &set_buffer_scale
 };
 
 static void surface_destroy(struct wl_resource * resource)
