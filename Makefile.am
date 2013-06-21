@@ -1,7 +1,7 @@
 # swc: Makefile.am
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = $(pixman_CFLAGS)
+AM_CFLAGS = $(pixman_CFLAGS) $(drm_CFLAGS)
 
 lib_LTLIBRARIES = libswc.la
 
