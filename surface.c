@@ -2,6 +2,7 @@
 #include "event.h"
 #include "region.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 
 static pixman_box32_t infinite_extents = {
@@ -20,12 +21,6 @@ static void state_initialize(struct swc_surface_state * state)
     wl_list_init(&state->frame_callbacks);
 }
 
-static void destroy_surface_resource(struct wl_resource * resource)
-{
-    struct swc_surface * surface = resource->data;
-
-    swc_surface_finish(surface);
-}
 
 static void destroy(struct wl_client * client, struct wl_resource * resource)
 {
@@ -173,18 +168,23 @@ struct wl_surface_interface surface_implementation = {
     .commit = &commit,
 };
 
-bool swc_surface_initialize(struct swc_surface * surface,
-                            struct wl_client * client, uint32_t id)
+/**
+ * Construct a new surface, adding it to the given client as id.
+ *
+ * The surface will be free'd automatically when it's resource is destroyed.
+ *
+ * @return The newly allocated surface.
+ */
+struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
 {
-    state_initialize(&surface->state);
-    state_initialize(&surface->pending.state);
+    struct swc_surface * surface;
 
-    surface->resource = wl_client_add_object(client, &wl_surface_interface,
-                                             &surface_implementation, id, surface);
-    wl_resource_set_destructor(surface->resource, &destroy_surface_resource);
+    surface = malloc(sizeof *surface);
 
-    wl_signal_init(&surface->event_signal);
+    if (!surface)
+        return NULL;
 
+    /* Initialize the surface. */
     surface->output_mask = 0;
     surface->geometry.x = 0;
     surface->geometry.y = 0;
@@ -193,11 +193,21 @@ bool swc_surface_initialize(struct swc_surface * surface,
     surface->border.width = 0;
     surface->border.color = 0x000000;
 
-    return true;
-}
+    state_initialize(&surface->state);
+    state_initialize(&surface->pending.state);
 
-void swc_surface_finish(struct swc_surface * surface)
-{
+    /* The input region should be intersected with the surface's geometry,
+     * which at this point is empty. */
+    pixman_region32_clear(&surface->state.input);
+
+    wl_signal_init(&surface->event_signal);
+
+    /* Add the surface to the client. */
+    surface->resource
+        = wl_client_add_object(client, &wl_surface_interface,
+                               &surface_implementation, id, surface);
+
+    return surface;
 }
 
 void swc_surface_send_frame_callbacks(struct swc_surface * surface,

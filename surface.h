@@ -62,10 +62,7 @@ struct swc_surface
     struct wl_list link;
 };
 
-bool swc_surface_initialize(struct swc_surface * surface,
-                            struct wl_client * client, uint32_t id);
-
-void swc_surface_finish(struct swc_surface * surface);
+struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id);
 
 void swc_surface_send_frame_callbacks(struct swc_surface * surface,
                                       uint32_t time);

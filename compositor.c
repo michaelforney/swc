@@ -222,7 +222,7 @@ static void create_surface(struct wl_client * client,
     struct swc_surface * surface;
     struct swc_output * output;
 
-    surface = malloc(sizeof *surface);
+    surface = swc_surface_new(client, id);
 
     if (!surface)
     {
@@ -245,7 +245,6 @@ static void create_surface(struct wl_client * client,
         }
     };
 
-    swc_surface_initialize(surface, client, id);
     wl_signal_add(&surface->event_signal,
                   &surface->compositor_state.event_listener);
     wl_resource_add_destroy_listener(surface->resource,
