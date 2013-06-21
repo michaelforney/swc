@@ -21,6 +21,18 @@ static void state_initialize(struct swc_surface_state * state)
     wl_list_init(&state->frame_callbacks);
 }
 
+static void state_finish(struct swc_surface_state * state)
+{
+    struct wl_resource * resource, * tmp;
+
+    pixman_region32_fini(&state->damage);
+    pixman_region32_fini(&state->opaque);
+    pixman_region32_fini(&state->input);
+
+    /* Remove all leftover callbacks. */
+    wl_list_for_each_safe(resource, tmp, &state->frame_callbacks, link)
+        wl_resource_destroy(resource);
+}
 
 static void destroy(struct wl_client * client, struct wl_resource * resource)
 {
@@ -168,6 +180,18 @@ struct wl_surface_interface surface_implementation = {
     .commit = &commit,
 };
 
+static void surface_destroy(struct wl_resource * resource)
+{
+    struct swc_surface * surface = wl_resource_get_user_data(resource);
+
+    /* Finish the surface. */
+    state_finish(&surface->state);
+    state_finish(&surface->pending.state);
+
+    printf("freeing surface %p\n", surface);
+    free(surface);
+}
+
 /**
  * Construct a new surface, adding it to the given client as id.
  *
@@ -206,6 +230,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
     surface->resource
         = wl_client_add_object(client, &wl_surface_interface,
                                &surface_implementation, id, surface);
+    wl_resource_set_destructor(surface->resource, &surface_destroy);
 
     return surface;
 }
