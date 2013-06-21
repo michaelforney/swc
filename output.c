@@ -21,7 +21,7 @@ static void bind_output(struct wl_client * client, void * data,
     resource = wl_client_add_object(client, &wl_output_interface, NULL, id,
                                     output);
     wl_list_insert(&output->resource_list, wl_resource_get_link(resource));
-    wl_resource_set_destructor(resource, &swc_unbind_resource);
+    wl_resource_set_destructor(resource, &swc_remove_resource);
 
     wl_output_send_geometry(resource, output->x, output->y,
         output->physical_width, output->physical_height, 0, "unknown",

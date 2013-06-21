@@ -107,7 +107,7 @@ struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
 
     client_resource = wl_client_add_object(client, &wl_pointer_interface,
                                            &pointer_implementation, id, pointer);
-    wl_resource_set_destructor(client_resource, &swc_unbind_resource);
+    wl_resource_set_destructor(client_resource, &swc_remove_resource);
     wl_list_insert(&pointer->resources,
                    wl_resource_get_user_data(client_resource));
 

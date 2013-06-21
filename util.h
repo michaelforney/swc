@@ -3,7 +3,7 @@
 
 #include <wayland-server.h>
 
-void swc_unbind_resource(struct wl_resource * resource);
+void swc_remove_resource(struct wl_resource * resource);
 
 #endif
 

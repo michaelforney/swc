@@ -211,7 +211,7 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
     resource = wl_client_add_object(client, &wl_seat_interface,
                                     &seat_implementation, id, seat);
     wl_list_insert(&seat->resources, wl_resource_get_link(resource));
-    wl_resource_set_destructor(resource, &swc_unbind_resource);
+    wl_resource_set_destructor(resource, &swc_remove_resource);
 
     wl_seat_send_capabilities(resource, seat->capabilities);
 }

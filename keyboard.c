@@ -74,7 +74,7 @@ struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
 
     client_resource = wl_client_add_object(client, &wl_keyboard_interface,
                                            NULL, id, NULL);
-    wl_resource_set_destructor(client_resource, &swc_unbind_resource);
+    wl_resource_set_destructor(client_resource, &swc_remove_resource);
     wl_list_insert(&keyboard->resources, wl_resource_get_link(client_resource));
 
     printf("keyboard: adding client %p, resource: %p\n", client, client_resource);
