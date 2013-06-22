@@ -1,5 +1,4 @@
 #include "batch.h"
-#include "bo.h"
 #include "mi.h"
 
 #include <stdio.h>

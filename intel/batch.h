@@ -1,8 +1,6 @@
 #ifndef SWC_I915_BATCH_H
 #define SWC_I915_BATCH_H 1
 
-#include "bo.h"
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
