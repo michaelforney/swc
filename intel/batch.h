@@ -1,5 +1,5 @@
-#ifndef SWC_I915_BATCH_H
-#define SWC_I915_BATCH_H 1
+#ifndef SWC_INTEL_BATCH_H
+#define SWC_INTEL_BATCH_H 1
 
 #include <stdlib.h>
 #include <stdint.h>
