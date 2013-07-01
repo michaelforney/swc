@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <xf86drm.h>
 
-void intel_batch_initialize(struct intel_batch * batch, drm_intel_bufmgr * bufmgr)
+void intel_batch_initialize(struct intel_batch * batch,
+                            drm_intel_bufmgr * bufmgr)
 {
     batch->bufmgr = bufmgr;
     batch->command_count = 0;

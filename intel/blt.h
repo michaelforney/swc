@@ -3,49 +3,12 @@
 
 #include "batch.h"
 
-#include <libdrm/i915_drm.h>
+#include <i915_drm.h>
 
 #define COMMAND_TYPE_2D 0x2
 
 #define BLT_OPCODE_XY_COLOR_BLT     0x50
 #define BLT_OPCODE_XY_SRC_COPY_BLT  0x53
-
-#if 0
-/* BR00 */
-#define BLT_OP(opcode, dword_length) (                                      \
-      COMMAND_TYPE_2D << 29                 /* 31:29 */                     \
-    | opcode << 23                          /* 28:23 */                     \
-    | dword_length                          /* 7:0 */                       \
-)
-
-#define BR00_32BPP_WRITE_ALPHA  (1 << 21)   /* 21 */
-#define BR00_32BPP_WRITE_RGB    (1 << 20)   /* 20 */
-#define BR00_SRC_TILING_ENABLE  (1 << 15)   /* 15 */
-#define BR00_DST_TILING_ENABLE  (1 << 11)   /* 11 */
-
-#define BLT_ADDRESS(address)    (address)
-#define BLT_COORD(x, y)         (y << 16 | x)
-
-#define BR09(address)       BLT_ADDRESS(address)
-#define BR11(source_pitch)  (source_pitch)
-#define BR12(address)       BLT_ADDRESS(address)
-
-/* BR13 */
-#define BR13_COLOR_DEPTH(depth)     (depth << 24)                   /* 25:24 */
-#define BR13_COLOR_DEPTH_8BIT       BR13_COLOR_DEPTH(0x0)
-#define BR13_COLOR_DEPTH_16BIT_565  BR13_COLOR_DEPTH(0x1)
-#define BR13_COLOR_DEPTH_16BIT_1555 BR13_COLOR_DEPTH(0x2)
-#define BR13_COLOR_DEPTH_32BIT      BR13_COLOR_DEPTH(0x3)
-
-#define BR13_RASTER_OPERATION(op)       (op << 16)                  /* 23:16 */
-#define BR13_RASTER_OPERATION_SOURCE    BR13_RASTER_OPERATION(0xcc)
-#define BR13_RASTER_OPERATION_PATTERN   BR13_RASTER_OPERATION(0xf0)
-
-#define BR16(color) (color)
-#define BR22(x, y)  BLT_COORD(x, y)
-#define BR23(x, y)  BLT_COORD(x, y)
-#define BR26(x, y)  BLT_COORD(x, y)
-#endif
 
 #define BR00_32BPP_BYTE_MASK_ALPHA (1 << 0)
 #define BR00_32BPP_BYTE_MASK_COLOR (1 << 1)
@@ -151,12 +114,12 @@ static inline void xy_src_copy_blt(struct intel_batch * batch,
     drm_intel_bo_get_tiling(dst, &dst_tiling_mode, &swizzle);
     drm_intel_bo_get_tiling(src, &src_tiling_mode, &swizzle);
 
-    //printf("src_tiling: %u, dst_tiling: %u\n", src_tiling_mode, dst_tiling_mode);
-
-    drm_intel_bo_emit_reloc_fence(batch->bo, intel_batch_offset(batch, 4), dst, 0,
-                                  I915_GEM_DOMAIN_RENDER, I915_GEM_DOMAIN_RENDER);
-    drm_intel_bo_emit_reloc_fence(batch->bo, intel_batch_offset(batch, 7), src, 0,
-                                  I915_GEM_DOMAIN_RENDER, 0);
+    drm_intel_bo_emit_reloc_fence
+        (batch->bo, intel_batch_offset(batch, 4), dst, 0,
+         I915_GEM_DOMAIN_RENDER, I915_GEM_DOMAIN_RENDER);
+    drm_intel_bo_emit_reloc_fence
+        (batch->bo, intel_batch_offset(batch, 7), src, 0,
+         I915_GEM_DOMAIN_RENDER, 0);
 
     intel_batch_add_dwords(batch, 8,
         br00(COMMAND_TYPE_2D, BLT_OPCODE_XY_SRC_COPY_BLT,
@@ -186,11 +149,9 @@ static inline void xy_color_blt(struct intel_batch * batch,
 
     drm_intel_bo_get_tiling(dst, &tiling_mode, &swizzle_mode);
 
-    //printf("tiling: %u, swizzle: %u\n", tiling_mode, swizzle_mode);
-    //printf("pitch: %u\n", dst_pitch);
-
-    drm_intel_bo_emit_reloc_fence(batch->bo, intel_batch_offset(batch, 4), dst, 0,
-                                  I915_GEM_DOMAIN_RENDER, I915_GEM_DOMAIN_RENDER);
+    drm_intel_bo_emit_reloc_fence
+        (batch->bo, intel_batch_offset(batch, 4), dst, 0,
+         I915_GEM_DOMAIN_RENDER, I915_GEM_DOMAIN_RENDER);
 
     intel_batch_add_dwords(batch, 6,
         br00(COMMAND_TYPE_2D, BLT_OPCODE_XY_COLOR_BLT,
