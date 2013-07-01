@@ -1,4 +1,4 @@
-/* swc: data_device_manager.h
+/* swc: data.h
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,12 +21,19 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_DATA_DEVICE_MANAGER_H
-#define SWC_DATA_DEVICE_MANAGER_H 1
+#ifndef SWC_DATA_H
+#define SWC_DATA_H 1
 
 #include <wayland-server.h>
 
-void swc_data_device_manager_add_globals(struct wl_display * display);
+struct wl_resource * swc_data_source_new(struct wl_client * client,
+                                         uint32_t id);
+
+struct wl_resource * swc_data_offer_new(struct wl_client * client,
+                                        struct wl_resource * source);
+
+void swc_data_send_mime_types(struct wl_resource * source,
+                              struct wl_resource * offer);
 
 #endif
 

@@ -2,6 +2,7 @@
 #define SWC_SEAT_H 1
 
 #include "xkb.h"
+#include "data_device.h"
 #include "keyboard.h"
 #include "pointer.h"
 
@@ -20,7 +21,12 @@ struct swc_seat
     struct wl_list resources;
     struct wl_signal destroy_signal;
 
+    struct swc_data_device data_device;
+    struct wl_listener data_device_listener;
+
     struct swc_keyboard keyboard;
+    struct wl_listener keyboard_focus_listener;
+
     struct swc_pointer pointer;
 
     struct wl_list devices;

@@ -156,6 +156,48 @@ static void handle_evdev_event(struct wl_listener * listener, void * data)
     }
 }
 
+static void handle_keyboard_focus_event(struct wl_listener * listener,
+                                        void * data)
+{
+    struct swc_seat * seat
+        = wl_container_of(listener, seat, keyboard_focus_listener);
+    struct swc_event * event = data;
+    struct swc_input_focus_event_data * event_data = event->data;
+
+    switch (event->type)
+    {
+        case SWC_INPUT_FOCUS_EVENT_CHANGED:
+            if (event_data->new)
+            {
+                struct wl_client * client
+                    = wl_resource_get_client(event_data->new->resource);
+
+                /* Offer the selection to the new focus. */
+                swc_data_device_offer_selection(&seat->data_device, client);
+            }
+            break;
+    }
+}
+
+static void handle_data_device_event(struct wl_listener * listener, void * data)
+{
+    struct swc_seat * seat
+        = wl_container_of(listener, seat, data_device_listener);
+    struct swc_event * event = data;
+
+    switch (event->type)
+    {
+        case SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED:
+            if (seat->keyboard.focus.resource)
+            {
+                struct wl_client * client
+                    = wl_resource_get_client(seat->keyboard.focus.resource);
+                swc_data_device_offer_selection(&seat->data_device, client);
+            }
+            break;
+    }
+}
+
 /* Wayland Seat Interface */
 static void get_pointer(struct wl_client * client, struct wl_resource * resource,
                         uint32_t id)
@@ -260,6 +302,8 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
     {
         printf("initializing keyboard\n");
         swc_keyboard_initialize(&seat->keyboard);
+        wl_signal_add(&seat->keyboard.focus.event_signal,
+                      &seat->keyboard_focus_listener);
         seat->capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
         update_capabilities(seat);
     }
@@ -274,12 +318,22 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
 {
     seat->name = strdup(seat_name);
     seat->capabilities = 0;
+    seat->keyboard_focus_listener.notify = &handle_keyboard_focus_event;
+    seat->data_device_listener.notify = &handle_data_device_event;
 
     if (!swc_xkb_initialize(&seat->xkb))
     {
         printf("could not initialize XKB\n");
         goto error_name;
     }
+
+    if (!swc_data_device_initialize(&seat->data_device))
+    {
+        printf("could not initialize data device\n");
+        goto error_xkb;
+    }
+
+    wl_signal_add(&seat->data_device.event_signal, &seat->data_device_listener);
 
     wl_list_init(&seat->resources);
     wl_signal_init(&seat->destroy_signal);
@@ -288,6 +342,8 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
 
     return true;
 
+  error_xkb:
+    swc_xkb_finish(&seat->xkb);
   error_name:
     free(seat->name);
   error_base:

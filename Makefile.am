@@ -19,6 +19,7 @@ libswc_la_SOURCES = \
 	seat.c seat.h \
 	data_device_manager.c data_device_manager.h \
 	data_device.c data_device.h \
+	data.c data.h \
 	mode.c mode.h \
 	tty.c tty.h \
 	evdev_device.c evdev_device.h \

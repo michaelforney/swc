@@ -1,11 +1,40 @@
+/* swc: data_device_manager.c
+ *
+ * Copyright (c) 2013 Michael Forney
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "data_device_manager.h"
 #include "data_device.h"
-
-#include <stdio.h>
+#include "data.h"
+#include "seat.h"
 
 static void create_data_source(struct wl_client * client,
                                struct wl_resource * resource, uint32_t id)
 {
+    struct wl_resource * data_source;
+
+    data_source = swc_data_source_new(client, id);
+
+    if (!data_source)
+        wl_resource_post_no_memory(resource);
 }
 
 static void get_data_device(struct wl_client * client,
@@ -14,10 +43,9 @@ static void get_data_device(struct wl_client * client,
 {
     struct swc_seat * seat = wl_resource_get_user_data(seat_resource);
 
-    printf("get_data_device\n");
+    printf("data_device_manager.get_data_device\n");
 
-    // TODO: keep track of resource?
-    swc_data_device_new(client, id);
+    swc_data_device_bind(&seat->data_device, client, id);
 }
 
 static struct wl_data_device_manager_interface
