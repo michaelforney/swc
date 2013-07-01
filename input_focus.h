@@ -29,6 +29,16 @@
 
 struct swc_surface;
 
+enum swc_input_focus_event_type
+{
+    SWC_INPUT_FOCUS_EVENT_CHANGED
+};
+
+struct swc_input_focus_event_data
+{
+    struct swc_surface * old, * new;
+};
+
 struct swc_input_focus_handler
 {
     void (* enter)(struct swc_input_focus_handler * handler,
@@ -46,6 +56,8 @@ struct swc_input_focus
 
     struct swc_input_focus_handler * handler;
     struct wl_list resources;
+
+    struct wl_signal event_signal;
 };
 
 bool swc_input_focus_initialize(struct swc_input_focus * input_focus,

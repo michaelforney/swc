@@ -24,6 +24,7 @@
 #include "input_focus.h"
 #include "surface.h"
 #include "util.h"
+#include "event.h"
 
 static inline void focus(struct swc_input_focus * input_focus,
                          struct swc_surface * surface,
@@ -55,6 +56,7 @@ bool swc_input_focus_initialize(struct swc_input_focus * input_focus,
     input_focus->handler = handler;
 
     wl_list_init(&input_focus->resources);
+    wl_signal_init(&input_focus->event_signal);
 
     return true;
 }
@@ -102,9 +104,16 @@ void swc_input_focus_set(struct swc_input_focus * input_focus,
     struct wl_display * display;
     struct wl_resource * resource;
     uint32_t serial;
+    struct swc_input_focus_event_data data;
+    struct swc_event event;
+
+    event.type = SWC_INPUT_FOCUS_EVENT_CHANGED;
+    event.data = &data;
 
     if (surface == input_focus->surface)
         return;
+
+    data.old = input_focus->surface;
 
     /* Unfocus previously focused surface. */
     unfocus(input_focus);
@@ -122,6 +131,10 @@ void swc_input_focus_set(struct swc_input_focus * input_focus,
         input_focus->surface = NULL;
         input_focus->resource = NULL;
     }
+
+    data.new = input_focus->surface;
+
+    wl_signal_emit(&input_focus->event_signal, &event);
 
     return;
 }
