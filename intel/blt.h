@@ -95,8 +95,8 @@ static inline uint32_t br23(uint16_t destination_y2, uint16_t destination_x2)
 
 static inline uint32_t br26(uint16_t source_y1, uint16_t source_x1)
 {
-    return source_y1 << 16  /* 31:16 */
-        | source_x1 << 16   /* 15:0 */
+    return source_y1        << 16   /* 31:16 */
+        | source_x1         << 0    /* 15:0 */
         ;
 };
 
