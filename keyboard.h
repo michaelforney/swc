@@ -2,7 +2,7 @@
 #define SWC_KEYBOARD_H 1
 
 #include "surface.h"
-#include "input.h"
+#include "input_focus.h"
 
 #include <wayland-server.h>
 
@@ -19,8 +19,8 @@ struct swc_keyboard_handler
 
 struct swc_keyboard
 {
-    struct swc_input input;
-    struct swc_input_handler input_handler;
+    struct swc_input_focus focus;
+    struct swc_input_focus_handler focus_handler;
 
     struct swc_keyboard_handler * handler;
 

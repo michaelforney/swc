@@ -2,7 +2,7 @@
 #define SWC_POINTER_H 1
 
 #include "surface.h"
-#include "input.h"
+#include "input_focus.h"
 
 #include <wayland-server.h>
 
@@ -23,8 +23,8 @@ enum swc_pointer_event
 
 struct swc_pointer
 {
-    struct swc_input input;
-    struct swc_input_handler input_handler;
+    struct swc_input_focus focus;
+    struct swc_input_focus_handler focus_handler;
     struct wl_listener focus_surface_destroy_listener;
 
     struct wl_signal event_signal;

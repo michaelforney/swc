@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-static void enter(struct swc_input_handler * handler,
+static void enter(struct swc_input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
     struct swc_pointer * pointer;
@@ -13,7 +13,7 @@ static void enter(struct swc_input_handler * handler,
     uint32_t serial;
     wl_fixed_t surface_x, surface_y;
 
-    pointer = wl_container_of(handler, pointer, input_handler);
+    pointer = wl_container_of(handler, pointer, focus_handler);
     client = wl_resource_get_client(resource);
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
@@ -26,7 +26,7 @@ static void enter(struct swc_input_handler * handler,
                           surface_x, surface_y);
 }
 
-static void leave(struct swc_input_handler * handler,
+static void leave(struct swc_input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
     struct wl_client * client;
@@ -49,7 +49,7 @@ static void handle_focus_surface_destroy(struct wl_listener * listener,
     pointer = wl_container_of(listener, pointer,
                               focus_surface_destroy_listener);
 
-    pointer->input.focus.surface = NULL;
+    pointer->focus.surface = NULL;
 }
 
 bool swc_pointer_initialize(struct swc_pointer * pointer)
@@ -59,20 +59,20 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
     pointer->x = wl_fixed_from_int(0);
     pointer->y = wl_fixed_from_int(0);
 
-    pointer->input_handler.enter = &enter;
-    pointer->input_handler.leave = &leave;
+    pointer->focus_handler.enter = &enter;
+    pointer->focus_handler.leave = &leave;
 
     pointer->focus_surface_destroy_listener.notify
         = &handle_focus_surface_destroy;
 
-    swc_input_initialize(&pointer->input, &pointer->input_handler);
+    swc_input_focus_initialize(&pointer->focus, &pointer->focus_handler);
 
     return true;
 }
 
 void swc_pointer_finish(struct swc_pointer * pointer)
 {
-    swc_input_finish(&pointer->input);
+    swc_input_focus_finish(&pointer->focus);
 }
 
 /**
@@ -81,9 +81,9 @@ void swc_pointer_finish(struct swc_pointer * pointer)
 void swc_pointer_set_focus(struct swc_pointer * pointer,
                            struct swc_surface * surface)
 {
-    if (surface != pointer->input.focus.surface)
+    if (surface != pointer->focus.surface)
     {
-        if (pointer->input.focus.surface)
+        if (pointer->focus.surface)
             wl_list_remove(&pointer->focus_surface_destroy_listener.link);
 
         if (surface)
@@ -91,7 +91,7 @@ void swc_pointer_set_focus(struct swc_pointer * pointer,
                 (surface->resource, &pointer->focus_surface_destroy_listener);
     }
 
-    swc_input_set_focus(&pointer->input, surface);
+    swc_input_focus_set(&pointer->focus, surface);
 }
 
 static void set_cursor(struct wl_client * client,
@@ -132,7 +132,7 @@ static void unbind(struct wl_resource * resource)
 {
     struct swc_pointer * pointer = wl_resource_get_user_data(resource);
 
-    swc_input_remove_resource(&pointer->input, resource);
+    swc_input_focus_remove_resource(&pointer->focus, resource);
 }
 
 struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
@@ -145,7 +145,7 @@ struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
     client_resource = wl_client_add_object(client, &wl_pointer_interface,
                                            &pointer_implementation, id, pointer);
     wl_resource_set_destructor(client_resource, &unbind);
-    swc_input_add_resource(&pointer->input, client_resource);
+    swc_input_focus_add_resource(&pointer->focus, client_resource);
 
     return client_resource;
 }

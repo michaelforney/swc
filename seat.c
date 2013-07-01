@@ -27,10 +27,10 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
     uint32_t serial;
     enum xkb_key_direction direction;
 
-    if (keyboard->input.focus.resource)
+    if (keyboard->focus.resource)
     {
         struct wl_client * client
-            = wl_resource_get_client(keyboard->input.focus.resource);
+            = wl_resource_get_client(keyboard->focus.resource);
         display = wl_client_get_display(client);
     }
 
@@ -70,10 +70,10 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
     if (!(keyboard->handler && keyboard->handler->key)
         || !keyboard->handler->key(keyboard, time, key, state))
     {
-        if (keyboard->input.focus.resource)
+        if (keyboard->focus.resource)
         {
             serial = wl_display_next_serial(display);
-            wl_keyboard_send_key(keyboard->input.focus.resource, serial, time,
+            wl_keyboard_send_key(keyboard->focus.resource, serial, time,
                                  key, state);
 
             if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
@@ -102,10 +102,10 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
             || mods_locked != keyboard->modifiers.mods_locked
             || group != keyboard->modifiers.group)
         {
-            if (keyboard->input.focus.resource)
+            if (keyboard->focus.resource)
             {
                 serial = wl_display_next_serial(display);
-                wl_keyboard_send_modifiers(keyboard->input.focus.resource,
+                wl_keyboard_send_modifiers(keyboard->focus.resource,
                                            serial, mods_depressed, mods_latched,
                                            mods_locked, group);
             }
