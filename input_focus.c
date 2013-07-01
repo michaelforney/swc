@@ -30,10 +30,14 @@ static inline void focus(struct swc_input_focus * input_focus,
                          struct swc_surface * surface,
                          struct wl_resource * resource)
 {
-    if (resource)
+    if (surface)
     {
-        input_focus->handler->enter(input_focus->handler, resource, surface);
+        wl_resource_add_destroy_listener
+            (surface->resource, &input_focus->surface_destroy_listener);
     }
+
+    if (resource)
+        input_focus->handler->enter(input_focus->handler, resource, surface);
 
     input_focus->surface = surface;
     input_focus->resource = resource;
@@ -41,6 +45,9 @@ static inline void focus(struct swc_input_focus * input_focus,
 
 static inline void unfocus(struct swc_input_focus * input_focus)
 {
+    if (input_focus->surface)
+        wl_list_remove(&input_focus->surface_destroy_listener.link);
+
     if (input_focus->resource)
     {
         input_focus->handler->leave(input_focus->handler, input_focus->resource,
@@ -48,11 +55,27 @@ static inline void unfocus(struct swc_input_focus * input_focus)
     }
 }
 
+static void handle_focus_surface_destroy(struct wl_listener * listener,
+                                         void * data)
+{
+    struct swc_input_focus * input_focus;
+
+    printf("focus surface destroy\n");
+
+    input_focus = wl_container_of(listener, input_focus,
+                                  surface_destroy_listener);
+
+    input_focus->surface = NULL;
+    input_focus->resource = NULL;
+}
+
 bool swc_input_focus_initialize(struct swc_input_focus * input_focus,
                                 struct swc_input_focus_handler * handler)
 {
     input_focus->resource = NULL;
     input_focus->surface = NULL;
+    input_focus->surface_destroy_listener.notify
+        = &handle_focus_surface_destroy;
     input_focus->handler = handler;
 
     wl_list_init(&input_focus->resources);

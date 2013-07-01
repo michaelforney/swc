@@ -25,7 +25,6 @@ struct swc_pointer
 {
     struct swc_input_focus focus;
     struct swc_input_focus_handler focus_handler;
-    struct wl_listener focus_surface_destroy_listener;
 
     struct wl_signal event_signal;
 

@@ -53,6 +53,7 @@ struct swc_input_focus
 {
     struct wl_resource * resource;
     struct swc_surface * surface;
+    struct wl_listener surface_destroy_listener;
 
     struct swc_input_focus_handler * handler;
     struct wl_list resources;

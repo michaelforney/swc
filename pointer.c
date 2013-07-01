@@ -41,17 +41,6 @@ static void leave(struct swc_input_focus_handler * handler,
     wl_pointer_send_leave(resource, serial, surface->resource);
 }
 
-static void handle_focus_surface_destroy(struct wl_listener * listener,
-                                         void * data)
-{
-    struct swc_pointer * pointer;
-
-    pointer = wl_container_of(listener, pointer,
-                              focus_surface_destroy_listener);
-
-    pointer->focus.surface = NULL;
-}
-
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
     wl_signal_init(&pointer->event_signal);
@@ -61,9 +50,6 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
 
     pointer->focus_handler.enter = &enter;
     pointer->focus_handler.leave = &leave;
-
-    pointer->focus_surface_destroy_listener.notify
-        = &handle_focus_surface_destroy;
 
     swc_input_focus_initialize(&pointer->focus, &pointer->focus_handler);
 
@@ -81,16 +67,6 @@ void swc_pointer_finish(struct swc_pointer * pointer)
 void swc_pointer_set_focus(struct swc_pointer * pointer,
                            struct swc_surface * surface)
 {
-    if (surface != pointer->focus.surface)
-    {
-        if (pointer->focus.surface)
-            wl_list_remove(&pointer->focus_surface_destroy_listener.link);
-
-        if (surface)
-            wl_resource_add_destroy_listener
-                (surface->resource, &pointer->focus_surface_destroy_listener);
-    }
-
     swc_input_focus_set(&pointer->focus, surface);
 }
 
