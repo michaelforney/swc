@@ -39,6 +39,15 @@ struct swc_surface
     union swc_renderer_surface_state renderer_state;
     struct swc_compositor_surface_state compositor_state;
 
+    /* For usage by a shell implementation. */
+    void * shell_data;
+
+    /* Shells may want to use this destructor, guaranteed to run after all the
+     * other destroy listeners, rather than a destroy listener if they want to
+     * do something like change keyboard focus after the currently focused
+     * surface is destroyed. */
+    void (* shell_destructor)(struct swc_surface * surface);
+
     struct
     {
         struct swc_surface_state state;
