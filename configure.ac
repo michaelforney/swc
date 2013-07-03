@@ -32,7 +32,6 @@ PKG_CHECK_MODULES([pixman], [pixman-1])
 PKG_CHECK_MODULES([wayland_client], [wayland-client])
 dnl }}}
 
-#AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([Makefile intel/Makefile launch/Makefile])
 AC_OUTPUT
 
