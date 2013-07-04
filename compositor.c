@@ -10,6 +10,7 @@
 #include "event.h"
 #include "region.h"
 #include "data_device_manager.h"
+#include "util.h"
 
 static const char default_seat[] = "seat0";
 
@@ -58,8 +59,8 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
     struct swc_compositor * compositor;
     char keysym_name[64];
 
-    seat = wl_container_of(keyboard, seat, keyboard);
-    compositor = wl_container_of(seat, compositor, seat);
+    seat = swc_container_of(keyboard, typeof(*seat), keyboard);
+    compositor = swc_container_of(seat, typeof(*compositor), seat);
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
@@ -139,8 +140,8 @@ static bool handle_motion(struct swc_pointer * pointer, uint32_t time)
     struct swc_seat * seat;
     struct swc_compositor * compositor;
 
-    seat = wl_container_of(pointer, seat, pointer);
-    compositor = wl_container_of(seat, compositor, seat);
+    seat = swc_container_of(pointer, typeof(*seat), pointer);
+    compositor = swc_container_of(seat, typeof(*compositor), seat);
 
     return false;
 }
@@ -156,7 +157,7 @@ static void handle_tty_event(struct wl_listener * listener, void * data)
     struct swc_event * event = data;
     struct swc_compositor * compositor;
 
-    compositor = wl_container_of(listener, compositor, tty_listener);
+    compositor = swc_container_of(listener, typeof(*compositor), tty_listener);
 
     switch (event->type)
     {
@@ -201,7 +202,7 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
     struct swc_event * event = data;
     struct swc_compositor * compositor;
 
-    compositor = wl_container_of(listener, compositor, drm_listener);
+    compositor = swc_container_of(listener, typeof(*compositor), drm_listener);
 
     switch (event->type)
     {
@@ -275,7 +276,7 @@ static void create_surface(struct wl_client * client,
 
     printf("compositor_create_surface: %p\n", surface);
 
-    output = wl_container_of(compositor->outputs.next, output, link);
+    output = swc_container_of(compositor->outputs.next, typeof(*output), link);
 
     /* Initialize compositor state */
     surface->compositor_state = (struct swc_compositor_surface_state) {

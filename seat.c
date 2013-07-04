@@ -134,7 +134,7 @@ static void handle_evdev_event(struct wl_listener * listener, void * data)
     struct swc_event * event = data;
     struct swc_evdev_device_event_data * evdev_data = event->data;
 
-    entry = wl_container_of(listener, entry, event_listener);
+    entry = swc_container_of(listener, typeof(*entry), event_listener);
 
     switch (event->type)
     {
@@ -159,8 +159,8 @@ static void handle_evdev_event(struct wl_listener * listener, void * data)
 static void handle_keyboard_focus_event(struct wl_listener * listener,
                                         void * data)
 {
-    struct swc_seat * seat
-        = wl_container_of(listener, seat, keyboard_focus_listener);
+    struct swc_seat * seat = swc_container_of
+        (listener, typeof(*seat), keyboard_focus_listener);
     struct swc_event * event = data;
     struct swc_input_focus_event_data * event_data = event->data;
 
@@ -181,8 +181,8 @@ static void handle_keyboard_focus_event(struct wl_listener * listener,
 
 static void handle_data_device_event(struct wl_listener * listener, void * data)
 {
-    struct swc_seat * seat
-        = wl_container_of(listener, seat, data_device_listener);
+    struct swc_seat * seat = swc_container_of
+        (listener, typeof(*seat), data_device_listener);
     struct swc_event * event = data;
 
     switch (event->type)

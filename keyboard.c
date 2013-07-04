@@ -11,7 +11,7 @@ static void enter(struct swc_input_focus_handler * handler,
     struct wl_display * display;
     uint32_t serial;
 
-    keyboard = wl_container_of(handler, keyboard, focus_handler);
+    keyboard = swc_container_of(handler, typeof(*keyboard), focus_handler);
     client = wl_resource_get_client(resource);
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
