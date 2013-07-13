@@ -25,6 +25,7 @@ PKG_CHECK_MODULES([udev], [libudev])
 PKG_CHECK_MODULES([xkbcommon], [xkbcommon])
 PKG_CHECK_MODULES([drm], [libdrm])
 PKG_CHECK_MODULES([drm_intel], [libdrm_intel])
+PKG_CHECK_MODULES([intelbatch], [intelbatch])
 PKG_CHECK_MODULES([gbm], [gbm])
 PKG_CHECK_MODULES([egl], [egl])
 PKG_CHECK_MODULES([pixman], [pixman-1])
@@ -32,6 +33,6 @@ PKG_CHECK_MODULES([pixman], [pixman-1])
 PKG_CHECK_MODULES([wayland_client], [wayland-client])
 dnl }}}
 
-AC_CONFIG_FILES([Makefile intel/Makefile launch/Makefile])
+AC_CONFIG_FILES([Makefile launch/Makefile])
 AC_OUTPUT
 

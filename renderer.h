@@ -4,7 +4,8 @@
 #include "output.h"
 #include "surface.h"
 #include "drm.h"
-#include "intel/batch.h"
+
+#include <intelbatch/batch.h>
 
 enum swc_renderer_context
 {

@@ -8,13 +8,13 @@
 #include <xf86drm.h>
 #include <libdrm/i915_drm.h>
 #include <libdrm/intel_bufmgr.h>
+#include <intelbatch/batch.h>
 //#include <xf86drmMode.h>
 #include <wayland-util.h>
 
 #include "drm.h"
 #include "output.h"
 #include "event.h"
-#include "intel/batch.h"
 
 static struct udev_device * find_primary_drm_device(struct udev * udev,
                                                     const char * seat)

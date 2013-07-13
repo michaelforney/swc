@@ -1,11 +1,11 @@
 #include "renderer.h"
-#include "intel/blt.h"
-#include "intel/mi.h"
 
 #include <stdio.h>
 #include <GLES2/gl2.h>
 #include <libdrm/intel_bufmgr.h>
 #include <libdrm/drm.h>
+#include <intelbatch/blt.h>
+#include <intelbatch/mi.h>
 #include <xf86drm.h>
 
 static inline uint32_t format_wayland_to_pixman(uint32_t wayland_format)
