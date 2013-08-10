@@ -77,7 +77,6 @@ static void set_cursor(struct wl_client * client,
 {
     struct swc_pointer * pointer = wl_resource_get_user_data(resource);
     struct swc_surface * surface;
-    struct swc_event event;
 
     printf("set_cursor\n");
 
@@ -94,10 +93,7 @@ static void set_cursor(struct wl_client * client,
     pointer->cursor.hotspot_x = hotspot_x;
     pointer->cursor.hotspot_y = hotspot_y;
 
-    event.type = SWC_POINTER_CURSOR_CHANGED;
-    event.data = pointer;
-
-    wl_signal_emit(&pointer->event_signal, &event);
+    swc_send_event(&pointer->event_signal, SWC_POINTER_CURSOR_CHANGED, pointer);
 }
 
 struct wl_pointer_interface pointer_implementation = {

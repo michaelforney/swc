@@ -139,15 +139,13 @@ static void handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
                              unsigned int usec, void * data)
 {
     struct swc_output * output = data;
-    struct swc_event event = {
-        .type = SWC_DRM_PAGE_FLIP,
-        .data = output
-    };
 
     printf("page flip\n");
     output->front_buffer ^= 1;
 
-    wl_signal_emit(&output->drm->event_signal, &event);
+    /* XXX: It doesn't make sense for multiple things to be listening for page
+     *      flips (or does it?). Maybe this should be a callback instead? */
+    swc_send_event(&output->drm->event_signal, SWC_DRM_PAGE_FLIP, output);
 }
 
 static drmEventContext event_context = {

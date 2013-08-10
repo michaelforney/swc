@@ -38,13 +38,10 @@ static void set_selection(struct wl_client * client,
                           struct wl_resource * data_source, uint32_t serial)
 {
     struct swc_data_device * data_device = wl_resource_get_user_data(resource);
-    struct swc_event event;
 
     /* Check if this data source is already the current selection. */
     if (data_source == data_device->selection)
         return;
-
-    event.type = SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED;
 
     if (data_device->selection)
     {
@@ -60,7 +57,8 @@ static void set_selection(struct wl_client * client,
             (data_source, &data_device->selection_destroy_listener);
     }
 
-    wl_signal_emit(&data_device->event_signal, &event);
+    swc_send_event(&data_device->event_signal,
+                   SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
 struct wl_data_device_interface data_device_implementation = {
@@ -72,11 +70,10 @@ static void handle_selection_destroy(struct wl_listener * listener, void * data)
 {
     struct swc_data_device * data_device = swc_container_of
         (listener, typeof(*data_device), selection_destroy_listener);
-    struct swc_event event;
 
-    event.type = SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED;
     data_device->selection = NULL;
-    wl_signal_emit(&data_device->event_signal, &event);
+    swc_send_event(&data_device->event_signal,
+                   SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
 bool swc_data_device_initialize(struct swc_data_device * data_device)

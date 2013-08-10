@@ -197,13 +197,10 @@ void restore_tty(struct swc_tty * tty)
 static int handle_vt_signal(int signal_number, void * data)
 {
     struct swc_tty * tty = data;
-    struct swc_event event;
 
     if (tty->active)
     {
-        event.type = SWC_TTY_VT_LEAVE;
-        wl_signal_emit(&tty->event_signal, &event);
-
+        swc_send_event(&tty->event_signal, SWC_TTY_VT_LEAVE, NULL);
         ioctl(tty->fd, VT_RELDISP, 1);
         tty->active = false;
     }
@@ -211,9 +208,7 @@ static int handle_vt_signal(int signal_number, void * data)
     {
         ioctl(tty->fd, VT_RELDISP, VT_ACKACQ);
         tty->active = true;
-
-        event.type = SWC_TTY_VT_ENTER;
-        wl_signal_emit(&tty->event_signal, &event);
+        swc_send_event(&tty->event_signal, SWC_TTY_VT_ENTER, NULL);
     }
 
     return 1;

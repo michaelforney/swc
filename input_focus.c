@@ -124,10 +124,6 @@ void swc_input_focus_set(struct swc_input_focus * input_focus,
     struct wl_resource * resource;
     uint32_t serial;
     struct swc_input_focus_event_data data;
-    struct swc_event event;
-
-    event.type = SWC_INPUT_FOCUS_EVENT_CHANGED;
-    event.data = &data;
 
     if (surface == input_focus->surface)
         return;
@@ -153,7 +149,8 @@ void swc_input_focus_set(struct swc_input_focus * input_focus,
 
     data.new = input_focus->surface;
 
-    wl_signal_emit(&input_focus->event_signal, &event);
+    swc_send_event(&input_focus->event_signal, SWC_INPUT_FOCUS_EVENT_CHANGED,
+                   &data);
 
     return;
 }
