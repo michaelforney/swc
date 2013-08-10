@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 struct data
 {
@@ -53,7 +54,10 @@ static void offer_receive(struct wl_client * client,
 
     /* Protect against expired data_offers being used. */
     if (data)
+    {
         wl_data_source_send_send(data->source, mime_type, fd);
+        close(fd);
+    }
 }
 
 static void offer_destroy(struct wl_client * client,
