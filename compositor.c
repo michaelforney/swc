@@ -318,9 +318,15 @@ static void bind_compositor(struct wl_client * client, void * data,
                             uint32_t version, uint32_t id)
 {
     struct swc_compositor * compositor = data;
+    struct wl_resource * resource;
 
-    wl_client_add_object(client, &wl_compositor_interface,
-                         &compositor_implementation, id, compositor);
+    if (version >= 3)
+        version = 3;
+
+    resource = wl_resource_create(client, &wl_compositor_interface,
+                                  version, id);
+    wl_resource_set_implementation(resource, &compositor_implementation,
+                                   compositor, NULL);
 }
 
 bool swc_compositor_initialize(struct swc_compositor * compositor,
@@ -482,8 +488,8 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
 {
     struct swc_output * output;
 
-    wl_display_add_global(display, &wl_compositor_interface, compositor,
-                          &bind_compositor);
+    wl_global_create(display, &wl_compositor_interface, 3, compositor,
+                     &bind_compositor);
 
     swc_data_device_manager_add_globals(display);
     swc_seat_add_globals(&compositor->seat, display);

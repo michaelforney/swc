@@ -98,11 +98,10 @@ void swc_data_device_bind(struct swc_data_device * data_device,
 {
     struct wl_resource * resource;
 
-    resource = wl_client_add_object(client, &wl_data_device_interface,
-                                    &data_device_implementation, id,
-                                    data_device);
+    resource = wl_resource_create(client, &wl_data_device_interface, 1, id);
+    wl_resource_set_implementation(resource, &data_device_implementation,
+                                   data_device, &swc_remove_resource);
     wl_list_insert(&data_device->resources, &resource->link);
-    wl_resource_set_destructor(resource, &swc_remove_resource);
 }
 
 static struct wl_resource * new_offer(struct wl_resource * resource,

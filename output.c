@@ -18,10 +18,13 @@ static void bind_output(struct wl_client * client, void * data,
     struct wl_resource * resource;
     uint32_t flags;
 
-    resource = wl_client_add_object(client, &wl_output_interface, NULL, id,
-                                    output);
+    if (version >= 1)
+        version = 1;
+
+    resource = wl_resource_create(client, &wl_output_interface, version, id);
+    wl_resource_set_implementation(resource, NULL, output,
+                                   &swc_remove_resource);
     wl_list_insert(&output->resource_list, wl_resource_get_link(resource));
-    wl_resource_set_destructor(resource, &swc_remove_resource);
 
     wl_output_send_geometry(resource, output->x, output->y,
         output->physical_width, output->physical_height, 0, "unknown",
@@ -144,7 +147,7 @@ void swc_output_finish(struct swc_output * output)
 void swc_output_add_globals(struct swc_output * output,
                             struct wl_display * display)
 {
-    wl_display_add_global(display, &wl_output_interface, output, &bind_output);
+    wl_global_create(display, &wl_output_interface, 1, output, &bind_output);
 }
 
 void swc_output_switch_buffer(struct swc_output * output)

@@ -114,9 +114,9 @@ struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
 
     printf("pointer: adding client %p\n", client);
 
-    client_resource = wl_client_add_object(client, &wl_pointer_interface,
-                                           &pointer_implementation, id, pointer);
-    wl_resource_set_destructor(client_resource, &unbind);
+    client_resource = wl_resource_create(client, &wl_pointer_interface, 1, id);
+    wl_resource_set_implementation(client_resource, &pointer_implementation,
+                                   pointer, &unbind);
     swc_input_focus_add_resource(&pointer->focus, client_resource);
 
     return client_resource;

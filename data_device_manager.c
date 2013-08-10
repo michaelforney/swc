@@ -57,13 +57,17 @@ static struct wl_data_device_manager_interface
 static void bind_data_device_manager(struct wl_client * client, void * data,
                                      uint32_t version, uint32_t id)
 {
-    wl_client_add_object(client, &wl_data_device_manager_interface,
-                         &data_device_manager_implementation, id, NULL);
+    struct wl_resource * resource;
+
+    resource = wl_resource_create(client, &wl_data_device_manager_interface,
+                                  1, id);
+    wl_resource_set_implementation
+        (resource, &data_device_manager_implementation, NULL, NULL);
 }
 
 void swc_data_device_manager_add_globals(struct wl_display * display)
 {
-    wl_display_add_global(display, &wl_data_device_manager_interface, NULL,
-                          &bind_data_device_manager);
+    wl_global_create(display, &wl_data_device_manager_interface, 1, NULL,
+                     &bind_data_device_manager);
 }
 

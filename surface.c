@@ -122,9 +122,10 @@ static void frame(struct wl_client * client, struct wl_resource * resource,
     struct swc_surface * surface = wl_resource_get_user_data(resource);
     struct wl_resource * callback_resource;
 
-    callback_resource = wl_client_add_object(client, &wl_callback_interface,
-                                             NULL, id, NULL);
-    wl_resource_set_destructor(callback_resource, &swc_remove_resource);
+    callback_resource = wl_resource_create(client, &wl_callback_interface,
+                                           1, id);
+    wl_resource_set_implementation(callback_resource, NULL, NULL,
+                                   &swc_remove_resource);
     wl_list_insert(surface->pending.state.frame_callbacks.prev,
                    wl_resource_get_link(callback_resource));
 }
@@ -300,10 +301,10 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
     wl_signal_init(&surface->event_signal);
 
     /* Add the surface to the client. */
-    surface->resource
-        = wl_client_add_object(client, &wl_surface_interface,
-                               &surface_implementation, id, surface);
-    wl_resource_set_destructor(surface->resource, &surface_destroy);
+    surface->resource = wl_resource_create(client, &wl_surface_interface,
+                                           1, id);
+    wl_resource_set_implementation(surface->resource, &surface_implementation,
+                                   surface, &surface_destroy);
 
     return surface;
 }

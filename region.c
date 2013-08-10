@@ -55,9 +55,9 @@ struct swc_region * swc_region_new(struct wl_client * client, uint32_t id)
     pixman_region32_init(&region->region);
 
     /* Add the region to the client. */
-    region->resource = wl_client_add_object(client, &wl_region_interface,
-                                            &region_implementation, id, region);
-    wl_resource_set_destructor(region->resource, &region_destroy);
+    region->resource = wl_resource_create(client, &wl_region_interface, 1, id);
+    wl_resource_set_implementation(region->resource, &region_implementation,
+                                   region, &region_destroy);
 
     return region;
 }

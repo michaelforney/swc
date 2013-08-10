@@ -73,9 +73,8 @@ struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
 {
     struct wl_resource * client_resource;
 
-    client_resource = wl_client_add_object(client, &wl_keyboard_interface,
-                                           NULL, id, keyboard);
-    wl_resource_set_destructor(client_resource, &unbind);
+    client_resource = wl_resource_create(client, &wl_keyboard_interface, 1, id);
+    wl_resource_set_implementation(client_resource, NULL, keyboard, &unbind);
     swc_input_focus_add_resource(&keyboard->focus, client_resource);
 
     return client_resource;
