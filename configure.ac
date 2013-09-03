@@ -14,7 +14,7 @@ AC_USE_SYSTEM_EXTENSIONS
 AM_PROG_AR
 LT_INIT
 
-AC_CONFIG_SRCDIR([compositor.c])
+AC_CONFIG_SRCDIR([libswc/compositor.c])
 AC_CONFIG_MACRO_DIR([m4])
 
 PKG_PROG_PKG_CONFIG([0.9.0])
@@ -33,6 +33,6 @@ PKG_CHECK_MODULES([pixman], [pixman-1])
 PKG_CHECK_MODULES([wayland_client], [wayland-client])
 dnl }}}
 
-AC_CONFIG_FILES([Makefile launch/Makefile])
+AC_CONFIG_FILES([Makefile libswc/Makefile launch/Makefile])
 AC_OUTPUT
 
