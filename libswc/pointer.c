@@ -41,6 +41,15 @@ static void leave(struct swc_input_focus_handler * handler,
     wl_pointer_send_leave(resource, serial, surface->resource);
 }
 
+static void handle_cursor_surface_destroy(struct wl_listener * listener,
+                                          void * data)
+{
+    struct swc_pointer * pointer = swc_container_of(listener, typeof(*pointer),
+                                                    cursor.destroy_listener);
+
+    pointer->cursor.surface = NULL;
+}
+
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
     wl_signal_init(&pointer->event_signal);
@@ -50,6 +59,8 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
 
     pointer->focus_handler.enter = &enter;
     pointer->focus_handler.leave = &leave;
+
+    pointer->cursor.destroy_listener.notify = &handle_cursor_surface_destroy;
 
     swc_input_focus_initialize(&pointer->focus, &pointer->focus_handler);
 
@@ -80,6 +91,9 @@ static void set_cursor(struct wl_client * client,
 
     printf("set_cursor\n");
 
+    if (pointer->cursor.surface)
+        wl_list_remove(&pointer->cursor.destroy_listener.link);
+
     surface = surface_resource ? wl_resource_get_user_data(surface_resource)
                                : NULL;
 
@@ -87,6 +101,8 @@ static void set_cursor(struct wl_client * client,
     {
         surface->geometry.x = wl_fixed_to_int(pointer->x) - hotspot_x;
         surface->geometry.y = wl_fixed_to_int(pointer->y) - hotspot_y;
+        wl_resource_add_destroy_listener(surface->resource,
+                                         &pointer->cursor.destroy_listener);
     }
 
     pointer->cursor.surface = surface;

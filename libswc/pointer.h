@@ -32,6 +32,7 @@ struct swc_pointer
     {
         struct swc_surface * surface;
         int32_t hotspot_x, hotspot_y;
+        struct wl_listener destroy_listener;
     } cursor;
 
     struct swc_pointer_handler * handler;
