@@ -84,7 +84,7 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
                 if (mod_mask & (1 << seat->xkb.indices.alt))
                     modifiers |= SWC_MOD_ALT;
                 if (mod_mask & (1 << seat->xkb.indices.super))
-                    modifiers |= SWC_MOD_SUPER;
+                    modifiers |= SWC_MOD_LOGO;
                 if (mod_mask & (1 << seat->xkb.indices.shift))
                     modifiers |= SWC_MOD_SHIFT;
 
