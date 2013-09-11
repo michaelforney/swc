@@ -1,7 +1,7 @@
 # swc: libswc/Makefile.am
 
 AM_CPPFLAGS = -I$(top_srcdir) -I$(PROTOCOL_DIR)
-AM_CFLAGS = $(pixman_CFLAGS) $(drm_CFLAGS) $(intelbatch_CFLAGS)
+AM_CFLAGS = $(drm_CFLAGS) $(pixman_CFLAGS) $(wld_CFLAGS)
 
 lib_LTLIBRARIES = libswc.la
 
@@ -9,7 +9,6 @@ libswc_la_SOURCES = \
     compositor.c compositor.h \
     util.c util.h \
     output.c output.h \
-    buffer.c buffer.h \
     plane.c plane.h \
     surface.c surface.h \
     compositor_surface.c compositor_surface.h \
@@ -31,7 +30,6 @@ libswc_la_SOURCES = \
     $(PROTOCOL_DIR)/wayland-drm-protocol.c
 
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
-                   $(drm_LIBS) $(drm_intel_LIBS) $(gbm_LIBS) $(egl_LIBS) \
-                   $(pixman_LIBS) $(intelbatch_LIBS) $(wld_LIBS) \
+                   $(drm_LIBS) $(pixman_LIBS) $(wld_LIBS) \
                    ../launch/liblaunch-protocol.la
 

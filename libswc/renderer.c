@@ -1,29 +1,18 @@
 #include "renderer.h"
 #include "compositor_surface.h"
-#include "util.h"
+#include "drm_buffer.h"
 
+#include <assert.h>
 #include <stdio.h>
-#include <GLES2/gl2.h>
-#include <libdrm/intel_bufmgr.h>
-#include <libdrm/drm.h>
-#include <intelbatch/blt.h>
-#include <intelbatch/mi.h>
-#include <xf86drm.h>
+#include <stdlib.h>
+#include <wld/wld.h>
+#include <wld/drm.h>
 
 struct buffer_state
 {
-    union
-    {
-        struct
-        {
-            pixman_image_t * image;
-        } shm;
-        struct
-        {
-            drm_intel_bo * bo;
-            uint32_t width, height, pitch;
-        } drm;
-    };
+    struct wld_drawable * drawable;
+    /* Only used for SHM buffers */
+    pixman_image_t * dst, * src;
     struct wl_listener destroy_listener;
 };
 
@@ -40,38 +29,17 @@ static inline uint32_t pixman_format(uint32_t format)
     return 0;
 }
 
-static inline void switch_context(struct swc_renderer * renderer,
-                                  uint32_t context, struct swc_buffer * buffer)
+static inline uint32_t wld_format(uint32_t format)
 {
-    if (renderer->context != context)
+    switch (format)
     {
-        /* Leave old context */
-        switch (renderer->context)
-        {
-            case SWC_RENDERER_CONTEXT_NONE:
-                break;
-            case SWC_RENDERER_CONTEXT_BATCH:
-                intel_batch_flush(&renderer->batch);
-                break;
-            case SWC_RENDERER_CONTEXT_SHM:
-                drm_intel_gem_bo_unmap_gtt(buffer->bo);
-                break;
-        }
-
-        /* Enter new context */
-        switch (context)
-        {
-            case SWC_RENDERER_CONTEXT_NONE:
-                break;
-            case SWC_RENDERER_CONTEXT_BATCH:
-                break;
-            case SWC_RENDERER_CONTEXT_SHM:
-                drm_intel_gem_bo_map_gtt(buffer->bo);
-                break;
-        }
-
-        renderer->context = context;
+        case WL_SHM_FORMAT_XRGB8888:
+            return WLD_FORMAT_XRGB8888;
+        case WL_SHM_FORMAT_ARGB8888:
+            return WLD_FORMAT_ARGB8888;
     }
+
+    return 0;
 }
 
 static void handle_buffer_destroy(struct wl_listener * listener, void * data)
@@ -79,6 +47,11 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
     struct buffer_state * state
         = swc_container_of(listener, typeof(*state), destroy_listener);
 
+    wld_destroy_drawable(state->drawable);
+    if (state->dst)
+        pixman_image_unref(state->dst);
+    if (state->src)
+        pixman_image_unref(state->src);
     free(state);
 }
 
@@ -92,176 +65,189 @@ static inline struct buffer_state * buffer_state(struct wl_resource * resource)
                     : NULL;
 }
 
-static void repaint_surface_for_output(struct swc_renderer * renderer,
-                                       struct swc_surface * surface,
-                                       struct swc_output * output)
+static void repaint_surface(struct swc_renderer * renderer,
+                            struct swc_surface * surface,
+                            pixman_region32_t * damage)
 {
-    struct swc_buffer * back_buffer = swc_output_get_back_buffer(output);
+    struct swc_render_target * target = &renderer->target;
+    pixman_region32_t surface_damage;
+    pixman_region32_t border_damage;
+    pixman_region32_t surface_region;
     struct buffer_state * state;
     struct swc_compositor_surface_state * surface_state = surface->class_state;
 
     if (!surface->state.buffer)
         return;
 
-    state = buffer_state(&surface->state.buffer->resource);
+    state = buffer_state(surface->state.buffer);
+    assert(state);
 
-    if (wl_buffer_is_shm(surface->state.buffer))
+    pixman_region32_init_with_extents(&surface_damage, &surface_state->extents);
+    pixman_region32_init(&border_damage);
+    pixman_region32_init_rect
+        (&surface_region, surface->geometry.x, surface->geometry.y,
+         surface->geometry.width, surface->geometry.height);
+
+    pixman_region32_intersect(&surface_damage, damage, &surface_damage);
+    pixman_region32_subtract(&surface_damage, &surface_damage,
+                             &surface_state->clip);
+    pixman_region32_subtract(&border_damage, &surface_damage, &surface_region);
+    pixman_region32_intersect(&surface_damage, &surface_damage,
+                              &surface_region);
+
+    pixman_region32_fini(&surface_region);
+
+    if (pixman_region32_not_empty(&surface_damage))
     {
-        pixman_image_t * buffer_image;
+        printf("\tdrm surface %u { x: %d, y: %d, w: %u, h: %u }\n",
+               wl_resource_get_id(surface->resource),
+               surface->geometry.x, surface->geometry.y,
+               surface->geometry.width, surface->geometry.height);
 
-        switch_context(renderer, SWC_RENDERER_CONTEXT_SHM, back_buffer);
-
-        printf("repainting shm surface\n");
-
-        buffer_image = pixman_image_create_bits_no_clear
-            (PIXMAN_x8r8g8b8, back_buffer->width, back_buffer->height,
-             back_buffer->bo->virtual, back_buffer->pitch);
-
-        pixman_image_composite32(PIXMAN_OP_SRC,
-                                 state->shm.image, NULL,
-                                 buffer_image, 0, 0, 0, 0, 0, 0,
-                                 surface->geometry.width,
-                                 surface->geometry.height);
+        pixman_region32_translate(&surface_damage,
+                                  -surface->geometry.x, -surface->geometry.y);
+        wld_copy_region(state->drawable, target->drawable, &surface_damage,
+                        surface->geometry.x - target->geometry.x,
+                        surface->geometry.y - target->geometry.y);
     }
-    else
-    {
-        switch_context(renderer, SWC_RENDERER_CONTEXT_BATCH, back_buffer);
 
-        printf("repainting drm surface\n");
-
-        drm_intel_bo * src = state->drm.bo;
-        uint32_t src_pitch = state->drm.pitch;
-
-        xy_src_copy_blt(&renderer->batch, src, src_pitch, 0, 0,
-                        back_buffer->bo, back_buffer->pitch,
-                        surface->geometry.x + surface_state->border.width,
-                        surface->geometry.y + surface_state->border.width,
-                        surface->geometry.width, surface->geometry.height);
-    }
+    pixman_region32_fini(&surface_damage);
 
     /* Draw border */
+    if (pixman_region32_not_empty(&border_damage))
     {
-        switch_context(renderer, SWC_RENDERER_CONTEXT_BATCH, back_buffer);
+        printf("\tborder\n");
 
-        /* Top */
-        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
-                     surface->geometry.x, surface->geometry.y,
-                     surface->geometry.x + surface->geometry.width + 2 * surface_state->border.width,
-                     surface->geometry.y + surface_state->border.width,
-                     surface_state->border.color);
-        /* Bottom */
-        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
-                     surface->geometry.x,
-                     surface->geometry.y + surface_state->border.width + surface->geometry.height,
-                     surface->geometry.x + surface->geometry.width + 2 * surface_state->border.width,
-                     surface->geometry.y + surface->geometry.height + 2 * surface_state->border.width,
-                     surface_state->border.color);
-        /* Left */
-        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
-                     surface->geometry.x, surface->geometry.y + surface_state->border.width,
-                     surface->geometry.x + surface_state->border.width,
-                     surface->geometry.y + + surface_state->border.width + surface->geometry.height,
-                     surface_state->border.color);
-        /* Right */
-        xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
-                     surface->geometry.x + surface_state->border.width + surface->geometry.width,
-                     surface->geometry.y + surface_state->border.width,
-                     surface->geometry.x + surface->geometry.width + 2 * surface_state->border.width,
-                     surface->geometry.y + surface_state->border.width + surface->geometry.height,
-                     surface_state->border.color);
-
+        pixman_region32_translate(&border_damage,
+                                  -target->geometry.x, -target->geometry.y);
+        wld_fill_region(target->drawable, surface_state->border.color,
+                        &border_damage);
     }
+
+    pixman_region32_fini(&border_damage);
 }
 
 bool swc_renderer_initialize(struct swc_renderer * renderer,
-                             struct swc_drm * drm,
-                             struct gbm_device * gbm)
+                             struct swc_drm * drm)
 {
     renderer->drm = drm;
-    renderer->gbm = gbm;
-
-    intel_batch_initialize(&renderer->batch, drm->bufmgr);
 
     return true;
 }
 
 void swc_renderer_finalize(struct swc_renderer * renderer)
 {
-    intel_batch_finalize(&renderer->batch);
 }
 
-void swc_renderer_repaint_output(struct swc_renderer * renderer,
-                                 struct swc_output * output,
-                                 struct wl_list * surfaces)
+void swc_renderer_set_target(struct swc_renderer * renderer,
+                             struct swc_plane * plane)
 {
+    struct wld_drawable * drawable = swc_plane_get_buffer(plane);
+
+    renderer->target.drawable = drawable;
+    renderer->target.geometry.x = plane->output->geometry.x + plane->x;
+    renderer->target.geometry.y = plane->output->geometry.y + plane->y;
+    renderer->target.geometry.width = drawable->width;
+    renderer->target.geometry.height = drawable->height;
+}
+
+void swc_renderer_repaint(struct swc_renderer * renderer,
+                          pixman_region32_t * damage,
+                          pixman_region32_t * base_damage,
+                          struct wl_list * surfaces)
+{
+    struct swc_render_target * target = &renderer->target;
     struct swc_surface * surface;
-    struct swc_buffer * back_buffer;
 
-    back_buffer = swc_output_get_back_buffer(output);
+    printf("rendering to target { x: %d, y: %d, w: %u, h: %u }\n",
+           target->geometry.x, target->geometry.y,
+           target->geometry.width, target->geometry.height);
 
-    switch_context(renderer, SWC_RENDERER_CONTEXT_BATCH, back_buffer);
-
-    wl_list_for_each(surface, surfaces, link)
+    /* Paint base damage black. */
+    if (pixman_region32_not_empty(base_damage))
     {
-        if (surface->outputs & (1 << output->id))
-            repaint_surface_for_output(renderer, surface, output);
+        pixman_region32_translate(base_damage,
+                                  -target->geometry.x, -target->geometry.y);
+        wld_fill_region(target->drawable, 0xff000000, base_damage);
     }
 
-    switch_context(renderer, SWC_RENDERER_CONTEXT_NONE, back_buffer);
+    wl_list_for_each_reverse(surface, surfaces, link)
+    {
+        if (swc_rectangle_overlap(&target->geometry, &surface->geometry))
+            repaint_surface(renderer, surface, damage);
+    }
+
+    wld_flush(target->drawable);
 }
 
 void swc_renderer_attach(struct swc_renderer * renderer,
                          struct swc_surface * surface,
-                         struct wl_buffer * buffer)
+                         struct wl_resource * resource)
 {
     struct buffer_state * state;
-    struct gbm_bo * bo;
+    struct wl_shm_buffer * shm_buffer;
+    struct swc_drm_buffer * drm_buffer;
 
-    if (!buffer)
+    if (!resource)
         return;
 
     /* Check if we have already seen this buffer. */
-    if ((state = buffer_state(&buffer->resource)))
+    if ((state = buffer_state(resource)))
         return;
 
     if (!(state = malloc(sizeof *state)))
         return;
 
-    /* SHM buffer */
-    if (wl_buffer_is_shm(buffer))
+    if ((shm_buffer = wl_shm_buffer_get(resource)))
     {
-        struct swc_output * output;
-        uint32_t wayland_format = wl_shm_buffer_get_format(buffer);
+        uint32_t width = wl_shm_buffer_get_width(shm_buffer),
+                 height = wl_shm_buffer_get_height(shm_buffer),
+                 format = wl_shm_buffer_get_format(shm_buffer),
+                 pitch = wl_shm_buffer_get_stride(shm_buffer);
+        void * data = wl_shm_buffer_get_data(shm_buffer);
 
-        state->shm.image
-            = pixman_image_create_bits(pixman_format(wayland_format),
-                                       wl_shm_buffer_get_width(buffer),
-                                       wl_shm_buffer_get_height(buffer),
-                                       wl_shm_buffer_get_data(buffer),
-                                       wl_shm_buffer_get_stride(buffer));
+        state->drawable = wld_drm_create_drawable(renderer->drm->context,
+                                                  width, height,
+                                                  wld_format(format));
+        state->src = pixman_image_create_bits_no_clear(pixman_format(format),
+                                                       width, height,
+                                                       data, pitch);
+        state->dst = wld_map(state->drawable);
     }
-    /* DRM buffer */
-    else if ((bo = gbm_bo_import(renderer->gbm, GBM_BO_IMPORT_WL_BUFFER, buffer,
-                                 GBM_BO_USE_RENDERING)))
+    else if ((drm_buffer = swc_drm_buffer_get(resource)))
     {
-        int handle = gbm_bo_get_handle(bo).s32;
-        struct drm_gem_flink flink = { .handle = handle };
-
-        if (drmIoctl(renderer->drm->fd, DRM_IOCTL_GEM_FLINK, &flink) != 0)
-        {
-            printf("could not flink handle\n");
+        if (!(state = malloc(sizeof *state)))
             return;
-        }
 
-        state->drm.bo
-            = drm_intel_bo_gem_create_from_name(renderer->drm->bufmgr,
-                                                "surface", flink.name);
-        state->drm.pitch = gbm_bo_get_stride(bo);
-        state->drm.width = gbm_bo_get_width(bo);
-        state->drm.height = gbm_bo_get_height(bo);
-
-        printf("pitch: %u, width: %u, height: %u\n", state->drm.pitch,
-            state->drm.width, state->drm.height);
+        state->drawable = drm_buffer->drawable;
+        state->src = NULL;
+        state->dst = NULL;
     }
+    else
+    {
+        fprintf(stderr, "Unsupported buffer type\n");
+        return;
+    }
+
+    state->destroy_listener.notify = &handle_buffer_destroy;
+    wl_resource_add_destroy_listener(resource, &state->destroy_listener);
+}
+
+void swc_renderer_flush(struct swc_renderer * renderer,
+                        struct swc_surface * surface)
+{
+    struct wl_shm_buffer * buffer;
+    struct buffer_state * state;
+
+    if (!(buffer = wl_shm_buffer_get(surface->state.buffer)))
+        return;
+
+    state = buffer_state(surface->state.buffer);
+    assert(state);
+
+    pixman_image_set_clip_region32(state->src, &surface->state.damage);
+    pixman_image_composite32(PIXMAN_OP_SRC, state->src, NULL, state->dst,
+                             0, 0, 0, 0, 0, 0,
+                             state->drawable->width, state->drawable->height);
 }
 

@@ -257,7 +257,6 @@ static void handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
     struct swc_output * output = data;
 
     printf("page flip\n");
-    output->front_buffer ^= 1;
 
     /* XXX: It doesn't make sense for multiple things to be listening for page
      *      flips (or does it?). Maybe this should be a callback instead? */

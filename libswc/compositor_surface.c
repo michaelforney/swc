@@ -187,8 +187,7 @@ void attach(struct swc_surface * surface, struct wl_resource * resource)
     struct swc_compositor * compositor = swc_container_of
         (surface->class, typeof(*compositor), compositor_class);
 
-    swc_renderer_attach(&compositor->renderer, surface,
-                        wl_resource_get_user_data(resource));
+    swc_renderer_attach(&compositor->renderer, surface, resource);
 }
 
 void update(struct swc_surface * surface)

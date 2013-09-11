@@ -1,7 +1,7 @@
 #ifndef SWC_OUTPUT_H
 #define SWC_OUTPUT_H 1
 
-#include "buffer.h"
+#include "plane.h"
 
 #include <stdint.h>
 #include <pixman.h>
@@ -26,9 +26,11 @@ struct swc_output
     struct wl_array modes;
     struct swc_mode * current_mode, * preferred_mode;
 
-    /* Use double buffering */
-    struct swc_buffer buffers[2];
-    uint8_t front_buffer;
+    /* Output planes. */
+    struct swc_plane framebuffer_plane;
+    struct swc_plane cursor_plane;
+
+    pixman_region32_t previous_damage;
 
     /* The CRTC and connector we are using to drive this output */
     uint32_t crtc_id;
@@ -38,8 +40,6 @@ struct swc_output
     {
         drmModeCrtc * crtc;
     } original_state;
-
-    bool repaint_scheduled;
 
     struct wl_list resources;
     struct wl_list link;
@@ -53,20 +53,6 @@ void swc_output_finish(struct swc_output * output);
 
 void swc_output_add_globals(struct swc_output * output,
                             struct wl_display * display);
-
-void swc_output_switch_buffer(struct swc_output * output);
-
-static inline struct swc_buffer * swc_output_get_front_buffer
-    (struct swc_output * output)
-{
-    return &output->buffers[output->front_buffer];
-}
-
-static inline struct swc_buffer * swc_output_get_back_buffer
-    (struct swc_output * output)
-{
-    return &output->buffers[!output->front_buffer];
-}
 
 #endif
 

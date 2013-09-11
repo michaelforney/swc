@@ -14,7 +14,6 @@ struct swc_compositor
     struct wl_display * display;
 
     struct udev * udev;
-    struct gbm_device * gbm;
 
     struct swc_tty tty;
     struct swc_seat seat;

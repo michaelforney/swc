@@ -4,9 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <libudev.h>
-#include <gbm.h>
 #include <wayland-server.h>
-#include <libdrm/intel_bufmgr.h>
 
 struct wld_drm_context * context;
 
@@ -21,7 +19,6 @@ struct swc_drm
     uint32_t id;
     char * path;
 
-    drm_intel_bufmgr * bufmgr;
     struct wld_drm_context * context;
 
     uint32_t taken_output_ids;

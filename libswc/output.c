@@ -57,14 +57,12 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
     printf("initializing output with id: %u\n", id);
 
     output->id = id;
-    output->repaint_scheduled = false;
-    output->front_buffer = 0;
-
     output->physical_width = connector->mmWidth;
     output->physical_height = connector->mmHeight;
 
     wl_list_init(&output->resources);
     wl_array_init(&output->modes);
+    pixman_region32_init(&output->previous_damage);
 
     output->crtc_id = crtc_id;
     output->connector_id = connector->connector_id;
@@ -93,36 +91,18 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
     output->geometry.width = output->current_mode->width;
     output->geometry.height = output->current_mode->height;
 
-    /* Create output buffers */
-    if (!swc_buffer_initialize(&output->buffers[0], drm, output->geometry.width,
-                               output->geometry.height))
-    {
-        printf("could not initialize buffer 0 for output\n");
-        goto error_base;
-    }
-
-    if (!swc_buffer_initialize(&output->buffers[1], drm, output->geometry.width,
-                               output->geometry.height))
-    {
-        printf("could not initialize buffer 1 for output\n");
-        goto error_buffer0;
-    }
-
     output->original_state.crtc = current_crtc;
 
-    if (drmModeSetCrtc(drm->fd, output->crtc_id, output->buffers[0].id, 0, 0,
-                       &output->connector_id, 1, &output->current_mode->info) != 0)
+    /* Create output planes */
+    if (!swc_plane_initialize(&output->framebuffer_plane,
+                              &swc_framebuffer_plane, output))
     {
-        printf("could not set crtc for output\n");
-        goto error_buffer1;
+        printf("failed to initialize framebuffer plane\n");
+        goto error_base;
     }
 
     return true;
 
-  error_buffer1:
-    swc_buffer_finish(&output->buffers[1], drm);
-  error_buffer0:
-    swc_buffer_finish(&output->buffers[0], drm);
   error_base:
     return false;
 }
@@ -139,27 +119,11 @@ void swc_output_finish(struct swc_output * output)
     drmModeSetCrtc(output->drm->fd, crtc->crtc_id, crtc->buffer_id, crtc->x,
                    crtc->y, &output->connector_id, 1, &crtc->mode);
     drmModeFreeCrtc(crtc);
-
-    swc_buffer_finish(&output->buffers[0], output->drm);
-    swc_buffer_finish(&output->buffers[1], output->drm);
 }
 
 void swc_output_add_globals(struct swc_output * output,
                             struct wl_display * display)
 {
     wl_global_create(display, &wl_output_interface, 1, output, &bind_output);
-}
-
-void swc_output_switch_buffer(struct swc_output * output)
-{
-    printf("queueing pageflip\n");
-
-    /* Queue a page flip */
-    if (drmModePageFlip(output->drm->fd, output->crtc_id,
-                        swc_output_get_back_buffer(output)->id,
-                        DRM_MODE_PAGE_FLIP_EVENT, output) != 0)
-    {
-        printf("could not queue pageflip\n");
-    }
 }
 

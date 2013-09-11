@@ -4,6 +4,7 @@
 #include <gbm.h>
 
 #include "compositor.h"
+#include "compositor_surface.h"
 #include "tty.h"
 #include "output.h"
 #include "surface.h"
@@ -14,41 +15,133 @@
 
 static const char default_seat[] = "seat0";
 
-struct repaint_operation
+static void calculate_damage(struct swc_compositor * compositor)
 {
-    struct swc_compositor * compositor;
-    struct swc_output * output;
-};
+    struct swc_surface * surface;
+    struct swc_compositor_surface_state * state;
+    pixman_region32_t opaque, surface_opaque;
 
-static void repaint_output(void * data)
-{
-    struct repaint_operation * operation = data;
-    struct swc_compositor * compositor = operation->compositor;
+    pixman_region32_clear(&compositor->opaque);
+    pixman_region32_init(&surface_opaque);
 
-    swc_renderer_repaint_output(&compositor->renderer, operation->output,
-                                &compositor->surfaces);
+    /* Go through surfaces top-down to calculate clipping regions. */
+    wl_list_for_each(surface, &compositor->surfaces, link)
+    {
+        state = surface->class_state;
 
-    swc_output_switch_buffer(operation->output);
+        /* Clip the surface by the opaque region covering it. */
+        pixman_region32_copy(&state->clip, &compositor->opaque);
 
-    free(operation);
+        /* Translate the opaque region to global coordinates. */
+        pixman_region32_copy(&surface_opaque, &surface->state.opaque);
+        pixman_region32_translate(&surface_opaque, surface->geometry.x,
+                                  surface->geometry.y);
+
+        /* Add the surface's opaque region to the accumulated opaque
+         * region. */
+        pixman_region32_union(&compositor->opaque, &compositor->opaque,
+                              &surface_opaque);
+
+        if (pixman_region32_not_empty(&surface->state.damage))
+        {
+            swc_renderer_flush(&compositor->renderer, surface);
+
+            /* Translate surface damage to global coordinates. */
+            pixman_region32_translate(&surface->state.damage,
+                                      surface->geometry.x,
+                                      surface->geometry.y);
+
+            /* Add the surface damage to the compositor damage. */
+            pixman_region32_union(&compositor->damage, &compositor->damage,
+                                  &surface->state.damage);
+            pixman_region32_clear(&surface->state.damage);
+        }
+
+        if (state->border.damaged)
+        {
+            pixman_region32_t border_region, surface_region;
+
+            pixman_region32_init_with_extents(&border_region, &state->extents);
+            pixman_region32_init_rect
+                (&surface_region, surface->geometry.x, surface->geometry.y,
+                 surface->geometry.width, surface->geometry.height);
+
+            pixman_region32_subtract(&border_region, &border_region,
+                                     &surface_region);
+
+            pixman_region32_union(&compositor->damage, &compositor->damage,
+                                  &border_region);
+
+            pixman_region32_fini(&border_region);
+            pixman_region32_fini(&surface_region);
+
+            state->border.damaged = false;
+        }
+    }
+
+    pixman_region32_fini(&surface_opaque);
 }
 
-static void schedule_repaint_for_output(struct swc_compositor * compositor,
-                                        struct swc_output * output)
+static void repaint_output(struct swc_compositor * compositor,
+                           struct swc_output * output)
 {
-    struct wl_event_loop * event_loop;
-    struct repaint_operation * operation;
+    pixman_region32_t damage, previous_damage, base_damage;
 
-    if (output->repaint_scheduled)
-        return;
+    pixman_region32_init(&damage);
+    pixman_region32_init(&previous_damage);
+    pixman_region32_init(&base_damage);
 
-    operation = malloc(sizeof *operation);
-    operation->compositor = compositor;
-    operation->output = output;
+    pixman_region32_intersect_rect
+        (&damage, &compositor->damage, output->geometry.x, output->geometry.y,
+         output->geometry.width, output->geometry.height);
 
-    event_loop = wl_display_get_event_loop(compositor->display);
-    wl_event_loop_add_idle(event_loop, &repaint_output, operation);
-    output->repaint_scheduled = true;
+    /* We must save the damage from the previous frame because the back buffer
+     * is also damaged in this region. */
+    pixman_region32_copy(&previous_damage, &output->previous_damage);
+    pixman_region32_copy(&output->previous_damage, &damage);
+
+    /* The total damage is composed of the damage from the new frame, and the
+     * damage from the last frame. */
+    pixman_region32_union(&damage, &damage, &previous_damage);
+
+    pixman_region32_subtract(&base_damage, &damage, &compositor->opaque);
+
+    swc_renderer_set_target(&compositor->renderer, &output->framebuffer_plane);
+    swc_renderer_repaint(&compositor->renderer, &damage, &base_damage,
+                         &compositor->surfaces);
+
+    pixman_region32_subtract(&compositor->damage, &compositor->damage, &damage);
+
+    pixman_region32_fini(&damage);
+    pixman_region32_fini(&previous_damage);
+    pixman_region32_fini(&base_damage);
+
+    if (!swc_plane_flip(&output->framebuffer_plane))
+        fprintf(stderr, "Plane flip failed\n");
+}
+
+static void perform_update(void * data)
+{
+    struct swc_compositor * compositor = data;
+    struct swc_output * output;
+    uint32_t updates = compositor->scheduled_updates
+                       & ~compositor->pending_flips;
+
+    if (updates)
+    {
+        printf("performing update\n");
+        calculate_damage(compositor);
+
+        wl_list_for_each(output, &compositor->outputs, link)
+        {
+            if (updates & SWC_OUTPUT_MASK(output))
+                repaint_output(compositor, output);
+        }
+
+        compositor->pending_flips |= updates;
+        compositor->scheduled_updates &= ~updates;
+    }
+
 }
 
 static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
@@ -186,20 +279,21 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
             struct timeval timeval;
             uint32_t time;
 
-            output->repaint_scheduled = false;
-            output->front_buffer ^= 1;
-
             gettimeofday(&timeval, NULL);
             time = timeval.tv_sec * 1000 + timeval.tv_usec / 1000;
 
-            /* Handle all frame callbacks for surfaces on this output. */
-            wl_list_for_each(surface, &compositor->surfaces, link)
-            {
-                swc_surface_send_frame_callbacks(surface, time);
+            compositor->pending_flips &= ~SWC_OUTPUT_MASK(output);
 
-                if (surface->state.buffer)
-                    wl_buffer_send_release(&surface->state.buffer->resource);
+            if (compositor->pending_flips == 0)
+            {
+                wl_list_for_each(surface, &compositor->surfaces, link)
+                    swc_surface_send_frame_callbacks(surface, time);
             }
+
+            /* If we had scheduled updates that couldn't run because we were
+             * waiting on a page flip, run them now. */
+            if (compositor->scheduled_updates)
+                perform_update(compositor);
 
             break;
         }
@@ -295,6 +389,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->display = display;
     compositor->tty_listener.notify = &handle_tty_event;
     compositor->drm_listener.notify = &handle_drm_event;
+    compositor->scheduled_updates = 0;
+    compositor->pending_flips = 0;
     compositor->compositor_class.interface
         = &swc_compositor_class_implementation;
 
@@ -338,19 +434,10 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     wl_signal_add(&compositor->drm.event_signal, &compositor->drm_listener);
     swc_drm_add_event_sources(&compositor->drm, event_loop);
 
-    compositor->gbm = gbm_create_device(compositor->drm.fd);
-
-    if (!compositor->gbm)
-    {
-        printf("could not create gbm device\n");
-        goto error_drm;
-    }
-
-    if (!swc_renderer_initialize(&compositor->renderer, &compositor->drm,
-                                 compositor->gbm))
+    if (!swc_renderer_initialize(&compositor->renderer, &compositor->drm))
     {
         printf("could not initialize renderer\n");
-        goto error_gbm;
+        goto error_drm;
     }
 
     outputs = swc_drm_create_outputs(&compositor->drm);
@@ -367,6 +454,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         goto error_renderer;
     }
 
+    pixman_region32_init(&compositor->damage);
+    pixman_region32_init(&compositor->opaque);
     wl_list_init(&compositor->surfaces);
     wl_array_init(&compositor->key_bindings);
     wl_signal_init(&compositor->destroy_signal);
@@ -387,8 +476,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
   error_renderer:
     swc_renderer_finalize(&compositor->renderer);
-  error_gbm:
-    gbm_device_destroy(compositor->gbm);
   error_drm:
     swc_drm_finish(&compositor->drm);
   error_seat:
@@ -415,7 +502,6 @@ void swc_compositor_finish(struct swc_compositor * compositor)
         free(output);
     }
 
-    gbm_device_destroy(compositor->gbm);
     swc_drm_finish(&compositor->drm);
     swc_seat_finish(&compositor->seat);
     swc_tty_finish(&compositor->tty);
@@ -451,5 +537,24 @@ void swc_compositor_add_key_binding(struct swc_compositor * compositor,
     binding->modifiers = modifiers;
     binding->handler = handler;
     binding->data = data;
+}
+
+void swc_compositor_schedule_update(struct swc_compositor * compositor,
+                                    struct swc_output * output)
+{
+    bool update_scheduled = compositor->scheduled_updates != 0;
+
+    if (compositor->scheduled_updates & SWC_OUTPUT_MASK(output))
+        return;
+
+    compositor->scheduled_updates |= SWC_OUTPUT_MASK(output);
+
+    if (!update_scheduled)
+    {
+        struct wl_event_loop * event_loop;
+
+        event_loop = wl_display_get_event_loop(compositor->display);
+        wl_event_loop_add_idle(event_loop, &perform_update, compositor);
+    }
 }
 

@@ -5,35 +5,37 @@
 #include "surface.h"
 #include "drm.h"
 
-#include <intelbatch/batch.h>
-
-enum swc_renderer_context
+struct swc_render_target
 {
-    SWC_RENDERER_CONTEXT_NONE,
-    SWC_RENDERER_CONTEXT_SHM,
-    SWC_RENDERER_CONTEXT_BATCH
+    struct wld_drawable * drawable;
+    pixman_rectangle32_t geometry;
 };
 
 struct swc_renderer
 {
     struct swc_drm * drm;
-    struct gbm_device * gbm;
-    enum swc_renderer_context context;
-    struct intel_batch batch;
+    struct swc_render_target target;
 };
 
 bool swc_renderer_initialize(struct swc_renderer * renderer,
-                             struct swc_drm * drm, struct gbm_device * gbm);
+                             struct swc_drm * drm);
 
 void swc_renderer_finalize(struct swc_renderer * renderer);
 
-void swc_renderer_repaint_output(struct swc_renderer * renderer,
-                                 struct swc_output * output,
-                                 struct wl_list * surfaces);
+void swc_renderer_set_target(struct swc_renderer * renderer,
+                             struct swc_plane * plane);
+
+void swc_renderer_repaint(struct swc_renderer * renderer,
+                          pixman_region32_t * damage,
+                          pixman_region32_t * base_damage,
+                          struct wl_list * surfaces);
 
 void swc_renderer_attach(struct swc_renderer * renderer,
                          struct swc_surface * surface,
-                         struct wl_buffer * buffer);
+                         struct wl_resource * resource);
+
+void swc_renderer_flush(struct swc_renderer * renderer,
+                        struct swc_surface * surface);
 
 #endif
 

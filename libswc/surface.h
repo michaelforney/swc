@@ -32,7 +32,7 @@ struct swc_surface;
 
 struct swc_surface_state
 {
-    struct wl_buffer * buffer;
+    struct wl_resource * buffer;
 
     /* The region that needs to be repainted */
     pixman_region32_t damage;

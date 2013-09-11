@@ -25,9 +25,11 @@
 #include "event.h"
 #include "region.h"
 #include "util.h"
+#include "drm_buffer.h"
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <wld/wld.h>
 
 static pixman_box32_t infinite_extents = {
     .x1 = INT32_MIN, .y1 = INT32_MIN,
@@ -83,7 +85,7 @@ static void state_finish(struct swc_surface_state * state)
  * @return: Whether or not the buffer was changed.
  */
 static bool state_set_buffer(struct swc_surface_state * state,
-                             struct wl_buffer * buffer)
+                             struct wl_resource * buffer)
 {
     if (buffer == state->buffer)
         return false;
@@ -98,13 +100,24 @@ static bool state_set_buffer(struct swc_surface_state * state,
     {
         /* Need to watch the new buffer for destruction so we can remove it
          * from state. */
-        wl_resource_add_destroy_listener(&buffer->resource,
+        wl_resource_add_destroy_listener(buffer,
                                          &state->buffer_destroy_listener);
     }
 
     state->buffer = buffer;
 
     return true;
+}
+
+static void set_size(struct swc_surface * surface,
+                     uint32_t width, uint32_t height)
+{
+    /* Check if the surface was resized. */
+    if (width != surface->geometry.width || height != surface->geometry.height)
+    {
+        surface->geometry.width = width;
+        surface->geometry.height = height;
+    }
 }
 
 static void destroy(struct wl_client * client, struct wl_resource * resource)
@@ -116,14 +129,8 @@ static void attach(struct wl_client * client, struct wl_resource * resource,
                    struct wl_resource * buffer_resource, int32_t x, int32_t y)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
-    struct wl_buffer * buffer
-        = buffer_resource ? wl_resource_get_user_data(buffer_resource) : NULL;
 
-    state_set_buffer(&surface->pending.state, buffer);
-
-    /* Adjust geometry of the surface to match the buffer. */
-    surface->geometry.width = buffer ? buffer->width : 0;
-    surface->geometry.height = buffer ? buffer->height : 0;
+    state_set_buffer(&surface->pending.state, buffer_resource);
 
     surface->pending.x = x;
     surface->pending.y = y;
@@ -199,16 +206,28 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     /* Attach */
     if (surface->state.buffer != surface->pending.state.buffer)
     {
-        if (surface->state.buffer)
+        struct wl_shm_buffer * shm_buffer;
+        struct swc_drm_buffer * drm_buffer;
+
+        if (surface->state.buffer
+            && surface->state.buffer != surface->pending.state.buffer)
         {
-            /* Release the old buffer, it's no longer needed. */
-            wl_buffer_send_release(&surface->state.buffer->resource);
+            wl_buffer_send_release(surface->state.buffer);
         }
 
         state_set_buffer(&surface->state, surface->pending.state.buffer);
 
-        surface->class->interface->attach(surface,
-                                          &surface->state.buffer->resource);
+        /* Determine size of buffer. */
+        if ((shm_buffer = wl_shm_buffer_get(surface->state.buffer)))
+        {
+            set_size(surface, wl_shm_buffer_get_width(shm_buffer),
+                     wl_shm_buffer_get_height(shm_buffer));
+        }
+        else if ((drm_buffer = swc_drm_buffer_get(surface->state.buffer)))
+        {
+            set_size(surface, drm_buffer->drawable->width,
+                     drm_buffer->drawable->height);
+        }
     }
 
     /* Damage */
@@ -369,7 +388,7 @@ void swc_surface_set_class(struct swc_surface * surface,
         }
 
 
-        surface->class->interface->attach(surface, &surface->state.buffer->resource);
+        surface->class->interface->attach(surface, surface->state.buffer);
         surface->class->interface->update(surface);
     }
 }
