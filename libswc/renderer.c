@@ -27,9 +27,9 @@ struct buffer_state
     struct wl_listener destroy_listener;
 };
 
-static inline uint32_t format_wayland_to_pixman(uint32_t wayland_format)
+static inline uint32_t pixman_format(uint32_t format)
 {
-    switch (wayland_format)
+    switch (format)
     {
         case WL_SHM_FORMAT_XRGB8888:
             return PIXMAN_x8r8g8b8;
@@ -234,7 +234,7 @@ void swc_renderer_attach(struct swc_renderer * renderer,
         uint32_t wayland_format = wl_shm_buffer_get_format(buffer);
 
         state->shm.image
-            = pixman_image_create_bits(format_wayland_to_pixman(wayland_format),
+            = pixman_image_create_bits(pixman_format(wayland_format),
                                        wl_shm_buffer_get_width(buffer),
                                        wl_shm_buffer_get_height(buffer),
                                        wl_shm_buffer_get_data(buffer),
