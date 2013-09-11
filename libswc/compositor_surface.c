@@ -137,6 +137,27 @@ static void update_outputs(struct swc_surface * surface)
     surface->outputs = new_outputs;
 }
 
+static void handle_surface_event(struct wl_listener * listener, void * data)
+{
+    struct swc_compositor_surface_state * state
+        = swc_container_of(listener, typeof(*state), event_listener);
+    struct swc_event * event = data;
+    struct swc_surface_event_data * event_data = event->data;
+    struct swc_surface * surface = event_data->surface;
+
+    switch (event->type)
+    {
+        case SWC_SURFACE_EVENT_TYPE_RESIZE:
+            damage_below_surface(surface);
+
+            update_extents(surface);
+            update(surface);
+            update_outputs(surface);
+
+            break;
+    }
+}
+
 /* Compositor class */
 bool add(struct swc_surface * surface)
 {
@@ -158,6 +179,7 @@ bool add(struct swc_surface * surface)
     state->border.color = 0x000000;
     state->border.damaged = false;
     state->mapped = false;
+    state->event_listener.notify = &handle_surface_event;
 
     wl_signal_add(&surface->event_signal, &state->event_listener);
 
