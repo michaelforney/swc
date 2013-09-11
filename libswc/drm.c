@@ -201,18 +201,6 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
         goto error_device;
     }
 
-    {
-        int value, ret;
-        struct drm_i915_getparam getparam = {
-            .param = I915_PARAM_HAS_BLT,
-            .value = &value
-        };
-
-        ret = drmIoctl(drm->fd, DRM_IOCTL_I915_GETPARAM, &getparam);
-
-        printf("has blt: %u\n", ret);
-    }
-
     if (!(drm->context = wld_drm_create_context(drm->fd)))
     {
         fprintf(stderr, "Could not create WLD DRM context\n");
