@@ -39,7 +39,7 @@ struct swc_output
 
     bool repaint_scheduled;
 
-    struct wl_list resource_list;
+    struct wl_list resources;
     struct wl_list link;
 };
 

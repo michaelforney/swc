@@ -24,7 +24,7 @@ static void bind_output(struct wl_client * client, void * data,
     resource = wl_resource_create(client, &wl_output_interface, version, id);
     wl_resource_set_implementation(resource, NULL, output,
                                    &swc_remove_resource);
-    wl_list_insert(&output->resource_list, wl_resource_get_link(resource));
+    wl_list_insert(&output->resources, wl_resource_get_link(resource));
 
     wl_output_send_geometry(resource, output->geometry.x, output->geometry.y,
         output->physical_width, output->physical_height, 0, "unknown",
@@ -63,7 +63,7 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
     output->physical_width = connector->mmWidth;
     output->physical_height = connector->mmHeight;
 
-    wl_list_init(&output->resource_list);
+    wl_list_init(&output->resources);
     wl_array_init(&output->modes);
 
     output->crtc_id = crtc_id;
