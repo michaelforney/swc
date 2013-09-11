@@ -19,6 +19,7 @@ struct swc_drm
 {
     int fd;
     uint32_t id;
+    char * path;
 
     drm_intel_bufmgr * bufmgr;
     struct wld_drm_context * context;
@@ -37,6 +38,8 @@ void swc_drm_finish(struct swc_drm * drm);
 
 void swc_drm_add_event_sources(struct swc_drm * drm,
                                struct wl_event_loop * event_loop);
+
+void swc_drm_add_globals(struct swc_drm * drm, struct wl_display * display);
 
 void swc_drm_set_master(struct swc_drm * drm);
 

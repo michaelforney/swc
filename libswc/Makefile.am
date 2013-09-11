@@ -1,6 +1,6 @@
 # swc: libswc/Makefile.am
 
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir) -I$(PROTOCOL_DIR)
 AM_CFLAGS = $(pixman_CFLAGS) $(drm_CFLAGS) $(intelbatch_CFLAGS)
 
 lib_LTLIBRARIES = libswc.la
@@ -27,10 +27,11 @@ libswc_la_SOURCES = \
     evdev_device.c evdev_device.h \
     xkb.c xkb.h \
     drm.c drm.h \
-    egl.c egl.h
+    drm_buffer.c drm_buffer.h \
+    $(PROTOCOL_DIR)/wayland-drm-protocol.c
 
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
                    $(drm_LIBS) $(drm_intel_LIBS) $(gbm_LIBS) $(egl_LIBS) \
-                   $(pixman_LIBS) $(intelbatch_LIBS) \
+                   $(pixman_LIBS) $(intelbatch_LIBS) $(wld_LIBS) \
                    ../launch/liblaunch-protocol.la
 

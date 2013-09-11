@@ -1,3 +1,31 @@
+/* swc: drm.c
+ *
+ * Copyright (c) 2013 Michael Forney
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#include "drm.h"
+#include "drm_buffer.h"
+#include "output.h"
+#include "event.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,15 +34,103 @@
 #include <libudev.h>
 #include <libdrm/drm.h>
 #include <xf86drm.h>
-#include <libdrm/i915_drm.h>
-#include <libdrm/intel_bufmgr.h>
-#include <intelbatch/batch.h>
-//#include <xf86drmMode.h>
+#include <wld/wld.h>
+#include <wld/drm.h>
 #include <wayland-util.h>
+#include <wayland-drm-server-protocol.h>
 
-#include "drm.h"
-#include "output.h"
-#include "event.h"
+static void authenticate(struct wl_client * client,
+                         struct wl_resource * resource, uint32_t magic)
+{
+    struct swc_drm * drm = wl_resource_get_user_data(resource);
+    int ret;
+
+    if ((ret = drmAuthMagic(drm->fd, magic)) == 0)
+        wl_drm_send_authenticated(resource);
+    else
+    {
+        wl_resource_post_error(resource, WL_DRM_ERROR_AUTHENTICATE_FAIL,
+                               "drmAuthMagic failed: %d\n", ret);
+    }
+}
+
+static void create_buffer(struct wl_client * client,
+                          struct wl_resource * resource, uint32_t id,
+                          uint32_t name, int32_t width, int32_t height,
+                          uint32_t stride, uint32_t format)
+{
+    struct swc_drm * drm = wl_resource_get_user_data(resource);
+    struct wld_drawable * drawable;
+    struct swc_drm_buffer * buffer;
+
+    drawable = wld_drm_import_gem(drm->context, width, height, format,
+                                  name, stride);
+
+    if (!drawable)
+        goto error0;
+
+    buffer = swc_drm_buffer_new(client, id, drawable);
+
+    if (!buffer)
+        goto error1;
+
+    return;
+
+  error1:
+    wld_destroy_drawable(drawable);
+  error0:
+    wl_resource_post_no_memory(resource);
+}
+
+static void create_planar_buffer(struct wl_client * client,
+                                 struct wl_resource * resource, uint32_t id,
+                                 uint32_t name, int32_t width, int32_t height,
+                                 uint32_t format,
+                                 int32_t offset0, int32_t stride0,
+                                 int32_t offset1, int32_t stride1,
+                                 int32_t offset2, int32_t stride2)
+{
+    wl_resource_post_error(resource, WL_DRM_ERROR_INVALID_FORMAT,
+                           "planar buffers are not supported\n");
+}
+
+static void create_prime_buffer(struct wl_client * client,
+                                struct wl_resource * resource, uint32_t id,
+                                int32_t fd, int32_t width, int32_t height,
+                                uint32_t format,
+                                int32_t offset0, int32_t stride0,
+                                int32_t offset1, int32_t stride1,
+                                int32_t offset2, int32_t stride2)
+{
+    struct swc_drm * drm = wl_resource_get_user_data(resource);
+    struct wld_drawable * drawable;
+    struct swc_drm_buffer * buffer;
+
+    drawable = wld_drm_import(drm->context, width, height, format, fd, stride0);
+    close(fd);
+
+    if (!drawable)
+        goto error0;
+
+    buffer = swc_drm_buffer_new(client, id, drawable);
+
+    if (!buffer)
+        goto error1;
+
+    return;
+
+  error1:
+    wld_destroy_drawable(drawable);
+  error0:
+    wl_resource_post_no_memory(resource);
+}
+
+static const struct wl_drm_interface drm_implementation = {
+        .authenticate = &authenticate,
+        .create_buffer = &create_buffer,
+        .create_planar_buffer = &create_planar_buffer,
+        .create_prime_buffer = &create_prime_buffer
+};
 
 static struct udev_device * find_primary_drm_device(struct udev * udev,
                                                     const char * seat)
@@ -192,8 +308,8 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
 
     printf("sysnum: %s\n", sysnum);
 
-    device_path = udev_device_get_devnode(drm_device);
-    drm->fd = open(device_path, O_RDWR | O_CLOEXEC);
+    drm->path = strdup(udev_device_get_devnode(drm_device));
+    drm->fd = open(drm->path, O_RDWR | O_CLOEXEC);
 
     if (drm->fd == -1)
     {
@@ -207,23 +323,10 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
         goto error_fd;
     }
 
-    drm->bufmgr = drm_intel_bufmgr_gem_init(drm->fd, INTEL_MAX_COMMANDS << 2);
-
-    if (!drm->bufmgr)
-    {
-        printf("could not create bufmgr\n");
-        goto error_wld;
-    }
-
-    //drm_intel_bufmgr_set_debug(drm->bufmgr, true);
-    drm_intel_bufmgr_gem_enable_fenced_relocs(drm->bufmgr);
-
     udev_device_unref(drm_device);
 
     return true;
 
-  error_wld:
-    wld_drm_destroy_context(drm->context);
   error_fd:
     close(drm->fd);
   error_device:
@@ -235,7 +338,7 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
 void swc_drm_finish(struct swc_drm * drm)
 {
     wld_drm_destroy_context(drm->context);
-    drm_intel_bufmgr_destroy(drm->bufmgr);
+    free(drm->path);
     close(drm->fd);
 }
 
@@ -244,6 +347,31 @@ void swc_drm_add_event_sources(struct swc_drm * drm,
 {
     drm->source = wl_event_loop_add_fd(event_loop, drm->fd, WL_EVENT_READABLE,
                                        &handle_data, NULL);
+}
+
+static void bind_drm(struct wl_client * client, void * data, uint32_t version,
+                     uint32_t id)
+{
+    struct swc_drm * drm = data;
+    struct wl_resource * resource;
+
+    if (version >= 2)
+        version = 2;
+
+    resource = wl_resource_create(client, &wl_drm_interface, version, id);
+    wl_resource_set_implementation(resource, &drm_implementation, drm, NULL);
+
+    if (version >= 2)
+        wl_drm_send_capabilities(resource, WL_DRM_CAPABILITY_PRIME);
+
+    wl_drm_send_device(resource, drm->path);
+    wl_drm_send_format(resource, WL_DRM_FORMAT_XRGB8888);
+    wl_drm_send_format(resource, WL_DRM_FORMAT_ARGB8888);
+}
+
+void swc_drm_add_globals(struct swc_drm * drm, struct wl_display * display)
+{
+    wl_global_create(display, &wl_drm_interface, 2, drm, &bind_drm);
 }
 
 void swc_drm_set_master(struct swc_drm * drm)

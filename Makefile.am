@@ -2,5 +2,5 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = launch libswc
+SUBDIRS = launch protocol libswc
 

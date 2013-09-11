@@ -29,10 +29,15 @@ PKG_CHECK_MODULES([intelbatch], [intelbatch])
 PKG_CHECK_MODULES([gbm], [gbm])
 PKG_CHECK_MODULES([egl], [egl])
 PKG_CHECK_MODULES([pixman], [pixman-1])
+PKG_CHECK_MODULES([wld], [wld])
 
 PKG_CHECK_MODULES([wayland_client], [wayland-client])
 dnl }}}
 
-AC_CONFIG_FILES([Makefile libswc/Makefile launch/Makefile])
+dnl Wayland protocol
+AC_SUBST(PROTOCOL_DIR, ['$(top_builddir)/protocol'])
+WAYLAND_SCANNER_RULES(['$(top_srcdir)/protocol'])
+
+AC_CONFIG_FILES([Makefile libswc/Makefile launch/Makefile protocol/Makefile])
 AC_OUTPUT
 

@@ -6,7 +6,6 @@
 #include "drm.h"
 #include "tty.h"
 #include "seat.h"
-#include "egl.h"
 #include "binding.h"
 #include "renderer.h"
 
@@ -20,7 +19,6 @@ struct swc_compositor
     struct swc_tty tty;
     struct swc_seat seat;
     struct swc_drm drm;
-    struct swc_egl egl;
     struct swc_renderer renderer;
 
     struct wl_list outputs;

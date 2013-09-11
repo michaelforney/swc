@@ -346,24 +346,11 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         goto error_drm;
     }
 
-    if (!swc_egl_initialize(&compositor->egl, compositor->gbm))
-    {
-        printf("could not initialize egl\n");
-        goto error_gbm;
-    }
-
-    if (!swc_egl_bind_display(&compositor->egl, compositor->display))
-    {
-        printf("could not bind egl display\n");
-        swc_egl_finish(&compositor->egl);
-        goto error_gbm;
-    }
-
     if (!swc_renderer_initialize(&compositor->renderer, &compositor->drm,
                                  compositor->gbm))
     {
         printf("could not initialize renderer\n");
-        goto error_egl;
+        goto error_gbm;
     }
 
     outputs = swc_drm_create_outputs(&compositor->drm);
@@ -400,9 +387,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
   error_renderer:
     swc_renderer_finalize(&compositor->renderer);
-  error_egl:
-    swc_egl_unbind_display(&compositor->egl, compositor->display);
-    swc_egl_finish(&compositor->egl);
   error_gbm:
     gbm_device_destroy(compositor->gbm);
   error_drm:
@@ -431,8 +415,6 @@ void swc_compositor_finish(struct swc_compositor * compositor)
         free(output);
     }
 
-    swc_egl_unbind_display(&compositor->egl, compositor->display);
-    swc_egl_finish(&compositor->egl);
     gbm_device_destroy(compositor->gbm);
     swc_drm_finish(&compositor->drm);
     swc_seat_finish(&compositor->seat);
@@ -450,6 +432,7 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
 
     swc_data_device_manager_add_globals(display);
     swc_seat_add_globals(&compositor->seat, display);
+    swc_drm_add_globals(&compositor->drm, display);
 
     wl_list_for_each(output, &compositor->outputs, link)
     {
