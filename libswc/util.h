@@ -29,5 +29,30 @@ static inline bool swc_rectangle_overlap
 int swc_launch_open_input_device(int socket, const char * path, int flags);
 bool swc_launch_drm_master(int socket, int fd, bool set);
 
+/* Double Buffers */
+struct swc_double_buffer
+{
+    void * buffers[2];
+    uint8_t front;
+};
+
+static inline void * swc_double_buffer_front
+    (struct swc_double_buffer * double_buffer)
+{
+    return double_buffer->buffers[double_buffer->front];
+}
+
+static inline void * swc_double_buffer_back
+    (struct swc_double_buffer * double_buffer)
+{
+    return double_buffer->buffers[double_buffer->front ^ 1];
+}
+
+static inline void swc_double_buffer_swap
+    (struct swc_double_buffer * double_buffer)
+{
+    double_buffer->front ^= 1;
+}
+
 #endif
 

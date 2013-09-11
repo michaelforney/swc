@@ -213,12 +213,18 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
         printf("has blt: %u\n", ret);
     }
 
+    if (!(drm->context = wld_drm_create_context(drm->fd)))
+    {
+        fprintf(stderr, "Could not create WLD DRM context\n");
+        goto error_fd;
+    }
+
     drm->bufmgr = drm_intel_bufmgr_gem_init(drm->fd, INTEL_MAX_COMMANDS << 2);
 
     if (!drm->bufmgr)
     {
         printf("could not create bufmgr\n");
-        goto error_fd;
+        goto error_wld;
     }
 
     //drm_intel_bufmgr_set_debug(drm->bufmgr, true);
@@ -228,6 +234,8 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
 
     return true;
 
+  error_wld:
+    wld_drm_destroy_context(drm->context);
   error_fd:
     close(drm->fd);
   error_device:
@@ -238,6 +246,7 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
 
 void swc_drm_finish(struct swc_drm * drm)
 {
+    wld_drm_destroy_context(drm->context);
     drm_intel_bufmgr_destroy(drm->bufmgr);
     close(drm->fd);
 }

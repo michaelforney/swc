@@ -10,6 +10,7 @@ libswc_la_SOURCES = \
     util.c util.h \
     output.c output.h \
     buffer.c buffer.h \
+    plane.c plane.h \
     surface.c surface.h \
     compositor_surface.c compositor_surface.h \
     region.c region.h \

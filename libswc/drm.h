@@ -8,6 +8,8 @@
 #include <wayland-server.h>
 #include <libdrm/intel_bufmgr.h>
 
+struct wld_drm_context * context;
+
 enum swc_drm_event
 {
     SWC_DRM_PAGE_FLIP
@@ -19,6 +21,7 @@ struct swc_drm
     uint32_t id;
 
     drm_intel_bufmgr * bufmgr;
+    struct wld_drm_context * context;
 
     uint32_t taken_output_ids;
 
