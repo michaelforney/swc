@@ -2,6 +2,9 @@
 *.lo
 .*.swp
 
+protocol/wayland-drm-protocol.c
+protocol/wayland-drm-server-protocol.h
+
 .deps/
 .libs/
 
@@ -23,8 +26,7 @@ Makefile.in
 /m4/
 /missing
 
-/libswc.la
-/intel/libintel.la
+/libswc/libswc.la
 /launch/liblaunch-protocol.la
 /launch/libswc-launch.la
 
