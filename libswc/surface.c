@@ -130,6 +130,8 @@ static void attach(struct wl_client * client, struct wl_resource * resource,
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
+    surface->pending.commit |= SWC_SURFACE_COMMIT_ATTACH;
+
     state_set_buffer(&surface->pending.state, buffer_resource);
 
     surface->pending.x = x;
@@ -141,6 +143,8 @@ static void damage(struct wl_client * client, struct wl_resource * resource,
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
+    surface->pending.commit |= SWC_SURFACE_COMMIT_DAMAGE;
+
     pixman_region32_union_rect(&surface->pending.state.damage,
                                &surface->pending.state.damage,
                                x, y, width, height);
@@ -151,6 +155,8 @@ static void frame(struct wl_client * client, struct wl_resource * resource,
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
     struct wl_resource * callback_resource;
+
+    surface->pending.commit |= SWC_SURFACE_COMMIT_FRAME;
 
     callback_resource = wl_resource_create(client, &wl_callback_interface,
                                            1, id);
@@ -166,7 +172,7 @@ static void set_opaque_region(struct wl_client * client,
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
-    //printf("surface_set_opaque_region\n");
+    surface->pending.commit |= SWC_SURFACE_COMMIT_OPAQUE;
 
     if (region_resource)
     {
@@ -184,7 +190,7 @@ static void set_input_region(struct wl_client * client,
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
-    printf("surface.set_input_region\n");
+    surface->pending.commit |= SWC_SURFACE_COMMIT_INPUT;
 
     if (region_resource)
     {
@@ -199,12 +205,9 @@ static void set_input_region(struct wl_client * client,
 static void commit(struct wl_client * client, struct wl_resource * resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
-    struct swc_event event;
-
-    event.data = surface;
 
     /* Attach */
-    if (surface->state.buffer != surface->pending.state.buffer)
+    if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
     {
         struct wl_shm_buffer * shm_buffer;
         struct swc_drm_buffer * drm_buffer;
@@ -231,39 +234,51 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     }
 
     /* Damage */
-    pixman_region32_union(&surface->state.damage, &surface->state.damage,
-                          &surface->pending.state.damage);
-    pixman_region32_intersect_rect(&surface->state.damage,
-                                   &surface->state.damage, 0, 0,
-                                   surface->geometry.width,
-                                   surface->geometry.height);
+    if (surface->pending.commit & SWC_SURFACE_COMMIT_DAMAGE)
+    {
+        pixman_region32_intersect_rect(&surface->pending.state.damage,
+                                       &surface->pending.state.damage, 0, 0,
+                                       surface->geometry.width,
+                                       surface->geometry.height);
+        pixman_region32_union(&surface->state.damage, &surface->state.damage,
+                              &surface->pending.state.damage);
+        pixman_region32_clear(&surface->pending.state.damage);
+    }
 
     /* Opaque */
-    pixman_region32_copy(&surface->state.opaque,
-                         &surface->pending.state.opaque);
-    pixman_region32_intersect_rect(&surface->state.opaque,
-                                   &surface->state.opaque, 0, 0,
-                                   surface->geometry.width,
-                                   surface->geometry.height);
+    if (surface->pending.commit & SWC_SURFACE_COMMIT_OPAQUE)
+    {
+        pixman_region32_intersect_rect(&surface->state.opaque,
+                                       &surface->pending.state.opaque, 0, 0,
+                                       surface->geometry.width,
+                                       surface->geometry.height);
+    }
 
     /* Input */
-    pixman_region32_copy(&surface->state.input, &surface->pending.state.input);
-    pixman_region32_intersect_rect(&surface->state.input,
-                                   &surface->state.input, 0, 0,
-                                   surface->geometry.width,
-                                   surface->geometry.height);
+    if (surface->pending.commit & SWC_SURFACE_COMMIT_INPUT)
+    {
+        pixman_region32_intersect_rect(&surface->state.input,
+                                       &surface->pending.state.input, 0, 0,
+                                       surface->geometry.width,
+                                       surface->geometry.height);
+    }
 
     /* Frame */
-    wl_list_insert_list(&surface->state.frame_callbacks,
-                        &surface->pending.state.frame_callbacks);
+    if (surface->pending.commit & SWC_SURFACE_COMMIT_FRAME)
+    {
+        wl_list_insert_list(&surface->state.frame_callbacks,
+                            &surface->pending.state.frame_callbacks);
+        wl_list_init(&surface->pending.state.frame_callbacks);
+    }
 
-    /* Reset pending state */
-    pixman_region32_clear(&surface->pending.state.damage);
-    pixman_region32_clear(&surface->pending.state.opaque);
-    surface->pending.state.buffer = surface->state.buffer;
-    wl_list_init(&surface->pending.state.frame_callbacks);
+    if (surface->class)
+    {
+        if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
+            surface->class->interface->attach(surface, surface->state.buffer);
+        surface->class->interface->update(surface);
+    }
 
-    surface->class->interface->update(surface);
+    surface->pending.commit = 0;
 }
 
 void set_buffer_transform(struct wl_client * client,
@@ -330,6 +345,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
     surface->geometry.y = 0;
     surface->geometry.width = 0;
     surface->geometry.height = 0;
+    surface->pending.commit = 0;
     surface->shell_data = NULL;
     surface->shell_destructor = NULL;
     surface->class = NULL;

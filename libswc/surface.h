@@ -30,6 +30,15 @@
 
 struct swc_surface;
 
+enum swc_surface_commit_info
+{
+    SWC_SURFACE_COMMIT_ATTACH = (1 << 0),
+    SWC_SURFACE_COMMIT_DAMAGE = (1 << 1),
+    SWC_SURFACE_COMMIT_OPAQUE = (1 << 2),
+    SWC_SURFACE_COMMIT_INPUT = (1 << 3),
+    SWC_SURFACE_COMMIT_FRAME = (1 << 4)
+};
+
 struct swc_surface_state
 {
     struct wl_resource * buffer;
@@ -94,6 +103,7 @@ struct swc_surface
     struct
     {
         struct swc_surface_state state;
+        uint32_t commit;
         int32_t x, y;
     } pending;
 
