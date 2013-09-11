@@ -26,7 +26,7 @@ static void bind_output(struct wl_client * client, void * data,
                                    &swc_remove_resource);
     wl_list_insert(&output->resource_list, wl_resource_get_link(resource));
 
-    wl_output_send_geometry(resource, output->x, output->y,
+    wl_output_send_geometry(resource, output->geometry.x, output->geometry.y,
         output->physical_width, output->physical_height, 0, "unknown",
         "unknown", WL_OUTPUT_TRANSFORM_NORMAL);
 
@@ -90,19 +90,19 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
     if (output->preferred_mode)
         output->current_mode = output->preferred_mode;
 
-    output->width = output->current_mode->width;
-    output->height = output->current_mode->height;
+    output->geometry.width = output->current_mode->width;
+    output->geometry.height = output->current_mode->height;
 
     /* Create output buffers */
-    if (!swc_buffer_initialize(&output->buffers[0], drm, output->width,
-                               output->height))
+    if (!swc_buffer_initialize(&output->buffers[0], drm, output->geometry.width,
+                               output->geometry.height))
     {
         printf("could not initialize buffer 0 for output\n");
         goto error_base;
     }
 
-    if (!swc_buffer_initialize(&output->buffers[1], drm, output->width,
-                               output->height))
+    if (!swc_buffer_initialize(&output->buffers[1], drm, output->geometry.width,
+                               output->geometry.height))
     {
         printf("could not initialize buffer 1 for output\n");
         goto error_buffer0;

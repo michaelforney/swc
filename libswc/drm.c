@@ -331,6 +331,9 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
 
             output = malloc(sizeof(struct swc_output));
 
+            output->geometry.x = x;
+            output->geometry.y = 0;
+
             if (!swc_output_initialize(output, drm, id,
                                        resources->crtcs[crtc_index], connector))
             {
@@ -339,14 +342,11 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
                 continue;
             }
 
-            output->x = x;
-            output->y = 0;
-
             taken_crtcs |= 1 << crtc_index;
             drm->taken_output_ids |= 1 << id;
 
             wl_list_insert(outputs, &output->link);
-            x += output->width;
+            x += output->geometry.width;
         }
 
         drmModeFreeConnector(connector);

@@ -4,6 +4,7 @@
 #include "buffer.h"
 
 #include <stdint.h>
+#include <pixman.h>
 #include <wayland-util.h>
 #include <wayland-server.h>
 #include <xf86drmMode.h>
@@ -17,7 +18,7 @@ struct swc_output
     struct swc_drm * drm;
 
     /* The geometry of this output */
-    uint32_t x, y, width, height;
+    pixman_rectangle32_t geometry;
     uint32_t physical_width, physical_height;
 
     struct wl_array modes;
