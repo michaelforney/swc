@@ -367,12 +367,12 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
 void swc_surface_send_frame_callbacks(struct swc_surface * surface,
                                       uint32_t time)
 {
-    struct wl_resource * callback;
+    struct wl_resource * resource, * tmp;
 
-    wl_list_for_each(callback, &surface->state.frame_callbacks, link)
+    wl_list_for_each_safe(resource, tmp, &surface->state.frame_callbacks, link)
     {
-        wl_callback_send_done(callback, time);
-        wl_resource_destroy(callback);
+        wl_callback_send_done(resource, time);
+        wl_resource_destroy(resource);
     }
 
     wl_list_init(&surface->state.frame_callbacks);
