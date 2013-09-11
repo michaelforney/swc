@@ -32,7 +32,6 @@ void swc_renderer_repaint_output(struct swc_renderer * renderer,
                                  struct wl_list * surfaces);
 
 void swc_renderer_attach(struct swc_renderer * renderer,
-                         struct wl_list * outputs,
                          struct swc_surface * surface,
                          struct wl_buffer * buffer);
 
