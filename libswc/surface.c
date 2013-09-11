@@ -309,9 +309,6 @@ static void surface_destroy(struct wl_resource * resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
-    if (surface->shell_destructor)
-        surface->shell_destructor(surface);
-
     if (surface->class && surface->class->interface->remove)
         surface->class->interface->remove(surface);
 
@@ -346,8 +343,6 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
     surface->geometry.width = 0;
     surface->geometry.height = 0;
     surface->pending.commit = 0;
-    surface->shell_data = NULL;
-    surface->shell_destructor = NULL;
     surface->class = NULL;
     surface->class_state = NULL;
 
