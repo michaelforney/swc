@@ -115,8 +115,21 @@ static void set_size(struct swc_surface * surface,
     /* Check if the surface was resized. */
     if (width != surface->geometry.width || height != surface->geometry.height)
     {
+        struct swc_surface_event_data data = {
+            .surface = surface,
+            .resize = {
+                .old_width = surface->geometry.width,
+                .old_height = surface->geometry.height,
+                .new_width = width,
+                .new_height = height
+            }
+        };
+
         surface->geometry.width = width;
         surface->geometry.height = height;
+
+        swc_send_event(&surface->event_signal,
+                       SWC_SURFACE_EVENT_TYPE_RESIZE, &data);
     }
 }
 

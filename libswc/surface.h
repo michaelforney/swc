@@ -30,6 +30,22 @@
 
 struct swc_surface;
 
+enum swc_surface_event_type
+{
+    SWC_SURFACE_EVENT_TYPE_RESIZE
+};
+
+struct swc_surface_event_data
+{
+    struct swc_surface * surface;
+
+    struct
+    {
+        uint32_t old_width, old_height;
+        uint32_t new_width, new_height;
+    } resize;
+};
+
 enum swc_surface_commit_info
 {
     SWC_SURFACE_COMMIT_ATTACH = (1 << 0),
