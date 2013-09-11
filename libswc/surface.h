@@ -54,11 +54,7 @@ struct swc_surface
         int32_t x, y;
     } pending;
 
-    struct
-    {
-        uint32_t x, y;
-        uint32_t width, height;
-    } geometry;
+    pixman_rectangle32_t geometry;
 
     struct
     {
