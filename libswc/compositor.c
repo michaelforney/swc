@@ -170,33 +170,6 @@ static void handle_tty_event(struct wl_listener * listener, void * data)
     }
 }
 
-static void handle_surface_event(struct wl_listener * listener, void * data)
-{
-    struct swc_event * event = data;
-    struct swc_surface * surface = event->data;
-    struct swc_compositor * compositor = surface->compositor_state.compositor;
-
-    switch (event->type)
-    {
-        case SWC_SURFACE_ATTACH:
-            swc_renderer_attach(&compositor->renderer, &compositor->outputs,
-                                surface, surface->state.buffer);
-            break;
-        case SWC_SURFACE_REPAINT:
-        {
-            struct swc_output * output;
-
-            wl_list_for_each(output, &compositor->outputs, link)
-            {
-                if (surface->output_mask & (1 << output->id))
-                    schedule_repaint_for_output(compositor, output);
-            }
-
-            break;
-        }
-    }
-}
-
 static void handle_drm_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
@@ -266,6 +239,11 @@ static void create_surface(struct wl_client * client,
     struct swc_surface * surface;
     struct swc_output * output;
 
+    printf("compositor.create_surface\n");
+
+    output = swc_container_of(compositor->outputs.next, typeof(*output), link);
+
+    /* Initialize surface. */
     surface = swc_surface_new(client, id);
 
     if (!surface)
@@ -273,29 +251,6 @@ static void create_surface(struct wl_client * client,
         wl_resource_post_no_memory(resource);
         return;
     }
-
-    printf("compositor_create_surface: %p\n", surface);
-
-    output = swc_container_of(compositor->outputs.next, typeof(*output), link);
-
-    /* Initialize compositor state */
-    surface->compositor_state = (struct swc_compositor_surface_state) {
-        .compositor = compositor,
-        .event_listener = {
-            .notify = &handle_surface_event
-        },
-        .destroy_listener = {
-            .notify = &handle_surface_destroy
-        }
-    };
-
-    wl_signal_add(&surface->event_signal,
-                  &surface->compositor_state.event_listener);
-    wl_resource_add_destroy_listener(surface->resource,
-                  &surface->compositor_state.destroy_listener);
-
-    wl_list_insert(compositor->surfaces.prev, &surface->link);
-    surface->output_mask |= 1 << output->id;
 }
 
 static void create_region(struct wl_client * client,
@@ -340,6 +295,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->display = display;
     compositor->tty_listener.notify = &handle_tty_event;
     compositor->drm_listener.notify = &handle_drm_event;
+    compositor->compositor_class.interface
+        = &swc_compositor_class_implementation;
 
     compositor->udev = udev_new();
 

@@ -11,6 +11,7 @@ libswc_la_SOURCES = \
     output.c output.h \
     buffer.c buffer.h \
     surface.c surface.h \
+    compositor_surface.c compositor_surface.h \
     region.c region.h \
     renderer.c renderer.h \
     input_focus.c input_focus.h \

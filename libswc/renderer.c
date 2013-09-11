@@ -1,4 +1,6 @@
 #include "renderer.h"
+#include "compositor_surface.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <GLES2/gl2.h>
@@ -7,6 +9,23 @@
 #include <intelbatch/blt.h>
 #include <intelbatch/mi.h>
 #include <xf86drm.h>
+
+struct buffer_state
+{
+    union
+    {
+        struct
+        {
+            pixman_image_t * image;
+        } shm;
+        struct
+        {
+            drm_intel_bo * bo;
+            uint32_t width, height, pitch;
+        } drm;
+    };
+    struct wl_listener destroy_listener;
+};
 
 static inline uint32_t format_wayland_to_pixman(uint32_t wayland_format)
 {
@@ -55,14 +74,36 @@ static inline void switch_context(struct swc_renderer * renderer,
     }
 }
 
+static void handle_buffer_destroy(struct wl_listener * listener, void * data)
+{
+    struct buffer_state * state
+        = swc_container_of(listener, typeof(*state), destroy_listener);
+
+    free(state);
+}
+
+static inline struct buffer_state * buffer_state(struct wl_resource * resource)
+{
+    struct wl_listener * listener
+        = wl_resource_get_destroy_listener(resource, &handle_buffer_destroy);
+
+    return listener ? swc_container_of(listener, struct buffer_state,
+                                       destroy_listener)
+                    : NULL;
+}
+
 static void repaint_surface_for_output(struct swc_renderer * renderer,
                                        struct swc_surface * surface,
                                        struct swc_output * output)
 {
     struct swc_buffer * back_buffer = swc_output_get_back_buffer(output);
+    struct buffer_state * state;
+    struct swc_compositor_surface_state * surface_state = surface->class_state;
 
     if (!surface->state.buffer)
         return;
+
+    state = buffer_state(&surface->state.buffer->resource);
 
     if (wl_buffer_is_shm(surface->state.buffer))
     {
@@ -77,7 +118,7 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
              back_buffer->bo->virtual, back_buffer->pitch);
 
         pixman_image_composite32(PIXMAN_OP_SRC,
-                                 surface->renderer_state.shm.image, NULL,
+                                 state->shm.image, NULL,
                                  buffer_image, 0, 0, 0, 0, 0, 0,
                                  surface->geometry.width,
                                  surface->geometry.height);
@@ -88,13 +129,13 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
 
         printf("repainting drm surface\n");
 
-        drm_intel_bo * src = surface->renderer_state.drm.bo;
-        uint32_t src_pitch = surface->renderer_state.drm.pitch;
+        drm_intel_bo * src = state->drm.bo;
+        uint32_t src_pitch = state->drm.pitch;
 
         xy_src_copy_blt(&renderer->batch, src, src_pitch, 0, 0,
                         back_buffer->bo, back_buffer->pitch,
-                        surface->geometry.x + surface->border.width,
-                        surface->geometry.y + surface->border.width,
+                        surface->geometry.x + surface_state->border.width,
+                        surface->geometry.y + surface_state->border.width,
                         surface->geometry.width, surface->geometry.height);
     }
 
@@ -105,29 +146,29 @@ static void repaint_surface_for_output(struct swc_renderer * renderer,
         /* Top */
         xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
                      surface->geometry.x, surface->geometry.y,
-                     surface->geometry.x + surface->geometry.width + 2 * surface->border.width,
-                     surface->geometry.y + surface->border.width,
-                     surface->border.color);
+                     surface->geometry.x + surface->geometry.width + 2 * surface_state->border.width,
+                     surface->geometry.y + surface_state->border.width,
+                     surface_state->border.color);
         /* Bottom */
         xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
                      surface->geometry.x,
-                     surface->geometry.y + surface->border.width + surface->geometry.height,
-                     surface->geometry.x + surface->geometry.width + 2 * surface->border.width,
-                     surface->geometry.y + surface->geometry.height + 2 * surface->border.width,
-                     surface->border.color);
+                     surface->geometry.y + surface_state->border.width + surface->geometry.height,
+                     surface->geometry.x + surface->geometry.width + 2 * surface_state->border.width,
+                     surface->geometry.y + surface->geometry.height + 2 * surface_state->border.width,
+                     surface_state->border.color);
         /* Left */
         xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
-                     surface->geometry.x, surface->geometry.y + surface->border.width,
-                     surface->geometry.x + surface->border.width,
-                     surface->geometry.y + + surface->border.width + surface->geometry.height,
-                     surface->border.color);
+                     surface->geometry.x, surface->geometry.y + surface_state->border.width,
+                     surface->geometry.x + surface_state->border.width,
+                     surface->geometry.y + + surface_state->border.width + surface->geometry.height,
+                     surface_state->border.color);
         /* Right */
         xy_color_blt(&renderer->batch, back_buffer->bo, back_buffer->pitch,
-                     surface->geometry.x + surface->border.width + surface->geometry.width,
-                     surface->geometry.y + surface->border.width,
-                     surface->geometry.x + surface->geometry.width + 2 * surface->border.width,
-                     surface->geometry.y + surface->border.width + surface->geometry.height,
-                     surface->border.color);
+                     surface->geometry.x + surface_state->border.width + surface->geometry.width,
+                     surface->geometry.y + surface_state->border.width,
+                     surface->geometry.x + surface->geometry.width + 2 * surface_state->border.width,
+                     surface->geometry.y + surface_state->border.width + surface->geometry.height,
+                     surface_state->border.color);
 
     }
 }
@@ -162,10 +203,8 @@ void swc_renderer_repaint_output(struct swc_renderer * renderer,
 
     wl_list_for_each(surface, surfaces, link)
     {
-        if (surface->output_mask & (1 << output->id))
-        {
+        if (surface->outputs & (1 << output->id))
             repaint_surface_for_output(renderer, surface, output);
-        }
     }
 
     switch_context(renderer, SWC_RENDERER_CONTEXT_NONE, back_buffer);
@@ -175,9 +214,17 @@ void swc_renderer_attach(struct swc_renderer * renderer,
                          struct swc_surface * surface,
                          struct wl_buffer * buffer)
 {
+    struct buffer_state * state;
     struct gbm_bo * bo;
 
     if (!buffer)
+        return;
+
+    /* Check if we have already seen this buffer. */
+    if ((state = buffer_state(&buffer->resource)))
+        return;
+
+    if (!(state = malloc(sizeof *state)))
         return;
 
     /* SHM buffer */
@@ -186,7 +233,7 @@ void swc_renderer_attach(struct swc_renderer * renderer,
         struct swc_output * output;
         uint32_t wayland_format = wl_shm_buffer_get_format(buffer);
 
-        surface->renderer_state.shm.image
+        state->shm.image
             = pixman_image_create_bits(format_wayland_to_pixman(wayland_format),
                                        wl_shm_buffer_get_width(buffer),
                                        wl_shm_buffer_get_height(buffer),
@@ -206,15 +253,15 @@ void swc_renderer_attach(struct swc_renderer * renderer,
             return;
         }
 
-        surface->renderer_state.drm.bo
+        state->drm.bo
             = drm_intel_bo_gem_create_from_name(renderer->drm->bufmgr,
                                                 "surface", flink.name);
-        surface->renderer_state.drm.pitch = gbm_bo_get_stride(bo);
-        surface->renderer_state.drm.width = gbm_bo_get_width(bo);
-        surface->renderer_state.drm.height = gbm_bo_get_height(bo);
+        state->drm.pitch = gbm_bo_get_stride(bo);
+        state->drm.width = gbm_bo_get_width(bo);
+        state->drm.height = gbm_bo_get_height(bo);
 
-        printf("pitch: %u, width: %u, height: %u\n", surface->renderer_state.drm.pitch,
-            surface->renderer_state.drm.width, surface->renderer_state.drm.height);
+        printf("pitch: %u, width: %u, height: %u\n", state->drm.pitch,
+            state->drm.width, state->drm.height);
     }
 }
 

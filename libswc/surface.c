@@ -1,3 +1,26 @@
+/* swc: surface.c
+ *
+ * Copyright (c) 2013 Michael Forney
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "surface.h"
 #include "event.h"
 #include "region.h"
@@ -184,8 +207,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
 
         state_set_buffer(&surface->state, surface->pending.state.buffer);
 
-        event.type = SWC_SURFACE_ATTACH;
-        wl_signal_emit(&surface->event_signal, &event);
+        surface->class->interface->attach(surface,
+                                          &surface->state.buffer->resource);
     }
 
     /* Damage */
@@ -221,8 +244,7 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     surface->pending.state.buffer = surface->state.buffer;
     wl_list_init(&surface->pending.state.frame_callbacks);
 
-    event.type = SWC_SURFACE_REPAINT;
-    wl_signal_emit(&surface->event_signal, &event);
+    surface->class->interface->update(surface);
 }
 
 void set_buffer_transform(struct wl_client * client,
@@ -256,6 +278,9 @@ static void surface_destroy(struct wl_resource * resource)
     if (surface->shell_destructor)
         surface->shell_destructor(surface);
 
+    if (surface->class && surface->class->interface->remove)
+        surface->class->interface->remove(surface);
+
     /* Finish the surface. */
     state_finish(&surface->state);
     state_finish(&surface->pending.state);
@@ -281,15 +306,15 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
         return NULL;
 
     /* Initialize the surface. */
-    surface->output_mask = 0;
+    surface->outputs = 0;
     surface->geometry.x = 0;
     surface->geometry.y = 0;
     surface->geometry.width = 0;
     surface->geometry.height = 0;
-    surface->border.width = 0;
-    surface->border.color = 0x000000;
     surface->shell_data = NULL;
     surface->shell_destructor = NULL;
+    surface->class = NULL;
+    surface->class_state = NULL;
 
     state_initialize(&surface->state);
     state_initialize(&surface->pending.state);
@@ -321,5 +346,43 @@ void swc_surface_send_frame_callbacks(struct swc_surface * surface,
     }
 
     wl_list_init(&surface->state.frame_callbacks);
+}
+
+void swc_surface_set_class(struct swc_surface * surface,
+                           const struct swc_surface_class * class)
+{
+    if (surface->class == class)
+        return;
+
+    if (surface->class && surface->class->interface->remove)
+        surface->class->interface->remove(surface);
+
+    surface->class = class;
+
+    if (surface->class)
+    {
+        if (surface->class->interface->add
+            && !surface->class->interface->add(surface))
+        {
+            surface->class = NULL;
+            return;
+        }
+
+
+        surface->class->interface->attach(surface, &surface->state.buffer->resource);
+        surface->class->interface->update(surface);
+    }
+}
+
+void swc_surface_update(struct swc_surface * surface)
+{
+    if (surface->class)
+        surface->class->interface->update(surface);
+}
+
+void swc_surface_move(struct swc_surface * surface, int32_t x, int32_t y)
+{
+    if (surface->class)
+        surface->class->interface->move(surface, x, y);
 }
 
