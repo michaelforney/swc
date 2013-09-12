@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 struct evdev_device_entry
 {
@@ -16,6 +17,30 @@ struct evdev_device_entry
     struct swc_seat * seat;
     struct wl_list link;
 };
+
+static void clip_position(struct swc_seat * seat, wl_fixed_t fx, wl_fixed_t fy)
+{
+    int32_t x, y, last_x, last_y;
+    pixman_box32_t box;
+
+    x = wl_fixed_to_int(fx);
+    y = wl_fixed_to_int(fy);
+    last_x = wl_fixed_to_int(seat->pointer.x);
+    last_y = wl_fixed_to_int(seat->pointer.y);
+
+    if (!pixman_region32_contains_point(&seat->pointer_region, x, y, NULL))
+    {
+        assert(pixman_region32_contains_point(&seat->pointer_region,
+                                              last_x, last_y, &box));
+
+        /* Do some clipping. */
+        x = MAX(MIN(x, box.x2 - 1), box.x1);
+        y = MAX(MIN(y, box.y2 - 1), box.y1);
+    }
+
+    seat->pointer.x = wl_fixed_from_int(x);
+    seat->pointer.y = wl_fixed_from_int(y);
+}
 
 static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
                        uint32_t state)
@@ -340,6 +365,7 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
 
     wl_list_init(&seat->resources);
     wl_signal_init(&seat->destroy_signal);
+    pixman_region32_init(&seat->pointer_region);
     wl_list_init(&seat->devices);
     swc_seat_add_devices(seat, udev);
 
@@ -413,5 +439,12 @@ void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev)
     }
 
     udev_enumerate_unref(enumerate);
+}
+
+void swc_seat_set_pointer_region(struct swc_seat * seat,
+                                 pixman_region32_t * region)
+{
+    pixman_region32_copy(&seat->pointer_region, region);
+    clip_position(seat, seat->pointer.x, seat->pointer.y);
 }
 

@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <libudev.h>
 #include <wayland-server.h>
+#include <pixman.h>
 
 struct swc_seat
 {
@@ -28,6 +29,7 @@ struct swc_seat
     struct wl_listener keyboard_focus_listener;
 
     struct swc_pointer pointer;
+    pixman_region32_t pointer_region;
 
     struct wl_list devices;
 };
@@ -43,6 +45,9 @@ void swc_seat_add_event_sources(struct swc_seat * seat,
                                 struct wl_event_loop * event_loop);
 
 void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev);
+
+void swc_seat_set_pointer_region(struct swc_seat * seat,
+                                 pixman_region32_t * region);
 
 #endif
 
