@@ -17,6 +17,13 @@
 
 void swc_remove_resource(struct wl_resource * resource);
 
+static inline bool swc_rectangle_contains_point
+    (pixman_rectangle32_t * rectangle, int32_t x, int32_t y)
+{
+    return x > rectangle->x && x < rectangle->x + rectangle->width
+        && y > rectangle->y && y < rectangle->y + rectangle->height;
+}
+
 static inline bool swc_rectangle_overlap
     (pixman_rectangle32_t * r1, pixman_rectangle32_t * r2)
 {

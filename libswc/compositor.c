@@ -204,7 +204,7 @@ static void handle_focus(struct swc_pointer * pointer)
     struct swc_seat * seat;
     struct swc_compositor * compositor;
     struct swc_surface * surface;
-    int32_t surface_x, surface_y;
+    int32_t x, y;
 
     seat = swc_container_of(pointer, typeof(*seat), pointer);
     compositor = swc_container_of(seat, typeof(*compositor), seat);
@@ -217,11 +217,13 @@ static void handle_focus(struct swc_pointer * pointer)
             (&region, surface->geometry.x, surface->geometry.y,
              surface->geometry.width, surface->geometry.height);
 
-        surface_x = wl_fixed_to_int(pointer->x) - surface->geometry.x;
-        surface_y = wl_fixed_to_int(pointer->y) - surface->geometry.y;
+        x = wl_fixed_to_int(pointer->x);
+        y = wl_fixed_to_int(pointer->y);
 
-        if (pixman_region32_contains_point(&surface->state.input,
-                                           surface_x, surface_y, NULL))
+        if (swc_rectangle_contains_point(&surface->geometry, x, y)
+            && pixman_region32_contains_point(&surface->state.input,
+                                              x - surface->geometry.x,
+                                              y - surface->geometry.y, NULL))
         {
             swc_pointer_set_focus(pointer, surface);
             return;

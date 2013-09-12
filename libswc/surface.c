@@ -270,10 +270,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     /* Input */
     if (surface->pending.commit & SWC_SURFACE_COMMIT_INPUT)
     {
-        pixman_region32_intersect_rect(&surface->state.input,
-                                       &surface->pending.state.input, 0, 0,
-                                       surface->geometry.width,
-                                       surface->geometry.height);
+        pixman_region32_copy(&surface->state.input,
+                             &surface->pending.state.input);
     }
 
     /* Frame */
@@ -361,10 +359,6 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
 
     state_initialize(&surface->state);
     state_initialize(&surface->pending.state);
-
-    /* The input region should be intersected with the surface's geometry,
-     * which at this point is empty. */
-    pixman_region32_clear(&surface->state.input);
 
     wl_signal_init(&surface->event_signal);
 
