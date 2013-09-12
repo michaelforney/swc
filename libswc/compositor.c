@@ -206,6 +206,9 @@ static void handle_focus(struct swc_pointer * pointer)
     struct swc_surface * surface;
     int32_t surface_x, surface_y;
 
+    seat = swc_container_of(pointer, typeof(*seat), pointer);
+    compositor = swc_container_of(seat, typeof(*compositor), seat);
+
     wl_list_for_each(surface, &compositor->surfaces, link)
     {
         pixman_region32_t region;
