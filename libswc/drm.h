@@ -13,6 +13,12 @@ enum swc_drm_event
     SWC_DRM_PAGE_FLIP
 };
 
+struct swc_drm_event_data
+{
+    uint32_t time;
+    struct swc_output * output;
+};
+
 struct swc_drm
 {
     int fd;

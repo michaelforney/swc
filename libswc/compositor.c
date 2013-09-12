@@ -274,20 +274,15 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
     {
         case SWC_DRM_PAGE_FLIP:
         {
-            struct swc_output * output = event->data;
+            struct swc_drm_event_data * event_data = event->data;
             struct swc_surface * surface;
-            struct timeval timeval;
-            uint32_t time;
 
-            gettimeofday(&timeval, NULL);
-            time = timeval.tv_sec * 1000 + timeval.tv_usec / 1000;
-
-            compositor->pending_flips &= ~SWC_OUTPUT_MASK(output);
+            compositor->pending_flips &= ~SWC_OUTPUT_MASK(event_data->output);
 
             if (compositor->pending_flips == 0)
             {
                 wl_list_for_each(surface, &compositor->surfaces, link)
-                    swc_surface_send_frame_callbacks(surface, time);
+                    swc_surface_send_frame_callbacks(surface, event_data->time);
             }
 
             /* If we had scheduled updates that couldn't run because we were
