@@ -315,27 +315,11 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
 
     wl_signal_add(&entry->device.event_signal, &entry->event_listener);
 
-    if (!(seat->capabilities & WL_SEAT_CAPABILITY_POINTER)
-        && entry->device.capabilities & WL_SEAT_CAPABILITY_POINTER)
+    if (~seat->capabilities & entry->device.capabilities)
     {
-        printf("initializing pointer\n");
-        swc_pointer_initialize(&seat->pointer);
-        seat->capabilities |= WL_SEAT_CAPABILITY_POINTER;
+        seat->capabilities |= entry->device.capabilities;
         update_capabilities(seat);
     }
-
-    if (!(seat->capabilities & WL_SEAT_CAPABILITY_KEYBOARD)
-        && entry->device.capabilities & WL_SEAT_CAPABILITY_KEYBOARD)
-    {
-        printf("initializing keyboard\n");
-        swc_keyboard_initialize(&seat->keyboard);
-        wl_signal_add(&seat->keyboard.focus.event_signal,
-                      &seat->keyboard_focus_listener);
-        seat->capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
-        update_capabilities(seat);
-    }
-
-    seat->capabilities |= entry->device.capabilities;
 
     wl_list_insert(&seat->devices, &entry->link);
 }
@@ -360,6 +344,21 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
         goto error_xkb;
     }
 
+    if (!swc_keyboard_initialize(&seat->keyboard))
+    {
+        printf("could not initialize keyboard\n");
+        goto error_data_device;
+    }
+
+    wl_signal_add(&seat->keyboard.focus.event_signal,
+                  &seat->keyboard_focus_listener);
+
+    if (!swc_pointer_initialize(&seat->pointer))
+    {
+        printf("could not initialize pointer\n");
+        goto error_keyboard;
+    }
+
     wl_signal_add(&seat->data_device.event_signal, &seat->data_device_listener);
 
     wl_list_init(&seat->resources);
@@ -370,6 +369,10 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
 
     return true;
 
+  error_keyboard:
+    swc_keyboard_finish(&seat->keyboard);
+  error_data_device:
+    swc_data_device_finish(&seat->data_device);
   error_xkb:
     swc_xkb_finish(&seat->xkb);
   error_name:
@@ -384,12 +387,8 @@ void swc_seat_finish(struct swc_seat * seat)
 
     wl_signal_emit(&seat->destroy_signal, seat);
 
-    if (seat->capabilities & WL_SEAT_CAPABILITY_KEYBOARD)
-        swc_keyboard_finish(&seat->keyboard);
-
-    if (seat->capabilities & WL_SEAT_CAPABILITY_POINTER)
-        swc_pointer_finish(&seat->pointer);
-
+    swc_pointer_finish(&seat->pointer);
+    swc_keyboard_finish(&seat->keyboard);
     swc_xkb_finish(&seat->xkb);
 
     free(seat->name);
