@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <libudev.h>
-#include <gbm.h>
 
 #include "compositor.h"
 #include "compositor_surface.h"
