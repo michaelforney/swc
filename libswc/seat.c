@@ -92,18 +92,13 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
     }
 
     /* See if the key press is not handled by the compositor */
-    if (!(keyboard->handler && keyboard->handler->key)
-        || !keyboard->handler->key(keyboard, time, key, state))
+    if ((!keyboard->handler || !keyboard->handler->key
+         || !keyboard->handler->key(keyboard, time, key, state))
+        && keyboard->focus.resource)
     {
-        if (keyboard->focus.resource)
-        {
-            serial = wl_display_next_serial(display);
-            wl_keyboard_send_key(keyboard->focus.resource, serial, time,
-                                 key, state);
-
-            if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-                printf("\t-> sent to client\n");
-        }
+        serial = wl_display_next_serial(display);
+        wl_keyboard_send_key(keyboard->focus.resource, serial, time,
+                             key, state);
     }
 
     /* Update XKB state. Apparently the keycodes are offset by 8 in XKB. */
@@ -391,8 +386,9 @@ void swc_seat_finish(struct swc_seat * seat)
     if (seat->capabilities & WL_SEAT_CAPABILITY_POINTER)
         swc_pointer_finish(&seat->pointer);
 
-    free(seat->name);
     swc_xkb_finish(&seat->xkb);
+
+    free(seat->name);
 
     wl_list_for_each_safe(entry, tmp, &seat->devices, link)
     {
