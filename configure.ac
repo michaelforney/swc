@@ -3,7 +3,7 @@ dnl swc: configure.ac
 AC_PREREQ([2.59])
 
 AC_INIT([swc], [0.0.1], [mforney@mforney.org])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror subdir-objects])
 AC_LANG([C])
 
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])

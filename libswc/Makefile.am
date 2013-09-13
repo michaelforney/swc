@@ -28,7 +28,7 @@ libswc_la_SOURCES = \
     xkb.c xkb.h \
     drm.c drm.h \
     drm_buffer.c drm_buffer.h \
-    $(PROTOCOL_DIR)/wayland-drm-protocol.c
+    ../protocol/wayland-drm-protocol.c
 
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(xkbcommon_LIBS) \
                    $(drm_LIBS) $(pixman_LIBS) $(wld_LIBS) \
