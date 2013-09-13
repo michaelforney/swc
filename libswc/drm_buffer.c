@@ -41,7 +41,6 @@ static void buffer_destroy(struct wl_resource * resource)
 {
     struct swc_drm_buffer * buffer = wl_resource_get_user_data(resource);
 
-    wld_destroy_drawable(buffer->drawable);
     free(buffer);
 }
 
