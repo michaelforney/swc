@@ -141,11 +141,70 @@ static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
 static void handle_button(struct swc_seat * seat, uint32_t time,
                           uint32_t button, uint32_t state)
 {
+    struct swc_pointer * pointer = &seat->pointer;
+
+    if ((!pointer->handler || !pointer->handler->button
+         || !pointer->handler->button(pointer, time, button, state))
+        && pointer->focus.resource)
+    {
+        struct wl_client * client
+            = wl_resource_get_client(pointer->focus.resource);
+        struct wl_display * display = wl_client_get_display(client);
+        uint32_t serial = wl_display_next_serial(display);
+
+        wl_pointer_send_button(pointer->focus.resource, serial, time,
+                               button, state);
+    }
 }
 
 static void handle_relative_motion(struct swc_seat * seat, uint32_t time,
                                    wl_fixed_t dx, wl_fixed_t dy)
 {
+    struct swc_pointer * pointer = &seat->pointer;
+
+    clip_position(seat, pointer->x + dx, pointer->y + dy);
+
+    if (pointer->handler && pointer->handler->focus)
+        pointer->handler->focus(pointer);
+
+    if ((!pointer->handler || !pointer->handler->motion
+         || !pointer->handler->motion(pointer, time))
+        && pointer->focus.resource)
+    {
+        wl_fixed_t surface_x, surface_y;
+        surface_x = pointer->x
+            - wl_fixed_from_int(pointer->focus.surface->geometry.x);
+        surface_y = pointer->y
+            - wl_fixed_from_int(pointer->focus.surface->geometry.y);
+
+        wl_pointer_send_motion(pointer->focus.resource, time,
+                               surface_x, surface_y);
+
+        if (pointer->cursor.surface)
+        {
+            swc_surface_move
+                (pointer->cursor.surface,
+                 wl_fixed_to_int(pointer->x) - pointer->cursor.hotspot_x,
+                 wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot_y);
+        }
+    }
+}
+
+static void handle_axis_motion(struct swc_seat * seat, uint32_t time,
+                               enum wl_pointer_axis axis, wl_fixed_t amount)
+{
+    struct swc_pointer * pointer = &seat->pointer;
+
+    if ((!pointer->handler || !pointer->handler->axis
+         || !pointer->handler->axis(pointer, time, axis, amount))
+        && pointer->focus.resource)
+    {
+        struct wl_client * client
+            = wl_resource_get_client(pointer->focus.resource);
+        struct wl_display * display = wl_client_get_display(client);
+
+        wl_pointer_send_axis(pointer->focus.resource, time, axis, amount);
+    }
 }
 
 static void handle_evdev_event(struct wl_listener * listener, void * data)
@@ -172,6 +231,11 @@ static void handle_evdev_event(struct wl_listener * listener, void * data)
                                    evdev_data->relative_motion.dy);
             break;
         case SWC_EVDEV_DEVICE_EVENT_ABSOLUTE_MOTION:
+            break;
+        case SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION:
+            handle_axis_motion(entry->seat, evdev_data->time,
+                               evdev_data->axis_motion.axis,
+                               evdev_data->axis_motion.amount);
             break;
     }
 }

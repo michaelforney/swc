@@ -12,8 +12,10 @@ struct swc_pointer_handler
 {
     void (* focus)(struct swc_pointer * pointer);
     bool (* motion)(struct swc_pointer * pointer, uint32_t time);
-    void (* button)(struct swc_pointer * pointer, uint32_t time,
+    bool (* button)(struct swc_pointer * pointer, uint32_t time,
                     uint32_t button, uint32_t state);
+    bool (* axis)(struct swc_pointer * pointer, uint32_t time,
+                  enum wl_pointer_axis axis, wl_fixed_t amount);
 };
 
 enum swc_pointer_event_type

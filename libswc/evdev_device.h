@@ -11,7 +11,8 @@ enum swc_evdev_device_event_type
     SWC_EVDEV_DEVICE_EVENT_KEY,
     SWC_EVDEV_DEVICE_EVENT_BUTTON,
     SWC_EVDEV_DEVICE_EVENT_RELATIVE_MOTION,
-    SWC_EVDEV_DEVICE_EVENT_ABSOLUTE_MOTION
+    SWC_EVDEV_DEVICE_EVENT_ABSOLUTE_MOTION,
+    SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION
 };
 
 struct swc_evdev_device_event_data
@@ -23,6 +24,12 @@ struct swc_evdev_device_event_data
         {
             wl_fixed_t dx, dy;
         } relative_motion;
+
+        struct
+        {
+            wl_fixed_t amount;
+            enum wl_pointer_axis axis;
+        } axis_motion;
 
         struct
         {

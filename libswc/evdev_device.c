@@ -13,6 +13,8 @@
 #define TEST_BIT(var, n) \
     (((var)[(n)/((sizeof (var)[0])*8)] >> ((n)%((sizeof (var)[0])*8))) & 1)
 
+#define AXIS_STEP_DISTANCE 10
+
 static inline uint32_t timeval_to_msec(struct timeval * time)
 {
     return time->tv_sec * 1000 + time->tv_usec / 1000;
@@ -49,6 +51,12 @@ static void handle_key_event(struct swc_evdev_device * device,
 static void handle_rel_event(struct swc_evdev_device * device,
                              struct input_event * input_event)
 {
+    struct swc_event event;
+    struct swc_evdev_device_event_data data;
+
+    event.data = &data;
+    data.time = timeval_to_msec(&input_event->time);
+
     switch (input_event->code)
     {
         case REL_X:
@@ -58,6 +66,20 @@ static void handle_rel_event(struct swc_evdev_device * device,
         case REL_Y:
             device->motion.rel.dy += input_event->value;
             device->motion.rel.pending = true;
+            break;
+        case REL_WHEEL:
+            event.type = SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION;
+            data.axis_motion.axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
+            data.axis_motion.amount
+                = -AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
+            wl_signal_emit(&device->event_signal, &event);
+            break;
+        case REL_HWHEEL:
+            event.type = SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION;
+            data.axis_motion.axis = WL_POINTER_AXIS_HORIZONTAL_SCROLL;
+            data.axis_motion.amount
+                = AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
+            wl_signal_emit(&device->event_signal, &event);
             break;
     }
 }
