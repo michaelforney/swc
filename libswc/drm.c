@@ -292,7 +292,7 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
     if (!drm_device)
     {
         printf("couldn't find drm device\n");
-        goto error_base;
+        goto error0;
     }
 
     /* XXX: Why do we need the sysnum? */
@@ -304,35 +304,35 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
     if (*end != '\0')
     {
         printf("couldn't get drm device sysnum\n");
-        goto error_device;
+        udev_device_unref(drm_device);
+        goto error0;
     }
 
     printf("sysnum: %s\n", sysnum);
 
     drm->path = strdup(udev_device_get_devnode(drm_device));
+    udev_device_unref(drm_device);
     drm->fd = open(drm->path, O_RDWR | O_CLOEXEC);
 
     if (drm->fd == -1)
     {
         printf("couldn't open %s\n", device_path);
-        goto error_device;
+        goto error1;
     }
 
     if (!(drm->context = wld_drm_create_context(drm->fd)))
     {
         fprintf(stderr, "Could not create WLD DRM context\n");
-        goto error_fd;
+        goto error2;
     }
-
-    udev_device_unref(drm_device);
 
     return true;
 
-  error_fd:
+  error2:
     close(drm->fd);
-  error_device:
-    udev_device_unref(drm_device);
-  error_base:
+  error1:
+    free(drm->path);
+  error0:
     return false;
 }
 
