@@ -300,16 +300,6 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
     }
 }
 
-static void handle_surface_destroy(struct wl_listener * listener, void * data)
-{
-    struct wl_resource * resource = data;
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
-
-    wl_list_remove(&surface->link);
-
-    free(surface);
-}
-
 static void handle_terminate(uint32_t time, uint32_t value, void * data)
 {
     struct wl_display * display = data;
