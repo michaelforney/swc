@@ -88,8 +88,9 @@ static void set_cursor(struct wl_client * client,
 {
     struct swc_pointer * pointer = wl_resource_get_user_data(resource);
     struct swc_surface * surface;
+    struct swc_pointer_event_data data;
 
-    printf("set_cursor\n");
+    data.old = pointer->cursor.surface;
 
     if (pointer->cursor.surface)
         wl_list_remove(&pointer->cursor.destroy_listener.link);
@@ -109,7 +110,9 @@ static void set_cursor(struct wl_client * client,
     pointer->cursor.hotspot_x = hotspot_x;
     pointer->cursor.hotspot_y = hotspot_y;
 
-    swc_send_event(&pointer->event_signal, SWC_POINTER_CURSOR_CHANGED, pointer);
+    data.new = pointer->cursor.surface;
+
+    swc_send_event(&pointer->event_signal, SWC_POINTER_CURSOR_CHANGED, &data);
 }
 
 struct wl_pointer_interface pointer_implementation = {

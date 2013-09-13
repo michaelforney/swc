@@ -16,9 +16,14 @@ struct swc_pointer_handler
                     uint32_t button, uint32_t state);
 };
 
-enum swc_pointer_event
+enum swc_pointer_event_type
 {
     SWC_POINTER_CURSOR_CHANGED
+};
+
+struct swc_pointer_event_data
+{
+    struct swc_surface * old, * new;
 };
 
 struct swc_pointer

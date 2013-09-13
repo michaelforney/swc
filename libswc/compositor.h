@@ -40,9 +40,11 @@ struct swc_compositor
     };
 
     struct swc_surface_class compositor_class;
+    struct swc_surface_class cursor_class;
 
     struct wl_listener tty_listener;
     struct wl_listener drm_listener;
+    struct wl_listener pointer_listener;
 
     struct wl_signal destroy_signal;
 };

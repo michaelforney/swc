@@ -5,6 +5,7 @@
 
 #include "compositor.h"
 #include "compositor_surface.h"
+#include "cursor_surface.h"
 #include "tty.h"
 #include "output.h"
 #include "surface.h"
@@ -300,6 +301,27 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
     }
 }
 
+static void handle_pointer_event(struct wl_listener * listener, void * data)
+{
+    struct swc_event * event = data;
+    struct swc_pointer_event_data * event_data = event->data;
+    struct swc_compositor * compositor;
+
+    compositor = swc_container_of(listener, typeof(*compositor),
+                                  pointer_listener);
+
+    switch (event->type)
+    {
+        case SWC_POINTER_CURSOR_CHANGED:
+            if (event_data->old)
+                swc_surface_set_class(event_data->old, NULL);
+
+            if (event_data->new)
+                swc_surface_set_class(event_data->new, &compositor->cursor_class);
+            break;
+    }
+}
+
 static void handle_terminate(uint32_t time, uint32_t value, void * data)
 {
     struct wl_display * display = data;
@@ -381,10 +403,13 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->display = display;
     compositor->tty_listener.notify = &handle_tty_event;
     compositor->drm_listener.notify = &handle_drm_event;
+    compositor->pointer_listener.notify = &handle_pointer_event;
     compositor->scheduled_updates = 0;
     compositor->pending_flips = 0;
     compositor->compositor_class.interface
         = &swc_compositor_class_implementation;
+    compositor->cursor_class.interface = &swc_cursor_class_implementation;
+
 
     compositor->udev = udev_new();
 
@@ -415,6 +440,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     swc_seat_add_event_sources(&compositor->seat, event_loop);
     compositor->seat.keyboard.handler = &keyboard_handler;
     compositor->seat.pointer.handler = &pointer_handler;
+    wl_signal_add(&compositor->seat.pointer.event_signal,
+                  &compositor->pointer_listener);
 
     /* TODO: configurable seat */
     if (!swc_drm_initialize(&compositor->drm, compositor->udev, default_seat))

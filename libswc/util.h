@@ -2,6 +2,7 @@
 #define SWC_UTIL_H 1
 
 #include <stdbool.h>
+#include <sys/time.h>
 #include <sys/param.h>
 #include <wayland-server.h>
 #include <pixman.h>
@@ -16,6 +17,14 @@
 })
 
 void swc_remove_resource(struct wl_resource * resource);
+
+static inline uint32_t swc_time()
+{
+    struct timeval timeval;
+
+    gettimeofday(&timeval, NULL);
+    return timeval.tv_sec * 1000 + timeval.tv_usec / 1000;
+}
 
 static inline bool swc_rectangle_contains_point
     (pixman_rectangle32_t * rectangle, int32_t x, int32_t y)
