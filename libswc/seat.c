@@ -237,8 +237,9 @@ static void get_keyboard(struct wl_client * client, struct wl_resource * resourc
 
     client_resource = swc_keyboard_bind(keyboard, client, id);
 
+    /* Subtract one to remove terminating NULL character. */
     wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
-                            seat->xkb.keymap.fd, seat->xkb.keymap.size);
+                            seat->xkb.keymap.fd, seat->xkb.keymap.size - 1);
 }
 
 static void get_touch(struct wl_client * client, struct wl_resource * resource,
