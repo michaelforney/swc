@@ -11,10 +11,10 @@
 
 #define SWC_OUTPUT_MASK(output) (1 << (output)->id)
 
+struct swc_mode;
+
 struct swc_output
 {
-    /* Outputs need IDs so surfaces can keep track of which output they are
-     * visible on. */
     uint32_t id;
 
     struct swc_drm * drm;

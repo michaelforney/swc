@@ -8,7 +8,7 @@
 
 struct wld_drm_context * context;
 
-enum swc_drm_event
+enum swc_drm_event_type
 {
     SWC_DRM_PAGE_FLIP
 };

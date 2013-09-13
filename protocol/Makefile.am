@@ -5,4 +5,3 @@ CLEANFILES = $(BUILT_SOURCES)
 
 @wayland_scanner_rules@
 
-
