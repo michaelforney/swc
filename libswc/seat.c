@@ -258,13 +258,16 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
     struct swc_seat * seat = data;
     struct wl_resource * resource;
 
-    if (version >= 1)
-        version = 1;
+    if (version >= 2)
+        version = 2;
 
     resource = wl_resource_create(client, &wl_seat_interface, version, id);
     wl_resource_set_implementation(resource, &seat_implementation, seat,
                                    &swc_remove_resource);
     wl_list_insert(&seat->resources, wl_resource_get_link(resource));
+
+    if (version >= 2)
+        wl_seat_send_name(resource, seat->name);
 
     wl_seat_send_capabilities(resource, seat->capabilities);
 }
@@ -399,7 +402,7 @@ void swc_seat_finish(struct swc_seat * seat)
 
 void swc_seat_add_globals(struct swc_seat * seat, struct wl_display * display)
 {
-    wl_global_create(display, &wl_seat_interface, 1, seat, &bind_seat);
+    wl_global_create(display, &wl_seat_interface, 2, seat, &bind_seat);
 }
 
 void swc_seat_add_event_sources(struct swc_seat * seat,
