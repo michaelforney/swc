@@ -350,7 +350,7 @@ static void create_surface(struct wl_client * client,
     output = swc_container_of(compositor->outputs.next, typeof(*output), link);
 
     /* Initialize surface. */
-    surface = swc_surface_new(client, id);
+    surface = swc_surface_new(client, wl_resource_get_version(resource), id);
 
     if (!surface)
     {

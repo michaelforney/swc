@@ -338,7 +338,8 @@ static void surface_destroy(struct wl_resource * resource)
  *
  * @return The newly allocated surface.
  */
-struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
+struct swc_surface * swc_surface_new(struct wl_client * client,
+                                     uint32_t version, uint32_t id)
 {
     struct swc_surface * surface;
 
@@ -364,7 +365,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client, uint32_t id)
 
     /* Add the surface to the client. */
     surface->resource = wl_resource_create(client, &wl_surface_interface,
-                                           1, id);
+                                           version, id);
     wl_resource_set_implementation(surface->resource, &surface_implementation,
                                    surface, &surface_destroy);
 
