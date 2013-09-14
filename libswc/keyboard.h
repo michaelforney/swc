@@ -3,6 +3,7 @@
 
 #include "surface.h"
 #include "input_focus.h"
+#include "xkb.h"
 
 #include <wayland-server.h>
 
@@ -24,6 +25,7 @@ struct swc_keyboard
 
     struct swc_keyboard_handler * handler;
 
+    struct swc_xkb xkb;
     struct wl_array keys;
 
     struct
@@ -41,6 +43,8 @@ void swc_keyboard_set_focus(struct swc_keyboard * keyboard,
                             struct swc_surface * surface);
 struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
                                        struct wl_client * client, uint32_t id);
+void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
+                             uint32_t key, uint32_t state);
 
 #endif
 

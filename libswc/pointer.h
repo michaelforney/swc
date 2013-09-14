@@ -5,6 +5,7 @@
 #include "input_focus.h"
 
 #include <wayland-server.h>
+#include <pixman.h>
 
 struct swc_pointer;
 
@@ -45,16 +46,23 @@ struct swc_pointer
     struct swc_pointer_handler * handler;
 
     wl_fixed_t x, y;
-
-    uint32_t button_count;
+    pixman_region32_t region;
 };
 
 bool swc_pointer_initialize(struct swc_pointer * pointer);
 void swc_pointer_finish(struct swc_pointer * pointer);
 void swc_pointer_set_focus(struct swc_pointer * pointer,
                            struct swc_surface * surface);
+void swc_pointer_set_region(struct swc_pointer * pointer,
+                            pixman_region32_t * region);
 struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
                                       struct wl_client * client, uint32_t id);
+void swc_pointer_handle_button(struct swc_pointer * pointer, uint32_t time,
+                               uint32_t button, uint32_t state);
+void swc_pointer_handle_axis(struct swc_pointer * pointer, uint32_t time,
+                             uint32_t axis, wl_fixed_t amount);
+void swc_pointer_handle_relative_motion
+    (struct swc_pointer * pointer, uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
 
 #endif
 

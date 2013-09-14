@@ -159,7 +159,7 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
     {
         xkb_keysym_t keysym;
 
-        keysym = xkb_state_key_get_one_sym(seat->xkb.state, key + 8);
+        keysym = xkb_state_key_get_one_sym(keyboard->xkb.state, key + 8);
 
         wl_array_for_each(binding, &compositor->key_bindings)
         {
@@ -167,18 +167,18 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
             {
                 xkb_mod_mask_t mod_mask;
                 uint32_t modifiers = 0;
-                mod_mask = xkb_state_serialize_mods(seat->xkb.state,
+                mod_mask = xkb_state_serialize_mods(keyboard->xkb.state,
                                                     XKB_STATE_MODS_EFFECTIVE);
-                mod_mask = xkb_state_mod_mask_remove_consumed(seat->xkb.state, key + 8,
+                mod_mask = xkb_state_mod_mask_remove_consumed(keyboard->xkb.state, key + 8,
                                                               mod_mask);
 
-                if (mod_mask & (1 << seat->xkb.indices.ctrl))
+                if (mod_mask & (1 << keyboard->xkb.indices.ctrl))
                     modifiers |= SWC_MOD_CTRL;
-                if (mod_mask & (1 << seat->xkb.indices.alt))
+                if (mod_mask & (1 << keyboard->xkb.indices.alt))
                     modifiers |= SWC_MOD_ALT;
-                if (mod_mask & (1 << seat->xkb.indices.super))
+                if (mod_mask & (1 << keyboard->xkb.indices.super))
                     modifiers |= SWC_MOD_LOGO;
-                if (mod_mask & (1 << seat->xkb.indices.shift))
+                if (mod_mask & (1 << keyboard->xkb.indices.shift))
                     modifiers |= SWC_MOD_SHIFT;
 
                 if (binding->modifiers == SWC_MOD_ANY
@@ -483,7 +483,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
                                    output->geometry.height);
     }
 
-    swc_seat_set_pointer_region(&compositor->seat, &pointer_region);
+    swc_pointer_set_region(&compositor->seat.pointer, &pointer_region);
     pixman_region32_fini(&pointer_region);
 
     pixman_region32_init(&compositor->damage);

@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 struct evdev_device_entry
 {
@@ -18,193 +17,28 @@ struct evdev_device_entry
     struct wl_list link;
 };
 
-static void clip_position(struct swc_seat * seat, wl_fixed_t fx, wl_fixed_t fy)
-{
-    int32_t x, y, last_x, last_y;
-    pixman_box32_t box;
-
-    x = wl_fixed_to_int(fx);
-    y = wl_fixed_to_int(fy);
-    last_x = wl_fixed_to_int(seat->pointer.x);
-    last_y = wl_fixed_to_int(seat->pointer.y);
-
-    if (!pixman_region32_contains_point(&seat->pointer_region, x, y, NULL))
-    {
-        assert(pixman_region32_contains_point(&seat->pointer_region,
-                                              last_x, last_y, &box));
-
-        /* Do some clipping. */
-        x = MAX(MIN(x, box.x2 - 1), box.x1);
-        y = MAX(MIN(y, box.y2 - 1), box.y1);
-    }
-
-    seat->pointer.x = wl_fixed_from_int(x);
-    seat->pointer.y = wl_fixed_from_int(y);
-}
-
 static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
                        uint32_t state)
 {
-    uint32_t * pressed_key;
-    struct swc_keyboard * keyboard = &seat->keyboard;
-    struct swc_xkb * xkb = &seat->xkb;
-    struct wl_display * display;
-    uint32_t serial;
-    enum xkb_key_direction direction;
-
-    if (keyboard->focus.resource)
-    {
-        struct wl_client * client
-            = wl_resource_get_client(keyboard->focus.resource);
-        display = wl_client_get_display(client);
-    }
-
-    /* Update keyboard state state */
-    wl_array_for_each(pressed_key, &keyboard->keys)
-    {
-        if (*pressed_key == key)
-        {
-            /* Ignore repeat evdev events. */
-            if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-                return;
-            else
-            {
-                /* Remove the key from the array */
-                uint32_t bytes_to_copy = keyboard->keys.size + 1
-                    - (((void *) pressed_key) - keyboard->keys.data);
-
-                if (bytes_to_copy > 0)
-                    memmove(pressed_key, pressed_key + 1, bytes_to_copy);
-
-                keyboard->keys.size -= sizeof key;
-
-                break;
-            }
-        }
-    }
-
-    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-    {
-        //keyboard->grab_key = key;
-        //keyboard->grab_time = time;
-        pressed_key = wl_array_add(&keyboard->keys, sizeof key);
-        *pressed_key = key;
-    }
-
-    /* See if the key press is not handled by the compositor */
-    if ((!keyboard->handler || !keyboard->handler->key
-         || !keyboard->handler->key(keyboard, time, key, state))
-        && keyboard->focus.resource)
-    {
-        serial = wl_display_next_serial(display);
-        wl_keyboard_send_key(keyboard->focus.resource, serial, time,
-                             key, state);
-    }
-
-    /* Update XKB state. Apparently the keycodes are offset by 8 in XKB. */
-    direction = state == WL_KEYBOARD_KEY_STATE_PRESSED ? XKB_KEY_DOWN
-                                                       : XKB_KEY_UP;
-    xkb_state_update_key(xkb->state, key + 8, direction);
-
-    {
-        uint32_t mods_depressed, mods_latched, mods_locked, mods_active;
-        uint32_t group;
-
-        mods_depressed = xkb_state_serialize_mods(xkb->state, XKB_STATE_DEPRESSED);
-        mods_latched = xkb_state_serialize_mods(xkb->state, XKB_STATE_LATCHED);
-        mods_locked = xkb_state_serialize_mods(xkb->state, XKB_STATE_LOCKED);
-        mods_active = mods_depressed | mods_latched;
-
-        group = xkb_state_serialize_layout(xkb->state, XKB_STATE_LAYOUT_EFFECTIVE);
-
-        if (mods_depressed != keyboard->modifiers.mods_depressed
-            || mods_latched != keyboard->modifiers.mods_latched
-            || mods_locked != keyboard->modifiers.mods_locked
-            || group != keyboard->modifiers.group)
-        {
-            if (keyboard->focus.resource)
-            {
-                serial = wl_display_next_serial(display);
-                wl_keyboard_send_modifiers(keyboard->focus.resource,
-                                           serial, mods_depressed, mods_latched,
-                                           mods_locked, group);
-            }
-        }
-
-        keyboard->modifiers.mods_depressed = mods_depressed;
-        keyboard->modifiers.mods_latched = mods_latched;
-        keyboard->modifiers.mods_locked = mods_locked;
-        keyboard->modifiers.group = group;
-    }
+    swc_keyboard_handle_key(&seat->keyboard, time, key, state);
 }
 
 static void handle_button(struct swc_seat * seat, uint32_t time,
                           uint32_t button, uint32_t state)
 {
-    struct swc_pointer * pointer = &seat->pointer;
-
-    if ((!pointer->handler || !pointer->handler->button
-         || !pointer->handler->button(pointer, time, button, state))
-        && pointer->focus.resource)
-    {
-        struct wl_client * client
-            = wl_resource_get_client(pointer->focus.resource);
-        struct wl_display * display = wl_client_get_display(client);
-        uint32_t serial = wl_display_next_serial(display);
-
-        wl_pointer_send_button(pointer->focus.resource, serial, time,
-                               button, state);
-    }
+    swc_pointer_handle_button(&seat->pointer, time, button, state);
 }
 
 static void handle_relative_motion(struct swc_seat * seat, uint32_t time,
                                    wl_fixed_t dx, wl_fixed_t dy)
 {
-    struct swc_pointer * pointer = &seat->pointer;
-
-    clip_position(seat, pointer->x + dx, pointer->y + dy);
-
-    if (pointer->handler && pointer->handler->focus)
-        pointer->handler->focus(pointer);
-
-    if ((!pointer->handler || !pointer->handler->motion
-         || !pointer->handler->motion(pointer, time))
-        && pointer->focus.resource)
-    {
-        wl_fixed_t surface_x, surface_y;
-        surface_x = pointer->x
-            - wl_fixed_from_int(pointer->focus.surface->geometry.x);
-        surface_y = pointer->y
-            - wl_fixed_from_int(pointer->focus.surface->geometry.y);
-
-        wl_pointer_send_motion(pointer->focus.resource, time,
-                               surface_x, surface_y);
-
-        if (pointer->cursor.surface)
-        {
-            swc_surface_move
-                (pointer->cursor.surface,
-                 wl_fixed_to_int(pointer->x) - pointer->cursor.hotspot_x,
-                 wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot_y);
-        }
-    }
+    swc_pointer_handle_relative_motion(&seat->pointer, time, dx, dy);
 }
 
 static void handle_axis_motion(struct swc_seat * seat, uint32_t time,
                                enum wl_pointer_axis axis, wl_fixed_t amount)
 {
-    struct swc_pointer * pointer = &seat->pointer;
-
-    if ((!pointer->handler || !pointer->handler->axis
-         || !pointer->handler->axis(pointer, time, axis, amount))
-        && pointer->focus.resource)
-    {
-        struct wl_client * client
-            = wl_resource_get_client(pointer->focus.resource);
-        struct wl_display * display = wl_client_get_display(client);
-
-        wl_pointer_send_axis(pointer->focus.resource, time, axis, amount);
-    }
+    swc_pointer_handle_axis(&seat->pointer, time, axis, amount);
 }
 
 static void handle_evdev_event(struct wl_listener * listener, void * data)
@@ -300,10 +134,6 @@ static void get_keyboard(struct wl_client * client, struct wl_resource * resourc
     struct swc_keyboard * keyboard = &seat->keyboard;
 
     client_resource = swc_keyboard_bind(keyboard, client, id);
-
-    /* Subtract one to remove terminating NULL character. */
-    wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
-                            seat->xkb.keymap.fd, seat->xkb.keymap.size - 1);
 }
 
 static void get_touch(struct wl_client * client, struct wl_resource * resource,
@@ -396,16 +226,10 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
     seat->keyboard_focus_listener.notify = &handle_keyboard_focus_event;
     seat->data_device_listener.notify = &handle_data_device_event;
 
-    if (!swc_xkb_initialize(&seat->xkb))
-    {
-        printf("could not initialize XKB\n");
-        goto error_name;
-    }
-
     if (!swc_data_device_initialize(&seat->data_device))
     {
         printf("could not initialize data device\n");
-        goto error_xkb;
+        goto error_name;
     }
 
     if (!swc_keyboard_initialize(&seat->keyboard))
@@ -427,7 +251,6 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
 
     wl_list_init(&seat->resources);
     wl_signal_init(&seat->destroy_signal);
-    pixman_region32_init(&seat->pointer_region);
     wl_list_init(&seat->devices);
     swc_seat_add_devices(seat, udev);
 
@@ -437,8 +260,6 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
     swc_keyboard_finish(&seat->keyboard);
   error_data_device:
     swc_data_device_finish(&seat->data_device);
-  error_xkb:
-    swc_xkb_finish(&seat->xkb);
   error_name:
     free(seat->name);
   error_base:
@@ -453,7 +274,6 @@ void swc_seat_finish(struct swc_seat * seat)
 
     swc_pointer_finish(&seat->pointer);
     swc_keyboard_finish(&seat->keyboard);
-    swc_xkb_finish(&seat->xkb);
 
     free(seat->name);
 
@@ -502,12 +322,5 @@ void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev)
     }
 
     udev_enumerate_unref(enumerate);
-}
-
-void swc_seat_set_pointer_region(struct swc_seat * seat,
-                                 pixman_region32_t * region)
-{
-    pixman_region32_copy(&seat->pointer_region, region);
-    clip_position(seat, seat->pointer.x, seat->pointer.y);
 }
 
