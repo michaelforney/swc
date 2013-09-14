@@ -3,10 +3,11 @@
 
 #include <stdbool.h>
 #include <linux/input.h>
-#include <wayland-server.h>
+#include <wayland-util.h>
 
 struct libevdev_device;
 struct swc_evdev_device;
+struct wl_event_loop;
 
 struct swc_evdev_device_handler
 {
