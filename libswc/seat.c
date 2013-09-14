@@ -9,14 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 
-struct evdev_device_entry
-{
-    struct swc_evdev_device device;
-    struct wl_listener event_listener;
-    struct swc_seat * seat;
-    struct wl_list link;
-};
-
 static void handle_key(const struct swc_evdev_device_handler * handler,
                        uint32_t time, uint32_t key, uint32_t state)
 {
@@ -160,7 +152,6 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
     const char * device_seat;
     const char * device_path;
     struct swc_evdev_device * device;
-    struct evdev_device_entry * entry;
 
     device_seat = udev_device_get_property_value(udev_device, "ID_SEAT");
 
@@ -172,31 +163,21 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
         return;
 
     device_path = udev_device_get_devnode(udev_device);
+    device = swc_evdev_device_new(device_path, &seat->evdev_handler);
 
-    entry = malloc(sizeof *entry);
-
-    if (!entry)
+    if (!device)
     {
-        printf("could not allocate evdev device\n");
+        fprintf(stderr, "Could not create evdev device\n");
         return;
     }
 
-    entry->seat = seat;
-
-    if (!swc_evdev_device_initialize(&entry->device, device_path,
-                                     &seat->evdev_handler))
+    if (~seat->capabilities & device->capabilities)
     {
-        free(entry);
-        return;
-    }
-
-    if (~seat->capabilities & entry->device.capabilities)
-    {
-        seat->capabilities |= entry->device.capabilities;
+        seat->capabilities |= device->capabilities;
         update_capabilities(seat);
     }
 
-    wl_list_insert(&seat->devices, &entry->link);
+    wl_list_insert(&seat->devices, &device->link);
 }
 
 bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
@@ -253,7 +234,7 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
 
 void swc_seat_finish(struct swc_seat * seat)
 {
-    struct evdev_device_entry * entry, * tmp;
+    struct swc_evdev_device * device, * tmp;
 
     wl_signal_emit(&seat->destroy_signal, seat);
 
@@ -262,10 +243,9 @@ void swc_seat_finish(struct swc_seat * seat)
 
     free(seat->name);
 
-    wl_list_for_each_safe(entry, tmp, &seat->devices, link)
+    wl_list_for_each_safe(device, tmp, &seat->devices, link)
     {
-        swc_evdev_device_finish(&entry->device);
-        free(entry);
+        swc_evdev_device_destroy(device);
     }
 }
 
@@ -277,11 +257,11 @@ void swc_seat_add_globals(struct swc_seat * seat, struct wl_display * display)
 void swc_seat_add_event_sources(struct swc_seat * seat,
                                 struct wl_event_loop * event_loop)
 {
-    struct evdev_device_entry * entry;
+    struct swc_evdev_device * device;
 
-    wl_list_for_each(entry, &seat->devices, link)
+    wl_list_for_each(device, &seat->devices, link)
     {
-        swc_evdev_device_add_event_sources(&entry->device, event_loop);
+        swc_evdev_device_add_event_sources(device, event_loop);
     }
 }
 

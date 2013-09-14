@@ -133,32 +133,34 @@ static int handle_data(int fd, uint32_t mask, void * data)
     return 1;
 }
 
-bool swc_evdev_device_initialize(struct swc_evdev_device * device,
-                                 const char * path,
-                                 const struct swc_evdev_device_handler * handler)
+struct swc_evdev_device * swc_evdev_device_new
+    (const char * path, const struct swc_evdev_device_handler * handler)
 {
+    struct swc_evdev_device * device;
     uint32_t index;
 
+    if (!(device = malloc(sizeof *device)))
+        goto error0;
+
     device->fd = open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
-    memset(&device->motion, 0, sizeof device->motion);
 
     if (device->fd == -1)
     {
         printf("couldn't open input device at %s\n", path);
-        goto error_base;
+        goto error0;
     }
 
     if (libevdev_new_from_fd(device->fd, &device->dev) != 0)
     {
         fprintf(stderr, "Could not create libevdev device\n");
-        goto error_fd;
+        goto error1;
     }
 
     printf("Adding device %s\n", libevdev_get_name(device->dev));
 
     device->handler = handler;
     device->capabilities = 0;
-    /* XXX: touch devices */
+    memset(&device->motion, 0, sizeof device->motion);
 
     if (libevdev_has_event_code(device->dev, EV_KEY, KEY_ENTER))
     {
@@ -174,19 +176,22 @@ bool swc_evdev_device_initialize(struct swc_evdev_device * device,
         printf("\tthis device is a pointer\n");
     }
 
-    return true;
+    /* XXX: touch devices */
 
-  error_fd:
+    return device;
+
+  error1:
     close(device->fd);
-  error_base:
-    return false;
+  error0:
+    return NULL;
 }
 
-void swc_evdev_device_finish(struct swc_evdev_device * device)
+void swc_evdev_device_destroy(struct swc_evdev_device * device)
 {
     wl_event_source_remove(device->source);
     libevdev_free(device->dev);
     close(device->fd);
+    free(device);
 }
 
 void swc_evdev_device_add_event_sources(struct swc_evdev_device * device,

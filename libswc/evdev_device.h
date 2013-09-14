@@ -53,11 +53,10 @@ struct swc_evdev_device
     struct wl_list link;
 };
 
-bool swc_evdev_device_initialize
-    (struct swc_evdev_device * device, const char * path,
-     const struct swc_evdev_device_handler * handler);
+struct swc_evdev_device * swc_evdev_device_new
+    (const char * path, const struct swc_evdev_device_handler * handler);
 
-void swc_evdev_device_finish(struct swc_evdev_device * device);
+void swc_evdev_device_destroy(struct swc_evdev_device * device);
 
 void swc_evdev_device_add_event_sources(struct swc_evdev_device * device,
                                         struct wl_event_loop * event_loop);
