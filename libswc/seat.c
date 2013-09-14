@@ -17,61 +17,41 @@ struct evdev_device_entry
     struct wl_list link;
 };
 
-static void handle_key(struct swc_seat * seat, uint32_t time, uint32_t key,
-                       uint32_t state)
+static void handle_key(const struct swc_evdev_device_handler * handler,
+                       uint32_t time, uint32_t key, uint32_t state)
 {
+    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
+                                              evdev_handler);
+
     swc_keyboard_handle_key(&seat->keyboard, time, key, state);
 }
 
-static void handle_button(struct swc_seat * seat, uint32_t time,
-                          uint32_t button, uint32_t state)
+static void handle_button(const struct swc_evdev_device_handler * handler,
+                          uint32_t time, uint32_t button, uint32_t state)
 {
+    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
+                                              evdev_handler);
+
     swc_pointer_handle_button(&seat->pointer, time, button, state);
 }
 
-static void handle_relative_motion(struct swc_seat * seat, uint32_t time,
-                                   wl_fixed_t dx, wl_fixed_t dy)
+static void handle_axis(const struct swc_evdev_device_handler * handler,
+                        uint32_t time, uint32_t axis, wl_fixed_t amount)
 {
-    swc_pointer_handle_relative_motion(&seat->pointer, time, dx, dy);
-}
+    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
+                                              evdev_handler);
 
-static void handle_axis_motion(struct swc_seat * seat, uint32_t time,
-                               enum wl_pointer_axis axis, wl_fixed_t amount)
-{
     swc_pointer_handle_axis(&seat->pointer, time, axis, amount);
 }
 
-static void handle_evdev_event(struct wl_listener * listener, void * data)
+static void handle_relative_motion
+    (const struct swc_evdev_device_handler * handler,
+     uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
-    struct evdev_device_entry * entry;
-    struct swc_event * event = data;
-    struct swc_evdev_device_event_data * evdev_data = event->data;
+    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
+                                              evdev_handler);
 
-    entry = swc_container_of(listener, typeof(*entry), event_listener);
-
-    switch (event->type)
-    {
-        case SWC_EVDEV_DEVICE_EVENT_KEY:
-            handle_key(entry->seat, evdev_data->time, evdev_data->key.key,
-                       evdev_data->key.state);
-            break;
-        case SWC_EVDEV_DEVICE_EVENT_BUTTON:
-            handle_button(entry->seat, evdev_data->time,
-                          evdev_data->button.button, evdev_data->button.state);
-            break;
-        case SWC_EVDEV_DEVICE_EVENT_RELATIVE_MOTION:
-            handle_relative_motion(entry->seat, evdev_data->time,
-                                   evdev_data->relative_motion.dx,
-                                   evdev_data->relative_motion.dy);
-            break;
-        case SWC_EVDEV_DEVICE_EVENT_ABSOLUTE_MOTION:
-            break;
-        case SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION:
-            handle_axis_motion(entry->seat, evdev_data->time,
-                               evdev_data->axis_motion.axis,
-                               evdev_data->axis_motion.amount);
-            break;
-    }
+    swc_pointer_handle_relative_motion(&seat->pointer, time, dx, dy);
 }
 
 static void handle_keyboard_focus_event(struct wl_listener * listener,
@@ -202,15 +182,13 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
     }
 
     entry->seat = seat;
-    entry->event_listener.notify = &handle_evdev_event;
 
-    if (!swc_evdev_device_initialize(&entry->device, device_path))
+    if (!swc_evdev_device_initialize(&entry->device, device_path,
+                                     &seat->evdev_handler))
     {
         free(entry);
         return;
     }
-
-    wl_signal_add(&entry->device.event_signal, &entry->event_listener);
 
     if (~seat->capabilities & entry->device.capabilities)
     {
@@ -228,6 +206,10 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
     seat->capabilities = 0;
     seat->keyboard_focus_listener.notify = &handle_keyboard_focus_event;
     seat->data_device_listener.notify = &handle_data_device_event;
+    seat->evdev_handler.key = &handle_key;
+    seat->evdev_handler.button = &handle_button;
+    seat->evdev_handler.axis = &handle_axis;
+    seat->evdev_handler.relative_motion = &handle_relative_motion;
 
     if (!swc_data_device_initialize(&seat->data_device))
     {

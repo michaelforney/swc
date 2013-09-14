@@ -6,50 +6,26 @@
 #include <wayland-server.h>
 
 struct libevdev_device;
+struct swc_evdev_device;
 
-enum swc_evdev_device_event_type
+struct swc_evdev_device_handler
 {
-    SWC_EVDEV_DEVICE_EVENT_KEY,
-    SWC_EVDEV_DEVICE_EVENT_BUTTON,
-    SWC_EVDEV_DEVICE_EVENT_RELATIVE_MOTION,
-    SWC_EVDEV_DEVICE_EVENT_ABSOLUTE_MOTION,
-    SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION
-};
-
-struct swc_evdev_device_event_data
-{
-    uint32_t time;
-    union
-    {
-        struct
-        {
-            wl_fixed_t dx, dy;
-        } relative_motion;
-
-        struct
-        {
-            wl_fixed_t amount;
-            enum wl_pointer_axis axis;
-        } axis_motion;
-
-        struct
-        {
-            uint32_t key;
-            enum wl_keyboard_key_state state;
-        } key;
-
-        struct
-        {
-            uint32_t button;
-            enum wl_pointer_button_state state;
-        } button;
-    };
+    void (* key)(const struct swc_evdev_device_handler * handler,
+                 uint32_t time, uint32_t key, uint32_t state);
+    void (* button)(const struct swc_evdev_device_handler * handler,
+                    uint32_t time, uint32_t key, uint32_t state);
+    void (* axis)(const struct swc_evdev_device_handler * handler,
+                  uint32_t time, uint32_t axis, wl_fixed_t amount);
+    void (* relative_motion)(const struct swc_evdev_device_handler * handler,
+                             uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
 };
 
 struct swc_evdev_device
 {
     int fd;
     struct libevdev * dev;
+
+    const struct swc_evdev_device_handler * handler;
 
     struct
     {
@@ -74,12 +50,12 @@ struct swc_evdev_device
     uint32_t capabilities;
 
     struct wl_event_source * source;
-    struct wl_signal event_signal;
     struct wl_list link;
 };
 
-bool swc_evdev_device_initialize(struct swc_evdev_device * device,
-                                 const char * path);
+bool swc_evdev_device_initialize
+    (struct swc_evdev_device * device, const char * path,
+     const struct swc_evdev_device_handler * handler);
 
 void swc_evdev_device_finish(struct swc_evdev_device * device);
 

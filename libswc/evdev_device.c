@@ -22,65 +22,52 @@ static inline uint32_t timeval_to_msec(struct timeval * time)
 static void handle_key_event(struct swc_evdev_device * device,
                              struct input_event * input_event)
 {
-    struct swc_event event;
-    struct swc_evdev_device_event_data data;
-
-    event.data = &data;
-    data.time = timeval_to_msec(&input_event->time);
+    uint32_t time = timeval_to_msec(&input_event->time);
+    uint32_t state;
 
     if ((input_event->code >= BTN_MISC && input_event->code <= BTN_GEAR_UP)
         || input_event->code >= BTN_TRIGGER_HAPPY)
     {
-        event.type = SWC_EVDEV_DEVICE_EVENT_BUTTON;
-        data.button.button = input_event->code;
-        data.button.state = input_event->value ? WL_POINTER_BUTTON_STATE_PRESSED
-                                               : WL_POINTER_BUTTON_STATE_RELEASED;
+        state = input_event->value ? WL_POINTER_BUTTON_STATE_PRESSED
+                                   : WL_POINTER_BUTTON_STATE_RELEASED;
+        device->handler->button(device->handler, time,
+                                input_event->code, state);
     }
     else
     {
-        event.type = SWC_EVDEV_DEVICE_EVENT_KEY;
-        data.key.key = input_event->code;
-        data.key.state = input_event->value ? WL_KEYBOARD_KEY_STATE_PRESSED
-                                            : WL_KEYBOARD_KEY_STATE_RELEASED;
+        state = input_event->value ? WL_KEYBOARD_KEY_STATE_PRESSED
+                                   : WL_KEYBOARD_KEY_STATE_RELEASED;
+        device->handler->key(device->handler, time, input_event->code, state);
     }
-
-    wl_signal_emit(&device->event_signal, &event);
 }
 
 static void handle_rel_event(struct swc_evdev_device * device,
                              struct input_event * input_event)
 {
-    struct swc_event event;
-    struct swc_evdev_device_event_data data;
-
-    event.data = &data;
-    data.time = timeval_to_msec(&input_event->time);
+    uint32_t time = timeval_to_msec(&input_event->time);
+    uint32_t axis, amount;
 
     switch (input_event->code)
     {
         case REL_X:
             device->motion.rel.dx += input_event->value;
             device->motion.rel.pending = true;
-            break;
+            return;
         case REL_Y:
             device->motion.rel.dy += input_event->value;
             device->motion.rel.pending = true;
-            break;
+            return;
         case REL_WHEEL:
-            event.type = SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION;
-            data.axis_motion.axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
-            data.axis_motion.amount
-                = -AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
-            wl_signal_emit(&device->event_signal, &event);
+            axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
+            amount = -AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
             break;
         case REL_HWHEEL:
-            event.type = SWC_EVDEV_DEVICE_EVENT_AXIS_MOTION;
-            data.axis_motion.axis = WL_POINTER_AXIS_HORIZONTAL_SCROLL;
-            data.axis_motion.amount
-                = AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
-            wl_signal_emit(&device->event_signal, &event);
+            axis = WL_POINTER_AXIS_HORIZONTAL_SCROLL;
+            amount = AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
             break;
     }
+
+    device->handler->axis(device->handler, time, axis, amount);
 }
 
 static void handle_abs_event(struct swc_evdev_device * device,
@@ -105,19 +92,12 @@ static bool is_motion_event(struct input_event * event)
 static void handle_motion_events(struct swc_evdev_device * device,
                                  uint32_t time)
 {
-    struct swc_event event;
-    struct swc_evdev_device_event_data data;
-
-    event.data = &data;
-    data.time = time;
-
     if (device->motion.rel.pending)
     {
-        event.type = SWC_EVDEV_DEVICE_EVENT_RELATIVE_MOTION;
-        data.relative_motion.dx = wl_fixed_from_int(device->motion.rel.dx);
-        data.relative_motion.dy = wl_fixed_from_int(device->motion.rel.dy);
+        wl_fixed_t dx = wl_fixed_from_int(device->motion.rel.dx);
+        wl_fixed_t dy = wl_fixed_from_int(device->motion.rel.dy);
 
-        wl_signal_emit(&device->event_signal, &event);
+        device->handler->relative_motion(device->handler, time, dx, dy);
 
         device->motion.rel.pending = false;
         device->motion.rel.dx = 0;
@@ -154,14 +134,13 @@ static int handle_data(int fd, uint32_t mask, void * data)
 }
 
 bool swc_evdev_device_initialize(struct swc_evdev_device * device,
-                                 const char * path)
+                                 const char * path,
+                                 const struct swc_evdev_device_handler * handler)
 {
     uint32_t index;
 
     device->fd = open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
     memset(&device->motion, 0, sizeof device->motion);
-
-    wl_signal_init(&device->event_signal);
 
     if (device->fd == -1)
     {
@@ -177,6 +156,7 @@ bool swc_evdev_device_initialize(struct swc_evdev_device * device,
 
     printf("Adding device %s\n", libevdev_get_name(device->dev));
 
+    device->handler = handler;
     device->capabilities = 0;
     /* XXX: touch devices */
 

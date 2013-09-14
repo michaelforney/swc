@@ -5,6 +5,7 @@
 #include "data_device.h"
 #include "keyboard.h"
 #include "pointer.h"
+#include "evdev_device.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -28,6 +29,7 @@ struct swc_seat
     struct swc_pointer pointer;
 
     struct wl_list devices;
+    struct swc_evdev_device_handler evdev_handler;
 };
 
 bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
