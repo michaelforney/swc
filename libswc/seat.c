@@ -192,16 +192,19 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
     seat->evdev_handler.axis = &handle_axis;
     seat->evdev_handler.relative_motion = &handle_relative_motion;
 
+    if (!seat->name)
+        goto error0;
+
     if (!swc_data_device_initialize(&seat->data_device))
     {
         printf("could not initialize data device\n");
-        goto error_name;
+        goto error1;
     }
 
     if (!swc_keyboard_initialize(&seat->keyboard))
     {
         printf("could not initialize keyboard\n");
-        goto error_data_device;
+        goto error2;
     }
 
     wl_signal_add(&seat->keyboard.focus.event_signal,
@@ -210,7 +213,7 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
     if (!swc_pointer_initialize(&seat->pointer))
     {
         printf("could not initialize pointer\n");
-        goto error_keyboard;
+        goto error3;
     }
 
     wl_signal_add(&seat->data_device.event_signal, &seat->data_device_listener);
@@ -222,13 +225,13 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
 
     return true;
 
-  error_keyboard:
+  error3:
     swc_keyboard_finish(&seat->keyboard);
-  error_data_device:
+  error2:
     swc_data_device_finish(&seat->data_device);
-  error_name:
+  error1:
     free(seat->name);
-  error_base:
+  error0:
     return false;
 }
 
