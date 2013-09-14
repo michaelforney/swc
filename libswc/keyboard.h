@@ -13,7 +13,7 @@ struct swc_keyboard_handler
 {
     bool (* key)(struct swc_keyboard * keyboard, uint32_t time,
                  uint32_t key, uint32_t state);
-    bool (* modifiers)(struct swc_keyboard * keyboyard, uint32_t serial,
+    bool (* modifiers)(struct swc_keyboard * keyboard, uint32_t serial,
                        uint32_t mods_depressed, uint32_t mods_latched,
                        uint32_t mods_locked, uint32_t group);
 };
