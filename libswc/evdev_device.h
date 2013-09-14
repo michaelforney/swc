@@ -2,7 +2,6 @@
 #define SWC_EVDEV_DEVICE_H 1
 
 #include <stdbool.h>
-#include <libudev.h>
 #include <linux/input.h>
 #include <wayland-server.h>
 
@@ -51,7 +50,6 @@ struct swc_evdev_device
 {
     int fd;
     struct libevdev * dev;
-    char * model, * vendor;
 
     struct
     {
@@ -81,7 +79,7 @@ struct swc_evdev_device
 };
 
 bool swc_evdev_device_initialize(struct swc_evdev_device * device,
-                                 struct udev_device * udev_device);
+                                 const char * path);
 
 void swc_evdev_device_finish(struct swc_evdev_device * device);
 

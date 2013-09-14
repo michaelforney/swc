@@ -154,19 +154,10 @@ static int handle_data(int fd, uint32_t mask, void * data)
 }
 
 bool swc_evdev_device_initialize(struct swc_evdev_device * device,
-                                 struct udev_device * udev_device)
+                                 const char * path)
 {
-    const char * path, * model, * vendor;
     uint32_t index;
 
-    path = udev_device_get_devnode(udev_device);
-    model = udev_device_get_property_value(udev_device, "ID_MODEL")
-        ?: "unknown";
-    vendor = udev_device_get_property_value(udev_device, "ID_VENDOR")
-        ?: "unknown";
-
-    device->model = strdup(model);
-    device->vendor = strdup(vendor);
     device->fd = open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
     memset(&device->motion, 0, sizeof device->motion);
 
@@ -184,19 +175,20 @@ bool swc_evdev_device_initialize(struct swc_evdev_device * device,
         goto error_fd;
     }
 
-    printf("adding device %s %s\n", device->vendor, device->model);
+    printf("Adding device %s\n", libevdev_get_name(device->dev));
 
     device->capabilities = 0;
     /* XXX: touch devices */
 
-    if (udev_device_get_property_value(udev_device, "ID_INPUT_KEYBOARD"))
+    if (libevdev_has_event_code(device->dev, EV_KEY, KEY_ENTER))
     {
         device->capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
         printf("\tthis device is a keyboard\n");
     }
 
-    if (udev_device_get_property_value(udev_device, "ID_INPUT_MOUSE")
-        || udev_device_get_property_value(udev_device, "ID_INPUT_TOUCHPAD"))
+    if (libevdev_has_event_code(device->dev, EV_REL, REL_X)
+        && libevdev_has_event_code(device->dev, EV_REL, REL_Y)
+        && libevdev_has_event_code(device->dev, EV_KEY, BTN_MOUSE))
     {
         device->capabilities |= WL_SEAT_CAPABILITY_POINTER;
         printf("\tthis device is a pointer\n");
@@ -214,15 +206,13 @@ void swc_evdev_device_finish(struct swc_evdev_device * device)
 {
     wl_event_source_remove(device->source);
     libevdev_free(device->dev);
-    free(device->model);
-    free(device->vendor);
     close(device->fd);
 }
 
 void swc_evdev_device_add_event_sources(struct swc_evdev_device * device,
                                         struct wl_event_loop * event_loop)
 {
-    printf("adding event source for %s %s\n", device->vendor, device->model);
+    printf("Adding event source for %s\n", libevdev_get_name(device->dev));
     device->source
         = wl_event_loop_add_fd(event_loop, device->fd, WL_EVENT_READABLE,
                                handle_data, device);

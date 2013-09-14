@@ -179,6 +179,7 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
 {
     const char * device_seat;
     const char * device_path;
+    struct swc_evdev_device * device;
     struct evdev_device_entry * entry;
 
     device_seat = udev_device_get_property_value(udev_device, "ID_SEAT");
@@ -189,6 +190,8 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
 
     if (strcmp(device_seat, seat->name) != 0)
         return;
+
+    device_path = udev_device_get_devnode(udev_device);
 
     entry = malloc(sizeof *entry);
 
@@ -201,7 +204,7 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
     entry->seat = seat;
     entry->event_listener.notify = &handle_evdev_event;
 
-    if (!swc_evdev_device_initialize(&entry->device, udev_device))
+    if (!swc_evdev_device_initialize(&entry->device, device_path))
     {
         free(entry);
         return;
