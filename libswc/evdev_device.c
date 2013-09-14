@@ -8,12 +8,11 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#define BITS(var, n) uint64_t var[((n)-1)/64+1]
-#define TEST_BIT(var, n) \
-    (((var)[(n)/((sizeof (var)[0])*8)] >> ((n)%((sizeof (var)[0])*8))) & 1)
+#include <errno.h>
+#include <libevdev/libevdev.h>
 
 #define AXIS_STEP_DISTANCE 10
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
 
 static inline uint32_t timeval_to_msec(struct timeval * time)
 {
@@ -126,45 +125,30 @@ static void handle_motion_events(struct swc_evdev_device * device,
     }
 }
 
-static void process_events(struct swc_evdev_device * device,
-                           struct input_event * events, uint32_t event_count)
-{
-    struct input_event * event, * end = events + event_count;
-
-    for (event = events; event != end; ++event)
-    {
-        if (!is_motion_event(event))
-            handle_motion_events(device, timeval_to_msec(&event->time));
-
-        /*
-        printf("processing event, type: %u, code: %u, value: %d\n",
-               event->type, event->code, event->value);
-        */
-
-        if (event->type < (sizeof event_handlers / sizeof event_handlers[0])
-            && event_handlers[event->type])
-        {
-            event_handlers[event->type](device, event);
-        }
-    }
-}
-
 static int handle_data(int fd, uint32_t mask, void * data)
 {
     struct swc_evdev_device * device = data;
-    struct input_event events[32];
-    ssize_t bytes_read;
+    struct input_event event;
+    int ret;
 
     do
     {
-        bytes_read = read(fd, events, sizeof events);
+        ret = libevdev_next_event(device->dev, LIBEVDEV_READ_NORMAL, &event);
 
-        /* Stop on error */
-        if (bytes_read == -1)
-            return 1;
+        while (ret == 1)
+            ret = libevdev_next_event(device->dev, LIBEVDEV_READ_SYNC, &event);
 
-        process_events(device, events, bytes_read / sizeof events[0]);
-    } while (bytes_read > 0);
+        if (!is_motion_event(&event))
+            handle_motion_events(device, timeval_to_msec(&event.time));
+
+        if (event.type < ARRAY_SIZE(event_handlers)
+            && event_handlers[event.type])
+        {
+            event_handlers[event.type](device, &event);
+        }
+    } while (ret != -EAGAIN);
+
+    handle_motion_events(device, timeval_to_msec(&event.time));
 
     return 1;
 }
@@ -173,7 +157,6 @@ bool swc_evdev_device_initialize(struct swc_evdev_device * device,
                                  struct udev_device * udev_device)
 {
     const char * path, * model, * vendor;
-    BITS(ev_bits, EV_MAX);
     uint32_t index;
 
     path = udev_device_get_devnode(udev_device);
@@ -195,9 +178,13 @@ bool swc_evdev_device_initialize(struct swc_evdev_device * device,
         goto error_base;
     }
 
-    printf("adding device %s %s\n", device->vendor, device->model);
+    if (libevdev_new_from_fd(device->fd, &device->dev) != 0)
+    {
+        fprintf(stderr, "Could not create libevdev device\n");
+        goto error_fd;
+    }
 
-    ioctl(device->fd, EVIOCGBIT(0, sizeof ev_bits), &ev_bits);
+    printf("adding device %s %s\n", device->vendor, device->model);
 
     device->capabilities = 0;
     /* XXX: touch devices */
@@ -215,34 +202,6 @@ bool swc_evdev_device_initialize(struct swc_evdev_device * device,
         printf("\tthis device is a pointer\n");
     }
 
-    if (device->capabilities & WL_SEAT_CAPABILITY_POINTER)
-    {
-        /* Check if the device has relative motion. */
-        if (TEST_BIT(ev_bits, EV_REL))
-        {
-            BITS(rel_bits, REL_MAX);
-
-            ioctl(device->fd, EVIOCGBIT(EV_REL, sizeof rel_bits), &rel_bits);
-
-            if (TEST_BIT(rel_bits, REL_X) || TEST_BIT(rel_bits, REL_Y))
-            {
-            }
-        }
-
-        /* Check if the device has absolute motion. */
-        if (TEST_BIT(ev_bits, EV_ABS))
-        {
-            BITS(abs_bits, ABS_MAX);
-
-            ioctl(device->fd, EVIOCGBIT(EV_ABS, sizeof abs_bits), &abs_bits);
-
-            if (TEST_BIT(abs_bits, ABS_X))
-                ioctl(device->fd, EVIOCGABS(ABS_X), &device->motion.abs.info.x);
-            if (TEST_BIT(abs_bits, ABS_Y))
-                ioctl(device->fd, EVIOCGABS(ABS_X), &device->motion.abs.info.y);
-        }
-    }
-
     return true;
 
   error_fd:
@@ -254,6 +213,7 @@ bool swc_evdev_device_initialize(struct swc_evdev_device * device,
 void swc_evdev_device_finish(struct swc_evdev_device * device)
 {
     wl_event_source_remove(device->source);
+    libevdev_free(device->dev);
     free(device->model);
     free(device->vendor);
     close(device->fd);

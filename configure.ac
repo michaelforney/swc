@@ -22,6 +22,7 @@ PKG_PROG_PKG_CONFIG([0.9.0])
 dnl Check for libraries {{{
 PKG_CHECK_MODULES([wayland_server], [wayland-server])
 PKG_CHECK_MODULES([udev], [libudev])
+PKG_CHECK_MODULES([libevdev], [libevdev])
 PKG_CHECK_MODULES([xkbcommon], [xkbcommon])
 PKG_CHECK_MODULES([drm], [libdrm])
 PKG_CHECK_MODULES([pixman], [pixman-1])

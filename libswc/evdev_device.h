@@ -6,6 +6,8 @@
 #include <linux/input.h>
 #include <wayland-server.h>
 
+struct libevdev_device;
+
 enum swc_evdev_device_event_type
 {
     SWC_EVDEV_DEVICE_EVENT_KEY,
@@ -48,6 +50,7 @@ struct swc_evdev_device_event_data
 struct swc_evdev_device
 {
     int fd;
+    struct libevdev * dev;
     char * model, * vendor;
 
     struct
