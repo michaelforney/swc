@@ -1,6 +1,9 @@
 #include <stdbool.h>
 #include <xkbcommon/xkbcommon.h>
 
+#ifndef SWC_XKB_H
+#define SWC_XKB_H 1
+
 struct swc_xkb
 {
     struct xkb_context * context;
@@ -25,4 +28,6 @@ bool swc_xkb_initialize(struct swc_xkb * xkb);
 void swc_xkb_finish(struct swc_xkb * xkb);
 
 bool swc_xkb_update_keymap(struct swc_xkb * xkb);
+
+#endif
 
