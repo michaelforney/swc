@@ -24,7 +24,10 @@
 #ifndef SWC_DATA_H
 #define SWC_DATA_H 1
 
-#include <wayland-server.h>
+#include <stdint.h>
+
+struct wl_client;
+struct wl_resource;
 
 struct wl_resource * swc_data_source_new(struct wl_client * client,
                                          uint32_t id);

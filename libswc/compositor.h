@@ -1,13 +1,13 @@
 #ifndef SWC_COMPOSITOR_H
 #define SWC_COMPOSITOR_H 1
 
-#include <wayland-server.h>
-
 #include "drm.h"
 #include "tty.h"
 #include "seat.h"
 #include "binding.h"
 #include "renderer.h"
+
+#include <wayland-server.h>
 
 struct swc_compositor
 {

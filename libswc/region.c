@@ -1,6 +1,7 @@
 #include "region.h"
 
 #include <stdlib.h>
+#include <wayland-server.h>
 
 static void destroy(struct wl_client * client, struct wl_resource * resource)
 {

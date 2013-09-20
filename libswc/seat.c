@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <libudev.h>
 
 static void handle_key(const struct swc_evdev_device_handler * handler,
                        uint32_t time, uint32_t key, uint32_t state)

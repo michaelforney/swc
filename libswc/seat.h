@@ -9,8 +9,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <libudev.h>
-#include <wayland-server.h>
+#include <wayland-util.h>
+
+struct udev;
+struct wl_display;
+struct wl_event_loop;
 
 struct swc_seat
 {

@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <sys/time.h>
 #include <sys/param.h>
-#include <wayland-server.h>
 #include <pixman.h>
 
 #ifndef offsetof
@@ -15,6 +14,8 @@
     const typeof(((type *) 0)->member) *__mptr = (ptr);                     \
     ((type *) ((uintptr_t) __mptr - offsetof(type, member)));               \
 })
+
+struct wl_resource;
 
 void swc_remove_resource(struct wl_resource * resource);
 

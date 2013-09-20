@@ -5,9 +5,11 @@
 #include "input_focus.h"
 #include "xkb.h"
 
-#include <wayland-server.h>
+#include <wayland-util.h>
 
 struct swc_keyboard;
+struct wl_client;
+struct wl_resource;
 
 struct swc_keyboard_handler
 {

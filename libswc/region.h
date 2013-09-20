@@ -3,7 +3,9 @@
 
 #include <stdbool.h>
 #include <pixman.h>
-#include <wayland-server.h>
+
+struct wl_client;
+struct wl_resource;
 
 struct swc_region
 {

@@ -6,12 +6,12 @@
 #include <stdint.h>
 #include <pixman.h>
 #include <wayland-util.h>
-#include <wayland-server.h>
 #include <xf86drmMode.h>
 
 #define SWC_OUTPUT_MASK(output) (1 << (output)->id)
 
 struct swc_mode;
+struct wl_display;
 
 struct swc_output
 {
