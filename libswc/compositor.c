@@ -5,7 +5,6 @@
 #include "compositor.h"
 #include "compositor_surface.h"
 #include "cursor_surface.h"
-#include "tty.h"
 #include "output.h"
 #include "surface.h"
 #include "event.h"
@@ -249,25 +248,6 @@ struct swc_pointer_handler pointer_handler = {
     .motion = &handle_motion
 };
 
-/* XXX: maybe this should go in swc_drm */
-static void handle_tty_event(struct wl_listener * listener, void * data)
-{
-    struct swc_event * event = data;
-    struct swc_compositor * compositor;
-
-    compositor = swc_container_of(listener, typeof(*compositor), tty_listener);
-
-    switch (event->type)
-    {
-        case SWC_TTY_VT_ENTER:
-            swc_drm_set_master(&compositor->drm);
-            break;
-        case SWC_TTY_VT_LEAVE:
-            swc_drm_drop_master(&compositor->drm);
-            break;
-    }
-}
-
 static void handle_drm_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
@@ -330,11 +310,9 @@ static void handle_terminate(uint32_t time, uint32_t value, void * data)
 
 static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
 {
-    struct swc_tty * tty = data;
     uint8_t vt = value - XKB_KEY_XF86Switch_VT_1 + 1;
     printf("handle switch vt%u\n", vt);
-    if (vt != tty->vt)
-        swc_tty_switch_vt(tty, vt);
+    swc_launch_activate_vt(vt);
 }
 
 static void create_surface(struct wl_client * client,
@@ -400,7 +378,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     xkb_keysym_t keysym;
 
     compositor->display = display;
-    compositor->tty_listener.notify = &handle_tty_event;
     compositor->drm_listener.notify = &handle_drm_event;
     compositor->pointer_listener.notify = &handle_pointer_event;
     compositor->scheduled_updates = 0;
@@ -408,7 +385,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->compositor_class.interface
         = &swc_compositor_class_implementation;
     compositor->cursor_class.interface = &swc_cursor_class_implementation;
-
 
     compositor->udev = udev_new();
 
@@ -420,20 +396,11 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
     event_loop = wl_display_get_event_loop(display);
 
-    if (!swc_tty_initialize(&compositor->tty, event_loop, 2))
-    {
-        printf("could not initialize tty\n");
-        goto error_udev;
-    }
-
-    wl_signal_add(&compositor->tty.event_signal, &compositor->tty_listener);
-
     /* TODO: configurable seat */
-    if (!swc_seat_initialize(&compositor->seat, compositor->udev,
-                             default_seat))
+    if (!swc_seat_initialize(&compositor->seat, compositor->udev, default_seat))
     {
         printf("could not initialize seat\n");
-        goto error_tty;
+        goto error_udev;
     }
 
     swc_seat_add_event_sources(&compositor->seat, event_loop);
@@ -500,7 +467,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
          ++keysym)
     {
         swc_compositor_add_key_binding(compositor, SWC_MOD_ANY, keysym,
-                                       &handle_switch_vt, &compositor->tty);
+                                       &handle_switch_vt, NULL);
     }
 
 
@@ -512,8 +479,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     swc_drm_finish(&compositor->drm);
   error_seat:
     swc_seat_finish(&compositor->seat);
-  error_tty:
-    swc_tty_finish(&compositor->tty);
   error_udev:
     udev_unref(compositor->udev);
   error_base:
@@ -536,7 +501,6 @@ void swc_compositor_finish(struct swc_compositor * compositor)
 
     swc_drm_finish(&compositor->drm);
     swc_seat_finish(&compositor->seat);
-    swc_tty_finish(&compositor->tty);
     udev_unref(compositor->udev);
 }
 

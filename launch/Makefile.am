@@ -2,16 +2,12 @@
 
 AM_CFLAGS = $(drm_CFLAGS)
 
-lib_LTLIBRARIES = libswc-launch.la
+bin_PROGRAMS = swc-launch
 noinst_LTLIBRARIES = liblaunch-protocol.la
 
-libswc_launch_la_SOURCES = \
-	launch.c swc-launch.h
+swc_launch_SOURCES = launch.c
+swc_launch_LDADD = liblaunch-protocol.la $(drm_LIBS)
+swc_launch_LDFLAGS = -static
 
-libswc_launch_la_LIBADD = $(drm_LIBS) liblaunch-protocol.la
-
-liblaunch_protocol_la_SOURCES = \
-	protocol.c protocol.h
-
-include_HEADERS = swc-launch.h
+liblaunch_protocol_la_SOURCES = protocol.c protocol.h
 

@@ -11,19 +11,19 @@ struct swc_launch_request
 {
     enum
     {
-        SWC_LAUNCH_REQUEST_DRM_MASTER,
-        SWC_LAUNCH_REQUEST_OPEN_INPUT_DEVICE
+        SWC_LAUNCH_REQUEST_OPEN_DEVICE,
+        SWC_LAUNCH_REQUEST_ACTIVATE_VT
     } type;
     union
     {
-        struct /* DRM_MASTER */
-        {
-            bool set;
-        };
-        struct /* OPEN_INPUT_DEVICE */
+        struct /* OPEN_DEVICE */
         {
             int flags;
             char path[];
+        };
+        struct /* ACTIVATE_VT */
+        {
+            unsigned vt;
         };
     };
 };
@@ -33,7 +33,7 @@ struct swc_launch_response
     bool success;
 };
 
-ssize_t send_fd(int socket, int fd, void * buffer, ssize_t buffer_size);
+ssize_t send_fd(int socket, int fd, const void * buffer, ssize_t buffer_size);
 
 ssize_t receive_fd(int socket, int * fd, void * buffer,
                    ssize_t buffer_size);

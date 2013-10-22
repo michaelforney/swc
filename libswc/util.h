@@ -43,8 +43,9 @@ static inline bool swc_rectangle_overlap
             < r1->height + r2->height);
 }
 
-int swc_launch_open_input_device(int socket, const char * path, int flags);
-bool swc_launch_drm_master(int socket, int fd, bool set);
+/* Launch Utilities */
+int swc_launch_open_device(const char * path, int flags);
+bool swc_launch_activate_vt(unsigned vt);
 
 /* Double Buffers */
 struct swc_double_buffer

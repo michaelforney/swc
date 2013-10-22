@@ -2,6 +2,7 @@
 
 #include "seat.h"
 #include "event.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -142,7 +143,7 @@ struct swc_evdev_device * swc_evdev_device_new
     if (!(device = malloc(sizeof *device)))
         goto error0;
 
-    device->fd = open(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
+    device->fd = swc_launch_open_device(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
 
     if (device->fd == -1)
     {

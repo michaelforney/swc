@@ -2,7 +2,6 @@
 #define SWC_COMPOSITOR_H 1
 
 #include "drm.h"
-#include "tty.h"
 #include "seat.h"
 #include "binding.h"
 #include "renderer.h"
@@ -15,7 +14,6 @@ struct swc_compositor
 
     struct udev * udev;
 
-    struct swc_tty tty;
     struct swc_seat seat;
     struct swc_drm drm;
     struct swc_renderer renderer;
@@ -42,7 +40,6 @@ struct swc_compositor
     struct swc_surface_class compositor_class;
     struct swc_surface_class cursor_class;
 
-    struct wl_listener tty_listener;
     struct wl_listener drm_listener;
     struct wl_listener pointer_listener;
 

@@ -3,13 +3,12 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
-ssize_t send_fd(int socket, int fd, void * buffer, ssize_t buffer_size)
+ssize_t send_fd(int socket, int fd, const void * buffer, ssize_t buffer_size)
 {
     char control[CMSG_SPACE(sizeof(int))];
     struct iovec iov = {
-        .iov_base = buffer,
+        .iov_base = (void *) buffer,
         .iov_len = buffer_size
     };
     struct msghdr message = {

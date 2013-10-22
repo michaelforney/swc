@@ -23,7 +23,6 @@ libswc_la_SOURCES = \
     data_device.c data_device.h \
     data.c data.h \
     mode.c mode.h \
-    tty.c tty.h \
     evdev_device.c evdev_device.h \
     xkb.c xkb.h \
     drm.c drm.h \

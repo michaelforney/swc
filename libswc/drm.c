@@ -312,7 +312,7 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
 
     drm->path = strdup(udev_device_get_devnode(drm_device));
     udev_device_unref(drm_device);
-    drm->fd = open(drm->path, O_RDWR | O_CLOEXEC);
+    drm->fd = swc_launch_open_device(drm->path, O_RDWR | O_CLOEXEC);
 
     if (drm->fd == -1)
     {
@@ -373,18 +373,6 @@ static void bind_drm(struct wl_client * client, void * data, uint32_t version,
 void swc_drm_add_globals(struct swc_drm * drm, struct wl_display * display)
 {
     wl_global_create(display, &wl_drm_interface, 2, drm, &bind_drm);
-}
-
-void swc_drm_set_master(struct swc_drm * drm)
-{
-    printf("setting drm master\n");
-    drmSetMaster(drm->fd);
-}
-
-void swc_drm_drop_master(struct swc_drm * drm)
-{
-    printf("dropping drm master\n");
-    drmDropMaster(drm->fd);
 }
 
 struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)

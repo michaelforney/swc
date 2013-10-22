@@ -44,10 +44,6 @@ void swc_drm_add_event_sources(struct swc_drm * drm,
 
 void swc_drm_add_globals(struct swc_drm * drm, struct wl_display * display);
 
-void swc_drm_set_master(struct swc_drm * drm);
-
-void swc_drm_drop_master(struct swc_drm * drm);
-
 struct wl_list * swc_drm_create_outputs(struct swc_drm * drm);
 
 #endif

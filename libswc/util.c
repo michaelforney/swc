@@ -12,51 +12,81 @@ void swc_remove_resource(struct wl_resource * resource)
     wl_list_remove(wl_resource_get_link(resource));
 }
 
-bool swc_launch_drm_master(int socket, int fd, bool set)
+static int get_launcher_socket()
 {
-    ssize_t size;
-    struct swc_launch_request request;
-    struct swc_launch_response response;
+    static int launcher_socket = -1;
 
-    request.type = SWC_LAUNCH_REQUEST_DRM_MASTER;
-    request.set = set;
+    if (launcher_socket == -1)
+    {
+        char * launcher_socket_name;
 
-    size = send_fd(socket, fd, &request, sizeof request);
+        if ((launcher_socket_name = getenv(SWC_LAUNCH_SOCKET_ENV)))
+        {
+            char * end;
 
-    if (size == -1)
+            launcher_socket = strtol(launcher_socket_name, &end, 10);
+            if (*end != '\0')
+                launcher_socket = -1;
+        }
+    }
+
+    return launcher_socket;
+}
+
+static bool send_request(const struct swc_launch_request * request, size_t size,
+                         struct swc_launch_response * response,
+                         int out_fd, int * in_fd)
+{
+    int socket;
+    ssize_t ret;
+
+    socket = get_launcher_socket();
+
+    if (send_fd(socket, out_fd, request, size) == -1)
         return false;
 
-    size = recv(socket, &response, sizeof response, 0);
-
-    if (size == -1)
+    if (receive_fd(socket, in_fd, &response, sizeof response) == -1)
         return false;
 
     return true;
 }
 
-int swc_launch_open_input_device(int socket, const char * path, int flags)
+int swc_launch_open_device(const char * path, int flags)
 {
     size_t path_size = strlen(path);
     char buffer[sizeof(struct swc_launch_request) + path_size + 1];
     struct swc_launch_request * request = (void *) buffer;
     struct swc_launch_response response;
-    ssize_t size;
     int fd;
+    int socket;
 
-    request->type = SWC_LAUNCH_REQUEST_OPEN_INPUT_DEVICE;
+    socket = get_launcher_socket();
+
+    request->type = SWC_LAUNCH_REQUEST_OPEN_DEVICE;
     request->flags = flags;
     strcpy(request->path, path);
 
-    size = send(socket, buffer, sizeof buffer, 0);
-
-    if (size == -1)
-        return -1;
-
-    size = receive_fd(socket, &fd, &response, sizeof response);
-
-    if (size == -1)
+    if (!send_request(request, sizeof buffer, &response, -1, &fd))
         return -1;
 
     return fd;
+}
+
+bool swc_launch_activate_vt(unsigned vt)
+{
+    struct swc_launch_request request;
+    struct swc_launch_response response;
+    ssize_t size;
+    int socket;
+
+    socket = get_launcher_socket();
+
+    request.type = SWC_LAUNCH_REQUEST_ACTIVATE_VT;
+    request.vt = vt;
+
+    if (!send_request(&request, sizeof request, &response, -1, NULL))
+        return false;
+
+    return response.success;
 }
 

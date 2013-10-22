@@ -28,5 +28,5 @@ Makefile.in
 
 /libswc/libswc.la
 /launch/liblaunch-protocol.la
-/launch/libswc-launch.la
+/launch/swc-launch
 
