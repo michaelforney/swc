@@ -112,12 +112,19 @@ static int handle_data(int fd, uint32_t mask, void * data)
     struct input_event event;
     int ret;
 
-    do
+    while (true)
     {
-        ret = libevdev_next_event(device->dev, LIBEVDEV_READ_NORMAL, &event);
+        ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_NORMAL,
+                                  &event);
 
-        while (ret == 1)
-            ret = libevdev_next_event(device->dev, LIBEVDEV_READ_SYNC, &event);
+        if (ret == -EAGAIN)
+            break;
+
+        while (ret == LIBEVDEV_READ_STATUS_SYNC)
+        {
+            ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_SYNC,
+                                      &event);
+        }
 
         if (!is_motion_event(&event))
             handle_motion_events(device, timeval_to_msec(&event.time));
@@ -127,7 +134,7 @@ static int handle_data(int fd, uint32_t mask, void * data)
         {
             event_handlers[event.type](device, &event);
         }
-    } while (ret != -EAGAIN);
+    }
 
     handle_motion_events(device, timeval_to_msec(&event.time));
 
