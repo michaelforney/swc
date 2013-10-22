@@ -282,7 +282,6 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
                         const char * seat)
 {
     const char * sysnum;
-    const char * device_path;
     char * end;
 
     wl_signal_init(&drm->event_signal);
@@ -316,7 +315,7 @@ bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
 
     if (drm->fd == -1)
     {
-        printf("couldn't open %s\n", device_path);
+        fprintf(stderr, "Could not open %s\n", drm->path);
         goto error1;
     }
 
