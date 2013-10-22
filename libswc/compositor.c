@@ -371,7 +371,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
                                struct wl_display * display)
 {
     struct wl_event_loop * event_loop;
-    struct udev_device * drm_device;
     struct wl_list * outputs;
     struct swc_output * output;
     pixman_region32_t pointer_region;
