@@ -4,6 +4,7 @@ AM_CPPFLAGS = -I$(top_srcdir) -I$(PROTOCOL_DIR)
 AM_CFLAGS = $(drm_CFLAGS) $(pixman_CFLAGS) $(wld_CFLAGS) $(libevdev_CFLAGS)
 
 lib_LTLIBRARIES = libswc.la
+include_HEADERS = swc.h
 
 libswc_la_SOURCES = \
     compositor.c compositor.h \
@@ -28,6 +29,13 @@ libswc_la_SOURCES = \
     drm.c drm.h \
     drm_buffer.c drm_buffer.h \
     ../protocol/wayland-drm-protocol.c
+
+# Public interface
+libswc_la_SOURCES += \
+    swc.c swc.h \
+    window.c window.h \
+    shell.c shell.h \
+    shell_surface.c shell_surface.h
 
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(libevdev_LIBS) \
                    $(xkbcommon_LIBS) $(drm_LIBS) $(pixman_LIBS) $(wld_LIBS) \
