@@ -12,7 +12,7 @@ const struct xkb_rule_names rule_names = {
     .options = "grp:alt_shift_toggle"
 };
 
-const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
+static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
 
 bool swc_xkb_initialize(struct swc_xkb * xkb)
 {
