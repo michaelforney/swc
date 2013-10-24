@@ -1,6 +1,7 @@
 #ifndef SWC_UTIL_H
 #define SWC_UTIL_H 1
 
+#include <stdlib.h>
 #include <stdbool.h>
 #include <sys/time.h>
 #include <sys/param.h>
