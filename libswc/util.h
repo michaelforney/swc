@@ -6,13 +6,15 @@
 #include <sys/param.h>
 #include <pixman.h>
 
-#ifndef offsetof
-#   define offsetof __builtin_offsetof
+#ifdef offsetof
+# define OFFSET_OF offsetof
+#else
+# define OFFSET_OF __builtin_offsetof
 #endif
 
-#define swc_container_of(ptr, type, member) ({                              \
+#define CONTAINER_OF(ptr, type, member) ({                                  \
     const typeof(((type *) 0)->member) *__mptr = (ptr);                     \
-    ((type *) ((uintptr_t) __mptr - offsetof(type, member)));               \
+    ((type *) ((uintptr_t) __mptr - OFFSET_OF(type, member)));              \
 })
 
 struct wl_resource;

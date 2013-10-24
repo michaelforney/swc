@@ -48,7 +48,7 @@ const struct swc_surface_class_interface swc_compositor_class_implementation = {
  */
 static void damage_below_surface(struct swc_surface * surface)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state = surface->class_state;
     pixman_region32_t damage_below;
@@ -92,7 +92,7 @@ static void update_extents(struct swc_surface * surface)
 
 static void update_outputs(struct swc_surface * surface)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state = surface->class_state;
     uint32_t old_outputs = surface->outputs, new_outputs = 0,
@@ -140,7 +140,7 @@ static void update_outputs(struct swc_surface * surface)
 static void handle_surface_event(struct wl_listener * listener, void * data)
 {
     struct swc_compositor_surface_state * state
-        = swc_container_of(listener, typeof(*state), event_listener);
+        = CONTAINER_OF(listener, typeof(*state), event_listener);
     struct swc_event * event = data;
     struct swc_surface_event_data * event_data = event->data;
     struct swc_surface * surface = event_data->surface;
@@ -161,7 +161,7 @@ static void handle_surface_event(struct wl_listener * listener, void * data)
 /* Compositor class */
 bool add(struct swc_surface * surface)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state;
 
@@ -192,7 +192,7 @@ bool add(struct swc_surface * surface)
 
 void remove_(struct swc_surface * surface)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state = surface->class_state;
 
@@ -206,7 +206,7 @@ void remove_(struct swc_surface * surface)
 
 void attach(struct swc_surface * surface, struct wl_resource * resource)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
 
     swc_renderer_attach(&compositor->renderer, surface, resource);
@@ -214,7 +214,7 @@ void attach(struct swc_surface * surface, struct wl_resource * resource)
 
 void update(struct swc_surface * surface)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state = surface->class_state;
     struct swc_output * output;
@@ -231,7 +231,7 @@ void update(struct swc_surface * surface)
 
 void move(struct swc_surface * surface, int32_t x, int32_t y)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state = surface->class_state;
 
@@ -261,7 +261,7 @@ void move(struct swc_surface * surface, int32_t x, int32_t y)
 
 void swc_compositor_surface_show(struct swc_surface * surface)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state = surface->class_state;
 
@@ -287,7 +287,7 @@ void swc_compositor_surface_show(struct swc_surface * surface)
 
 void swc_compositor_surface_hide(struct swc_surface * surface)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), compositor_class);
     struct swc_compositor_surface_state * state = surface->class_state;
 

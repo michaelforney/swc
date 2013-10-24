@@ -45,7 +45,7 @@ static inline uint32_t wld_format(uint32_t format)
 static void handle_buffer_destroy(struct wl_listener * listener, void * data)
 {
     struct buffer_state * state
-        = swc_container_of(listener, typeof(*state), destroy_listener);
+        = CONTAINER_OF(listener, typeof(*state), destroy_listener);
 
     wld_destroy_drawable(state->drawable);
     if (state->dst)
@@ -60,8 +60,8 @@ static inline struct buffer_state * buffer_state(struct wl_resource * resource)
     struct wl_listener * listener
         = wl_resource_get_destroy_listener(resource, &handle_buffer_destroy);
 
-    return listener ? swc_container_of(listener, struct buffer_state,
-                                       destroy_listener)
+    return listener ? CONTAINER_OF(listener, struct buffer_state,
+                                   destroy_listener)
                     : NULL;
 }
 

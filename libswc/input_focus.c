@@ -58,7 +58,7 @@ static inline void unfocus(struct swc_input_focus * input_focus)
 static void handle_focus_surface_destroy(struct wl_listener * listener,
                                          void * data)
 {
-    struct swc_input_focus * input_focus = swc_container_of
+    struct swc_input_focus * input_focus = CONTAINER_OF
         (listener, typeof(*input_focus), surface_destroy_listener);
 
     input_focus->surface = NULL;

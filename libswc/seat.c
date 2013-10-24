@@ -13,8 +13,8 @@
 static void handle_key(const struct swc_evdev_device_handler * handler,
                        uint32_t time, uint32_t key, uint32_t state)
 {
-    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
-                                              evdev_handler);
+    struct swc_seat * seat = CONTAINER_OF(handler, typeof(*seat),
+                                          evdev_handler);
 
     swc_keyboard_handle_key(&seat->keyboard, time, key, state);
 }
@@ -22,8 +22,8 @@ static void handle_key(const struct swc_evdev_device_handler * handler,
 static void handle_button(const struct swc_evdev_device_handler * handler,
                           uint32_t time, uint32_t button, uint32_t state)
 {
-    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
-                                              evdev_handler);
+    struct swc_seat * seat = CONTAINER_OF(handler, typeof(*seat),
+                                          evdev_handler);
 
     swc_pointer_handle_button(&seat->pointer, time, button, state);
 }
@@ -31,8 +31,8 @@ static void handle_button(const struct swc_evdev_device_handler * handler,
 static void handle_axis(const struct swc_evdev_device_handler * handler,
                         uint32_t time, uint32_t axis, wl_fixed_t amount)
 {
-    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
-                                              evdev_handler);
+    struct swc_seat * seat = CONTAINER_OF(handler, typeof(*seat),
+                                          evdev_handler);
 
     swc_pointer_handle_axis(&seat->pointer, time, axis, amount);
 }
@@ -41,8 +41,8 @@ static void handle_relative_motion
     (const struct swc_evdev_device_handler * handler,
      uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
-    struct swc_seat * seat = swc_container_of(handler, typeof(*seat),
-                                              evdev_handler);
+    struct swc_seat * seat = CONTAINER_OF(handler, typeof(*seat),
+                                          evdev_handler);
 
     swc_pointer_handle_relative_motion(&seat->pointer, time, dx, dy);
 }
@@ -50,8 +50,8 @@ static void handle_relative_motion
 static void handle_keyboard_focus_event(struct wl_listener * listener,
                                         void * data)
 {
-    struct swc_seat * seat = swc_container_of
-        (listener, typeof(*seat), keyboard_focus_listener);
+    struct swc_seat * seat = CONTAINER_OF(listener, typeof(*seat),
+                                          keyboard_focus_listener);
     struct swc_event * event = data;
     struct swc_input_focus_event_data * event_data = event->data;
 
@@ -72,8 +72,8 @@ static void handle_keyboard_focus_event(struct wl_listener * listener,
 
 static void handle_data_device_event(struct wl_listener * listener, void * data)
 {
-    struct swc_seat * seat = swc_container_of
-        (listener, typeof(*seat), data_device_listener);
+    struct swc_seat * seat = CONTAINER_OF(listener, typeof(*seat),
+                                          data_device_listener);
     struct swc_event * event = data;
 
     switch (event->type)

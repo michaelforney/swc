@@ -151,8 +151,8 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
     struct swc_compositor * compositor;
     char keysym_name[64];
 
-    seat = swc_container_of(keyboard, typeof(*seat), keyboard);
-    compositor = swc_container_of(seat, typeof(*compositor), seat);
+    seat = CONTAINER_OF(keyboard, typeof(*seat), keyboard);
+    compositor = CONTAINER_OF(seat, typeof(*compositor), seat);
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
@@ -205,8 +205,8 @@ static void handle_focus(struct swc_pointer * pointer)
     struct swc_surface * surface;
     int32_t x, y;
 
-    seat = swc_container_of(pointer, typeof(*seat), pointer);
-    compositor = swc_container_of(seat, typeof(*compositor), seat);
+    seat = CONTAINER_OF(pointer, typeof(*seat), pointer);
+    compositor = CONTAINER_OF(seat, typeof(*compositor), seat);
 
     wl_list_for_each(surface, &compositor->surfaces, link)
     {
@@ -237,8 +237,8 @@ static bool handle_motion(struct swc_pointer * pointer, uint32_t time)
     struct swc_seat * seat;
     struct swc_compositor * compositor;
 
-    seat = swc_container_of(pointer, typeof(*seat), pointer);
-    compositor = swc_container_of(seat, typeof(*compositor), seat);
+    seat = CONTAINER_OF(pointer, typeof(*seat), pointer);
+    compositor = CONTAINER_OF(seat, typeof(*compositor), seat);
 
     return false;
 }
@@ -253,7 +253,7 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
     struct swc_event * event = data;
     struct swc_compositor * compositor;
 
-    compositor = swc_container_of(listener, typeof(*compositor), drm_listener);
+    compositor = CONTAINER_OF(listener, typeof(*compositor), drm_listener);
 
     switch (event->type)
     {
@@ -286,8 +286,7 @@ static void handle_pointer_event(struct wl_listener * listener, void * data)
     struct swc_pointer_event_data * event_data = event->data;
     struct swc_compositor * compositor;
 
-    compositor = swc_container_of(listener, typeof(*compositor),
-                                  pointer_listener);
+    compositor = CONTAINER_OF(listener, typeof(*compositor), pointer_listener);
 
     switch (event->type)
     {
@@ -324,7 +323,7 @@ static void create_surface(struct wl_client * client,
 
     printf("compositor.create_surface\n");
 
-    output = swc_container_of(compositor->outputs.next, typeof(*output), link);
+    output = CONTAINER_OF(compositor->outputs.next, typeof(*output), link);
 
     /* Initialize surface. */
     surface = swc_surface_new(client, wl_resource_get_version(resource), id);

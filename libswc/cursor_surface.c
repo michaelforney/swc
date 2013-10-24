@@ -41,7 +41,7 @@ static void update_plane(struct swc_plane * plane, void * data)
 static void attach(struct swc_surface * surface,
                    struct wl_resource * resource)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), cursor_class);
 
     if (pixman_region32_not_empty(&surface->state.damage))
@@ -86,7 +86,7 @@ static void update(struct swc_surface * surface)
 
 static void move(struct swc_surface * surface, int32_t x, int32_t y)
 {
-    struct swc_compositor * compositor = swc_container_of
+    struct swc_compositor * compositor = CONTAINER_OF
         (surface->class, typeof(*compositor), cursor_class);
     struct swc_output * output;
 

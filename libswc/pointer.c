@@ -14,7 +14,7 @@ static void enter(struct swc_input_focus_handler * handler,
     uint32_t serial;
     wl_fixed_t surface_x, surface_y;
 
-    pointer = swc_container_of(handler, typeof(*pointer), focus_handler);
+    pointer = CONTAINER_OF(handler, typeof(*pointer), focus_handler);
     client = wl_resource_get_client(resource);
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
@@ -45,8 +45,8 @@ static void leave(struct swc_input_focus_handler * handler,
 static void handle_cursor_surface_destroy(struct wl_listener * listener,
                                           void * data)
 {
-    struct swc_pointer * pointer = swc_container_of(listener, typeof(*pointer),
-                                                    cursor.destroy_listener);
+    struct swc_pointer * pointer = CONTAINER_OF(listener, typeof(*pointer),
+                                                cursor.destroy_listener);
 
     pointer->cursor.surface = NULL;
 }

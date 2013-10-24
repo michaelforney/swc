@@ -43,7 +43,7 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
 {
     struct swc_surface_state * state;
 
-    state = swc_container_of(listener, typeof(*state), buffer_destroy_listener);
+    state = CONTAINER_OF(listener, typeof(*state), buffer_destroy_listener);
     state->buffer = NULL;
 }
 

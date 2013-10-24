@@ -68,7 +68,7 @@ struct wl_data_device_interface data_device_implementation = {
 
 static void handle_selection_destroy(struct wl_listener * listener, void * data)
 {
-    struct swc_data_device * data_device = swc_container_of
+    struct swc_data_device * data_device = CONTAINER_OF
         (listener, typeof(*data_device), selection_destroy_listener);
 
     data_device->selection = NULL;
