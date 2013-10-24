@@ -27,8 +27,6 @@ PKG_CHECK_MODULES([xkbcommon], [xkbcommon])
 PKG_CHECK_MODULES([drm], [libdrm])
 PKG_CHECK_MODULES([pixman], [pixman-1])
 PKG_CHECK_MODULES([wld], [wld])
-
-PKG_CHECK_MODULES([wayland_client], [wayland-client])
 dnl }}}
 
 dnl Wayland protocol
