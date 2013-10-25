@@ -22,6 +22,7 @@
  */
 
 #include "swc.h"
+#include "binding.h"
 #include "compositor.h"
 #include "shell.h"
 
@@ -38,10 +39,16 @@ bool swc_initialize(struct wl_display * display,
 {
     window_manager = wm;
 
+    if (!swc_bindings_initialize())
+    {
+        fprintf(stderr, "Could not initialize bindings\n");
+        goto error0;
+    }
+
     if (!swc_compositor_initialize(&swc.compositor, display))
     {
         fprintf(stderr, "Could not initialize compositor\n");
-        goto error0;
+        goto error1;
     }
 
     swc_compositor_add_globals(&swc.compositor, display);
@@ -49,13 +56,15 @@ bool swc_initialize(struct wl_display * display,
     if (!swc_shell_initialize(display))
     {
         fprintf(stderr, "Could not initialize shell\n");
-        goto error1;
+        goto error2;
     }
 
     return true;
 
-  error1:
+  error2:
     swc_compositor_finish(&swc.compositor);
+  error1:
+    swc_bindings_finalize();
   error0:
     return false;
 }
@@ -64,5 +73,6 @@ void swc_finalize()
 {
     swc_shell_finalize();
     swc_compositor_finish(&swc.compositor);
+    swc_bindings_finalize();
 }
 

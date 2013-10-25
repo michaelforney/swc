@@ -67,6 +67,28 @@ void swc_window_set_border(struct swc_window * window,
                            uint32_t color, uint32_t width);
 /* }}} */
 
+/* Bindings {{{ */
+#define SWC_MOD_CTRL    (1 << 0)
+#define SWC_MOD_ALT     (1 << 1)
+#define SWC_MOD_LOGO    (1 << 2)
+#define SWC_MOD_SHIFT   (1 << 3)
+#define SWC_MOD_ANY     (-1)
+
+typedef void (* swc_binding_handler_t)(uint32_t time, uint32_t value,
+                                       void * data);
+
+struct swc_binding
+{
+    uint32_t value;
+    uint32_t modifiers;
+    swc_binding_handler_t handler;
+    void * data;
+};
+
+void swc_add_key_binding(uint32_t modifiers, uint32_t value,
+                         swc_binding_handler_t handler, void * data);
+/* }}} */
+
 /* Events {{{ */
 struct swc_event
 {

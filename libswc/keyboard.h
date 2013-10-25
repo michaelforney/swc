@@ -25,7 +25,7 @@ struct swc_keyboard
     struct swc_input_focus focus;
     struct swc_input_focus_handler focus_handler;
 
-    struct swc_keyboard_handler * handler;
+    const struct swc_keyboard_handler * handler;
 
     struct swc_xkb xkb;
     struct wl_array keys;

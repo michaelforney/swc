@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <libudev.h>
 
+#include "swc.h"
 #include "compositor.h"
 #include "compositor_surface.h"
 #include "cursor_surface.h"
@@ -10,6 +11,7 @@
 #include "event.h"
 #include "region.h"
 #include "data_device_manager.h"
+#include "binding.h"
 #include "util.h"
 
 static const char default_seat[] = "seat0";
@@ -142,61 +144,6 @@ static void perform_update(void * data)
     }
 
 }
-
-static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
-                       uint32_t key, uint32_t state)
-{
-    struct swc_seat * seat;
-    struct swc_binding * binding;
-    struct swc_compositor * compositor;
-    char keysym_name[64];
-
-    seat = CONTAINER_OF(keyboard, typeof(*seat), keyboard);
-    compositor = CONTAINER_OF(seat, typeof(*compositor), seat);
-
-    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-    {
-        xkb_keysym_t keysym;
-
-        keysym = xkb_state_key_get_one_sym(keyboard->xkb.state, key + 8);
-
-        wl_array_for_each(binding, &compositor->key_bindings)
-        {
-            if (binding->value == keysym)
-            {
-                xkb_mod_mask_t mod_mask;
-                uint32_t modifiers = 0;
-                mod_mask = xkb_state_serialize_mods(keyboard->xkb.state,
-                                                    XKB_STATE_MODS_EFFECTIVE);
-                mod_mask = xkb_state_mod_mask_remove_consumed(keyboard->xkb.state, key + 8,
-                                                              mod_mask);
-
-                if (mod_mask & (1 << keyboard->xkb.indices.ctrl))
-                    modifiers |= SWC_MOD_CTRL;
-                if (mod_mask & (1 << keyboard->xkb.indices.alt))
-                    modifiers |= SWC_MOD_ALT;
-                if (mod_mask & (1 << keyboard->xkb.indices.super))
-                    modifiers |= SWC_MOD_LOGO;
-                if (mod_mask & (1 << keyboard->xkb.indices.shift))
-                    modifiers |= SWC_MOD_SHIFT;
-
-                if (binding->modifiers == SWC_MOD_ANY
-                    || binding->modifiers == modifiers)
-                {
-                    binding->handler(time, keysym, binding->data);
-                    printf("\t-> handled\n");
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-struct swc_keyboard_handler keyboard_handler = {
-    .key = &handle_key,
-};
 
 static void handle_focus(struct swc_pointer * pointer)
 {
@@ -402,7 +349,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     }
 
     swc_seat_add_event_sources(&compositor->seat, event_loop);
-    compositor->seat.keyboard.handler = &keyboard_handler;
+    compositor->seat.keyboard.handler = swc_binding_handler;
     compositor->seat.pointer.handler = &pointer_handler;
     wl_signal_add(&compositor->seat.pointer.event_signal,
                   &compositor->pointer_listener);
@@ -457,15 +404,15 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     wl_array_init(&compositor->key_bindings);
     wl_signal_init(&compositor->destroy_signal);
 
-    swc_compositor_add_key_binding(compositor,
-        SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace, &handle_terminate, display);
+    swc_add_key_binding(SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace,
+                        &handle_terminate, display);
 
     for (keysym = XKB_KEY_XF86Switch_VT_1;
          keysym <= XKB_KEY_XF86Switch_VT_12;
          ++keysym)
     {
-        swc_compositor_add_key_binding(compositor, SWC_MOD_ANY, keysym,
-                                       &handle_switch_vt, NULL);
+        swc_add_key_binding(SWC_MOD_ANY, keysym,
+                            &handle_switch_vt, NULL);
     }
 
 

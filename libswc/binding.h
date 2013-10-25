@@ -1,25 +1,37 @@
+/* swc: libswc/binding.h
+ *
+ * Copyright (c) 2013 Michael Forney
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef SWC_BINDING_H
-#define SWC_BINDING_H 1
+#define SWC_BINDING_H
 
-#include <stdint.h>
-#include <linux/input.h>
+#include <stdbool.h>
 
-#define SWC_MOD_CTRL    (1 << 0)
-#define SWC_MOD_ALT     (1 << 1)
-#define SWC_MOD_LOGO    (1 << 2)
-#define SWC_MOD_SHIFT   (1 << 3)
-#define SWC_MOD_ANY     (-1)
+struct swc_keyboard_handler;
 
-typedef void (* swc_binding_handler_t)(uint32_t time, uint32_t value,
-                                       void * data);
+extern const struct swc_keyboard_handler * swc_binding_handler;
 
-struct swc_binding
-{
-    uint32_t value;
-    uint32_t modifiers;
-    swc_binding_handler_t handler;
-    void * data;
-};
+bool swc_bindings_initialize();
+void swc_bindings_finalize();
 
 #endif
 

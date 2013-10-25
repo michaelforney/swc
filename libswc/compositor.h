@@ -3,7 +3,6 @@
 
 #include "drm.h"
 #include "seat.h"
-#include "binding.h"
 #include "renderer.h"
 
 #include <wayland-server.h>
@@ -53,10 +52,6 @@ void swc_compositor_finish(struct swc_compositor * compositor);
 
 void swc_compositor_add_globals(struct swc_compositor * compositor,
                                 struct wl_display * display);
-
-void swc_compositor_add_key_binding(struct swc_compositor * compositor,
-                                    uint32_t modifiers, xkb_keysym_t key,
-                                    swc_binding_handler_t handler, void * data);
 
 void swc_compositor_schedule_update(struct swc_compositor * compositor,
                                     struct swc_output * output);

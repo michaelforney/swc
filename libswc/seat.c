@@ -1,8 +1,6 @@
 #include "seat.h"
-
 #include "evdev_device.h"
 #include "util.h"
-#include "binding.h"
 #include "event.h"
 
 #include <stdlib.h>

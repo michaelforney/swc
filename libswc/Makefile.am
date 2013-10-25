@@ -35,7 +35,8 @@ libswc_la_SOURCES += \
     swc.c swc.h \
     window.c window.h \
     shell.c shell.h \
-    shell_surface.c shell_surface.h
+    shell_surface.c shell_surface.h \
+    binding.c binding.h
 
 libswc_la_LIBADD = $(wayland_server_LIBS) $(udev_LIBS) $(libevdev_LIBS) \
                    $(xkbcommon_LIBS) $(drm_LIBS) $(pixman_LIBS) $(wld_LIBS) \
