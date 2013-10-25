@@ -1,0 +1,22 @@
+# swc: launch/Makefile.local
+
+dir := launch
+
+$(dir)_TARGETS := $(dir)/swc-launch
+
+$(dir)/launch.o: $(dir)/launch.c
+	$(compile) $(LAUNCH_PACKAGE_CFLAGS)
+
+$(dir)/swc-launch: $(dir)/launch.o $(dir)/protocol.static.o
+	$(link) $(LAUNCH_PACKAGE_LIBS)
+
+check-dependencies-$(dir):
+	$(call check_deps,swc-launch,$(LAUNCH_PACKAGES))
+
+install-$(dir): $(dir)/swc-launch | $(DESTDIR)$(BINDIR)
+	install -m4755 launch/swc-launch "$(DESTDIR)$(BINDIR)"
+
+CLEAN_FILES += $(dir)/launch.o
+
+include Makefile.common
+

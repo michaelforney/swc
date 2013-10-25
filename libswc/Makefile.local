@@ -1,0 +1,83 @@
+# swc: libswc/Makefile.local
+
+dir := libswc
+
+ifneq ($(ENABLE_STATIC), 0)
+$(dir)_TARGETS += $(dir)/libswc.a
+endif
+
+ifneq ($(ENABLE_SHARED), 0)
+$(dir)_TARGETS += $(dir)/libswc.so
+endif
+
+SWC_SOURCES =                       \
+    libswc/compositor.c             \
+    libswc/util.c                   \
+    libswc/output.c                 \
+    libswc/plane.c                  \
+    libswc/surface.c                \
+    libswc/compositor_surface.c     \
+    libswc/cursor_surface.c         \
+    libswc/region.c                 \
+    libswc/renderer.c               \
+    libswc/input_focus.c            \
+    libswc/keyboard.c               \
+    libswc/pointer.c                \
+    libswc/seat.c                   \
+    libswc/data_device_manager.c    \
+    libswc/data_device.c            \
+    libswc/data.c                   \
+    libswc/mode.c                   \
+    libswc/evdev_device.c           \
+    libswc/xkb.c                    \
+    libswc/drm.c                    \
+    libswc/drm_buffer.c             \
+    protocol/wayland-drm-protocol.c \
+    launch/protocol.c
+
+# Public interface
+SWC_SOURCES +=                      \
+    libswc/swc.c                    \
+    libswc/window.c                 \
+    libswc/shell.c                  \
+    libswc/shell_surface.c          \
+    libswc/binding.c
+
+SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.shared.o)
+SWC_STATIC_OBJECTS = $(SWC_SOURCES:%.c=%.static.o)
+
+# Explicitly state dependencies on generated files
+$(dir)/drm.c $(dir)/drm_buffer.c: protocol/wayland-drm-server-protocol.h
+
+%.shared.o: %.c
+	@mkdir -p .deps/$(dir $@)
+	$(compile) -fPIC $(SWC_PACKAGE_CFLAGS)
+
+%.static.o: %.c
+	@mkdir -p .deps/$(dir $@)
+	$(compile) $(SWC_PACKAGE_CFLAGS)
+
+$(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
+	$(call quiet,AR) cru $@ $^
+
+$(dir)/libswc.so: $(SWC_SHARED_OBJECTS)
+	$(link) -shared $(SWC_PACKAGE_LIBS)
+
+.PHONY: install-libswc.a
+install-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)
+	install -m0644 $< "$(DESTDIR)$(LIBDIR)"
+
+.PHONY: install-libswc.so
+install-libswc.so: $(dir)/libswc.so | $(DESTDIR)$(LIBDIR)
+	install -m0755 $< "$(DESTDIR)$(LIBDIR)"
+
+check-dependencies-libswc:
+	$(call check_deps,libswc,$(SWC_PACKAGES))
+
+install-libswc: $($(dir)_TARGETS:$(dir)/%=install-%) | $(DESTDIR)$(INCLUDEDIR)
+	install -m0644 libswc/swc.h "$(DESTDIR)$(INCLUDEDIR)"
+
+CLEAN_FILES += $(SWC_SHARED_OBJECTS) $(SWC_STATIC_OBJECTS)
+
+include Makefile.common
+
