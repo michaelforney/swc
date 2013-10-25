@@ -6,7 +6,8 @@ protocol/wayland-drm-protocol.c
 protocol/wayland-drm-server-protocol.h
 
 /.deps/
+/swc.pc
 /libswc/libswc.a
-/libswc/libswc.so
+/libswc/libswc.so*
 /launch/swc-launch
 
