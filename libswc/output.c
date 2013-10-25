@@ -16,8 +16,8 @@ static void bind_output(struct wl_client * client, void * data,
     struct wl_resource * resource;
     uint32_t flags;
 
-    if (version >= 1)
-        version = 1;
+    if (version >= 2)
+        version = 2;
 
     resource = wl_resource_create(client, &wl_output_interface, version, id);
     wl_resource_set_implementation(resource, NULL, output,
@@ -39,6 +39,9 @@ static void bind_output(struct wl_client * client, void * data,
         wl_output_send_mode(resource, flags, mode->width, mode->height,
                             mode->refresh);
     }
+
+    if (version >= 2)
+        wl_output_send_done(resource);
 }
 
 bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
@@ -122,6 +125,6 @@ void swc_output_finish(struct swc_output * output)
 void swc_output_add_globals(struct swc_output * output,
                             struct wl_display * display)
 {
-    wl_global_create(display, &wl_output_interface, 1, output, &bind_output);
+    wl_global_create(display, &wl_output_interface, 2, output, &bind_output);
 }
 
