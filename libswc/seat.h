@@ -47,6 +47,5 @@ void swc_seat_add_event_sources(struct swc_seat * seat,
 
 void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev);
 
-
 #endif
 

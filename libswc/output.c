@@ -1,12 +1,10 @@
 #include "output.h"
-
 #include "mode.h"
 #include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <libdrm/drm.h>
 #include <xf86drm.h>
 

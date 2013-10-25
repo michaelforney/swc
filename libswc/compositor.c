@@ -1,18 +1,17 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <libudev.h>
-
 #include "swc.h"
 #include "compositor.h"
 #include "compositor_surface.h"
 #include "cursor_surface.h"
 #include "output.h"
 #include "surface.h"
-#include "event.h"
 #include "region.h"
 #include "data_device_manager.h"
 #include "binding.h"
 #include "util.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <libudev.h>
 
 static const char default_seat[] = "seat0";
 

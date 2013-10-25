@@ -110,6 +110,7 @@ static void get_keyboard(struct wl_client * client, struct wl_resource * resourc
 static void get_touch(struct wl_client * client, struct wl_resource * resource,
                uint32_t id)
 {
+    /* XXX: Implement */
 }
 
 struct wl_seat_interface seat_implementation = {
