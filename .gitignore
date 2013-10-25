@@ -1,12 +1,13 @@
 *.o
 *.lo
-.*.swp
+.*.sw*
 
 protocol/wayland-drm-protocol.c
 protocol/wayland-drm-server-protocol.h
 
 .deps/
 .libs/
+.dirstamp
 
 Makefile
 Makefile.in
@@ -19,6 +20,7 @@ Makefile.in
 /config.status
 /config.sub
 /configure
+/compile
 /depcomp
 /install-sh
 /libtool
