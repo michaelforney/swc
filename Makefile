@@ -3,8 +3,11 @@
 .PHONY: all
 all: build
 
-SUBDIRS     := launch libswc protocol
-CLEAN_FILES :=
+VERSION_MAJOR   := 0
+VERSION_MINOR   := 0
+
+SUBDIRS         := launch libswc protocol
+CLEAN_FILES     :=
 
 include config.mk
 include $(SUBDIRS:%=%/Makefile.local)
