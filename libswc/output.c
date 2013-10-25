@@ -1,6 +1,7 @@
 #include "output.h"
 #include "mode.h"
 #include "util.h"
+#include "drm.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <drm.h>
 #include <sys/socket.h>
+#include <wayland-server.h>
 
 void swc_remove_resource(struct wl_resource * resource)
 {
