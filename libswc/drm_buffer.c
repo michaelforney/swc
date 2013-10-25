@@ -25,8 +25,8 @@
 
 #include <stdlib.h>
 #include <wayland-server.h>
-#include <wayland-drm-server-protocol.h>
 #include <wld/wld.h>
+#include "protocol/wayland-drm-server-protocol.h"
 
 static void destroy(struct wl_client * client, struct wl_resource * resource)
 {

@@ -36,8 +36,8 @@
 #include <xf86drm.h>
 #include <wld/wld.h>
 #include <wld/drm.h>
-#include <wayland-util.h>
-#include <wayland-drm-server-protocol.h>
+#include <wayland-server.h>
+#include "protocol/wayland-drm-server-protocol.h"
 
 static void authenticate(struct wl_client * client,
                          struct wl_resource * resource, uint32_t magic)

@@ -1,6 +1,6 @@
 # swc: libswc/Makefile.am
 
-AM_CPPFLAGS = -I$(top_srcdir) -I$(PROTOCOL_DIR)
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_builddir)
 AM_CFLAGS = $(drm_CFLAGS) $(pixman_CFLAGS) $(wld_CFLAGS) $(libevdev_CFLAGS)
 
 lib_LTLIBRARIES = libswc.la

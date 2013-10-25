@@ -30,7 +30,6 @@ PKG_CHECK_MODULES([wld], [wld])
 dnl }}}
 
 dnl Wayland protocol
-AC_SUBST(PROTOCOL_DIR, ['$(top_builddir)/protocol'])
 WAYLAND_SCANNER_RULES(['$(top_srcdir)/protocol'])
 
 AC_CONFIG_FILES([Makefile libswc/Makefile launch/Makefile protocol/Makefile])
