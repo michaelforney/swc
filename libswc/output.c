@@ -103,6 +103,12 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
         goto error_base;
     }
 
+    if (!swc_plane_initialize(&output->cursor_plane, &swc_cursor_plane, output))
+    {
+        printf("failed to initialize cursor plane\n");
+        goto error_base;
+    }
+
     return true;
 
   error_base:
