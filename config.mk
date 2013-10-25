@@ -4,6 +4,7 @@ PREFIX          = /usr/local
 BINDIR          = $(PREFIX)/bin
 LIBDIR          = $(PREFIX)/lib
 INCLUDEDIR      = $(PREFIX)/include
+PKGCONFIGDIR    = $(LIBDIR)/pkgconfig
 
 CC              = gcc
 CPPFLAGS        = -D_GNU_SOURCE # Required for mkostemp

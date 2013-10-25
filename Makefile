@@ -5,9 +5,11 @@ all: build
 
 VERSION_MAJOR   := 0
 VERSION_MINOR   := 0
+VERSION         := $(VERSION_MAJOR).$(VERSION_MINOR)
 
+TARGETS         := swc.pc
 SUBDIRS         := launch libswc protocol
-CLEAN_FILES     :=
+CLEAN_FILES     := $(TARGETS)
 
 include config.mk
 include $(SUBDIRS:%=%/Makefile.local)
@@ -33,12 +35,24 @@ link    = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
 check-dependencies: $(SUBDIRS:%=check-dependencies-%)
 
 .PHONY: build
-build: $(SUBDIRS:%=build-%)
+build: $(SUBDIRS:%=build-%) $(TARGETS)
+
+swc.pc: swc.pc.in
+	$(call quiet,GEN,                           \
+	    sed -e "s:@VERSION@:$(VERSION):"        \
+	        -e "s:@PREFIX@:$(PREFIX):"          \
+	        -e "s:@LIBDIR@:$(LIBDIR):"          \
+	        -e "s:@INCLUDEDIR@:$(INCLUDEDIR):"  \
+	        $< > $@)
+
+.PHONY: install-swc.pc
+install-swc.pc: swc.pc | $(DESTDIR)$(PKGCONFIGDIR)
+	install -m0644 $< "$(DESTDIR)$(PKGCONFIGDIR)"
 
 .PHONY: install
-install: $(SUBDIRS:%=install-%)
+install: $(SUBDIRS:%=install-%) $(TARGETS:%=install-%)
 
-$(DESTDIR)$(BINDIR) $(DESTDIR)$(LIBDIR) $(DESTDIR)$(INCLUDEDIR):
+$(DESTDIR)$(BINDIR) $(DESTDIR)$(LIBDIR) $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(PKGCONFIGDIR):
 	mkdir -p "$@"
 
 .PHONY: clean
