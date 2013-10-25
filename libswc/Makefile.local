@@ -11,10 +11,6 @@ $(dir)_TARGETS += $(dir)/libswc.a
 endif
 
 ifneq ($(ENABLE_SHARED), 0)
-$(dir)_SHARED_TARGETS :=            \
-    $(dir)/$(LIBSWC_LIB)            \
-    $(dir)/$(LIBSWC_SO)             \
-    $(dir)/$(LIBSWC_LINK)
 $(dir)_TARGETS += $(dir)/$(LIBSWC_LINK)
 endif
 
@@ -68,22 +64,18 @@ $(dir)/drm.c $(dir)/drm_buffer.c: protocol/wayland-drm-server-protocol.h
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
 	$(call quiet,AR) cru $@ $^
 
-$(dir)/$(LIBSWC_LIB): $(SWC_SHARED_OBJECTS)
+$(dir)/$(LIBSWC_LINK): $(SWC_SHARED_OBJECTS)
 	$(link) -shared -Wl,-soname,$(LIBSWC_SO) $(SWC_PACKAGE_LIBS)
-
-$(dir)/$(LIBSWC_SO): $(dir)/$(LIBSWC_LIB)
-	$(call quiet,SYM,ln -sf) $(notdir $<) $@
-
-$(dir)/$(LIBSWC_LINK): $(dir)/$(LIBSWC_SO)
-	$(call quiet,SYM,ln -sf) $(notdir $<) $@
 
 .PHONY: install-libswc.a
 install-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)
 	install -m0644 $< "$(DESTDIR)$(LIBDIR)"
 
 .PHONY: install-$(LIBSWC_LINK)
-install-$(LIBSWC_LINK): $($(dir)_SHARED_TARGETS) | $(DESTDIR)$(LIBDIR)
-	install -m0755 $^ "$(DESTDIR)$(LIBDIR)"
+install-$(LIBSWC_LINK): $(dir)/$(LIBSWC_LINK) | $(DESTDIR)$(LIBDIR)
+	install -m0755 $< "$(DESTDIR)$(LIBDIR)/$(LIBSWC_LIB)"
+	ln -sf $(LIBSWC_LIB) "$(DESTDIR)$(LIBDIR)/$(LIBSWC_SO)"
+	ln -sf $(LIBSWC_SO) "$(DESTDIR)$(LIBDIR)/$(LIBSWC_LINK)"
 
 check-dependencies-libswc:
 	$(call check_deps,libswc,$(SWC_PACKAGES))
