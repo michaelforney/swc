@@ -25,6 +25,7 @@
 #include "binding.h"
 #include "compositor.h"
 #include "shell.h"
+#include "window.h"
 
 static struct
 {
@@ -33,6 +34,11 @@ static struct
 
 struct swc_compositor * compositor = &swc.compositor;
 const struct swc_manager * swc_manager;
+
+static void setup_compositor()
+{
+    swc.compositor.seat.keyboard.handler = swc_binding_handler;
+}
 
 bool swc_initialize(struct wl_display * display,
                     const struct swc_manager * manager)
@@ -58,6 +64,8 @@ bool swc_initialize(struct wl_display * display,
         fprintf(stderr, "Could not initialize shell\n");
         goto error2;
     }
+
+    setup_compositor();
 
     return true;
 

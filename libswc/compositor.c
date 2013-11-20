@@ -348,7 +348,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     }
 
     swc_seat_add_event_sources(&compositor->seat, event_loop);
-    compositor->seat.keyboard.handler = swc_binding_handler;
     compositor->seat.pointer.handler = &pointer_handler;
     wl_signal_add(&compositor->seat.pointer.event_signal,
                   &compositor->pointer_listener);
