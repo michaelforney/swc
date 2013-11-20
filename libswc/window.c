@@ -68,11 +68,6 @@ void swc_window_set_border(struct swc_window * window,
     swc_compositor_surface_set_border_width(surface, border_width);
 }
 
-static void destroy(struct wl_client * client, struct wl_resource * resource)
-{
-    wl_resource_destroy(resource);
-}
-
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
     struct swc_window * window = CONTAINER_OF_INTERNAL
