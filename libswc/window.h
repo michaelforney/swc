@@ -43,6 +43,8 @@ struct swc_window_internal
     const struct swc_window_impl * impl;
 };
 
+extern struct wl_listener * swc_window_enter_listener;
+
 bool swc_window_initialize(struct swc_window * window,
                            const struct swc_window_impl * impl,
                            struct swc_surface * surface);

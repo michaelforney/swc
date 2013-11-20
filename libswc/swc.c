@@ -38,6 +38,8 @@ const struct swc_manager * swc_manager;
 static void setup_compositor()
 {
     swc.compositor.seat.keyboard.handler = swc_binding_handler;
+    wl_signal_add(&swc.compositor.seat.pointer.focus.event_signal,
+                  swc_window_enter_listener);
 }
 
 bool swc_initialize(struct wl_display * display,

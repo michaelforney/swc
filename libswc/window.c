@@ -31,6 +31,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void handle_window_enter(struct wl_listener * listener, void * data)
+{
+    struct swc_event * event = data;
+    struct swc_input_focus_event_data * event_data = event->data;
+    struct swc_window * window;
+
+    if (event->type != SWC_INPUT_FOCUS_EVENT_CHANGED)
+        return;
+
+    if (!event_data->new || !(window = swc_window_get(event_data->new)))
+        return;
+
+    swc_send_event(&window->event_signal, SWC_WINDOW_ENTERED, NULL);
+}
+
+static struct wl_listener window_enter_listener = {
+    .notify = &handle_window_enter
+};
+struct wl_listener * swc_window_enter_listener = &window_enter_listener;
+
 void swc_window_show(struct swc_window * window)
 {
     swc_compositor_surface_show(INTERNAL(window)->surface);
