@@ -27,8 +27,8 @@ SWC_PACKAGES    =   \
 LAUNCH_PACKAGES =   \
     libdrm
 
-SWC_PACKAGE_CFLAGS      = $$($(PKG_CONFIG) --cflags $(SWC_PACKAGES))
-SWC_PACKAGE_LIBS        = $$($(PKG_CONFIG) --libs $(SWC_PACKAGES))
-LAUNCH_PACKAGE_CFLAGS   = $$($(PKG_CONFIG) --cflags $(LAUNCH_PACKAGES))
-LAUNCH_PACKAGE_LIBS     = $$($(PKG_CONFIG) --libs $(LAUNCH_PACKAGES))
+libswc_PACKAGE_CFLAGS   = $$($(PKG_CONFIG) --cflags $(SWC_PACKAGES))
+libswc_PACKAGE_LIBS     = $$($(PKG_CONFIG) --libs $(SWC_PACKAGES))
+launch_PACKAGE_CFLAGS   = $$($(PKG_CONFIG) --cflags $(LAUNCH_PACKAGES))
+launch_PACKAGE_LIBS     = $$($(PKG_CONFIG) --libs $(LAUNCH_PACKAGES))
 

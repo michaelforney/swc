@@ -4,11 +4,8 @@ dir := launch
 
 $(dir)_TARGETS := $(dir)/swc-launch
 
-$(dir)/launch.o: $(dir)/launch.c
-	$(compile) $(LAUNCH_PACKAGE_CFLAGS)
-
-$(dir)/swc-launch: $(dir)/launch.o $(dir)/protocol.static.o
-	$(link) $(LAUNCH_PACKAGE_LIBS)
+$(dir)/swc-launch: $(dir)/launch.o $(dir)/protocol.o
+	$(link) $(launch_PACKAGE_LIBS)
 
 check-dependencies-$(dir):
 	$(call check_deps,swc-launch,$(LAUNCH_PACKAGES))

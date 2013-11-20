@@ -51,25 +51,17 @@ SWC_SOURCES +=                      \
     libswc/shell_surface.c          \
     libswc/binding.c
 
-SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.shared.o)
-SWC_STATIC_OBJECTS = $(SWC_SOURCES:%.c=%.static.o)
+SWC_STATIC_OBJECTS = $(SWC_SOURCES:%.c=%.o)
+SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 
 # Explicitly state dependencies on generated files
 $(dir)/drm.c $(dir)/drm_buffer.c: protocol/wayland-drm-server-protocol.h
-
-%.shared.o: %.c
-	@mkdir -p .deps/$(dir $@)
-	$(compile) -fPIC $(SWC_PACKAGE_CFLAGS)
-
-%.static.o: %.c
-	@mkdir -p .deps/$(dir $@)
-	$(compile) $(SWC_PACKAGE_CFLAGS)
 
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
 	$(call quiet,AR) cru $@ $^
 
 $(dir)/$(LIBSWC_LIB): $(SWC_SHARED_OBJECTS)
-	$(link) -shared -Wl,-soname,$(LIBSWC_SO) $(SWC_PACKAGE_LIBS)
+	$(link) -shared -Wl,-soname,$(LIBSWC_SO) $(libswc_PACKAGE_LIBS)
 
 $(dir)/$(LIBSWC_SO): $(dir)/$(LIBSWC_LIB)
 	$(call quiet,SYM,ln -sf) $(notdir $<) $@
