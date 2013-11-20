@@ -132,6 +132,6 @@ void swc_window_set_class(struct swc_window * window, const char * class)
 void swc_window_set_state(struct swc_window * window, uint32_t state)
 {
     window->state = state;
-    swc_send_event(&window->event_signal, state, NULL);
+    swc_send_event(&window->event_signal, SWC_WINDOW_STATE_CHANGED, NULL);
 }
 
