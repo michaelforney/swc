@@ -31,6 +31,9 @@ endef
 compile = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -MMD -MP -MF .deps/$(basename $<).d -o $@ $<
 link    = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
 
+$(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$(dir)):
+	mkdir -p "$@"
+
 .PHONY: check-dependencies
 check-dependencies: $(SUBDIRS:%=check-dependencies-%)
 
@@ -51,9 +54,6 @@ install-swc.pc: swc.pc | $(DESTDIR)$(PKGCONFIGDIR)
 
 .PHONY: install
 install: $(SUBDIRS:%=install-%) $(TARGETS:%=install-%)
-
-$(DESTDIR)$(BINDIR) $(DESTDIR)$(LIBDIR) $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(PKGCONFIGDIR):
-	mkdir -p "$@"
 
 .PHONY: clean
 clean:
