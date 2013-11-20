@@ -18,6 +18,16 @@ $(dir)_SHARED_TARGETS :=            \
 $(dir)_TARGETS += libswc-shared
 endif
 
+# Dependencies
+$(dir)_PACKAGES =   \
+    libdrm          \
+    libevdev        \
+    libudev         \
+    pixman-1        \
+    wayland-server  \
+    wld             \
+    xkbcommon
+
 SWC_SOURCES =                       \
     libswc/compositor.c             \
     libswc/util.c                   \

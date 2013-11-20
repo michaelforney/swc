@@ -18,5 +18,14 @@ $(dir)/%.o: $(dir)/%.c | .deps/$(dir)
 $(dir)/%.lo: $(dir)/%.c | .deps/$(dir)
 	$(compile) -fPIC $($(@D)_CFLAGS) $($(@D)_PACKAGE_CFLAGS)
 
+ifdef $(dir)_PACKAGES
+    ifndef $(dir)_PACKAGE_CFLAGS
+        $(dir)_PACKAGE_CFLAGS := $(shell $(PKG_CONFIG) --cflags $($(dir)_PACKAGES))
+    endif
+    ifndef $(dir)_PACKAGE_LIBS
+        $(dir)_PACKAGE_LIBS := $(shell $(PKG_CONFIG) --libs $($(dir)_PACKAGES))
+    endif
+endif
+
 CLEAN_FILES += $($(dir)_TARGETS)
 
