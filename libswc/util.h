@@ -3,9 +3,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <sys/time.h>
 #include <sys/param.h>
 #include <pixman.h>
+#include <wayland-util.h>
 
 #ifdef offsetof
 # define OFFSET_OF offsetof
@@ -44,6 +46,15 @@ static inline bool swc_rectangle_overlap
             < r1->width + r2->width)
         && (MAX(r1->y + r1->height, r2->y + r2->height) - MIN(r1->y, r2->y)
             < r1->height + r2->height);
+}
+
+static inline void swc_array_remove(struct wl_array * array,
+                                    void * item, size_t size)
+{
+    size_t bytes = array->size - (item + size - array->data);
+    if (bytes > 0)
+        memmove(item, item + size, bytes);
+    array->size -= size;
 }
 
 /* Launch Utilities */

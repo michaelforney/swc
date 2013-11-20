@@ -129,14 +129,7 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
             else
             {
                 /* Remove the key from the array */
-                uint32_t bytes_to_copy = keyboard->keys.size + 1
-                    - (((void *) pressed_key) - keyboard->keys.data);
-
-                if (bytes_to_copy > 0)
-                    memmove(pressed_key, pressed_key + 1, bytes_to_copy);
-
-                keyboard->keys.size -= sizeof key;
-
+                swc_array_remove(&keyboard->keys, pressed_key, sizeof key);
                 break;
             }
         }
