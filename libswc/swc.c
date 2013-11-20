@@ -32,12 +32,12 @@ static struct
 } swc;
 
 struct swc_compositor * compositor = &swc.compositor;
-const struct swc_window_manager * window_manager;
+const struct swc_manager * swc_manager;
 
 bool swc_initialize(struct wl_display * display,
-                    const struct swc_window_manager * wm)
+                    const struct swc_manager * manager)
 {
-    window_manager = wm;
+    swc_manager = manager;
 
     if (!swc_bindings_initialize())
     {

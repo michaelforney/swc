@@ -24,11 +24,11 @@
 #ifndef SWC_PRIVATE_H
 #define SWC_PRIVATE_H
 
+struct swc_manager;
 struct swc_compositor;
-struct swc_window_manager;
 
+extern const struct swc_manager * swc_manager;
 extern struct swc_compositor * compositor;
-extern const struct swc_window_manager * window_manager;
 
 #endif
 

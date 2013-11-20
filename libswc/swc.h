@@ -53,11 +53,6 @@ struct swc_window
     } state;
 };
 
-struct swc_window_manager
-{
-    void (* new_window)(struct swc_window * window);
-};
-
 void swc_window_show(struct swc_window * window);
 void swc_window_hide(struct swc_window * window);
 void swc_window_focus(struct swc_window * window);
@@ -97,8 +92,13 @@ struct swc_event
 };
 /* }}} */
 
+struct swc_manager
+{
+    void (* new_window)(struct swc_window * window);
+};
+
 bool swc_initialize(struct wl_display * display,
-                    const struct swc_window_manager * window_manager);
+                    const struct swc_manager * manager);
 void swc_finalize();
 
 #endif

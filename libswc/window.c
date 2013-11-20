@@ -97,7 +97,7 @@ bool swc_window_initialize(struct swc_window * window,
         (surface->resource, &INTERNAL(window)->surface_destroy_listener);
     swc_surface_set_class(surface, &compositor->compositor_class);
 
-    window_manager->new_window(window);
+    swc_manager->new_window(window);
 
     return true;
 }
