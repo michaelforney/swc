@@ -9,5 +9,8 @@ build-$(dir): $($(dir)_TARGETS)
 .PHONY: install-$(dir)
 install-$(dir):
 
+.deps/$(dir):
+	@mkdir -p "$@"
+
 CLEAN_FILES += $($(dir)_TARGETS)
 

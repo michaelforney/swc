@@ -28,7 +28,7 @@ define check_deps
     @$(PKG_CONFIG) --exists --print-errors $2
 endef
 
-compile = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -MMD -MP -MF .deps/$*.d -o $@ $<
+compile = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -MMD -MP -MF .deps/$(basename $<).d -o $@ $<
 link    = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
 
 .PHONY: check-dependencies
@@ -58,4 +58,6 @@ $(DESTDIR)$(BINDIR) $(DESTDIR)$(LIBDIR) $(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(PKGC
 .PHONY: clean
 clean:
 	rm -f $(CLEAN_FILES)
+
+-include .deps/*/*.d
 
