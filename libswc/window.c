@@ -88,6 +88,7 @@ bool swc_window_initialize(struct swc_window * window,
 {
     window->title = NULL;
     window->class = NULL;
+    window->state = SWC_WINDOW_STATE_WITHDRAWN;
     wl_signal_init(&window->event_signal);
     INTERNAL(window)->surface = surface;
     INTERNAL(window)->surface_destroy_listener.notify = &handle_surface_destroy;
