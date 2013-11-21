@@ -41,12 +41,12 @@ check-dependencies: $(SUBDIRS:%=check-dependencies-%)
 build: $(SUBDIRS:%=build-%) $(TARGETS)
 
 swc.pc: swc.pc.in
-	$(call quiet,GEN,                           \
-	    sed -e "s:@VERSION@:$(VERSION):"        \
-	        -e "s:@PREFIX@:$(PREFIX):"          \
-	        -e "s:@LIBDIR@:$(LIBDIR):"          \
-	        -e "s:@INCLUDEDIR@:$(INCLUDEDIR):"  \
-	        $< > $@)
+	$(call quiet,GEN,sed)                   \
+	    -e "s:@VERSION@:$(VERSION):"        \
+	    -e "s:@PREFIX@:$(PREFIX):"          \
+	    -e "s:@LIBDIR@:$(LIBDIR):"          \
+	    -e "s:@INCLUDEDIR@:$(INCLUDEDIR):"  \
+	    $< > $@
 
 .PHONY: install-swc.pc
 install-swc.pc: swc.pc | $(DESTDIR)$(PKGCONFIGDIR)
