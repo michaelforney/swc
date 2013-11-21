@@ -31,7 +31,7 @@ endef
 compile = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -MMD -MP -MF .deps/$(basename $<).d -o $@ $<
 link    = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
 
-$(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$(dir)):
+$(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)):
 	mkdir -p "$@"
 
 .PHONY: check-dependencies
