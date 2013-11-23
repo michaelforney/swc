@@ -70,6 +70,24 @@ void swc_window_set_border(struct swc_window * window,
                            uint32_t color, uint32_t width);
 /* }}} */
 
+/* Screens {{{ */
+enum
+{
+    SWC_SCREEN_GEOMETRY_CHANGED
+};
+
+struct swc_screen
+{
+    struct wl_signal event_signal;
+
+    /* The total area of the screen */
+    struct swc_rectangle total_geometry;
+
+    /* The area of the screen available for placing windows */
+    struct swc_rectangle usable_geometry;
+};
+/* }}} */
+
 /* Bindings {{{ */
 #define SWC_MOD_CTRL    (1 << 0)
 #define SWC_MOD_ALT     (1 << 1)
@@ -103,6 +121,7 @@ struct swc_event
 struct swc_manager
 {
     void (* new_window)(struct swc_window * window);
+    void (* new_screen)(struct swc_screen * screen);
 };
 
 bool swc_initialize(struct wl_display * display,
