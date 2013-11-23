@@ -295,8 +295,13 @@ static int find_vt()
     }
 
     tty0_fd = open("/dev/tty0", O_RDWR);
+
+    if (tty0_fd == -1)
+        die("Could not open /dev/tty0 to find open VT");
+
     if (ioctl(tty0_fd, VT_OPENQRY, &vt) != 0)
         die("Could not find open VT");
+
     close(tty0_fd);
 
     fprintf(stderr, "Running on VT %d\n", vt);
