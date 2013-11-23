@@ -12,7 +12,6 @@ SUBDIRS         := launch libswc protocol
 CLEAN_FILES     := $(TARGETS)
 
 include config.mk
-include $(SUBDIRS:%=%/Makefile.local)
 
 ifeq ($(if $(V),$(V),0), 0)
     define quiet
@@ -28,8 +27,12 @@ define check_deps
     @$(PKG_CONFIG) --exists --print-errors $2
 endef
 
-compile = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -MMD -MP -MF .deps/$(basename $<).d -o $@ $<
-link    = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
+compile     = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -MMD -MP -MF .deps/$(basename $<).d -o $@ $<
+link        = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
+pkgconfig   = $(sort $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
+                                           $(shell $(PKG_CONFIG) --$(2) $(pkg)))))
+
+include $(SUBDIRS:%=%/Makefile.local)
 
 $(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)):
 	mkdir -p "$@"

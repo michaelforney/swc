@@ -20,10 +20,10 @@ $(dir)/%.lo: $(dir)/%.c | .deps/$(dir)
 
 ifdef $(dir)_PACKAGES
     ifndef $(dir)_PACKAGE_CFLAGS
-        $(dir)_PACKAGE_CFLAGS := $(shell $(PKG_CONFIG) --cflags $($(dir)_PACKAGES))
+        $(dir)_PACKAGE_CFLAGS := $(call pkgconfig,$($(dir)_PACKAGES),cflags,CFLAGS)
     endif
     ifndef $(dir)_PACKAGE_LIBS
-        $(dir)_PACKAGE_LIBS := $(shell $(PKG_CONFIG) --libs $($(dir)_PACKAGES))
+        $(dir)_PACKAGE_LIBS := $(call pkgconfig,$($(dir)_PACKAGES),libs,LIBS)
     endif
 endif
 
