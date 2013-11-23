@@ -239,11 +239,11 @@ void swc_renderer_flush(struct swc_renderer * renderer,
     struct wl_shm_buffer * buffer;
     struct buffer_state * state;
 
-    if (!(buffer = wl_shm_buffer_get(surface->state.buffer)))
-        return;
-
     state = buffer_state(surface->state.buffer);
     assert(state);
+
+    if (!state->src || !state->dst)
+        return;
 
     pixman_image_set_clip_region32(state->src, &surface->state.damage);
     pixman_image_composite32(PIXMAN_OP_SRC, state->src, NULL, state->dst,
