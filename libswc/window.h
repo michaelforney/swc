@@ -31,8 +31,8 @@ struct swc_window;
 
 struct swc_window_impl
 {
-    void (* configure)(struct swc_window * window, int32_t x, int32_t y,
-                       uint32_t width, uint32_t height);
+    void (* configure)(struct swc_window * window,
+                       const struct swc_rectangle * geometry);
     void (* focus)(struct swc_window * window);
 };
 

@@ -28,6 +28,14 @@
 #include <stdint.h>
 #include <wayland-server.h>
 
+/* Rectangles {{{ */
+struct swc_rectangle
+{
+    int32_t x, y;
+    uint32_t width, height;
+};
+/* }}} */
+
 /* Windows {{{ */
 enum
 {
@@ -56,8 +64,8 @@ struct swc_window
 void swc_window_show(struct swc_window * window);
 void swc_window_hide(struct swc_window * window);
 void swc_window_focus(struct swc_window * window);
-void swc_window_set_geometry(struct swc_window * window, int32_t x, int32_t y,
-                             uint32_t width, uint32_t height);
+void swc_window_set_geometry(struct swc_window * window,
+                             const struct swc_rectangle * geometry);
 void swc_window_set_border(struct swc_window * window,
                            uint32_t color, uint32_t width);
 /* }}} */

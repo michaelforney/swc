@@ -153,14 +153,15 @@ static const struct wl_shell_surface_interface shell_surface_implementation = {
     .set_class = &set_class
 };
 
-static void configure(struct swc_window * window, int32_t x, int32_t y,
-                      uint32_t width, uint32_t height)
+static void configure(struct swc_window * window,
+                      const struct swc_rectangle * geometry)
 {
     struct swc_shell_surface * shell_surface
         = CONTAINER_OF(window, typeof(*shell_surface), window);
 
-    wl_shell_surface_send_configure
-        (shell_surface->resource, WL_SHELL_SURFACE_RESIZE_NONE, width, height);
+    wl_shell_surface_send_configure(shell_surface->resource,
+                                    WL_SHELL_SURFACE_RESIZE_NONE,
+                                    geometry->width, geometry->height);
 }
 
 static const struct swc_window_impl shell_window_impl = {

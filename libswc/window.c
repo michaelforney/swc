@@ -70,13 +70,13 @@ void swc_window_focus(struct swc_window * window)
                            INTERNAL(window)->surface);
 }
 
-void swc_window_set_geometry(struct swc_window * window, int32_t x, int32_t y,
-                             uint32_t width, uint32_t height)
+void swc_window_set_geometry(struct swc_window * window,
+                             const struct swc_rectangle * geometry)
 {
     if (INTERNAL(window)->impl->configure)
-        INTERNAL(window)->impl->configure(window, x, y, width, height);
+        INTERNAL(window)->impl->configure(window, geometry);
 
-    swc_surface_move(INTERNAL(window)->surface, x, y);
+    swc_surface_move(INTERNAL(window)->surface, geometry->x, geometry->y);
 }
 
 void swc_window_set_border(struct swc_window * window,
