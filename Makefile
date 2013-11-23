@@ -27,7 +27,8 @@ define check_deps
     @$(PKG_CONFIG) --exists --print-errors $2
 endef
 
-compile     = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -MMD -MP -MF .deps/$(basename $<).d -o $@ $<
+compile     = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -o $@ $< \
+              -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
 link        = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
 pkgconfig   = $(sort $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
                                            $(shell $(PKG_CONFIG) --$(2) $(pkg)))))
