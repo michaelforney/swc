@@ -69,7 +69,7 @@ static void * framebuffer_create_buffer(struct swc_plane * plane)
         goto error1;
     }
 
-    handle = wld_drm_drawable_get_handle(drawable);
+    handle = wld_drm_get_handle(drawable);
 
     if (drmModeAddFB(plane->output->drm->fd, drawable->width, drawable->height,
                      24, 32, drawable->pitch, handle, &buffer->fb_id) != 0)
@@ -150,7 +150,7 @@ static bool cursor_flip(struct swc_plane * plane)
     struct swc_output * output = plane->output;
     struct wld_drawable * drawable
         = swc_double_buffer_back(&plane->double_buffer);
-    int handle = wld_drm_drawable_get_handle(drawable);
+    int handle = wld_drm_get_handle(drawable);
 
     return drmModeSetCursor(plane->output->drm->fd, plane->output->crtc_id,
                             handle, 64, 64) == 0;
