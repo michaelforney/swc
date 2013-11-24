@@ -95,7 +95,7 @@ static void stop_devices()
 
     for (index = 0; index < launcher.num_input_fds; ++index)
     {
-        if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 1) == -1
+        if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1
             && errno == EINVAL)
         {
             static bool warned = false;
