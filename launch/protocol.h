@@ -1,5 +1,5 @@
 #ifndef SWC_LAUNCH_PROTOCOL_H
-#define SWC_LAUNCH_PROTOCOL_H 1
+#define SWC_LAUNCH_PROTOCOL_H
 
 #include <stdbool.h>
 #include <sys/types.h>

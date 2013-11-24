@@ -1,5 +1,5 @@
 #ifndef SWC_REGION_H
-#define SWC_REGION_H 1
+#define SWC_REGION_H
 
 #include <stdbool.h>
 #include <pixman.h>

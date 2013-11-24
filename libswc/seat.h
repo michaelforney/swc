@@ -1,5 +1,5 @@
 #ifndef SWC_SEAT_H
-#define SWC_SEAT_H 1
+#define SWC_SEAT_H
 
 #include "xkb.h"
 #include "data_device.h"

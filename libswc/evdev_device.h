@@ -1,5 +1,5 @@
 #ifndef SWC_EVDEV_DEVICE_H
-#define SWC_EVDEV_DEVICE_H 1
+#define SWC_EVDEV_DEVICE_H
 
 #include <stdbool.h>
 #include <linux/input.h>

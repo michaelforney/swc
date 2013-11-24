@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_DRM_BUFFER_H
-#define SWC_DRM_BUFFER_H 1
+#define SWC_DRM_BUFFER_H
 
 #include <stdint.h>
 

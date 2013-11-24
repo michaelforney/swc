@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_DATA_H
-#define SWC_DATA_H 1
+#define SWC_DATA_H
 
 #include <stdint.h>
 

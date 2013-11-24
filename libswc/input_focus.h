@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_INPUT_FOCUS_H
-#define SWC_INPUT_FOCUS_H 1
+#define SWC_INPUT_FOCUS_H
 
 #include <stdbool.h>
 #include <wayland-server.h>

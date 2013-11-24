@@ -1,5 +1,5 @@
 #ifndef SWC_DRM_H
-#define SWC_DRM_H 1
+#define SWC_DRM_H
 
 #include <stdbool.h>
 #include <stdint.h>

@@ -2,7 +2,7 @@
 #include <xkbcommon/xkbcommon.h>
 
 #ifndef SWC_XKB_H
-#define SWC_XKB_H 1
+#define SWC_XKB_H
 
 struct swc_xkb
 {

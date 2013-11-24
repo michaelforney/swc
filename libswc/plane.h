@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_PLANE_H
-#define SWC_PLANE_H 1
+#define SWC_PLANE_H
 
 #include "util.h"
 

@@ -1,5 +1,5 @@
 #ifndef SWC_COMPOSITOR_H
-#define SWC_COMPOSITOR_H 1
+#define SWC_COMPOSITOR_H
 
 #include "drm.h"
 #include "seat.h"

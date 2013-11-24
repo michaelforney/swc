@@ -1,5 +1,5 @@
 #ifndef SWC_POINTER_H
-#define SWC_POINTER_H 1
+#define SWC_POINTER_H
 
 #include "surface.h"
 #include "input_focus.h"

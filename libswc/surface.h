@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_SURFACE_H
-#define SWC_SURFACE_H 1
+#define SWC_SURFACE_H
 
 #include <stdbool.h>
 #include <wayland-server.h>

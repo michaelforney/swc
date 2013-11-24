@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_DATA_DEVICE_MANAGER_H
-#define SWC_DATA_DEVICE_MANAGER_H 1
+#define SWC_DATA_DEVICE_MANAGER_H
 
 #include <wayland-server.h>
 

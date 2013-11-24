@@ -1,5 +1,5 @@
 #ifndef SWC_OUTPUT_H
-#define SWC_OUTPUT_H 1
+#define SWC_OUTPUT_H
 
 #include "plane.h"
 

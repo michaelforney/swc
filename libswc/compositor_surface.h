@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_COMPOSITOR_SURFACE_H
-#define SWC_COMPOSITOR_SURFACE_H 1
+#define SWC_COMPOSITOR_SURFACE_H
 
 #include "surface.h"
 

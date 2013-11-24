@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_CURSOR_SURFACE_H
-#define SWC_CURSOR_SURFACE_H 1
+#define SWC_CURSOR_SURFACE_H
 
 #include "surface.h"
 

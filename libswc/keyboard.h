@@ -1,5 +1,5 @@
 #ifndef SWC_KEYBOARD_H
-#define SWC_KEYBOARD_H 1
+#define SWC_KEYBOARD_H
 
 #include "surface.h"
 #include "input_focus.h"

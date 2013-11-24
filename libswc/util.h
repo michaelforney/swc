@@ -1,5 +1,5 @@
 #ifndef SWC_UTIL_H
-#define SWC_UTIL_H 1
+#define SWC_UTIL_H
 
 #include <stdlib.h>
 #include <stdbool.h>

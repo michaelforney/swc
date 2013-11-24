@@ -1,5 +1,5 @@
 #ifndef SWC_RENDERER_H
-#define SWC_RENDERER_H 1
+#define SWC_RENDERER_H
 
 #include "output.h"
 #include "surface.h"

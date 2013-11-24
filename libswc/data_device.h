@@ -22,7 +22,7 @@
  */
 
 #ifndef SWC_DATA_DEVICE_H
-#define SWC_DATA_DEVICE_H 1
+#define SWC_DATA_DEVICE_H
 
 #include "event.h"
 
