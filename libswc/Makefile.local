@@ -65,7 +65,8 @@ SWC_STATIC_OBJECTS = $(SWC_SOURCES:%.c=%.o)
 SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 
 # Explicitly state dependencies on generated files
-$(dir)/drm.c $(dir)/drm_buffer.c: protocol/wayland-drm-server-protocol.h
+objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj.lo))
+$(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
 	$(call quiet,AR) cru $@ $^
