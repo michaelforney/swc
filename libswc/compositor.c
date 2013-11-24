@@ -313,9 +313,9 @@ static void bind_compositor(struct wl_client * client, void * data,
 }
 
 bool swc_compositor_initialize(struct swc_compositor * compositor,
-                               struct wl_display * display)
+                               struct wl_display * display,
+                               struct wl_event_loop * event_loop)
 {
-    struct wl_event_loop * event_loop;
     struct wl_list * outputs;
     struct swc_output * output;
     pixman_region32_t pointer_region;
@@ -337,8 +337,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         printf("could not initialize udev context\n");
         goto error_base;
     }
-
-    event_loop = wl_display_get_event_loop(display);
 
     /* TODO: configurable seat */
     if (!swc_seat_initialize(&compositor->seat, compositor->udev, default_seat))

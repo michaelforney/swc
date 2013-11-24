@@ -25,12 +25,14 @@
 #define SWC_PRIVATE_H
 
 struct wl_display;
+struct wl_event_loop;
 struct swc_manager;
 struct swc_compositor;
 
 struct swc
 {
     struct wl_display * display;
+    struct wl_event_loop * event_loop;
     const struct swc_manager * manager;
 
     struct swc_compositor * compositor;

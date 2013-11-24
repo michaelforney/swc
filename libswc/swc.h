@@ -125,6 +125,7 @@ struct swc_manager
 };
 
 bool swc_initialize(struct wl_display * display,
+                    struct wl_event_loop * event_loop,
                     const struct swc_manager * manager);
 void swc_finalize();
 

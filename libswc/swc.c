@@ -43,9 +43,11 @@ static void setup_compositor()
 
 EXPORT
 bool swc_initialize(struct wl_display * display,
+                    struct wl_event_loop * event_loop,
                     const struct swc_manager * manager)
 {
     swc.display = display;
+    swc.event_loop = event_loop ?: wl_display_get_event_loop(display);
     swc.manager = manager;
 
     if (!swc_bindings_initialize())
@@ -54,7 +56,7 @@ bool swc_initialize(struct wl_display * display,
         goto error0;
     }
 
-    if (!swc_compositor_initialize(&compositor, display))
+    if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         fprintf(stderr, "Could not initialize compositor\n");
         goto error1;

@@ -46,7 +46,8 @@ struct swc_compositor
 };
 
 bool swc_compositor_initialize(struct swc_compositor * compositor,
-                               struct wl_display * display);
+                               struct wl_display * display,
+                               struct wl_event_loop * event_loop);
 
 void swc_compositor_finish(struct swc_compositor * compositor);
 
