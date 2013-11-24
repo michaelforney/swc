@@ -19,7 +19,6 @@ struct swc_compositor
 
     struct wl_list outputs;
     struct wl_list surfaces;
-    struct wl_array key_bindings;
 
     /* Internal state related to repainting the screen. */
     struct

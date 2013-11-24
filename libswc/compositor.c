@@ -397,7 +397,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     pixman_region32_init(&compositor->damage);
     pixman_region32_init(&compositor->opaque);
     wl_list_init(&compositor->surfaces);
-    wl_array_init(&compositor->key_bindings);
     wl_signal_init(&compositor->destroy_signal);
 
     swc_add_key_binding(SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace,
@@ -432,8 +431,6 @@ void swc_compositor_finish(struct swc_compositor * compositor)
 
     wl_signal_emit(&compositor->destroy_signal, compositor);
 
-    wl_array_release(&compositor->key_bindings);
-
     wl_list_for_each_safe(output, tmp, &compositor->outputs, link)
     {
         swc_output_finish(output);
@@ -461,19 +458,6 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
     {
         swc_output_add_globals(output, display);
     }
-}
-
-void swc_compositor_add_key_binding(struct swc_compositor * compositor,
-                                    uint32_t modifiers, uint32_t value,
-                                    swc_binding_handler_t handler, void * data)
-{
-    struct swc_binding * binding;
-
-    binding = wl_array_add(&compositor->key_bindings, sizeof *binding);
-    binding->value = value;
-    binding->modifiers = modifiers;
-    binding->handler = handler;
-    binding->data = data;
 }
 
 void swc_compositor_schedule_update(struct swc_compositor * compositor,
