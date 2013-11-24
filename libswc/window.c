@@ -69,7 +69,7 @@ void swc_window_focus(struct swc_window * window)
     if (INTERNAL(window)->impl->focus)
         INTERNAL(window)->impl->focus(window);
 
-    swc_keyboard_set_focus(&compositor->seat.keyboard,
+    swc_keyboard_set_focus(&swc.compositor->seat.keyboard,
                            INTERNAL(window)->surface);
 }
 
@@ -117,9 +117,9 @@ bool swc_window_initialize(struct swc_window * window,
 
     wl_resource_add_destroy_listener
         (surface->resource, &INTERNAL(window)->surface_destroy_listener);
-    swc_surface_set_class(surface, &compositor->compositor_class);
+    swc_surface_set_class(surface, &swc.compositor->compositor_class);
 
-    swc_manager->new_window(window);
+    swc.manager->new_window(window);
 
     return true;
 }

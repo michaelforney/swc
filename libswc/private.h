@@ -24,11 +24,19 @@
 #ifndef SWC_PRIVATE_H
 #define SWC_PRIVATE_H
 
+struct wl_display;
 struct swc_manager;
 struct swc_compositor;
 
-extern const struct swc_manager * swc_manager;
-extern struct swc_compositor * compositor;
+struct swc
+{
+    struct wl_display * display;
+    const struct swc_manager * manager;
+
+    struct swc_compositor * compositor;
+};
+
+extern struct swc swc;
 
 #endif
 

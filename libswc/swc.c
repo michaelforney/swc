@@ -22,23 +22,22 @@
  */
 
 #include "swc.h"
+#include "private.h"
 #include "binding.h"
 #include "compositor.h"
 #include "shell.h"
 #include "window.h"
 
-static struct
-{
-    struct swc_compositor compositor;
-} swc;
+static struct swc_compositor compositor;
 
-struct swc_compositor * compositor = &swc.compositor;
-const struct swc_manager * swc_manager;
+struct swc swc = {
+    .compositor = &compositor
+};
 
 static void setup_compositor()
 {
-    swc.compositor.seat.keyboard.handler = swc_binding_handler;
-    wl_signal_add(&swc.compositor.seat.pointer.focus.event_signal,
+    compositor.seat.keyboard.handler = swc_binding_handler;
+    wl_signal_add(&compositor.seat.pointer.focus.event_signal,
                   swc_window_enter_listener);
 }
 
@@ -46,7 +45,8 @@ EXPORT
 bool swc_initialize(struct wl_display * display,
                     const struct swc_manager * manager)
 {
-    swc_manager = manager;
+    swc.display = display;
+    swc.manager = manager;
 
     if (!swc_bindings_initialize())
     {
@@ -54,13 +54,13 @@ bool swc_initialize(struct wl_display * display,
         goto error0;
     }
 
-    if (!swc_compositor_initialize(&swc.compositor, display))
+    if (!swc_compositor_initialize(&compositor, display))
     {
         fprintf(stderr, "Could not initialize compositor\n");
         goto error1;
     }
 
-    swc_compositor_add_globals(&swc.compositor, display);
+    swc_compositor_add_globals(&compositor, display);
 
     if (!swc_shell_initialize(display))
     {
@@ -73,7 +73,7 @@ bool swc_initialize(struct wl_display * display,
     return true;
 
   error2:
-    swc_compositor_finish(&swc.compositor);
+    swc_compositor_finish(&compositor);
   error1:
     swc_bindings_finalize();
   error0:
@@ -84,7 +84,7 @@ EXPORT
 void swc_finalize()
 {
     swc_shell_finalize();
-    swc_compositor_finish(&swc.compositor);
+    swc_compositor_finish(&compositor);
     swc_bindings_finalize();
 }
 
