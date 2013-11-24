@@ -61,7 +61,7 @@ static void set_selection(struct wl_client * client,
                    SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
-struct wl_data_device_interface data_device_implementation = {
+static struct wl_data_device_interface data_device_implementation = {
     .start_drag = &start_drag,
     .set_selection = &set_selection
 };

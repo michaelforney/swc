@@ -113,7 +113,7 @@ static void get_touch(struct wl_client * client, struct wl_resource * resource,
     /* XXX: Implement */
 }
 
-struct wl_seat_interface seat_implementation = {
+static struct wl_seat_interface seat_implementation = {
     .get_pointer = &get_pointer,
     .get_keyboard = &get_keyboard,
     .get_touch = &get_touch

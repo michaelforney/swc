@@ -292,7 +292,7 @@ static void create_region(struct wl_client * client,
         wl_resource_post_no_memory(resource);
 }
 
-struct wl_compositor_interface compositor_implementation = {
+static struct wl_compositor_interface compositor_implementation = {
     .create_surface = &create_surface,
     .create_region = &create_region
 };

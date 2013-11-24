@@ -67,7 +67,7 @@ static void offer_destroy(struct wl_client * client,
     wl_resource_destroy(offer);
 }
 
-struct wl_data_offer_interface data_offer_implementation = {
+static struct wl_data_offer_interface data_offer_implementation = {
     .accept = &offer_accept,
     .receive = &offer_receive,
     .destroy = &offer_destroy
@@ -90,7 +90,7 @@ static void source_destroy(struct wl_client * client,
     wl_resource_destroy(source);
 }
 
-struct wl_data_source_interface data_source_implementation = {
+static struct wl_data_source_interface data_source_implementation = {
     .offer = &source_offer,
     .destroy = &source_destroy
 };

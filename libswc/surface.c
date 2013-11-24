@@ -304,7 +304,7 @@ void set_buffer_scale(struct wl_client * client, struct wl_resource * surface,
     /* TODO: Implement */
 }
 
-struct wl_surface_interface surface_implementation = {
+static struct wl_surface_interface surface_implementation = {
     .destroy = &destroy,
     .attach = &attach,
     .damage = &damage,

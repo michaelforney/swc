@@ -150,7 +150,7 @@ static void set_cursor(struct wl_client * client,
     swc_send_event(&pointer->event_signal, SWC_POINTER_CURSOR_CHANGED, &data);
 }
 
-struct wl_pointer_interface pointer_implementation = {
+static struct wl_pointer_interface pointer_implementation = {
     .set_cursor = &set_cursor
 };
 
