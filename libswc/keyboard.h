@@ -28,15 +28,12 @@ struct swc_keyboard
     const struct swc_keyboard_handler * handler;
 
     struct swc_xkb xkb;
-    struct wl_array keys;
 
-    struct
-    {
-            uint32_t mods_depressed;
-            uint32_t mods_latched;
-            uint32_t mods_locked;
-            uint32_t group;
-    } modifiers;
+    struct wl_array keys;
+    uint32_t mods_depressed;
+    uint32_t mods_latched;
+    uint32_t mods_locked;
+    uint32_t group;
 };
 
 bool swc_keyboard_initialize(struct swc_keyboard * keyboard);

@@ -160,13 +160,12 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
     mods_latched = xkb_state_serialize_mods(xkb->state, XKB_STATE_LATCHED);
     mods_locked = xkb_state_serialize_mods(xkb->state, XKB_STATE_LOCKED);
     mods_active = mods_depressed | mods_latched;
-
     group = xkb_state_serialize_layout(xkb->state, XKB_STATE_LAYOUT_EFFECTIVE);
 
-    if (mods_depressed != keyboard->modifiers.mods_depressed
-        || mods_latched != keyboard->modifiers.mods_latched
-        || mods_locked != keyboard->modifiers.mods_locked
-        || group != keyboard->modifiers.group)
+    if (mods_depressed != keyboard->mods_depressed
+        || mods_latched != keyboard->mods_latched
+        || mods_locked != keyboard->mods_locked
+        || group != keyboard->group)
     {
         if (keyboard->focus.resource)
         {
@@ -177,9 +176,9 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
         }
     }
 
-    keyboard->modifiers.mods_depressed = mods_depressed;
-    keyboard->modifiers.mods_latched = mods_latched;
-    keyboard->modifiers.mods_locked = mods_locked;
-    keyboard->modifiers.group = group;
+    keyboard->mods_depressed = mods_depressed;
+    keyboard->mods_latched = mods_latched;
+    keyboard->mods_locked = mods_locked;
+    keyboard->group = group;
 }
 
