@@ -26,13 +26,6 @@
 
 #include "util.h"
 
-#define INTERNAL_DECL(type, name)                                           \
-    struct                                                                  \
-    {                                                                       \
-        struct swc_ ## type name;                                           \
-        struct swc_ ## type ## _internal _ ## name ## _internal;            \
-    }
-
 #define INTERNAL_ASSOCIATIONS(ptr, base)                                    \
     INTERNAL_ASSOCIATION(window, ptr,                                       \
     base)
@@ -49,7 +42,7 @@
 #if HAVE_GENERIC
 #   define INTERNAL_ASSOCIATION(type, ptr, next)                            \
         struct swc_ ## type *:                                              \
-            &((INTERNAL_DECL(type, dummy) *) ptr)->_dummy_internal          \
+            (struct swc_ ## type ## _internal *) ptr                        \
         next
 #   define INTERNAL(ptr)                                                    \
         _Generic(ptr, INTERNAL_ASSOCIATIONS(ptr,))
@@ -58,14 +51,10 @@
 #   define INTERNAL_ASSOCIATION(type, ptr, next)                            \
         __builtin_choose_expr(                                              \
         __builtin_types_compatible_p(typeof(ptr), struct swc_ ## type *),   \
-        &((INTERNAL_DECL(type, dummy) *) ptr)->_dummy_internal, next)
+        (struct swc_ ## type ## _internal *) ptr, next)
 #   define INTERNAL(ptr) \
         INTERNAL_ASSOCIATIONS(ptr, (void) 0)
 #endif
-
-#define CONTAINER_OF_INTERNAL(ptr, type, member)                            \
-    &CONTAINER_OF(ptr, INTERNAL_DECL(type, dummy),                          \
-                  _dummy_internal.member)->dummy
 
 #endif
 

@@ -31,7 +31,7 @@
 
 struct swc_shell_surface
 {
-    INTERNAL_DECL(window, window);
+    struct swc_window_internal window;
 
     struct wl_resource * resource;
 
@@ -72,7 +72,8 @@ static void set_toplevel(struct wl_client * client,
         return;
 
     shell_surface->type = SHELL_SURFACE_TYPE_TOPLEVEL;
-    swc_window_set_state(&shell_surface->window, SWC_WINDOW_STATE_TOPLEVEL);
+    swc_window_set_state(&shell_surface->window.base,
+                         SWC_WINDOW_STATE_TOPLEVEL);
 }
 
 static void set_transient(struct wl_client * client,
@@ -84,9 +85,9 @@ static void set_transient(struct wl_client * client,
         = wl_resource_get_user_data(resource);
     struct swc_surface * parent = wl_resource_get_user_data(parent_resource);
 
-    swc_surface_move(INTERNAL(&shell_surface->window)->surface,
+    swc_surface_move(shell_surface->window.surface,
                      parent->geometry.x + x, parent->geometry.y + y);
-    swc_compositor_surface_show(INTERNAL(&shell_surface->window)->surface);
+    swc_compositor_surface_show(shell_surface->window.surface);
 
     /* XXX: Handle transient */
 }
@@ -108,9 +109,9 @@ static void set_popup(struct wl_client * client, struct wl_resource * resource,
         = wl_resource_get_user_data(resource);
     struct swc_surface * parent = wl_resource_get_user_data(parent_resource);
 
-    swc_surface_move(INTERNAL(&shell_surface->window)->surface,
+    swc_surface_move(shell_surface->window.surface,
                      parent->geometry.x + x, parent->geometry.y + y);
-    swc_compositor_surface_show(INTERNAL(&shell_surface->window)->surface);
+    swc_compositor_surface_show(shell_surface->window.surface);
 
     /* XXX: Handle popup */
 }
@@ -128,7 +129,7 @@ static void set_title(struct wl_client * client, struct wl_resource * resource,
     struct swc_shell_surface * shell_surface
         = wl_resource_get_user_data(resource);
 
-    swc_window_set_title(&shell_surface->window, title, -1);
+    swc_window_set_title(&shell_surface->window.base, title, -1);
 }
 
 static void set_class(struct wl_client * client, struct wl_resource * resource,
@@ -137,7 +138,7 @@ static void set_class(struct wl_client * client, struct wl_resource * resource,
     struct swc_shell_surface * shell_surface
         = wl_resource_get_user_data(resource);
 
-    swc_window_set_class(&shell_surface->window, class);
+    swc_window_set_class(&shell_surface->window.base, class);
 }
 
 static const struct wl_shell_surface_interface shell_surface_implementation = {
@@ -157,7 +158,7 @@ static void configure(struct swc_window * window,
                       const struct swc_rectangle * geometry)
 {
     struct swc_shell_surface * shell_surface
-        = CONTAINER_OF(window, typeof(*shell_surface), window);
+        = CONTAINER_OF(window, typeof(*shell_surface), window.base);
 
     wl_shell_surface_send_configure(shell_surface->resource,
                                     WL_SHELL_SURFACE_RESIZE_NONE,
@@ -179,7 +180,8 @@ struct swc_shell_surface * swc_shell_surface_new
         return NULL;
 
     shell_surface->type = SHELL_SURFACE_TYPE_UNSPECIFIED;
-    swc_window_initialize(&shell_surface->window, &shell_window_impl, surface);
+    swc_window_initialize(&shell_surface->window.base,
+                          &shell_window_impl, surface);
 
     shell_surface->resource = wl_resource_create
         (client, &wl_shell_surface_interface, 1, id);

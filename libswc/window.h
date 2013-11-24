@@ -24,10 +24,10 @@
 #ifndef SWC_WINDOW_H
 #define SWC_WINDOW_H
 
+#include "swc.h"
+
 #include <stdint.h>
 #include <wayland-server.h>
-
-struct swc_window;
 
 struct swc_window_impl
 {
@@ -38,6 +38,8 @@ struct swc_window_impl
 
 struct swc_window_internal
 {
+    struct swc_window base;
+
     struct swc_surface * surface;
     struct wl_listener surface_destroy_listener;
     const struct swc_window_impl * impl;

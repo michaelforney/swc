@@ -95,8 +95,8 @@ void swc_window_set_border(struct swc_window * window,
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
-    struct swc_window * window = CONTAINER_OF_INTERNAL
-        (listener, window, surface_destroy_listener);
+    struct swc_window * window = &CONTAINER_OF
+        (listener, struct swc_window_internal, surface_destroy_listener)->base;
 
     swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
     free(window);
@@ -131,8 +131,8 @@ struct swc_window * swc_window_get(struct swc_surface * surface)
     listener = wl_resource_get_destroy_listener(surface->resource,
                                                 &handle_surface_destroy);
 
-    return listener ? CONTAINER_OF_INTERNAL(listener, window,
-                                            surface_destroy_listener)
+    return listener ? &CONTAINER_OF(listener, struct swc_window_internal,
+                                    surface_destroy_listener)->base
                     : NULL;
 }
 
