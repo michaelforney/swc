@@ -42,23 +42,35 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
                        uint32_t key, uint32_t state)
 {
     struct binding * binding;
-    char keysym_name[64];
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
-        xkb_keysym_t keysym;
+        xkb_layout_index_t layout;
+        const xkb_keysym_t * keysyms;
+        int num_keysyms;
 
-        keysym = xkb_state_key_get_one_sym(keyboard->xkb.state, key + 8);
+        /* XKB key codes are offset by 8 */
+        key += 8;
 
-        wl_array_for_each(binding, &key_bindings)
+        layout = xkb_state_key_get_layout(keyboard->xkb.state, key);
+
+        /* XXX: Maybe someone might want to register a key binding for a
+         * keysym with a different shift-level? */
+        num_keysyms = xkb_keymap_key_get_syms_by_level
+            (keyboard->xkb.keymap.map, key, layout, 0, &keysyms);
+
+        if (num_keysyms == 1)
         {
-            if (binding->value == keysym
-                && (binding->modifiers == keyboard->modifiers
-                    || binding->modifiers == SWC_MOD_ANY))
+            wl_array_for_each(binding, &key_bindings)
             {
-                binding->handler(time, keysym, binding->data);
-                printf("\t-> handled\n");
-                return true;
+                if (binding->value == keysyms[0]
+                    && (binding->modifiers == keyboard->modifiers
+                        || binding->modifiers == SWC_MOD_ANY))
+                {
+                    binding->handler(time, keysyms[0], binding->data);
+                    printf("\t-> handled\n");
+                    return true;
+                }
             }
         }
     }
