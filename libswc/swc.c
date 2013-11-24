@@ -64,7 +64,7 @@ bool swc_initialize(struct wl_display * display,
 
     swc_compositor_add_globals(&compositor, display);
 
-    if (!swc_shell_initialize(display))
+    if (!swc_shell_initialize())
     {
         fprintf(stderr, "Could not initialize shell\n");
         goto error2;

@@ -26,9 +26,7 @@
 
 #include <stdbool.h>
 
-struct wl_display;
-
-bool swc_shell_initialize(struct wl_display * display);
+bool swc_shell_initialize();
 void swc_shell_finalize();
 
 #endif

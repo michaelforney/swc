@@ -23,6 +23,7 @@
 
 #include "shell.h"
 #include "shell_surface.h"
+#include "private.h"
 
 #include <wayland-server.h>
 
@@ -60,10 +61,10 @@ static void bind_shell(struct wl_client * client, void * data,
     wl_resource_set_implementation(resource, &shell_implementation, NULL, NULL);
 }
 
-bool swc_shell_initialize(struct wl_display * display)
+bool swc_shell_initialize()
 {
-    shell.global = wl_global_create(display, &wl_shell_interface, 1, NULL,
-                                    &bind_shell);
+    shell.global = wl_global_create(swc.display, &wl_shell_interface, 1,
+                                    NULL, &bind_shell);
 
     return shell.global;
 }
