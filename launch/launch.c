@@ -72,6 +72,9 @@ static struct
     long console_mode;
 } original_vt_state;
 
+static void __attribute__((noreturn,format(printf,1,2)))
+    die(const char * format, ...);
+
 static void __attribute__((noreturn)) usage(const char * name)
 {
     fprintf(stderr, "Usage: %s [-h] [--] <server> [server arguments...]\n", name);
@@ -86,7 +89,7 @@ static void start_devices()
         drmSetMaster(launcher.drm_fds[index]);
 }
 
-static void stop_devices()
+static void stop_devices(bool fatal)
 {
     unsigned index;
 
@@ -95,17 +98,10 @@ static void stop_devices()
 
     for (index = 0; index < launcher.num_input_fds; ++index)
     {
-        if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1
-            && errno == EINVAL)
+        if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1 && fatal)
         {
-            static bool warned = false;
-
-            if (!warned)
-            {
-                fprintf(stderr, "WARNING: Your kernel does not support EVIOCREVOKE; "
-                                "input devices cannot be revoked\n");
-                warned = true;
-            }
+            die("FATAL: Your kernel does not support EVIOCREVOKE; "
+                "input devices cannot be revoked: %s\n", strerror(errno));
         }
         close(launcher.input_fds[index]);
     }
@@ -126,10 +122,10 @@ static void cleanup()
         ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
     }
 
-    stop_devices();
+    stop_devices(false);
 }
 
-static void __attribute__((noreturn,format(printf,1,2)))
+void __attribute__((noreturn,format(printf,1,2)))
     die(const char * format, ...)
 {
     va_list args;
@@ -162,7 +158,7 @@ static void handle_chld(int signal)
 
 static void handle_usr1(int signal)
 {
-    stop_devices();
+    stop_devices(true);
     ioctl(launcher.tty_fd, VT_RELDISP, 1);
 }
 
