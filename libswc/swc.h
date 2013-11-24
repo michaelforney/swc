@@ -170,14 +170,6 @@ struct swc_screen
 typedef void (* swc_binding_handler_t)(uint32_t time, uint32_t value,
                                        void * data);
 
-struct swc_binding
-{
-    uint32_t value;
-    uint32_t modifiers;
-    swc_binding_handler_t handler;
-    void * data;
-};
-
 void swc_add_key_binding(uint32_t modifiers, uint32_t value,
                          swc_binding_handler_t handler, void * data);
 

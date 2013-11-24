@@ -28,12 +28,20 @@
 
 #include <wayland-util.h>
 
+struct binding
+{
+    uint32_t value;
+    uint32_t modifiers;
+    swc_binding_handler_t handler;
+    void * data;
+};
+
 static struct wl_array key_bindings;
 
 static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
                        uint32_t key, uint32_t state)
 {
-    struct swc_binding * binding;
+    struct binding * binding;
     char keysym_name[64];
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
@@ -97,7 +105,7 @@ EXPORT
 void swc_add_key_binding(uint32_t modifiers, uint32_t value,
                          swc_binding_handler_t handler, void * data)
 {
-    struct swc_binding * binding;
+    struct binding * binding;
 
     binding = wl_array_add(&key_bindings, sizeof *binding);
     binding->value = value;
