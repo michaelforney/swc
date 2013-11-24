@@ -1,3 +1,4 @@
+#include "swc.h"
 #include "keyboard.h"
 #include "util.h"
 
@@ -47,7 +48,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
         goto error1;
 
     wl_array_init(&keyboard->keys);
-
+    keyboard->modifiers = 0;
     keyboard->focus_handler.enter = &enter;
     keyboard->focus_handler.leave = &leave;
 
@@ -175,6 +176,16 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
                                        mods_locked, group);
         }
     }
+
+    keyboard->modifiers = 0;
+    if (mods_active & (1 << keyboard->xkb.indices.ctrl))
+        keyboard->modifiers |= SWC_MOD_CTRL;
+    if (mods_active & (1 << keyboard->xkb.indices.alt))
+        keyboard->modifiers |= SWC_MOD_ALT;
+    if (mods_active & (1 << keyboard->xkb.indices.super))
+        keyboard->modifiers |= SWC_MOD_LOGO;
+    if (mods_active & (1 << keyboard->xkb.indices.shift))
+        keyboard->modifiers |= SWC_MOD_SHIFT;
 
     keyboard->mods_depressed = mods_depressed;
     keyboard->mods_latched = mods_latched;

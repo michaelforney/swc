@@ -34,6 +34,8 @@ struct swc_keyboard
     uint32_t mods_latched;
     uint32_t mods_locked;
     uint32_t group;
+
+    uint32_t modifiers;
 };
 
 bool swc_keyboard_initialize(struct swc_keyboard * keyboard);

@@ -52,31 +52,13 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
 
         wl_array_for_each(binding, &key_bindings)
         {
-            if (binding->value == keysym)
+            if (binding->value == keysym
+                && (binding->modifiers == keyboard->modifiers
+                    || binding->modifiers == SWC_MOD_ANY))
             {
-                xkb_mod_mask_t mod_mask;
-                uint32_t modifiers = 0;
-                mod_mask = xkb_state_serialize_mods(keyboard->xkb.state,
-                                                    XKB_STATE_MODS_EFFECTIVE);
-                mod_mask = xkb_state_mod_mask_remove_consumed(keyboard->xkb.state, key + 8,
-                                                              mod_mask);
-
-                if (mod_mask & (1 << keyboard->xkb.indices.ctrl))
-                    modifiers |= SWC_MOD_CTRL;
-                if (mod_mask & (1 << keyboard->xkb.indices.alt))
-                    modifiers |= SWC_MOD_ALT;
-                if (mod_mask & (1 << keyboard->xkb.indices.super))
-                    modifiers |= SWC_MOD_LOGO;
-                if (mod_mask & (1 << keyboard->xkb.indices.shift))
-                    modifiers |= SWC_MOD_SHIFT;
-
-                if (binding->modifiers == SWC_MOD_ANY
-                    || binding->modifiers == modifiers)
-                {
-                    binding->handler(time, keysym, binding->data);
-                    printf("\t-> handled\n");
-                    return true;
-                }
+                binding->handler(time, keysym, binding->data);
+                printf("\t-> handled\n");
+                return true;
             }
         }
     }
