@@ -72,7 +72,7 @@ $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
 	$(call quiet,AR) cru $@ $^
 
 $(dir)/$(LIBSWC_LIB): $(SWC_SHARED_OBJECTS)
-	$(link) -shared -Wl,-soname,$(LIBSWC_SO),-no-undefined $(libswc_PACKAGE_LIBS)
+	$(link) -shared -Wl,-soname,$(LIBSWC_SO) -Wl,-no-undefined $(libswc_PACKAGE_LIBS)
 
 $(dir)/$(LIBSWC_SO): $(dir)/$(LIBSWC_LIB)
 	$(call quiet,SYM,ln -sf) $(notdir $<) $@
