@@ -42,6 +42,7 @@ static void setup_compositor()
                   swc_window_enter_listener);
 }
 
+EXPORT
 bool swc_initialize(struct wl_display * display,
                     const struct swc_manager * manager)
 {
@@ -79,6 +80,7 @@ bool swc_initialize(struct wl_display * display,
     return false;
 }
 
+EXPORT
 void swc_finalize()
 {
     swc_shell_finalize();

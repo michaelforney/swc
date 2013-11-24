@@ -27,6 +27,8 @@ define check_deps
     @$(PKG_CONFIG) --exists --print-errors $2
 endef
 
+override CFLAGS += -fvisibility=hidden
+
 compile     = $(call quiet,CC) $(CFLAGS) $(CPPFLAGS) -I . -c -o $@ $< \
               -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
 link        = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^

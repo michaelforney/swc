@@ -9,6 +9,8 @@
 #include <pixman.h>
 #include <wayland-util.h>
 
+#define EXPORT __attribute__((visibility("default")))
+
 #ifdef offsetof
 # define OFFSET_OF offsetof
 #else

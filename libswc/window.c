@@ -51,16 +51,19 @@ static struct wl_listener window_enter_listener = {
 };
 struct wl_listener * swc_window_enter_listener = &window_enter_listener;
 
+EXPORT
 void swc_window_show(struct swc_window * window)
 {
     swc_compositor_surface_show(INTERNAL(window)->surface);
 }
 
+EXPORT
 void swc_window_hide(struct swc_window * window)
 {
     swc_compositor_surface_hide(INTERNAL(window)->surface);
 }
 
+EXPORT
 void swc_window_focus(struct swc_window * window)
 {
     if (INTERNAL(window)->impl->focus)
@@ -70,6 +73,7 @@ void swc_window_focus(struct swc_window * window)
                            INTERNAL(window)->surface);
 }
 
+EXPORT
 void swc_window_set_geometry(struct swc_window * window,
                              const struct swc_rectangle * geometry)
 {
@@ -79,6 +83,7 @@ void swc_window_set_geometry(struct swc_window * window,
     swc_surface_move(INTERNAL(window)->surface, geometry->x, geometry->y);
 }
 
+EXPORT
 void swc_window_set_border(struct swc_window * window,
                            uint32_t border_color, uint32_t border_width)
 {
@@ -97,6 +102,7 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
     free(window);
 }
 
+EXPORT
 bool swc_window_initialize(struct swc_window * window,
                            const struct swc_window_impl * impl,
                            struct swc_surface * surface)

@@ -24,6 +24,7 @@
 #include "swc.h"
 #include "binding.h"
 #include "keyboard.h"
+#include "util.h"
 
 #include <wayland-util.h>
 
@@ -92,6 +93,7 @@ void swc_bindings_finalize()
     wl_array_release(&key_bindings);
 }
 
+EXPORT
 void swc_add_key_binding(uint32_t modifiers, uint32_t value,
                          swc_binding_handler_t handler, void * data)
 {
