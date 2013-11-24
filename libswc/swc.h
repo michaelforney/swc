@@ -29,21 +29,52 @@
 #include <wayland-server.h>
 
 /* Rectangles {{{ */
+
 struct swc_rectangle
 {
     int32_t x, y;
     uint32_t width, height;
 };
+
 /* }}} */
 
 /* Windows {{{ */
+
 enum
 {
+    /**
+     * Sent when the window is about to be destroyed.
+     *
+     * After this event is sent, the window is not longer valid.
+     */
     SWC_WINDOW_DESTROYED,
+
+    /**
+     * Sent when the window's title changes.
+     */
     SWC_WINDOW_TITLE_CHANGED,
+
+    /**
+     * Sent when the window's class changes.
+     */
     SWC_WINDOW_CLASS_CHANGED,
+
+    /**
+     * Sent when the window's state changes.
+     *
+     * The display server should adjust the windows placement and visibility
+     * accordingly.
+     */
     SWC_WINDOW_STATE_CHANGED,
+
+    /**
+     * Sent when the pointer enters the window.
+     */
     SWC_WINDOW_ENTERED,
+
+    /**
+     * Sent when the window's size has changed.
+     */
     SWC_WINDOW_RESIZED
 };
 
@@ -61,18 +92,53 @@ struct swc_window
     } state;
 };
 
+/**
+ * Make the specified window visible.
+ */
 void swc_window_show(struct swc_window * window);
+
+/**
+ * Make the specified window hidden.
+ */
 void swc_window_hide(struct swc_window * window);
+
+/**
+ * Set the keyboard focus to the specified window.
+ *
+ * If window is NULL, the keyboard will have no focus.
+ */
 void swc_window_focus(struct swc_window * window);
+
+/**
+ * Set the window's geometry.
+ *
+ * The geometry's coordinates refer to the actual contents of the window, and
+ * should be adjusted for the border size.
+ */
 void swc_window_set_geometry(struct swc_window * window,
                              const struct swc_rectangle * geometry);
+
+/**
+ * Set the window's border color and width.
+ *
+ * NOTE: The windows geometry remains unchanged, and should be updated if a
+ *       fixed top-left corner of the border is desired.
+ */
 void swc_window_set_border(struct swc_window * window,
                            uint32_t color, uint32_t width);
+
 /* }}} */
 
 /* Screens {{{ */
+
 enum
 {
+    /**
+     * Sent when either the total_geometry or usable_geometry of the screen has
+     * changed.
+     *
+     * The data member of this event points to the rectangle which changed.
+     */
     SWC_SCREEN_GEOMETRY_CHANGED
 };
 
@@ -80,15 +146,21 @@ struct swc_screen
 {
     struct wl_signal event_signal;
 
-    /* The total area of the screen */
+    /**
+     * The total area of the screen.
+     */
     struct swc_rectangle total_geometry;
 
-    /* The area of the screen available for placing windows */
+    /**
+     * The area of the screen available for placing windows.
+     */
     struct swc_rectangle usable_geometry;
 };
+
 /* }}} */
 
 /* Bindings {{{ */
+
 #define SWC_MOD_CTRL    (1 << 0)
 #define SWC_MOD_ALT     (1 << 1)
 #define SWC_MOD_LOGO    (1 << 2)
@@ -108,25 +180,67 @@ struct swc_binding
 
 void swc_add_key_binding(uint32_t modifiers, uint32_t value,
                          swc_binding_handler_t handler, void * data);
+
 /* }}} */
 
 /* Events {{{ */
+
+/**
+ * An event is the data passed to the listeners of the event_signals of various
+ * objects.
+ */
 struct swc_event
 {
+    /**
+     * The type of event that was sent.
+     *
+     * The meaning of this field depends on the type of object containing the
+     * event_signal that passed this event.
+     */
     uint32_t type;
+
+    /**
+     * Data specific to the event type.
+     *
+     * Unless explicitly stated in the description of the event type, this
+     * value is undefined.
+     */
     void * data;
 };
+
 /* }}} */
 
+/**
+ * This is a user-provided structure that swc will use to notify the display
+ * server of new windows and screens.
+ */
 struct swc_manager
 {
+    /**
+     * Called when a new window is created.
+     *
+     * The window begins in the WITHDRAWN state and should not be managed until
+     * it changes to the TOPLEVEL state.
+     */
     void (* new_window)(struct swc_window * window);
+
+    /**
+     * Called when a new screen is created.
+     */
     void (* new_screen)(struct swc_screen * screen);
 };
 
+/**
+ * Initializes the compositor using the specified display, event_loop, and
+ * manager.
+ */
 bool swc_initialize(struct wl_display * display,
                     struct wl_event_loop * event_loop,
                     const struct swc_manager * manager);
+
+/**
+ * Stops the compositor, releasing any used resources.
+ */
 void swc_finalize();
 
 #endif
