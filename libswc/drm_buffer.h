@@ -26,7 +26,6 @@
 
 #include <stdint.h>
 
-struct wl_resource;
 struct wl_client;
 
 struct swc_drm_buffer

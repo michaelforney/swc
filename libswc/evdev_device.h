@@ -5,7 +5,6 @@
 #include <linux/input.h>
 #include <wayland-util.h>
 
-struct libevdev_device;
 struct swc_evdev_device;
 struct wl_event_loop;
 

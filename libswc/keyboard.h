@@ -32,7 +32,6 @@
 
 struct swc_keyboard;
 struct wl_client;
-struct wl_resource;
 
 struct swc_keyboard_handler
 {

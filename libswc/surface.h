@@ -28,8 +28,6 @@
 #include <wayland-server.h>
 #include <pixman.h>
 
-struct swc_surface;
-
 enum swc_surface_event_type
 {
     SWC_SURFACE_EVENT_TYPE_RESIZE

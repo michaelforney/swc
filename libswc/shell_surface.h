@@ -26,7 +26,6 @@
 
 #include <stdint.h>
 
-struct swc_shell_surface;
 struct swc_surface;
 struct wl_client;
 

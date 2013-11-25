@@ -24,11 +24,6 @@
 #ifndef SWC_INTERNAL_H
 #define SWC_INTERNAL_H
 
-struct wl_display;
-struct wl_event_loop;
-struct swc_manager;
-struct swc_compositor;
-
 struct swc
 {
     struct wl_display * display;

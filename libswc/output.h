@@ -10,7 +10,6 @@
 
 #define SWC_OUTPUT_MASK(output) (1 << (output)->id)
 
-struct swc_mode;
 struct wl_display;
 
 struct swc_output

@@ -27,8 +27,6 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-struct swc_surface;
-
 enum swc_input_focus_event_type
 {
     SWC_INPUT_FOCUS_EVENT_CHANGED
