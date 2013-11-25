@@ -23,8 +23,8 @@
 
 #include "drm.h"
 #include "drm_buffer.h"
-#include "output.h"
 #include "event.h"
+#include "output.h"
 #include "private.h"
 
 #include <stdio.h>

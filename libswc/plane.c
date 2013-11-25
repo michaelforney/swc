@@ -22,9 +22,9 @@
  */
 
 #include "plane.h"
-#include "output.h"
-#include "mode.h"
 #include "drm.h"
+#include "mode.h"
+#include "output.h"
 
 #include <stdlib.h>
 #include <stdio.h>

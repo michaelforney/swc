@@ -22,10 +22,10 @@
  */
 
 #include "surface.h"
+#include "drm_buffer.h"
 #include "event.h"
 #include "region.h"
 #include "util.h"
-#include "drm_buffer.h"
 
 #include <stdlib.h>
 #include <stdio.h>

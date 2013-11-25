@@ -22,10 +22,10 @@
  */
 
 #include "swc.h"
-#include "window.h"
+#include "compositor_surface.h"
 #include "internal.h"
 #include "shell_surface.h"
-#include "compositor_surface.h"
+#include "window.h"
 
 #include <stdlib.h>
 

@@ -1,6 +1,6 @@
-#include <stdio.h>
-
 #include "mode.h"
+
+#include <stdio.h>
 
 bool swc_mode_initialize(struct swc_mode * mode, drmModeModeInfo * mode_info)
 {

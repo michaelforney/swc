@@ -22,8 +22,8 @@
  */
 
 #include "data_device_manager.h"
-#include "data_device.h"
 #include "data.h"
+#include "data_device.h"
 #include "seat.h"
 
 static void create_data_source(struct wl_client * client,

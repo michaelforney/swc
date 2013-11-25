@@ -21,12 +21,12 @@
  * SOFTWARE.
  */
 
-#include "swc.h"
 #include "window.h"
 #include "compositor.h"
 #include "compositor_surface.h"
 #include "internal.h"
 #include "private.h"
+#include "swc.h"
 
 #include <stdlib.h>
 #include <string.h>

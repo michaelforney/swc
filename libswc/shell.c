@@ -22,8 +22,8 @@
  */
 
 #include "shell.h"
-#include "shell_surface.h"
 #include "private.h"
+#include "shell_surface.h"
 
 #include <wayland-server.h>
 

@@ -24,8 +24,8 @@
 #ifndef SWC_KEYBOARD_H
 #define SWC_KEYBOARD_H
 
-#include "surface.h"
 #include "input_focus.h"
+#include "surface.h"
 #include "xkb.h"
 
 #include <wayland-util.h>

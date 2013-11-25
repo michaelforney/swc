@@ -1,9 +1,9 @@
 #ifndef SWC_RENDERER_H
 #define SWC_RENDERER_H
 
+#include "drm.h"
 #include "output.h"
 #include "surface.h"
-#include "drm.h"
 
 struct swc_render_target
 {

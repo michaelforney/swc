@@ -22,9 +22,9 @@
  */
 
 #include "input_focus.h"
+#include "event.h"
 #include "surface.h"
 #include "util.h"
-#include "event.h"
 
 static inline void focus(struct swc_input_focus * input_focus,
                          struct swc_surface * surface,

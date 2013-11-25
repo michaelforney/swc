@@ -1,6 +1,6 @@
 #include "pointer.h"
-#include "util.h"
 #include "event.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <assert.h>
