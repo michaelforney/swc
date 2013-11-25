@@ -23,7 +23,6 @@
 
 #include "swc.h"
 #include "compositor_surface.h"
-#include "internal.h"
 #include "shell_surface.h"
 #include "window.h"
 

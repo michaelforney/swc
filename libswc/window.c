@@ -24,12 +24,13 @@
 #include "window.h"
 #include "compositor.h"
 #include "compositor_surface.h"
-#include "internal.h"
 #include "private.h"
 #include "swc.h"
 
 #include <stdlib.h>
 #include <string.h>
+
+#define INTERNAL(window) ((struct swc_window_internal *) (window))
 
 static void handle_window_enter(struct wl_listener * listener, void * data)
 {
