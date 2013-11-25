@@ -30,6 +30,11 @@ endef
 FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden
 FINAL_CPPFLAGS = $(CPPFLAGS)
 
+# Warning/error flags
+FINAL_CFLAGS += -Werror=implicit-function-declaration -Werror=implicit-int \
+                -Werror=pointer-sign -Werror=pointer-arith \
+                -Wall -Wno-missing-braces
+
 compile     = $(call quiet,CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \
               -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
 link        = $(call quiet,CCLD,$(CC)) $(FINAL_CFLAGS) -o $@ $^
