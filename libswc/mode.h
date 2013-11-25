@@ -1,6 +1,7 @@
 #ifndef SWC_MODE_H
 #define SWC_MODE_H
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <xf86drmMode.h>
