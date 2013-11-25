@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <libudev.h>
 #include <wayland-server.h>
 
 struct wld_drm_context * context;
@@ -34,9 +33,7 @@ struct swc_drm
     struct wl_signal event_signal;
 };
 
-bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
-                        const char * seat);
-
+bool swc_drm_initialize(struct swc_drm * drm, const char * seat);
 void swc_drm_finish(struct swc_drm * drm);
 
 void swc_drm_add_event_sources(struct swc_drm * drm,

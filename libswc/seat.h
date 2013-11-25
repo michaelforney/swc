@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include <wayland-util.h>
 
-struct udev;
 struct wl_display;
 struct wl_event_loop;
 
@@ -35,8 +34,7 @@ struct swc_seat
     struct swc_evdev_device_handler evdev_handler;
 };
 
-bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
-                         const char * seat_name);
+bool swc_seat_initialize(struct swc_seat * seat, const char * seat_name);
 
 void swc_seat_finish(struct swc_seat * seat);
 
@@ -45,7 +43,7 @@ void swc_seat_add_globals(struct swc_seat * seat, struct wl_display * display);
 void swc_seat_add_event_sources(struct swc_seat * seat,
                                 struct wl_event_loop * event_loop);
 
-void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev);
+void swc_seat_add_devices(struct swc_seat * seat);
 
 #endif
 

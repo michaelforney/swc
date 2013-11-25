@@ -28,6 +28,8 @@
 #include "shell.h"
 #include "window.h"
 
+#include <libudev.h>
+
 static struct swc_compositor compositor;
 
 struct swc swc = {
@@ -50,16 +52,22 @@ bool swc_initialize(struct wl_display * display,
     swc.event_loop = event_loop ?: wl_display_get_event_loop(display);
     swc.manager = manager;
 
+    if (!(swc.udev = udev_new()))
+    {
+        fprintf(stderr, "Could not initialize udev\n");
+        goto error0;
+    }
+
     if (!swc_bindings_initialize())
     {
         fprintf(stderr, "Could not initialize bindings\n");
-        goto error0;
+        goto error1;
     }
 
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         fprintf(stderr, "Could not initialize compositor\n");
-        goto error1;
+        goto error2;
     }
 
     swc_compositor_add_globals(&compositor, display);
@@ -67,17 +75,19 @@ bool swc_initialize(struct wl_display * display,
     if (!swc_shell_initialize())
     {
         fprintf(stderr, "Could not initialize shell\n");
-        goto error2;
+        goto error3;
     }
 
     setup_compositor();
 
     return true;
 
-  error2:
+  error3:
     swc_compositor_finish(&compositor);
-  error1:
+  error2:
     swc_bindings_finalize();
+  error1:
+    udev_unref(swc.udev);
   error0:
     return false;
 }
@@ -88,5 +98,6 @@ void swc_finalize()
     swc_shell_finalize();
     swc_compositor_finish(&compositor);
     swc_bindings_finalize();
+    udev_unref(swc.udev);
 }
 

@@ -2,6 +2,7 @@
 #include "evdev_device.h"
 #include "util.h"
 #include "event.h"
+#include "private.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -180,8 +181,7 @@ static void add_device(struct swc_seat * seat, struct udev_device * udev_device)
     wl_list_insert(&seat->devices, &device->link);
 }
 
-bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
-                         const char * seat_name)
+bool swc_seat_initialize(struct swc_seat * seat, const char * seat_name)
 {
     seat->name = strdup(seat_name);
     seat->capabilities = 0;
@@ -221,7 +221,7 @@ bool swc_seat_initialize(struct swc_seat * seat, struct udev * udev,
     wl_list_init(&seat->resources);
     wl_signal_init(&seat->destroy_signal);
     wl_list_init(&seat->devices);
-    swc_seat_add_devices(seat, udev);
+    swc_seat_add_devices(seat);
 
     return true;
 
@@ -268,14 +268,14 @@ void swc_seat_add_event_sources(struct swc_seat * seat,
     }
 }
 
-void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev)
+void swc_seat_add_devices(struct swc_seat * seat)
 {
     struct udev_enumerate * enumerate;
     struct udev_list_entry * entry;
     const char * path;
     struct udev_device * device;
 
-    enumerate = udev_enumerate_new(udev);
+    enumerate = udev_enumerate_new(swc.udev);
     udev_enumerate_add_match_subsystem(enumerate, "input");
     udev_enumerate_add_match_sysname(enumerate, "event[0-9]*");
 
@@ -284,7 +284,7 @@ void swc_seat_add_devices(struct swc_seat * seat, struct udev * udev)
     udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(enumerate))
     {
         path = udev_list_entry_get_name(entry);
-        device = udev_device_new_from_syspath(udev, path);
+        device = udev_device_new_from_syspath(swc.udev, path);
         add_device(seat, device);
         udev_device_unref(device);
     }

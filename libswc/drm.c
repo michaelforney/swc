@@ -25,6 +25,7 @@
 #include "drm_buffer.h"
 #include "output.h"
 #include "event.h"
+#include "private.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -132,8 +133,7 @@ static const struct wl_drm_interface drm_implementation = {
         .create_prime_buffer = &create_prime_buffer
 };
 
-static struct udev_device * find_primary_drm_device(struct udev * udev,
-                                                    const char * seat)
+static struct udev_device * find_primary_drm_device(const char * seat)
 {
     struct udev_enumerate * enumerate;
     struct udev_list_entry * entry;
@@ -143,7 +143,7 @@ static struct udev_device * find_primary_drm_device(struct udev * udev,
     struct udev_device * pci;
     struct udev_device * device, * drm_device = NULL;
 
-    enumerate = udev_enumerate_new(udev);
+    enumerate = udev_enumerate_new(swc.udev);
     udev_enumerate_add_match_subsystem(enumerate, "drm");
     udev_enumerate_add_match_sysname(enumerate, "card[0-9]*");
 
@@ -152,7 +152,7 @@ static struct udev_device * find_primary_drm_device(struct udev * udev,
     udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(enumerate))
     {
         path = udev_list_entry_get_name(entry);
-        device = udev_device_new_from_syspath(udev, path);
+        device = udev_device_new_from_syspath(swc.udev, path);
 
         printf("device node path: %s\n", udev_device_get_devnode(device));
 
@@ -278,15 +278,14 @@ static int handle_data(int fd, uint32_t mask, void * data)
     return 1;
 }
 
-bool swc_drm_initialize(struct swc_drm * drm, struct udev * udev,
-                        const char * seat)
+bool swc_drm_initialize(struct swc_drm * drm, const char * seat)
 {
     const char * sysnum;
     char * end;
 
     wl_signal_init(&drm->event_signal);
 
-    struct udev_device * drm_device = find_primary_drm_device(udev, seat);
+    struct udev_device * drm_device = find_primary_drm_device(seat);
 
     if (!drm_device)
     {

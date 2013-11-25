@@ -11,8 +11,6 @@ struct swc_compositor
 {
     struct wl_display * display;
 
-    struct udev * udev;
-
     struct swc_seat seat;
     struct swc_drm drm;
     struct swc_renderer renderer;

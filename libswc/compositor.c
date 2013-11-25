@@ -11,7 +11,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <libudev.h>
 
 static const char default_seat[] = "seat0";
 
@@ -330,19 +329,11 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         = &swc_compositor_class_implementation;
     compositor->cursor_class.interface = &swc_cursor_class_implementation;
 
-    compositor->udev = udev_new();
-
-    if (compositor->udev == NULL)
-    {
-        printf("could not initialize udev context\n");
-        goto error_base;
-    }
-
     /* TODO: configurable seat */
-    if (!swc_seat_initialize(&compositor->seat, compositor->udev, default_seat))
+    if (!swc_seat_initialize(&compositor->seat, default_seat))
     {
         printf("could not initialize seat\n");
-        goto error_udev;
+        goto error_base;
     }
 
     swc_seat_add_event_sources(&compositor->seat, event_loop);
@@ -351,7 +342,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
                   &compositor->pointer_listener);
 
     /* TODO: configurable seat */
-    if (!swc_drm_initialize(&compositor->drm, compositor->udev, default_seat))
+    if (!swc_drm_initialize(&compositor->drm, default_seat))
     {
         printf("could not initialize drm\n");
         goto error_seat;
@@ -419,8 +410,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     swc_drm_finish(&compositor->drm);
   error_seat:
     swc_seat_finish(&compositor->seat);
-  error_udev:
-    udev_unref(compositor->udev);
   error_base:
     return false;
 }
@@ -439,7 +428,6 @@ void swc_compositor_finish(struct swc_compositor * compositor)
 
     swc_drm_finish(&compositor->drm);
     swc_seat_finish(&compositor->seat);
-    udev_unref(compositor->udev);
 }
 
 void swc_compositor_add_globals(struct swc_compositor * compositor,

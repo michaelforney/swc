@@ -35,6 +35,8 @@ struct swc
     struct wl_event_loop * event_loop;
     const struct swc_manager * manager;
 
+    struct udev * udev;
+
     struct swc_compositor * compositor;
 };
 
