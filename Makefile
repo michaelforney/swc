@@ -27,11 +27,12 @@ define check_deps
     @$(PKG_CONFIG) --exists --print-errors $2
 endef
 
-override CFLAGS += -fvisibility=hidden
+FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden
+FINAL_CPPFLAGS = $(CPPFLAGS)
 
-compile     = $(call quiet,CC) $(CPPFLAGS) $(CFLAGS) -I . -c -o $@ $< \
+compile     = $(call quiet,CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \
               -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
-link        = $(call quiet,CCLD,$(CC)) $(CFLAGS) -o $@ $^
+link        = $(call quiet,CCLD,$(CC)) $(FINAL_CFLAGS) -o $@ $^
 pkgconfig   = $(sort $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
                                            $(shell $(PKG_CONFIG) --$(2) $(pkg)))))
 
