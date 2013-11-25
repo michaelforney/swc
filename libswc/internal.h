@@ -1,4 +1,4 @@
-/* swc: swc/private.h
+/* swc: swc/internal.h
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_PRIVATE_H
-#define SWC_PRIVATE_H
+#ifndef SWC_INTERNAL_H
+#define SWC_INTERNAL_H
 
 struct wl_display;
 struct wl_event_loop;

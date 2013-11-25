@@ -24,7 +24,7 @@
 #include "window.h"
 #include "compositor.h"
 #include "compositor_surface.h"
-#include "private.h"
+#include "internal.h"
 #include "swc.h"
 
 #include <stdlib.h>

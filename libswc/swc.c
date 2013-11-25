@@ -22,9 +22,9 @@
  */
 
 #include "swc.h"
-#include "private.h"
 #include "binding.h"
 #include "compositor.h"
+#include "internal.h"
 #include "shell.h"
 #include "window.h"
 

@@ -22,7 +22,7 @@
  */
 
 #include "shell.h"
-#include "private.h"
+#include "internal.h"
 #include "shell_surface.h"
 
 #include <wayland-server.h>

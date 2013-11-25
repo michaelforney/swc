@@ -24,8 +24,8 @@
 #include "drm.h"
 #include "drm_buffer.h"
 #include "event.h"
+#include "internal.h"
 #include "output.h"
-#include "private.h"
 
 #include <stdio.h>
 #include <stdlib.h>

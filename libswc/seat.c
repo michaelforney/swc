@@ -1,7 +1,7 @@
 #include "seat.h"
 #include "evdev_device.h"
 #include "event.h"
-#include "private.h"
+#include "internal.h"
 #include "util.h"
 
 #include <stdlib.h>
