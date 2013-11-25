@@ -26,9 +26,10 @@
 
 #include <stdbool.h>
 
-struct swc_keyboard_handler;
-
-extern const struct swc_keyboard_handler * swc_binding_handler;
+struct swc_bindings_global
+{
+    const struct swc_keyboard_handler * keyboard_handler;
+};
 
 bool swc_bindings_initialize();
 void swc_bindings_finalize();

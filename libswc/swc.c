@@ -30,15 +30,17 @@
 
 #include <libudev.h>
 
+extern const struct swc_bindings_global swc_bindings_global;
 static struct swc_compositor compositor;
 
 struct swc swc = {
+    .bindings = &swc_bindings_global,
     .compositor = &compositor
 };
 
 static void setup_compositor()
 {
-    compositor.seat.keyboard.handler = swc_binding_handler;
+    compositor.seat.keyboard.handler = swc.bindings->keyboard_handler;
     wl_signal_add(&compositor.seat.pointer.focus.event_signal,
                   swc_window_enter_listener);
 }
