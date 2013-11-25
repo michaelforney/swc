@@ -24,6 +24,7 @@
 #include "swc.h"
 #include "compositor_surface.h"
 #include "shell_surface.h"
+#include "util.h"
 #include "window.h"
 
 #include <stdlib.h>
