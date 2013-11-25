@@ -236,7 +236,6 @@ void swc_renderer_attach(struct swc_renderer * renderer,
 void swc_renderer_flush(struct swc_renderer * renderer,
                         struct swc_surface * surface)
 {
-    struct wl_shm_buffer * buffer;
     struct buffer_state * state;
 
     state = buffer_state(surface->state.buffer);

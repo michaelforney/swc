@@ -147,7 +147,6 @@ static struct wld_drawable * cursor_get_buffer(void * data)
 
 static bool cursor_flip(struct swc_plane * plane)
 {
-    struct swc_output * output = plane->output;
     struct wld_drawable * drawable
         = swc_double_buffer_back(&plane->double_buffer);
     int handle = wld_drm_get_handle(drawable);

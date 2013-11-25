@@ -39,7 +39,6 @@ static bool send_request(const struct swc_launch_request * request, size_t size,
                          int out_fd, int * in_fd)
 {
     int socket;
-    ssize_t ret;
 
     socket = get_launcher_socket();
 
@@ -59,9 +58,6 @@ int swc_launch_open_device(const char * path, int flags)
     struct swc_launch_request * request = (void *) buffer;
     struct swc_launch_response response;
     int fd;
-    int socket;
-
-    socket = get_launcher_socket();
 
     request->type = SWC_LAUNCH_REQUEST_OPEN_DEVICE;
     request->flags = flags;
@@ -77,10 +73,6 @@ bool swc_launch_activate_vt(unsigned vt)
 {
     struct swc_launch_request request;
     struct swc_launch_response response;
-    ssize_t size;
-    int socket;
-
-    socket = get_launcher_socket();
 
     request.type = SWC_LAUNCH_REQUEST_ACTIVATE_VT;
     request.vt = vt;

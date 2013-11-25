@@ -34,6 +34,12 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
 
     xkb->state = xkb_state_new(xkb->keymap.map);
 
+    if (!xkb->state)
+    {
+        printf("could not create XKB state\n");
+        goto error_keymap;
+    }
+
     if (!swc_xkb_update_keymap(xkb))
     {
         printf("could not update XKB keymap\n");

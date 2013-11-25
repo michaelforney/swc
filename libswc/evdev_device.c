@@ -144,7 +144,6 @@ struct swc_evdev_device * swc_evdev_device_new
     (const char * path, const struct swc_evdev_device_handler * handler)
 {
     struct swc_evdev_device * device;
-    uint32_t index;
 
     if (!(device = malloc(sizeof *device)))
         goto error0;

@@ -17,7 +17,7 @@ static void calculate_damage(struct swc_compositor * compositor)
 {
     struct swc_surface * surface;
     struct swc_compositor_surface_state * state;
-    pixman_region32_t opaque, surface_opaque;
+    pixman_region32_t surface_opaque;
 
     pixman_region32_clear(&compositor->opaque);
     pixman_region32_init(&surface_opaque);
@@ -178,12 +178,6 @@ static void handle_focus(struct swc_pointer * pointer)
 
 static bool handle_motion(struct swc_pointer * pointer, uint32_t time)
 {
-    struct swc_seat * seat;
-    struct swc_compositor * compositor;
-
-    seat = CONTAINER_OF(pointer, typeof(*seat), pointer);
-    compositor = CONTAINER_OF(seat, typeof(*compositor), seat);
-
     return false;
 }
 

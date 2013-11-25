@@ -101,11 +101,10 @@ static void get_pointer(struct wl_client * client, struct wl_resource * resource
 static void get_keyboard(struct wl_client * client, struct wl_resource * resource,
                          uint32_t id)
 {
-    struct wl_resource * client_resource;
     struct swc_seat * seat = wl_resource_get_user_data(resource);
     struct swc_keyboard * keyboard = &seat->keyboard;
 
-    client_resource = swc_keyboard_bind(keyboard, client, id);
+    swc_keyboard_bind(keyboard, client, id);
 }
 
 static void get_touch(struct wl_client * client, struct wl_resource * resource,

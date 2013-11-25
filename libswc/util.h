@@ -53,9 +53,9 @@ static inline bool swc_rectangle_overlap
 static inline void swc_array_remove(struct wl_array * array,
                                     void * item, size_t size)
 {
-    size_t bytes = array->size - (item + size - array->data);
+    size_t bytes = array->size - ((intptr_t) item + size - (intptr_t) array->data);
     if (bytes > 0)
-        memmove(item, item + size, bytes);
+        memmove(item, (void *)((intptr_t) item + size), bytes);
     array->size -= size;
 }
 

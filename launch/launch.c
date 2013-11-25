@@ -466,8 +466,6 @@ int main(int argc, char * argv[])
     if (child_pid == 0)
     {
         char string[64];
-        uid_t uid;
-        gid_t gid;
 
         /* Reset signal handlers to defaults */
         action.sa_handler = SIG_DFL;

@@ -200,10 +200,6 @@ void swc_pointer_handle_axis(struct swc_pointer * pointer, uint32_t time,
          || !pointer->handler->axis(pointer, time, axis, amount))
         && pointer->focus.resource)
     {
-        struct wl_client * client
-            = wl_resource_get_client(pointer->focus.resource);
-        struct wl_display * display = wl_client_get_display(client);
-
         wl_pointer_send_axis(pointer->focus.resource, time, axis, amount);
     }
 }

@@ -120,9 +120,7 @@ void swc_input_focus_set(struct swc_input_focus * input_focus,
                          struct swc_surface * surface)
 {
     struct wl_client * client;
-    struct wl_display * display;
     struct wl_resource * resource;
-    uint32_t serial;
     struct swc_input_focus_event_data data;
 
     if (surface == input_focus->surface)

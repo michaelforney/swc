@@ -379,7 +379,7 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
     drmModeConnector * connector;
     drmModeCrtc * crtc;
     uint32_t index;
-    uint32_t x = 0, y = 0;
+    uint32_t x = 0;
     struct swc_output * output;
     struct wl_list * outputs;
     uint32_t taken_crtcs = 0;
@@ -400,7 +400,7 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
     for (index = 0; index < resources->count_crtcs; ++index)
     {
         printf("crtc[%u]: %u\n", index, resources->crtcs[index]);
-        drmModeCrtc * crtc = drmModeGetCrtc(drm->fd, resources->crtcs[index]);
+        crtc = drmModeGetCrtc(drm->fd, resources->crtcs[index]);
         printf("crtc, id: %u, x: %u, y: %u, width: %u, height: %u\n",
             crtc->crtc_id, crtc->x, crtc->y, crtc->width, crtc->height);
         drmModeFreeCrtc(crtc);
