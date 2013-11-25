@@ -22,7 +22,7 @@
  */
 
 #include "swc.h"
-#include "binding.h"
+#include "bindings.h"
 #include "compositor.h"
 #include "internal.h"
 #include "shell.h"

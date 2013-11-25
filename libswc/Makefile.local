@@ -59,7 +59,7 @@ SWC_SOURCES +=                      \
     libswc/window.c                 \
     libswc/shell.c                  \
     libswc/shell_surface.c          \
-    libswc/binding.c
+    libswc/bindings.c
 
 SWC_STATIC_OBJECTS = $(SWC_SOURCES:%.c=%.o)
 SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)

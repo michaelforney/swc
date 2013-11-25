@@ -1,4 +1,4 @@
-/* swc: swc/binding.c
+/* swc: swc/bindings.c
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -22,7 +22,7 @@
  */
 
 #include "swc.h"
-#include "binding.h"
+#include "bindings.h"
 #include "keyboard.h"
 #include "util.h"
 

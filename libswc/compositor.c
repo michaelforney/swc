@@ -1,5 +1,4 @@
 #include "swc.h"
-#include "binding.h"
 #include "compositor.h"
 #include "compositor_surface.h"
 #include "cursor_surface.h"

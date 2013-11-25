@@ -1,4 +1,4 @@
-/* swc: libswc/binding.h
+/* swc: libswc/bindings.h
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_BINDING_H
-#define SWC_BINDING_H
+#ifndef SWC_BINDINGS_H
+#define SWC_BINDINGS_H
 
 #include <stdbool.h>
 
