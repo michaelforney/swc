@@ -23,6 +23,7 @@
 
 #include "compositor_surface.h"
 #include "compositor.h"
+#include "event.h"
 #include "util.h"
 
 #include <stdio.h>

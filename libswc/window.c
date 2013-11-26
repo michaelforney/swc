@@ -24,7 +24,10 @@
 #include "window.h"
 #include "compositor.h"
 #include "compositor_surface.h"
+#include "event.h"
 #include "internal.h"
+#include "keyboard.h"
+#include "seat.h"
 #include "swc.h"
 
 #include <stdlib.h>
@@ -70,8 +73,7 @@ void swc_window_focus(struct swc_window * window)
     if (INTERNAL(window)->impl->focus)
         INTERNAL(window)->impl->focus(window);
 
-    swc_keyboard_set_focus(&swc.compositor->seat.keyboard,
-                           INTERNAL(window)->surface);
+    swc_keyboard_set_focus(swc.seat->keyboard, INTERNAL(window)->surface);
 }
 
 EXPORT

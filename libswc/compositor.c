@@ -3,13 +3,17 @@
 #include "compositor_surface.h"
 #include "cursor_surface.h"
 #include "data_device_manager.h"
+#include "internal.h"
 #include "output.h"
+#include "pointer.h"
 #include "region.h"
+#include "seat.h"
 #include "surface.h"
 #include "util.h"
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 static const char default_seat[] = "seat0";
 
@@ -144,13 +148,10 @@ static void perform_update(void * data)
 
 static void handle_focus(struct swc_pointer * pointer)
 {
-    struct swc_seat * seat;
-    struct swc_compositor * compositor;
+    /* XXX: Temporary hack */
+    struct swc_compositor * compositor = swc.compositor;
     struct swc_surface * surface;
     int32_t x, y;
-
-    seat = CONTAINER_OF(pointer, typeof(*seat), pointer);
-    compositor = CONTAINER_OF(seat, typeof(*compositor), seat);
 
     wl_list_for_each(surface, &compositor->surfaces, link)
     {
@@ -306,7 +307,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     struct wl_list * outputs;
     struct swc_output * output;
     pixman_region32_t pointer_region;
-    xkb_keysym_t keysym;
+    uint32_t keysym;
 
     compositor->display = display;
     compositor->drm_listener.notify = &handle_drm_event;
@@ -322,22 +323,10 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     };
 
     /* TODO: configurable seat */
-    if (!swc_seat_initialize(&compositor->seat, default_seat))
-    {
-        printf("could not initialize seat\n");
-        goto error_base;
-    }
-
-    swc_seat_add_event_sources(&compositor->seat, event_loop);
-    compositor->seat.pointer.handler = &compositor->pointer_handler;
-    wl_signal_add(&compositor->seat.pointer.event_signal,
-                  &compositor->pointer_listener);
-
-    /* TODO: configurable seat */
     if (!swc_drm_initialize(&compositor->drm, default_seat))
     {
         printf("could not initialize drm\n");
-        goto error_seat;
+        goto error0;
     }
 
     wl_signal_add(&compositor->drm.event_signal, &compositor->drm_listener);
@@ -346,7 +335,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     if (!swc_renderer_initialize(&compositor->renderer, &compositor->drm))
     {
         printf("could not initialize renderer\n");
-        goto error_drm;
+        goto error1;
     }
 
     outputs = swc_drm_create_outputs(&compositor->drm);
@@ -360,7 +349,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     else
     {
         printf("could not create outputs\n");
-        goto error_renderer;
+        goto error2;
     }
 
     /* Calculate pointer region */
@@ -374,7 +363,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
                                    output->geometry.height);
     }
 
-    swc_pointer_set_region(&compositor->seat.pointer, &pointer_region);
+    swc_pointer_set_region(swc.seat->pointer, &pointer_region);
     pixman_region32_fini(&pointer_region);
 
     pixman_region32_init(&compositor->damage);
@@ -396,13 +385,11 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
     return true;
 
-  error_renderer:
+  error2:
     swc_renderer_finalize(&compositor->renderer);
-  error_drm:
+  error1:
     swc_drm_finish(&compositor->drm);
-  error_seat:
-    swc_seat_finish(&compositor->seat);
-  error_base:
+  error0:
     return false;
 }
 
@@ -419,7 +406,6 @@ void swc_compositor_finish(struct swc_compositor * compositor)
     }
 
     swc_drm_finish(&compositor->drm);
-    swc_seat_finish(&compositor->seat);
 }
 
 void swc_compositor_add_globals(struct swc_compositor * compositor,
@@ -431,7 +417,6 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
                      &bind_compositor);
 
     swc_data_device_manager_add_globals(display);
-    swc_seat_add_globals(&compositor->seat, display);
     swc_drm_add_globals(&compositor->drm, display);
 
     wl_list_for_each(output, &compositor->outputs, link)

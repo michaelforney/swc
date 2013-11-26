@@ -3,7 +3,6 @@
 
 #include "drm.h"
 #include "pointer.h"
-#include "seat.h"
 #include "renderer.h"
 
 #include <wayland-server.h>
@@ -12,7 +11,6 @@ struct swc_compositor
 {
     struct wl_display * display;
 
-    struct swc_seat seat;
     struct swc_drm drm;
     struct swc_renderer renderer;
 

@@ -1,49 +1,40 @@
+/* swc: libswc/seat.h
+ *
+ * Copyright (c) 2013 Michael Forney
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #ifndef SWC_SEAT_H
 #define SWC_SEAT_H
 
-#include "xkb.h"
-#include "data_device.h"
-#include "keyboard.h"
-#include "pointer.h"
-#include "evdev_device.h"
-
-#include <stdint.h>
 #include <stdbool.h>
-#include <wayland-util.h>
 
-struct wl_display;
-struct wl_event_loop;
-
-struct swc_seat
+struct swc_seat_global
 {
-    char * name;
-    uint32_t capabilities;
-
-    struct wl_list resources;
-    struct wl_signal destroy_signal;
-
-    struct swc_data_device data_device;
-    struct wl_listener data_device_listener;
-
-    struct swc_keyboard keyboard;
-    struct wl_listener keyboard_focus_listener;
-
-    struct swc_pointer pointer;
-
-    struct wl_list devices;
-    struct swc_evdev_device_handler evdev_handler;
+    struct swc_pointer * pointer;
+    struct swc_keyboard * keyboard;
+    struct swc_data_device * data_device;
 };
 
-bool swc_seat_initialize(struct swc_seat * seat, const char * seat_name);
-
-void swc_seat_finish(struct swc_seat * seat);
-
-void swc_seat_add_globals(struct swc_seat * seat, struct wl_display * display);
-
-void swc_seat_add_event_sources(struct swc_seat * seat,
-                                struct wl_event_loop * event_loop);
-
-void swc_seat_add_devices(struct swc_seat * seat);
+bool swc_seat_initialize();
+void swc_seat_finalize();
 
 #endif
 

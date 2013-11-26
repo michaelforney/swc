@@ -25,24 +25,32 @@
 #include "bindings.h"
 #include "compositor.h"
 #include "internal.h"
+#include "keyboard.h"
+#include "pointer.h"
+#include "seat.h"
 #include "shell.h"
 #include "window.h"
 
 #include <libudev.h>
 
+extern const struct swc_seat_global swc_seat_global;
 extern const struct swc_bindings_global swc_bindings_global;
 static struct swc_compositor compositor;
 
 struct swc swc = {
+    .seat = &swc_seat_global,
     .bindings = &swc_bindings_global,
     .compositor = &compositor
 };
 
 static void setup_compositor()
 {
-    compositor.seat.keyboard.handler = swc.bindings->keyboard_handler;
-    wl_signal_add(&compositor.seat.pointer.focus.event_signal,
+    swc.seat->keyboard->handler = swc.bindings->keyboard_handler;
+    swc.seat->pointer->handler = &compositor.pointer_handler;
+    wl_signal_add(&swc.seat->pointer->focus.event_signal,
                   swc_window_enter_listener);
+    wl_signal_add(&swc.seat->pointer->event_signal,
+                  &compositor.pointer_listener);
 }
 
 EXPORT
@@ -60,16 +68,22 @@ bool swc_initialize(struct wl_display * display,
         goto error0;
     }
 
+    if (!swc_seat_initialize())
+    {
+        fprintf(stderr, "Could not initialize seat\n");
+        goto error1;
+    }
+
     if (!swc_bindings_initialize())
     {
         fprintf(stderr, "Could not initialize bindings\n");
-        goto error1;
+        goto error2;
     }
 
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         fprintf(stderr, "Could not initialize compositor\n");
-        goto error2;
+        goto error3;
     }
 
     swc_compositor_add_globals(&compositor, display);
@@ -77,17 +91,19 @@ bool swc_initialize(struct wl_display * display,
     if (!swc_shell_initialize())
     {
         fprintf(stderr, "Could not initialize shell\n");
-        goto error3;
+        goto error4;
     }
 
     setup_compositor();
 
     return true;
 
-  error3:
+  error4:
     swc_compositor_finish(&compositor);
-  error2:
+  error3:
     swc_bindings_finalize();
+  error2:
+    swc_seat_finalize();
   error1:
     udev_unref(swc.udev);
   error0:
@@ -100,6 +116,7 @@ void swc_finalize()
     swc_shell_finalize();
     swc_compositor_finish(&compositor);
     swc_bindings_finalize();
+    swc_seat_finalize();
     udev_unref(swc.udev);
 }
 

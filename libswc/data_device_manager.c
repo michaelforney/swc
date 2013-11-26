@@ -24,6 +24,7 @@
 #include "data_device_manager.h"
 #include "data.h"
 #include "data_device.h"
+#include "internal.h"
 #include "seat.h"
 
 static void create_data_source(struct wl_client * client,
@@ -41,11 +42,7 @@ static void get_data_device(struct wl_client * client,
                             struct wl_resource * resource, uint32_t id,
                             struct wl_resource * seat_resource)
 {
-    struct swc_seat * seat = wl_resource_get_user_data(seat_resource);
-
-    printf("data_device_manager.get_data_device\n");
-
-    swc_data_device_bind(&seat->data_device, client, id);
+    swc_data_device_bind(swc.seat->data_device, client, id);
 }
 
 static struct wl_data_device_manager_interface

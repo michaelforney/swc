@@ -32,6 +32,7 @@ struct swc
 
     struct udev * udev;
 
+    const struct swc_seat_global * const seat;
     const struct swc_bindings_global * const bindings;
     struct swc_compositor * compositor;
 };
