@@ -30,6 +30,9 @@
 #include "seat.h"
 #include "shell.h"
 #include "window.h"
+#ifdef ENABLE_XWAYLAND
+# include "xserver.h"
+#endif
 
 #include <libudev.h>
 
@@ -94,10 +97,20 @@ bool swc_initialize(struct wl_display * display,
         goto error4;
     }
 
+#ifdef ENABLE_XWAYLAND
+    if (!swc_xserver_initialize())
+    {
+        fprintf(stderr, "Could not initialize xwayland\n");
+        goto error5;
+    }
+#endif
+
     setup_compositor();
 
     return true;
 
+  error5:
+    swc_shell_finalize();
   error4:
     swc_compositor_finish(&compositor);
   error3:
@@ -113,6 +126,9 @@ bool swc_initialize(struct wl_display * display,
 EXPORT
 void swc_finalize()
 {
+#ifdef ENABLE_XWAYLAND
+    swc_xserver_finalize();
+#endif
     swc_shell_finalize();
     swc_compositor_finish(&compositor);
     swc_bindings_finalize();
