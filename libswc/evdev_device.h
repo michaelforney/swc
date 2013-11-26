@@ -10,14 +10,10 @@ struct wl_event_loop;
 
 struct swc_evdev_device_handler
 {
-    void (* key)(const struct swc_evdev_device_handler * handler,
-                 uint32_t time, uint32_t key, uint32_t state);
-    void (* button)(const struct swc_evdev_device_handler * handler,
-                    uint32_t time, uint32_t key, uint32_t state);
-    void (* axis)(const struct swc_evdev_device_handler * handler,
-                  uint32_t time, uint32_t axis, wl_fixed_t amount);
-    void (* relative_motion)(const struct swc_evdev_device_handler * handler,
-                             uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
+    void (* key)(uint32_t time, uint32_t key, uint32_t state);
+    void (* button)(uint32_t time, uint32_t key, uint32_t state);
+    void (* axis)(uint32_t time, uint32_t axis, wl_fixed_t amount);
+    void (* relative_motion)(uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
 };
 
 struct swc_evdev_device

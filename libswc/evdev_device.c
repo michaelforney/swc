@@ -30,14 +30,13 @@ static void handle_key_event(struct swc_evdev_device * device,
     {
         state = input_event->value ? WL_POINTER_BUTTON_STATE_PRESSED
                                    : WL_POINTER_BUTTON_STATE_RELEASED;
-        device->handler->button(device->handler, time,
-                                input_event->code, state);
+        device->handler->button(time, input_event->code, state);
     }
     else
     {
         state = input_event->value ? WL_KEYBOARD_KEY_STATE_PRESSED
                                    : WL_KEYBOARD_KEY_STATE_RELEASED;
-        device->handler->key(device->handler, time, input_event->code, state);
+        device->handler->key(time, input_event->code, state);
     }
 }
 
@@ -67,7 +66,7 @@ static void handle_rel_event(struct swc_evdev_device * device,
             break;
     }
 
-    device->handler->axis(device->handler, time, axis, amount);
+    device->handler->axis(time, axis, amount);
 }
 
 static void handle_abs_event(struct swc_evdev_device * device,
@@ -97,7 +96,7 @@ static void handle_motion_events(struct swc_evdev_device * device,
         wl_fixed_t dx = wl_fixed_from_int(device->motion.rel.dx);
         wl_fixed_t dy = wl_fixed_from_int(device->motion.rel.dy);
 
-        device->handler->relative_motion(device->handler, time, dx, dy);
+        device->handler->relative_motion(time, dx, dy);
 
         device->motion.rel.pending = false;
         device->motion.rel.dx = 0;

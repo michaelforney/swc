@@ -34,27 +34,22 @@ const struct swc_seat_global swc_seat_global = {
     .data_device = &seat.data_device
 };
 
-static void handle_key(const struct swc_evdev_device_handler * handler,
-                       uint32_t time, uint32_t key, uint32_t state)
+static void handle_key(uint32_t time, uint32_t key, uint32_t state)
 {
     swc_keyboard_handle_key(&seat.keyboard, time, key, state);
 }
 
-static void handle_button(const struct swc_evdev_device_handler * handler,
-                          uint32_t time, uint32_t button, uint32_t state)
+static void handle_button(uint32_t time, uint32_t button, uint32_t state)
 {
     swc_pointer_handle_button(&seat.pointer, time, button, state);
 }
 
-static void handle_axis(const struct swc_evdev_device_handler * handler,
-                        uint32_t time, uint32_t axis, wl_fixed_t amount)
+static void handle_axis(uint32_t time, uint32_t axis, wl_fixed_t amount)
 {
     swc_pointer_handle_axis(&seat.pointer, time, axis, amount);
 }
 
-static void handle_relative_motion
-    (const struct swc_evdev_device_handler * handler,
-     uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
+static void handle_relative_motion(uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
     swc_pointer_handle_relative_motion(&seat.pointer, time, dx, dy);
 }
