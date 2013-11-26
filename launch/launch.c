@@ -226,8 +226,6 @@ static void handle_socket_data(int socket)
                     goto fail;
             }
 
-            fprintf(stderr, "opening %s\n", request->path);
-
             fd = open(request->path, request->flags);
 
             if (fd == -1)
