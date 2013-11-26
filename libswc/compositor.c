@@ -181,11 +181,6 @@ static bool handle_motion(struct swc_pointer * pointer, uint32_t time)
     return false;
 }
 
-struct swc_pointer_handler pointer_handler = {
-    .focus = &handle_focus,
-    .motion = &handle_motion
-};
-
 static void handle_drm_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
@@ -321,6 +316,10 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->compositor_class.interface
         = &swc_compositor_class_implementation;
     compositor->cursor_class.interface = &swc_cursor_class_implementation;
+    compositor->pointer_handler = (struct swc_pointer_handler) {
+        .focus = &handle_focus,
+        .motion = &handle_motion
+    };
 
     /* TODO: configurable seat */
     if (!swc_seat_initialize(&compositor->seat, default_seat))
@@ -330,7 +329,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     }
 
     swc_seat_add_event_sources(&compositor->seat, event_loop);
-    compositor->seat.pointer.handler = &pointer_handler;
+    compositor->seat.pointer.handler = &compositor->pointer_handler;
     wl_signal_add(&compositor->seat.pointer.event_signal,
                   &compositor->pointer_listener);
 
