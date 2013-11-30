@@ -177,7 +177,7 @@ struct swc_shell_surface * swc_shell_surface_new
     shell_surface = malloc(sizeof *shell_surface);
 
     if (!shell_surface)
-        return NULL;
+        goto error0;
 
     shell_surface->type = SHELL_SURFACE_TYPE_UNSPECIFIED;
     swc_window_initialize(&shell_surface->window.base,
@@ -185,10 +185,19 @@ struct swc_shell_surface * swc_shell_surface_new
 
     shell_surface->resource = wl_resource_create
         (client, &wl_shell_surface_interface, 1, id);
+
+    if (!shell_surface->resource)
+        goto error1;
+
     wl_resource_set_implementation(shell_surface->resource,
                                    &shell_surface_implementation,
                                    shell_surface, NULL);
 
     return shell_surface;
+
+  error1:
+    free(shell_surface);
+  error0:
+    return NULL;
 }
 
