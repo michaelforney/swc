@@ -105,7 +105,6 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
     swc_surface_set_class(INTERNAL(window)->surface, NULL);
 }
 
-EXPORT
 bool swc_window_initialize(struct swc_window * window,
                            const struct swc_window_impl * impl,
                            struct swc_surface * surface)
