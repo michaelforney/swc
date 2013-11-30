@@ -34,6 +34,7 @@ struct swc_shell_surface
     struct swc_window_internal window;
 
     struct wl_resource * resource;
+    struct wl_listener surface_destroy_listener;
 
     enum
     {
@@ -169,6 +170,22 @@ static const struct swc_window_impl shell_window_impl = {
     .configure = &configure
 };
 
+static void handle_surface_destroy(struct wl_listener * listener, void * data)
+{
+    struct swc_shell_surface * shell_surface = CONTAINER_OF
+        (listener, typeof(*shell_surface), surface_destroy_listener);
+
+    wl_resource_destroy(shell_surface->resource);
+}
+
+static void destroy_shell_surface(struct wl_resource * resource)
+{
+    struct swc_shell_surface * shell_surface
+        = wl_resource_get_user_data(resource);
+
+    free(shell_surface);
+}
+
 struct swc_shell_surface * swc_shell_surface_new
     (struct wl_client * client, uint32_t id, struct swc_surface * surface)
 {
@@ -180,6 +197,10 @@ struct swc_shell_surface * swc_shell_surface_new
         goto error0;
 
     shell_surface->type = SHELL_SURFACE_TYPE_UNSPECIFIED;
+    shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
+    wl_resource_add_destroy_listener(surface->resource,
+                                     &shell_surface->surface_destroy_listener);
+
     swc_window_initialize(&shell_surface->window.base,
                           &shell_window_impl, surface);
 
@@ -191,7 +212,7 @@ struct swc_shell_surface * swc_shell_surface_new
 
     wl_resource_set_implementation(shell_surface->resource,
                                    &shell_surface_implementation,
-                                   shell_surface, NULL);
+                                   shell_surface, &destroy_shell_surface);
 
     return shell_surface;
 

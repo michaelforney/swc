@@ -102,7 +102,7 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
         (listener, struct swc_window_internal, surface_destroy_listener)->base;
 
     swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
-    free(window);
+    swc_surface_set_class(INTERNAL(window)->surface, NULL);
 }
 
 EXPORT
