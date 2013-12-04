@@ -27,6 +27,11 @@
 #include "internal.h"
 #include "seat.h"
 
+static struct
+{
+    struct wl_global * global;
+} data_device_manager;
+
 static void create_data_source(struct wl_client * client,
                                struct wl_resource * resource, uint32_t id)
 {
@@ -62,9 +67,17 @@ static void bind_data_device_manager(struct wl_client * client, void * data,
         (resource, &data_device_manager_implementation, NULL, NULL);
 }
 
-void swc_data_device_manager_add_globals(struct wl_display * display)
+bool swc_data_device_manager_initialize()
 {
-    wl_global_create(display, &wl_data_device_manager_interface, 1, NULL,
-                     &bind_data_device_manager);
+    data_device_manager.global
+        = wl_global_create(swc.display, &wl_data_device_manager_interface, 1,
+                           NULL, &bind_data_device_manager);
+
+    return data_device_manager.global != NULL;
+}
+
+void swc_data_device_manager_finalize()
+{
+    wl_global_destroy(data_device_manager.global);
 }
 

@@ -24,6 +24,7 @@
 #include "swc.h"
 #include "bindings.h"
 #include "compositor.h"
+#include "data_device_manager.h"
 #include "internal.h"
 #include "keyboard.h"
 #include "pointer.h"
@@ -71,22 +72,28 @@ bool swc_initialize(struct wl_display * display,
         goto error0;
     }
 
+    if (!swc_data_device_manager_initialize())
+    {
+        ERROR("Could not initialize data device manager\n");
+        goto error1;
+    }
+
     if (!swc_seat_initialize())
     {
         fprintf(stderr, "Could not initialize seat\n");
-        goto error1;
+        goto error2;
     }
 
     if (!swc_bindings_initialize())
     {
         fprintf(stderr, "Could not initialize bindings\n");
-        goto error2;
+        goto error3;
     }
 
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         fprintf(stderr, "Could not initialize compositor\n");
-        goto error3;
+        goto error4;
     }
 
     swc_compositor_add_globals(&compositor, display);
@@ -94,14 +101,14 @@ bool swc_initialize(struct wl_display * display,
     if (!swc_shell_initialize())
     {
         fprintf(stderr, "Could not initialize shell\n");
-        goto error4;
+        goto error5;
     }
 
 #ifdef ENABLE_XWAYLAND
     if (!swc_xserver_initialize())
     {
         fprintf(stderr, "Could not initialize xwayland\n");
-        goto error5;
+        goto error6;
     }
 #endif
 
@@ -109,14 +116,16 @@ bool swc_initialize(struct wl_display * display,
 
     return true;
 
-  error5:
+  error6:
     swc_shell_finalize();
-  error4:
+  error5:
     swc_compositor_finish(&compositor);
-  error3:
+  error4:
     swc_bindings_finalize();
-  error2:
+  error3:
     swc_seat_finalize();
+  error2:
+    swc_data_device_manager_finalize();
   error1:
     udev_unref(swc.udev);
   error0:
@@ -133,6 +142,7 @@ void swc_finalize()
     swc_compositor_finish(&compositor);
     swc_bindings_finalize();
     swc_seat_finalize();
+    swc_data_device_manager_finalize();
     udev_unref(swc.udev);
 }
 

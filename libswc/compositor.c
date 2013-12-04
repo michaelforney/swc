@@ -416,7 +416,6 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
     wl_global_create(display, &wl_compositor_interface, 3, compositor,
                      &bind_compositor);
 
-    swc_data_device_manager_add_globals(display);
     swc_drm_add_globals(&compositor->drm, display);
 
     wl_list_for_each(output, &compositor->outputs, link)

@@ -24,9 +24,10 @@
 #ifndef SWC_DATA_DEVICE_MANAGER_H
 #define SWC_DATA_DEVICE_MANAGER_H
 
-#include <wayland-server.h>
+#include <stdbool.h>
 
-void swc_data_device_manager_add_globals(struct wl_display * display);
+bool swc_data_device_manager_initialize();
+void swc_data_device_manager_finalize();
 
 #endif
 
