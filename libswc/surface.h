@@ -112,6 +112,7 @@ struct swc_surface
         int32_t x, y;
     } pending;
 
+    struct swc_window * window;
     const struct swc_surface_class * class;
     void * class_state;
 

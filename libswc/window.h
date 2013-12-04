@@ -41,7 +41,6 @@ struct swc_window_internal
     struct swc_window base;
 
     struct swc_surface * surface;
-    struct wl_listener surface_destroy_listener;
     const struct swc_window_impl * impl;
 };
 
@@ -51,7 +50,7 @@ bool swc_window_initialize(struct swc_window * window,
                            const struct swc_window_impl * impl,
                            struct swc_surface * surface);
 
-struct swc_window * swc_window_get(struct swc_surface * surface);
+void swc_window_finalize(struct swc_window * window);
 
 void swc_window_set_title(struct swc_window * window,
                           const char * title, size_t length);

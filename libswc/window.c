@@ -44,7 +44,7 @@ static void handle_window_enter(struct wl_listener * listener, void * data)
     if (event->type != SWC_INPUT_FOCUS_EVENT_CHANGED)
         return;
 
-    if (!event_data->new || !(window = swc_window_get(event_data->new)))
+    if (!event_data->new || !(window = event_data->new->window))
         return;
 
     swc_send_event(&window->event_signal, SWC_WINDOW_ENTERED, NULL);
@@ -96,29 +96,20 @@ void swc_window_set_border(struct swc_window * window,
     swc_compositor_surface_set_border_width(surface, border_width);
 }
 
-static void handle_surface_destroy(struct wl_listener * listener, void * data)
-{
-    struct swc_window * window = &CONTAINER_OF
-        (listener, struct swc_window_internal, surface_destroy_listener)->base;
-
-    swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
-    swc_surface_set_class(INTERNAL(window)->surface, NULL);
-}
-
 bool swc_window_initialize(struct swc_window * window,
                            const struct swc_window_impl * impl,
                            struct swc_surface * surface)
 {
+    DEBUG("Initializing window, %p\n", window);
+
     window->title = NULL;
     window->class = NULL;
     window->state = SWC_WINDOW_STATE_WITHDRAWN;
     wl_signal_init(&window->event_signal);
     INTERNAL(window)->surface = surface;
-    INTERNAL(window)->surface_destroy_listener.notify = &handle_surface_destroy;
     INTERNAL(window)->impl = impl;
 
-    wl_resource_add_destroy_listener
-        (surface->resource, &INTERNAL(window)->surface_destroy_listener);
+    surface->window = window;
     swc_surface_set_class(surface, &swc.compositor->compositor_class);
 
     swc.manager->new_window(window);
@@ -126,16 +117,13 @@ bool swc_window_initialize(struct swc_window * window,
     return true;
 }
 
-struct swc_window * swc_window_get(struct swc_surface * surface)
+void swc_window_finalize(struct swc_window * window)
 {
-    struct wl_listener * listener;
+    DEBUG("Finalizing window, %p\n", window);
 
-    listener = wl_resource_get_destroy_listener(surface->resource,
-                                                &handle_surface_destroy);
-
-    return listener ? &CONTAINER_OF(listener, struct swc_window_internal,
-                                    surface_destroy_listener)->base
-                    : NULL;
+    swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
+    swc_surface_set_class(INTERNAL(window)->surface, NULL);
+    INTERNAL(window)->surface->window = NULL;
 }
 
 void swc_window_set_title(struct swc_window * window,

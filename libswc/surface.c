@@ -355,6 +355,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     surface->geometry.width = 0;
     surface->geometry.height = 0;
     surface->pending.commit = 0;
+    surface->window = NULL;
     surface->class = NULL;
     surface->class_state = NULL;
 

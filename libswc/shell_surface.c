@@ -183,6 +183,7 @@ static void destroy_shell_surface(struct wl_resource * resource)
     struct swc_shell_surface * shell_surface
         = wl_resource_get_user_data(resource);
 
+    swc_window_finalize(&shell_surface->window.base);
     free(shell_surface);
 }
 
