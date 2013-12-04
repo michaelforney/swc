@@ -94,7 +94,12 @@ static void stop_devices(bool fatal)
     unsigned index;
 
     for (index = 0; index < launcher.num_drm_fds; ++index)
-        drmDropMaster(launcher.drm_fds[index]);
+    {
+        fprintf(stderr, "Dropping DRM master\n");
+
+        if (drmDropMaster(launcher.drm_fds[index]) < 0)
+            perror("Failed to drop DRM master");
+    }
 
     for (index = 0; index < launcher.num_input_fds; ++index)
     {
