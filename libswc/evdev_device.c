@@ -160,6 +160,9 @@ struct swc_evdev_device * swc_evdev_device_new
         goto error1;
     }
 
+    if (!(device->path = strdup(path)))
+        goto error2;
+
     DEBUG("Adding device %s\n", libevdev_get_name(device->dev));
 
     device->handler = handler;
@@ -184,6 +187,8 @@ struct swc_evdev_device * swc_evdev_device_new
 
     return device;
 
+  error2:
+    libevdev_free(device->dev);
   error1:
     close(device->fd);
   error0:
@@ -195,6 +200,7 @@ void swc_evdev_device_destroy(struct swc_evdev_device * device)
     wl_event_source_remove(device->source);
     libevdev_free(device->dev);
     close(device->fd);
+    free(device->path);
     free(device);
 }
 
@@ -205,5 +211,30 @@ void swc_evdev_device_add_event_sources(struct swc_evdev_device * device,
     device->source
         = wl_event_loop_add_fd(event_loop, device->fd, WL_EVENT_READABLE,
                                handle_data, device);
+}
+
+bool swc_evdev_device_reopen(struct swc_evdev_device * device)
+{
+    close(device->fd);
+
+    device->fd = swc_launch_open_device(device->path,
+                                        O_RDWR | O_NONBLOCK | O_CLOEXEC);
+
+    if (device->fd == -1)
+    {
+        ERROR("Failed to open input device at %s\n", device->path);
+        goto error0;
+    }
+
+    if (libevdev_change_fd(device->dev, device->fd) == -1)
+    {
+        ERROR("Failed to update libevdev fd\n");
+        goto error1;
+    }
+
+  error1:
+    close(device->fd);
+  error0:
+    return false;
 }
 

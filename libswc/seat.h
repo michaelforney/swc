@@ -35,6 +35,7 @@ struct swc_seat_global
 
 bool swc_seat_initialize();
 void swc_seat_finalize();
+void swc_seat_reopen_devices();
 
 #endif
 

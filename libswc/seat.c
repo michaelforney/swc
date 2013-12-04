@@ -274,3 +274,11 @@ void swc_seat_finalize()
     wl_global_destroy(seat.global);
 }
 
+void swc_seat_reopen_devices()
+{
+    struct swc_evdev_device * device;
+
+    wl_list_for_each(device, &seat.devices, link)
+        swc_evdev_device_reopen(device);
+}
+
