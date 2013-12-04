@@ -70,10 +70,24 @@ void swc_window_hide(struct swc_window * window)
 EXPORT
 void swc_window_focus(struct swc_window * window)
 {
-    if (INTERNAL(window)->impl->focus)
+    struct swc_surface * new_focus = window ? INTERNAL(window)->surface : NULL,
+                       * old_focus = swc.seat->keyboard->focus.surface;
+
+    /* If the keyboard already has a focused window, and we are changing the
+     * focus to either NULL, or a window with a different implementation, set
+     * the focus of the previous focus window's implementation to NULL. */
+    if (old_focus && old_focus->window
+        && !(window && INTERNAL(window)->impl
+                    == INTERNAL(old_focus->window)->impl)
+        && INTERNAL(old_focus->window)->impl->focus)
+    {
+        INTERNAL(old_focus->window)->impl->focus(NULL);
+    }
+
+    if (window && INTERNAL(window)->impl->focus)
         INTERNAL(window)->impl->focus(window);
 
-    swc_keyboard_set_focus(swc.seat->keyboard, INTERNAL(window)->surface);
+    swc_keyboard_set_focus(swc.seat->keyboard, new_focus);
 }
 
 EXPORT

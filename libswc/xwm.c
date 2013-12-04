@@ -281,11 +281,12 @@ static void configure(struct swc_window * window,
 
 static void focus(struct swc_window * window)
 {
-    struct xwl_window * xwl_window
-        = CONTAINER_OF(window, typeof(*xwl_window), window.base);
+    xcb_window_t id = window ? CONTAINER_OF(window, struct xwl_window,
+                                            window.base)->id
+                             : XCB_NONE;
 
     xcb_set_input_focus(xwm.connection, XCB_INPUT_FOCUS_NONE,
-                        xwl_window->id, XCB_CURRENT_TIME);
+                        id, XCB_CURRENT_TIME);
     xcb_flush(xwm.connection);
 }
 
