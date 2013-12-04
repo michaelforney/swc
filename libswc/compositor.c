@@ -305,8 +305,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
                                struct wl_event_loop * event_loop)
 {
     struct wl_list * outputs;
-    struct swc_output * output;
-    pixman_region32_t pointer_region;
     uint32_t keysym;
 
     compositor->display = display;
@@ -351,20 +349,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         printf("could not create outputs\n");
         goto error2;
     }
-
-    /* Calculate pointer region */
-    pixman_region32_init(&pointer_region);
-
-    wl_list_for_each(output, &compositor->outputs, link)
-    {
-        pixman_region32_union_rect(&pointer_region, &pointer_region,
-                                   output->geometry.x, output->geometry.y,
-                                   output->geometry.width,
-                                   output->geometry.height);
-    }
-
-    swc_pointer_set_region(swc.seat->pointer, &pointer_region);
-    pixman_region32_fini(&pointer_region);
 
     pixman_region32_init(&compositor->damage);
     pixman_region32_init(&compositor->opaque);

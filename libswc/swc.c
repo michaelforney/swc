@@ -49,12 +49,29 @@ struct swc swc = {
 
 static void setup_compositor()
 {
+    pixman_region32_t pointer_region;
+    struct swc_output * output;
+
     swc.seat->keyboard->handler = swc.bindings->keyboard_handler;
     swc.seat->pointer->handler = &compositor.pointer_handler;
     wl_signal_add(&swc.seat->pointer->focus.event_signal,
                   swc_window_enter_listener);
     wl_signal_add(&swc.seat->pointer->event_signal,
                   &compositor.pointer_listener);
+
+    /* Calculate pointer region */
+    pixman_region32_init(&pointer_region);
+
+    wl_list_for_each(output, &compositor.outputs, link)
+    {
+        pixman_region32_union_rect(&pointer_region, &pointer_region,
+                                   output->geometry.x, output->geometry.y,
+                                   output->geometry.width,
+                                   output->geometry.height);
+    }
+
+    swc_pointer_set_region(swc.seat->pointer, &pointer_region);
+    pixman_region32_fini(&pointer_region);
 }
 
 EXPORT
