@@ -234,16 +234,23 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
         state_set_buffer(&surface->state, surface->pending.state.buffer);
 
         /* Determine size of buffer. */
-        if ((shm_buffer = wl_shm_buffer_get(surface->state.buffer)))
+        if (surface->state.buffer)
         {
-            set_size(surface, wl_shm_buffer_get_width(shm_buffer),
-                     wl_shm_buffer_get_height(shm_buffer));
+            if ((shm_buffer = wl_shm_buffer_get(surface->state.buffer)))
+            {
+                set_size(surface, wl_shm_buffer_get_width(shm_buffer),
+                         wl_shm_buffer_get_height(shm_buffer));
+            }
+            else if ((drm_buffer = swc_drm_buffer_get(surface->state.buffer)))
+            {
+                set_size(surface, drm_buffer->drawable->width,
+                         drm_buffer->drawable->height);
+            }
+            else
+                WARNING("Unknown buffer type attached\n");
         }
-        else if ((drm_buffer = swc_drm_buffer_get(surface->state.buffer)))
-        {
-            set_size(surface, drm_buffer->drawable->width,
-                     drm_buffer->drawable->height);
-        }
+        else
+            set_size(surface, 0, 0);
     }
 
     /* Damage */
