@@ -2,6 +2,7 @@
 #define SWC_UTIL_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/time.h>
@@ -10,6 +11,27 @@
 #include <wayland-util.h>
 
 #define EXPORT __attribute__((visibility("default")))
+
+#if ENABLE_DEBUG
+# define MESSAGE_SOURCE \
+    fprintf(stderr, "[swc:%s:%d] ", __FILE__, __LINE__);
+#else
+# define MESSAGE_SOURCE
+#endif
+
+#define MESSAGE(type, format, ...) \
+    do { MESSAGE_SOURCE                                         \
+         fprintf(stderr, type ": " format, ## __VA_ARGS__); }   \
+    while (false)
+
+#define WARNING(format, ...)    MESSAGE("WARNING", format, ## __VA_ARGS__)
+#define ERROR(format, ...)      MESSAGE("ERROR", format, ## __VA_ARGS__)
+
+#if ENABLE_DEBUG
+# define DEBUG(format, ...)     MESSAGE("DEBUG", format, ## __VA_ARGS__)
+#else
+# define DEBUG(format, ...)
+#endif
 
 #ifdef offsetof
 # define OFFSET_OF offsetof

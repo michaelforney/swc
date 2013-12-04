@@ -35,6 +35,11 @@ FINAL_CFLAGS += -Werror=implicit-function-declaration -Werror=implicit-int \
                 -Werror=pointer-sign -Werror=pointer-arith \
                 -Wall -Wno-missing-braces
 
+ifeq ($(ENABLE_DEBUG),1)
+    FINAL_CPPFLAGS += -DENABLE_DEBUG=1
+    FINAL_CFLAGS += -g
+endif
+
 compile     = $(call quiet,CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \
               -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
 link        = $(call quiet,CCLD,$(CC)) $(FINAL_CFLAGS) -o $@ $^
