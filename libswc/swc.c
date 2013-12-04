@@ -89,31 +89,31 @@ bool swc_initialize(struct wl_display * display,
         goto error0;
     }
 
+    if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
+    {
+        fprintf(stderr, "Could not initialize compositor\n");
+        goto error1;
+    }
+
+    swc_compositor_add_globals(&compositor, display);
+
     if (!swc_data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
-        goto error1;
+        goto error2;
     }
 
     if (!swc_seat_initialize())
     {
         fprintf(stderr, "Could not initialize seat\n");
-        goto error2;
+        goto error3;
     }
 
     if (!swc_bindings_initialize())
     {
         fprintf(stderr, "Could not initialize bindings\n");
-        goto error3;
-    }
-
-    if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
-    {
-        fprintf(stderr, "Could not initialize compositor\n");
         goto error4;
     }
-
-    swc_compositor_add_globals(&compositor, display);
 
     if (!swc_shell_initialize())
     {
@@ -136,13 +136,13 @@ bool swc_initialize(struct wl_display * display,
   error6:
     swc_shell_finalize();
   error5:
-    swc_compositor_finish(&compositor);
-  error4:
     swc_bindings_finalize();
-  error3:
+  error4:
     swc_seat_finalize();
-  error2:
+  error3:
     swc_data_device_manager_finalize();
+  error2:
+    swc_compositor_finish(&compositor);
   error1:
     udev_unref(swc.udev);
   error0:
@@ -156,10 +156,10 @@ void swc_finalize()
     swc_xserver_finalize();
 #endif
     swc_shell_finalize();
-    swc_compositor_finish(&compositor);
     swc_bindings_finalize();
     swc_seat_finalize();
     swc_data_device_manager_finalize();
+    swc_compositor_finish(&compositor);
     udev_unref(swc.udev);
 }
 
