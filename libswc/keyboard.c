@@ -179,10 +179,10 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
                              key, state);
     }
 
-    /* Update XKB state. Apparently the keycodes are offset by 8 in XKB. */
+    /* Update XKB state. */
     direction = state == WL_KEYBOARD_KEY_STATE_PRESSED ? XKB_KEY_DOWN
                                                        : XKB_KEY_UP;
-    xkb_state_update_key(xkb->state, key + 8, direction);
+    xkb_state_update_key(xkb->state, XKB_KEY(key), direction);
 
     mods_depressed = xkb_state_serialize_mods(xkb->state, XKB_STATE_DEPRESSED);
     mods_latched = xkb_state_serialize_mods(xkb->state, XKB_STATE_LATCHED);

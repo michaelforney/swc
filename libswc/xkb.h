@@ -4,6 +4,9 @@
 #ifndef SWC_XKB_H
 #define SWC_XKB_H
 
+/* Keycodes are offset by 8 in XKB. */
+#define XKB_KEY(key) ((key) + 8)
+
 struct swc_xkb
 {
     struct xkb_context * context;

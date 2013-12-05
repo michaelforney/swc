@@ -49,15 +49,12 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
         const xkb_keysym_t * keysyms;
         int num_keysyms;
 
-        /* XKB key codes are offset by 8 */
-        key += 8;
-
-        layout = xkb_state_key_get_layout(keyboard->xkb.state, key);
+        layout = xkb_state_key_get_layout(keyboard->xkb.state, XKB_KEY(key));
 
         /* XXX: Maybe someone might want to register a key binding for a
          * keysym with a different shift-level? */
         num_keysyms = xkb_keymap_key_get_syms_by_level
-            (keyboard->xkb.keymap.map, key, layout, 0, &keysyms);
+            (keyboard->xkb.keymap.map, XKB_KEY(key), layout, 0, &keysyms);
 
         if (num_keysyms == 1)
         {
