@@ -67,7 +67,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
 {
     if (!swc_xkb_initialize(&keyboard->xkb))
     {
-        printf("could not initialize XKB\n");
+        ERROR("Could not initialize XKB\n");
         goto error0;
     }
 
