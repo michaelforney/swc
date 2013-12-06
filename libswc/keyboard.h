@@ -33,13 +33,20 @@
 struct swc_keyboard;
 struct wl_client;
 
+struct swc_keyboard_modifier_state
+{
+    uint32_t depressed;
+    uint32_t latched;
+    uint32_t locked;
+    uint32_t group;
+};
+
 struct swc_keyboard_handler
 {
     bool (* key)(struct swc_keyboard * keyboard, uint32_t time,
                  uint32_t key, uint32_t state);
-    bool (* modifiers)(struct swc_keyboard * keyboard, uint32_t serial,
-                       uint32_t mods_depressed, uint32_t mods_latched,
-                       uint32_t mods_locked, uint32_t group);
+    bool (* modifiers)(struct swc_keyboard * keyboard,
+                       const struct swc_keyboard_modifier_state * state);
 };
 
 struct swc_keyboard
@@ -52,10 +59,7 @@ struct swc_keyboard
     struct swc_xkb xkb;
 
     struct wl_array keys;
-    uint32_t mods_depressed;
-    uint32_t mods_latched;
-    uint32_t mods_locked;
-    uint32_t group;
+    struct swc_keyboard_modifier_state modifier_state;
 
     uint32_t modifiers;
 };

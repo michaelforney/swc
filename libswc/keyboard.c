@@ -75,6 +75,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
         goto error1;
 
     wl_array_init(&keyboard->keys);
+    keyboard->modifier_state = (struct swc_keyboard_modifier_state) { 0 };
     keyboard->modifiers = 0;
     keyboard->focus_handler.enter = &enter;
     keyboard->focus_handler.leave = &leave;
@@ -133,7 +134,7 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
                              uint32_t key, uint32_t state)
 {
     uint32_t * pressed_key;
-    uint32_t mods_depressed, mods_latched, mods_locked, mods_active, group;
+    struct swc_keyboard_modifier_state modifier_state;
     struct wl_display * display;
     uint32_t serial;
     enum xkb_key_direction direction;
@@ -184,39 +185,45 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
                                                        : XKB_KEY_UP;
     xkb_state_update_key(xkb->state, XKB_KEY(key), direction);
 
-    mods_depressed = xkb_state_serialize_mods(xkb->state, XKB_STATE_DEPRESSED);
-    mods_latched = xkb_state_serialize_mods(xkb->state, XKB_STATE_LATCHED);
-    mods_locked = xkb_state_serialize_mods(xkb->state, XKB_STATE_LOCKED);
-    mods_active = mods_depressed | mods_latched;
-    group = xkb_state_serialize_layout(xkb->state, XKB_STATE_LAYOUT_EFFECTIVE);
+    modifier_state.depressed
+        = xkb_state_serialize_mods(xkb->state, XKB_STATE_DEPRESSED);
+    modifier_state.latched
+        = xkb_state_serialize_mods(xkb->state, XKB_STATE_LATCHED);
+    modifier_state.locked
+        = xkb_state_serialize_mods(xkb->state, XKB_STATE_LOCKED);
+    modifier_state.group
+        = xkb_state_serialize_layout(xkb->state, XKB_STATE_LAYOUT_EFFECTIVE);
 
-    if (mods_depressed != keyboard->mods_depressed
-        || mods_latched != keyboard->mods_latched
-        || mods_locked != keyboard->mods_locked
-        || group != keyboard->group)
+    if (modifier_state.depressed != keyboard->modifier_state.depressed
+        || modifier_state.latched != keyboard->modifier_state.latched
+        || modifier_state.locked != keyboard->modifier_state.locked
+        || modifier_state.group != keyboard->modifier_state.group)
     {
+        uint32_t mods_active = modifier_state.depressed
+                             | modifier_state.latched;
+
+        /* Update keyboard modifier state. */
+        keyboard->modifier_state = modifier_state;
+
         if (keyboard->focus.resource)
         {
             serial = wl_display_next_serial(display);
-            wl_keyboard_send_modifiers(keyboard->focus.resource,
-                                       serial, mods_depressed, mods_latched,
-                                       mods_locked, group);
+            wl_keyboard_send_modifiers
+                (keyboard->focus.resource, serial, modifier_state.depressed,
+                 modifier_state.latched, modifier_state.locked,
+                 modifier_state.group);
         }
+
+
+        keyboard->modifiers = 0;
+        if (mods_active & (1 << keyboard->xkb.indices.ctrl))
+            keyboard->modifiers |= SWC_MOD_CTRL;
+        if (mods_active & (1 << keyboard->xkb.indices.alt))
+            keyboard->modifiers |= SWC_MOD_ALT;
+        if (mods_active & (1 << keyboard->xkb.indices.super))
+            keyboard->modifiers |= SWC_MOD_LOGO;
+        if (mods_active & (1 << keyboard->xkb.indices.shift))
+            keyboard->modifiers |= SWC_MOD_SHIFT;
     }
-
-    keyboard->modifiers = 0;
-    if (mods_active & (1 << keyboard->xkb.indices.ctrl))
-        keyboard->modifiers |= SWC_MOD_CTRL;
-    if (mods_active & (1 << keyboard->xkb.indices.alt))
-        keyboard->modifiers |= SWC_MOD_ALT;
-    if (mods_active & (1 << keyboard->xkb.indices.super))
-        keyboard->modifiers |= SWC_MOD_LOGO;
-    if (mods_active & (1 << keyboard->xkb.indices.shift))
-        keyboard->modifiers |= SWC_MOD_SHIFT;
-
-    keyboard->mods_depressed = mods_depressed;
-    keyboard->mods_latched = mods_latched;
-    keyboard->mods_locked = mods_locked;
-    keyboard->group = group;
 }
 
