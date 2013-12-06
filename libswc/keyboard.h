@@ -47,20 +47,21 @@ struct swc_keyboard_handler
                  uint32_t key, uint32_t state);
     bool (* modifiers)(struct swc_keyboard * keyboard,
                        const struct swc_keyboard_modifier_state * state);
+
+    struct wl_array keys;
+    struct wl_list link;
 };
 
 struct swc_keyboard
 {
     struct swc_input_focus focus;
     struct swc_input_focus_handler focus_handler;
-
-    const struct swc_keyboard_handler * handler;
-
     struct swc_xkb xkb;
 
-    struct wl_array keys;
-    struct swc_keyboard_modifier_state modifier_state;
+    struct wl_list handlers;
+    struct swc_keyboard_handler client_handler;
 
+    struct swc_keyboard_modifier_state modifier_state;
     uint32_t modifiers;
 };
 

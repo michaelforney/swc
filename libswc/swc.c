@@ -52,7 +52,8 @@ static void setup_compositor()
     pixman_region32_t pointer_region;
     struct swc_output * output;
 
-    swc.seat->keyboard->handler = swc.bindings->keyboard_handler;
+    wl_list_insert(&swc.seat->keyboard->handlers,
+                   &swc.bindings->keyboard_handler->link);
     swc.seat->pointer->handler = &compositor.pointer_handler;
     wl_signal_add(&swc.seat->pointer->focus.event_signal,
                   swc_window_enter_listener);

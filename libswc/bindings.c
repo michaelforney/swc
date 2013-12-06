@@ -75,7 +75,7 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
     return false;
 }
 
-static const struct swc_keyboard_handler binding_handler = {
+static struct swc_keyboard_handler binding_handler = {
     .key = &handle_key,
 };
 

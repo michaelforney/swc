@@ -46,7 +46,7 @@ static void enter(struct swc_input_focus_handler * handler,
     serial = wl_display_next_serial(display);
 
     wl_keyboard_send_enter(resource, serial, surface->resource,
-                           &keyboard->keys);
+                           &keyboard->client_handler.keys);
 }
 
 static void leave(struct swc_input_focus_handler * handler,
@@ -63,6 +63,45 @@ static void leave(struct swc_input_focus_handler * handler,
     wl_keyboard_send_leave(resource, serial, surface->resource);
 }
 
+static bool client_handle_key(struct swc_keyboard * keyboard, uint32_t time,
+                              uint32_t key, uint32_t state)
+{
+    struct wl_client * client;
+    struct wl_display * display;
+    uint32_t serial;
+
+    if (!keyboard->focus.resource)
+        return true;
+
+    client = wl_resource_get_client(keyboard->focus.resource);
+    display = wl_client_get_display(client);
+    serial = wl_display_next_serial(display);
+    wl_keyboard_send_key(keyboard->focus.resource, serial, time, key, state);
+
+    return true;
+}
+
+static bool client_handle_modifiers
+    (struct swc_keyboard * keyboard,
+     const struct swc_keyboard_modifier_state * state)
+{
+    struct wl_client * client;
+    struct wl_display * display;
+    uint32_t serial;
+
+    if (!keyboard->focus.resource)
+        return false;
+
+    client = wl_resource_get_client(keyboard->focus.resource);
+    display = wl_client_get_display(client);
+    serial = wl_display_next_serial(display);
+    wl_keyboard_send_modifiers(keyboard->focus.resource, serial,
+                               state->depressed, state->locked, state->latched,
+                               state->group);
+
+    return true;
+}
+
 bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
 {
     if (!swc_xkb_initialize(&keyboard->xkb))
@@ -74,11 +113,15 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
     if (!swc_input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
         goto error1;
 
-    wl_array_init(&keyboard->keys);
     keyboard->modifier_state = (struct swc_keyboard_modifier_state) { 0 };
     keyboard->modifiers = 0;
     keyboard->focus_handler.enter = &enter;
     keyboard->focus_handler.leave = &leave;
+    keyboard->client_handler.key = &client_handle_key;
+    keyboard->client_handler.modifiers = &client_handle_modifiers;
+    wl_array_init(&keyboard->client_handler.keys);
+    wl_list_init(&keyboard->handlers);
+    wl_list_insert(&keyboard->handlers, &keyboard->client_handler.link);
 
     swc_input_focus_initialize(&keyboard->focus, &keyboard->focus_handler);
 
@@ -92,7 +135,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
 
 void swc_keyboard_finish(struct swc_keyboard * keyboard)
 {
-    wl_array_release(&keyboard->keys);
+    wl_array_release(&keyboard->client_handler.keys);
     swc_input_focus_finish(&keyboard->focus);
     swc_xkb_finish(&keyboard->xkb);
 }
@@ -135,52 +178,43 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
 {
     uint32_t * pressed_key;
     struct swc_keyboard_modifier_state modifier_state;
-    struct wl_display * display;
-    uint32_t serial;
     enum xkb_key_direction direction;
     struct swc_xkb * xkb = &keyboard->xkb;
+    struct swc_keyboard_handler * handler;
 
-    if (keyboard->focus.resource)
+    /* First handle key events associated with a particular handler. */
+    wl_list_for_each(handler, &keyboard->handlers, link)
     {
-        struct wl_client * client
-            = wl_resource_get_client(keyboard->focus.resource);
-        display = wl_client_get_display(client);
-    }
-
-    /* Update keyboard state state */
-    wl_array_for_each(pressed_key, &keyboard->keys)
-    {
-        if (*pressed_key == key)
+        wl_array_for_each(pressed_key, &handler->keys)
         {
-            /* Ignore repeat events. */
-            if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-                return;
-            else
+            if (*pressed_key == key)
             {
-                /* Remove the key from the array */
-                swc_array_remove(&keyboard->keys, pressed_key, sizeof key);
-                break;
+                /* Ignore repeat events. */
+                if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+                    return;
+
+                swc_array_remove(&handler->keys,
+                                 pressed_key, sizeof *pressed_key);
+                if (handler->key)
+                    handler->key(keyboard, time, key, state);
+                goto update_xkb_state;
             }
         }
     }
 
-    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+    /* Go through handlers again to see if any will accept this key event. */
+    wl_list_for_each(handler, &keyboard->handlers, link)
     {
-        pressed_key = wl_array_add(&keyboard->keys, sizeof key);
-        *pressed_key = key;
-    }
-
-    /* Check if the key event is handled by the keyboard handler. */
-    if ((!keyboard->handler || !keyboard->handler->key
-         || !keyboard->handler->key(keyboard, time, key, state))
-        && keyboard->focus.resource)
-    {
-        serial = wl_display_next_serial(display);
-        wl_keyboard_send_key(keyboard->focus.resource, serial, time,
-                             key, state);
+        if (handler->key && handler->key(keyboard, time, key, state))
+        {
+            if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+                *((uint32_t *) wl_array_add(&handler->keys, sizeof key)) = key;
+            break;
+        }
     }
 
     /* Update XKB state. */
+  update_xkb_state:
     direction = state == WL_KEYBOARD_KEY_STATE_PRESSED ? XKB_KEY_DOWN
                                                        : XKB_KEY_UP;
     xkb_state_update_key(xkb->state, XKB_KEY(key), direction);
@@ -204,17 +238,6 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
 
         /* Update keyboard modifier state. */
         keyboard->modifier_state = modifier_state;
-
-        if (keyboard->focus.resource)
-        {
-            serial = wl_display_next_serial(display);
-            wl_keyboard_send_modifiers
-                (keyboard->focus.resource, serial, modifier_state.depressed,
-                 modifier_state.latched, modifier_state.locked,
-                 modifier_state.group);
-        }
-
-
         keyboard->modifiers = 0;
         if (mods_active & (1 << keyboard->xkb.indices.ctrl))
             keyboard->modifiers |= SWC_MOD_CTRL;
@@ -224,6 +247,13 @@ void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
             keyboard->modifiers |= SWC_MOD_LOGO;
         if (mods_active & (1 << keyboard->xkb.indices.shift))
             keyboard->modifiers |= SWC_MOD_SHIFT;
+
+        /* Run any modifier handlers. */
+        wl_list_for_each(handler, &keyboard->handlers, link)
+        {
+            if (handler->modifiers)
+                handler->modifiers(keyboard, &modifier_state);
+        }
     }
 }
 
