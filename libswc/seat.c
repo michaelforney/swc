@@ -171,7 +171,7 @@ static void add_device(struct udev_device * udev_device)
 
     if (!device)
     {
-        fprintf(stderr, "Could not create evdev device\n");
+        ERROR("Could not create evdev device\n");
         return;
     }
 
@@ -227,7 +227,7 @@ bool swc_seat_initialize()
 
     if (!swc_data_device_initialize(&seat.data_device))
     {
-        printf("could not initialize data device\n");
+        ERROR("Could not initialize data device\n");
         goto error1;
     }
 
@@ -235,7 +235,7 @@ bool swc_seat_initialize()
 
     if (!swc_keyboard_initialize(&seat.keyboard))
     {
-        printf("could not initialize keyboard\n");
+        ERROR("Could not initialize keyboard\n");
         goto error2;
     }
 
@@ -243,7 +243,7 @@ bool swc_seat_initialize()
 
     if (!swc_pointer_initialize(&seat.pointer))
     {
-        printf("could not initialize pointer\n");
+        ERROR("Could not initialize pointer\n");
         goto error3;
     }
 
