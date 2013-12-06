@@ -69,7 +69,7 @@ struct swc_drm_buffer * swc_drm_buffer_get(struct wl_resource * resource)
     {
         return wl_resource_get_user_data(resource);
     }
-    else
-        return NULL;
+
+    return NULL;
 }
 

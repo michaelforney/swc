@@ -37,13 +37,13 @@
 
 #include <libudev.h>
 
-extern const struct swc_seat_global swc_seat_global;
-extern const struct swc_bindings_global swc_bindings_global;
+extern const struct swc_seat_global seat_global;
+extern const struct swc_bindings_global bindings_global;
 static struct swc_compositor compositor;
 
 struct swc swc = {
-    .seat = &swc_seat_global,
-    .bindings = &swc_bindings_global,
+    .seat = &seat_global,
+    .bindings = &bindings_global,
     .compositor = &compositor
 };
 

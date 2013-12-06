@@ -36,7 +36,10 @@ struct binding
     void * data;
 };
 
-static struct wl_array key_bindings;
+static struct
+{
+    struct wl_array keys;
+} bindings;
 
 static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
                        uint32_t key, uint32_t state)
@@ -58,7 +61,7 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
 
         if (num_keysyms == 1)
         {
-            wl_array_for_each(binding, &key_bindings)
+            wl_array_for_each(binding, &bindings.keys)
             {
                 if (binding->value == keysyms[0]
                     && (binding->modifiers == keyboard->modifiers
@@ -79,20 +82,20 @@ static struct swc_keyboard_handler binding_handler = {
     .key = &handle_key,
 };
 
-const struct swc_bindings_global swc_bindings_global = {
+const struct swc_bindings_global bindings_global = {
     .keyboard_handler = &binding_handler
 };
 
 bool swc_bindings_initialize()
 {
-    wl_array_init(&key_bindings);
+    wl_array_init(&bindings.keys);
 
     return true;
 }
 
 void swc_bindings_finalize()
 {
-    wl_array_release(&key_bindings);
+    wl_array_release(&bindings.keys);
 }
 
 EXPORT
@@ -101,7 +104,7 @@ void swc_add_key_binding(uint32_t modifiers, uint32_t value,
 {
     struct binding * binding;
 
-    binding = wl_array_add(&key_bindings, sizeof *binding);
+    binding = wl_array_add(&bindings.keys, sizeof *binding);
     binding->value = value;
     binding->modifiers = modifiers;
     binding->handler = handler;

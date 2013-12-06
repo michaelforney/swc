@@ -28,7 +28,7 @@ static struct
     struct wl_list devices;
 } seat;
 
-const struct swc_seat_global swc_seat_global = {
+const struct swc_seat_global seat_global = {
     .pointer = &seat.pointer,
     .keyboard = &seat.keyboard,
     .data_device = &seat.data_device
