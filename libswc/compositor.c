@@ -353,7 +353,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     pixman_region32_init(&compositor->damage);
     pixman_region32_init(&compositor->opaque);
     wl_list_init(&compositor->surfaces);
-    wl_signal_init(&compositor->destroy_signal);
 
     swc_add_key_binding(SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace,
                         &handle_terminate, display);
@@ -380,8 +379,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 void swc_compositor_finish(struct swc_compositor * compositor)
 {
     struct swc_output * output, * tmp;
-
-    wl_signal_emit(&compositor->destroy_signal, compositor);
 
     wl_list_for_each_safe(output, tmp, &compositor->outputs, link)
     {

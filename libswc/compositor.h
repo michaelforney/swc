@@ -39,8 +39,6 @@ struct swc_compositor
 
     struct wl_listener drm_listener;
     struct wl_listener pointer_listener;
-
-    struct wl_signal destroy_signal;
 };
 
 bool swc_compositor_initialize(struct swc_compositor * compositor,
