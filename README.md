@@ -18,7 +18,7 @@ Dependencies
 * pixman
 * [wld](http://github.com/michaelforney/wld)
 * libudev
-* linux[>=3.12] (for EVIOCREVOKE)
+* linux\[>=3.12\] (for EVIOCREVOKE)
 
 libudev is currently required for input hotplugging support. I'd like to get rid
 of this dependency, but it seems that libudev is currently the only way to get
