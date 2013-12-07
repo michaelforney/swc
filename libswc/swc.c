@@ -86,13 +86,13 @@ bool swc_initialize(struct wl_display * display,
 
     if (!(swc.udev = udev_new()))
     {
-        fprintf(stderr, "Could not initialize udev\n");
+        ERROR("Could not initialize udev\n");
         goto error0;
     }
 
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
-        fprintf(stderr, "Could not initialize compositor\n");
+        ERROR("Could not initialize compositor\n");
         goto error1;
     }
 
@@ -106,26 +106,26 @@ bool swc_initialize(struct wl_display * display,
 
     if (!swc_seat_initialize())
     {
-        fprintf(stderr, "Could not initialize seat\n");
+        ERROR("Could not initialize seat\n");
         goto error3;
     }
 
     if (!swc_bindings_initialize())
     {
-        fprintf(stderr, "Could not initialize bindings\n");
+        ERROR("Could not initialize bindings\n");
         goto error4;
     }
 
     if (!swc_shell_initialize())
     {
-        fprintf(stderr, "Could not initialize shell\n");
+        ERROR("Could not initialize shell\n");
         goto error5;
     }
 
 #ifdef ENABLE_XWAYLAND
     if (!swc_xserver_initialize())
     {
-        fprintf(stderr, "Could not initialize xwayland\n");
+        ERROR("Could not initialize xwayland\n");
         goto error6;
     }
 #endif
