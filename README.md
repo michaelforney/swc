@@ -35,31 +35,41 @@ get called when a new window or screen is created. In `new_window`, you should
 allocate your own window window structure, and register a listener for the
 window's event signal. More information can be found in `swc.h`.
 
-    void new_window(struct swc_window * window)
-    {
-        /* TODO: Implement */
-    }
+```C
+void new_window(struct swc_window * window)
+{
+    /* TODO: Implement */
+}
 
-    void new_screen(struct swc_screen * screen)
-    {
-        /* TODO: Implement */
-    }
+void new_screen(struct swc_screen * screen)
+{
+    /* TODO: Implement */
+}
+```
 
 Create a `struct swc_manager` containing pointers to these functions.
 
-    const struct swc_manager manager = { &new_window, &new_screen };
+```C
+const struct swc_manager manager = { &new_window, &new_screen };
+```
 
 In your startup code, you must create a Wayland display.
 
-    display = wl_display_create();
+```C
+display = wl_display_create();
+```
 
 Then call `swc_initialize`.
 
-    swc_initialize(display, NULL, manager);
+```C
+swc_initialize(display, NULL, manager);
+```
 
 Finally, run the main event loop.
 
-    wl_display_run(display);
+```C
+wl_display_run(display);
+```
 
 Why not write a Weston shell plugin?
 ------------------------------------
