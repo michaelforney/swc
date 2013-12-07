@@ -1,4 +1,4 @@
-# swc: Makefile.common
+# swc: common.mk
 
 .PHONY: check-dependencies-$(dir)
 check-dependencies-$(dir):

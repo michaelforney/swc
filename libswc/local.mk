@@ -1,4 +1,4 @@
-# swc: libswc/Makefile.local
+# swc: libswc/local.mk
 
 dir := libswc
 
@@ -115,5 +115,5 @@ install-libswc: $($(dir)_TARGETS:$(dir)/%=install-%) | $(DESTDIR)$(INCLUDEDIR)
 
 CLEAN_FILES += $(SWC_SHARED_OBJECTS) $(SWC_STATIC_OBJECTS) $($(dir)_SHARED_TARGETS)
 
-include Makefile.common
+include common.mk
 

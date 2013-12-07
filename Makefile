@@ -46,7 +46,7 @@ link        = $(call quiet,CCLD,$(CC)) $(FINAL_CFLAGS) -o $@ $^
 pkgconfig   = $(sort $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
                                            $(shell $(PKG_CONFIG) --$(2) $(pkg)))))
 
-include $(SUBDIRS:%=%/Makefile.local)
+include $(SUBDIRS:%=%/local.mk)
 
 $(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)):
 	mkdir -p "$@"

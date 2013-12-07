@@ -1,4 +1,4 @@
-# swc: protocol/Makefile.local
+# swc: protocol/local.mk
 
 dir := protocol
 
@@ -15,5 +15,5 @@ $(dir)/%-protocol.c: $(dir)/%.xml
 $(dir)/%-server-protocol.h: $(dir)/%.xml
 	$(call quiet,GEN,$(WAYLAND_SCANNER)) server-header < $< > $@
 
-include Makefile.common
+include common.mk
 

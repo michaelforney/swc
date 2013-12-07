@@ -1,4 +1,4 @@
-# swc: launch/Makefile.local
+# swc: launch/local.mk
 
 dir := launch
 
@@ -19,5 +19,5 @@ install-$(dir): $(dir)/swc-launch | $(DESTDIR)$(BINDIR)
 
 CLEAN_FILES += $(dir)/launch.o
 
-include Makefile.common
+include common.mk
 
