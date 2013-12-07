@@ -123,6 +123,13 @@ static void set_size(struct swc_surface * surface,
         surface->geometry.width = width;
         surface->geometry.height = height;
 
+        pixman_region32_intersect_rect
+            (&surface->state.opaque, &surface->state.opaque,
+             0, 0, width, height);
+        pixman_region32_intersect_rect
+            (&surface->state.damage, &surface->state.damage,
+             0, 0, width, height);
+
         swc_send_event(&surface->event_signal,
                        SWC_SURFACE_EVENT_TYPE_RESIZE, &data);
     }
