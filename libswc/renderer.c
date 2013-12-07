@@ -99,10 +99,10 @@ static void repaint_surface(struct swc_renderer * renderer,
 
     if (pixman_region32_not_empty(&surface_damage))
     {
-        printf("\tdrm surface %u { x: %d, y: %d, w: %u, h: %u }\n",
-               wl_resource_get_id(surface->resource),
-               surface->geometry.x, surface->geometry.y,
-               surface->geometry.width, surface->geometry.height);
+        DEBUG("\tDRM surface %u { x: %d, y: %d, w: %u, h: %u }\n",
+              wl_resource_get_id(surface->resource),
+              surface->geometry.x, surface->geometry.y,
+              surface->geometry.width, surface->geometry.height);
 
         pixman_region32_translate(&surface_damage,
                                   -surface->geometry.x, -surface->geometry.y);
@@ -116,7 +116,7 @@ static void repaint_surface(struct swc_renderer * renderer,
     /* Draw border */
     if (pixman_region32_not_empty(&border_damage))
     {
-        printf("\tborder\n");
+        DEBUG("\t\tRedrawing border\n");
 
         pixman_region32_translate(&border_damage,
                                   -target->geometry.x, -target->geometry.y);
@@ -159,9 +159,9 @@ void swc_renderer_repaint(struct swc_renderer * renderer,
     struct swc_render_target * target = &renderer->target;
     struct swc_surface * surface;
 
-    printf("rendering to target { x: %d, y: %d, w: %u, h: %u }\n",
-           target->geometry.x, target->geometry.y,
-           target->geometry.width, target->geometry.height);
+    DEBUG("Rendering to target { x: %d, y: %d, w: %u, h: %u }\n",
+          target->geometry.x, target->geometry.y,
+          target->geometry.width, target->geometry.height);
 
     /* Paint base damage black. */
     if (pixman_region32_not_empty(base_damage))
@@ -225,7 +225,7 @@ void swc_renderer_attach(struct swc_renderer * renderer,
     }
     else
     {
-        fprintf(stderr, "Unsupported buffer type\n");
+        ERROR("Unsupported buffer type\n");
         return;
     }
 
