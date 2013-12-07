@@ -47,11 +47,11 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
     struct buffer_state * state
         = CONTAINER_OF(listener, typeof(*state), destroy_listener);
 
-    wld_destroy_drawable(state->drawable);
     if (state->dst)
         pixman_image_unref(state->dst);
     if (state->src)
         pixman_image_unref(state->src);
+    wld_destroy_drawable(state->drawable);
     free(state);
 }
 
