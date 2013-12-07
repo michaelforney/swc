@@ -57,6 +57,7 @@ struct swc_surface_state
 {
     struct wl_resource * buffer;
     struct wl_listener buffer_destroy_listener;
+    bool current;
 
     /* The region that needs to be repainted. */
     pixman_region32_t damage;

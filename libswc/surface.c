@@ -31,6 +31,37 @@
 #include <stdio.h>
 #include <wld/wld.h>
 
+static void set_size(struct swc_surface * surface,
+                     uint32_t width, uint32_t height)
+{
+    /* Check if the surface was resized. */
+    if (width != surface->geometry.width || height != surface->geometry.height)
+    {
+        struct swc_surface_event_data data = {
+            .surface = surface,
+            .resize = {
+                .old_width = surface->geometry.width,
+                .old_height = surface->geometry.height,
+                .new_width = width,
+                .new_height = height
+            }
+        };
+
+        surface->geometry.width = width;
+        surface->geometry.height = height;
+
+        pixman_region32_intersect_rect
+            (&surface->state.opaque, &surface->state.opaque,
+             0, 0, width, height);
+        pixman_region32_intersect_rect
+            (&surface->state.damage, &surface->state.damage,
+             0, 0, width, height);
+
+        swc_send_event(&surface->event_signal,
+                       SWC_SURFACE_EVENT_TYPE_RESIZE, &data);
+    }
+}
+
 /**
  * Removes a buffer from a surface state.
  */
@@ -40,12 +71,21 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
 
     state = CONTAINER_OF(listener, typeof(*state), buffer_destroy_listener);
     state->buffer = NULL;
+
+    if (state->current)
+    {
+        struct swc_surface * surface;
+
+        surface = CONTAINER_OF(state, typeof(*surface), state);
+        set_size(surface, 0, 0);
+    }
 }
 
-static void state_initialize(struct swc_surface_state * state)
+static void state_initialize(struct swc_surface_state * state, bool current)
 {
     state->buffer = NULL;
     state->buffer_destroy_listener.notify = &handle_buffer_destroy;
+    state->current = current;
 
     pixman_region32_init(&state->damage);
     pixman_region32_init(&state->opaque);
@@ -102,37 +142,6 @@ static bool state_set_buffer(struct swc_surface_state * state,
     state->buffer = buffer;
 
     return true;
-}
-
-static void set_size(struct swc_surface * surface,
-                     uint32_t width, uint32_t height)
-{
-    /* Check if the surface was resized. */
-    if (width != surface->geometry.width || height != surface->geometry.height)
-    {
-        struct swc_surface_event_data data = {
-            .surface = surface,
-            .resize = {
-                .old_width = surface->geometry.width,
-                .old_height = surface->geometry.height,
-                .new_width = width,
-                .new_height = height
-            }
-        };
-
-        surface->geometry.width = width;
-        surface->geometry.height = height;
-
-        pixman_region32_intersect_rect
-            (&surface->state.opaque, &surface->state.opaque,
-             0, 0, width, height);
-        pixman_region32_intersect_rect
-            (&surface->state.damage, &surface->state.damage,
-             0, 0, width, height);
-
-        swc_send_event(&surface->event_signal,
-                       SWC_SURFACE_EVENT_TYPE_RESIZE, &data);
-    }
 }
 
 static void destroy(struct wl_client * client, struct wl_resource * resource)
@@ -368,8 +377,8 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     surface->class = NULL;
     surface->class_state = NULL;
 
-    state_initialize(&surface->state);
-    state_initialize(&surface->pending.state);
+    state_initialize(&surface->state, true);
+    state_initialize(&surface->pending.state, false);
 
     wl_signal_init(&surface->event_signal);
 
