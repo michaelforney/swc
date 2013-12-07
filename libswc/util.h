@@ -56,6 +56,8 @@ static inline uint32_t swc_time()
     return timeval.tv_sec * 1000 + timeval.tv_usec / 1000;
 }
 
+extern pixman_box32_t infinite_extents;
+
 static inline bool swc_rectangle_contains_point
     (pixman_rectangle32_t * rectangle, int32_t x, int32_t y)
 {

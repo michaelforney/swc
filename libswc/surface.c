@@ -31,11 +31,6 @@
 #include <stdio.h>
 #include <wld/wld.h>
 
-static pixman_box32_t infinite_extents = {
-    .x1 = INT32_MIN, .y1 = INT32_MIN,
-    .x2 = INT32_MAX, .y2 = INT32_MAX
-};
-
 /**
  * Removes a buffer from a surface state.
  */
