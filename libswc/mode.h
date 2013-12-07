@@ -1,4 +1,4 @@
-/* swc: libswc/swc.h
+/* swc: libswc/mode.h
  *
  * Copyright (c) 2013 Michael Forney
  *
