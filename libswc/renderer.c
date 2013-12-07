@@ -88,7 +88,7 @@ static void repaint_surface(struct swc_renderer * renderer,
         (&surface_region, surface->geometry.x, surface->geometry.y,
          surface->geometry.width, surface->geometry.height);
 
-    pixman_region32_intersect(&surface_damage, damage, &surface_damage);
+    pixman_region32_intersect(&surface_damage, &surface_damage, damage);
     pixman_region32_subtract(&surface_damage, &surface_damage,
                              &surface_state->clip);
     pixman_region32_subtract(&border_damage, &surface_damage, &surface_region);
