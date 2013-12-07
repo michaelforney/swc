@@ -132,38 +132,38 @@ static void perform_update(void * data)
 {
     struct swc_compositor * compositor = data;
     struct swc_output * output;
+    pixman_region32_t damage;
     uint32_t updates = compositor->scheduled_updates
-                       & ~compositor->pending_flips;
+                     & ~compositor->pending_flips;
 
-    if (updates)
+    if (!updates)
+        return;
+
+    DEBUG("Performing update\n");
+
+    calculate_damage(compositor);
+    pixman_region32_init(&damage);
+
+    wl_list_for_each(output, &compositor->outputs, link)
     {
-        pixman_region32_t damage;
+        if (!(compositor->scheduled_updates & SWC_OUTPUT_MASK(output)))
+            continue;
 
-        printf("performing update\n");
-        calculate_damage(compositor);
-        pixman_region32_init(&damage);
+        update_output_damage(output, &compositor->damage);
 
-        wl_list_for_each(output, &compositor->outputs, link)
-        {
-            if (compositor->scheduled_updates & SWC_OUTPUT_MASK(output))
-            {
-                update_output_damage(output, &compositor->damage);
+        /* Don't repaint the output if it is waiting for a page flip. */
+        if (compositor->pending_flips & SWC_OUTPUT_MASK(output))
+            continue;
 
-                if (!(compositor->pending_flips & SWC_OUTPUT_MASK(output)))
-                {
-                    flush_output_damage(output, &damage);
-                    repaint_output(compositor, output, &damage);
-                }
-            }
-        }
-
-        pixman_region32_fini(&damage);
-        /* XXX: Should assert that all damage was covered by some output */
-        pixman_region32_clear(&compositor->damage);
-        compositor->pending_flips |= updates;
-        compositor->scheduled_updates &= ~updates;
+        flush_output_damage(output, &damage);
+        repaint_output(compositor, output, &damage);
     }
 
+    pixman_region32_fini(&damage);
+    /* XXX: Should assert that all damage was covered by some output */
+    pixman_region32_clear(&compositor->damage);
+    compositor->pending_flips |= updates;
+    compositor->scheduled_updates &= ~updates;
 }
 
 static void handle_focus(struct swc_pointer * pointer)
