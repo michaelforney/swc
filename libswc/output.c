@@ -64,6 +64,7 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
 
     wl_list_init(&output->resources);
     wl_array_init(&output->modes);
+    pixman_region32_init(&output->current_damage);
     pixman_region32_init(&output->previous_damage);
 
     output->crtc_id = crtc_id;

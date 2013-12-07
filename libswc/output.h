@@ -29,7 +29,7 @@ struct swc_output
     struct swc_plane framebuffer_plane;
     struct swc_plane cursor_plane;
 
-    pixman_region32_t previous_damage;
+    pixman_region32_t current_damage, previous_damage;
 
     /* The CRTC and connector we are using to drive this output */
     uint32_t crtc_id;

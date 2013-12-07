@@ -85,41 +85,47 @@ static void calculate_damage(struct swc_compositor * compositor)
 }
 
 static void repaint_output(struct swc_compositor * compositor,
-                           struct swc_output * output)
+                           struct swc_output * output,
+                           pixman_region32_t * damage)
 {
-    pixman_region32_t damage, previous_damage, base_damage;
+    pixman_region32_t base_damage;
 
-    pixman_region32_init(&damage);
-    pixman_region32_init(&previous_damage);
     pixman_region32_init(&base_damage);
-
-    pixman_region32_intersect_rect
-        (&damage, &compositor->damage, output->geometry.x, output->geometry.y,
-         output->geometry.width, output->geometry.height);
-
-    /* We must save the damage from the previous frame because the back buffer
-     * is also damaged in this region. */
-    pixman_region32_copy(&previous_damage, &output->previous_damage);
-    pixman_region32_copy(&output->previous_damage, &damage);
-
-    /* The total damage is composed of the damage from the new frame, and the
-     * damage from the last frame. */
-    pixman_region32_union(&damage, &damage, &previous_damage);
-
-    pixman_region32_subtract(&base_damage, &damage, &compositor->opaque);
+    pixman_region32_subtract(&base_damage, damage, &compositor->opaque);
 
     swc_renderer_set_target(&compositor->renderer, &output->framebuffer_plane);
-    swc_renderer_repaint(&compositor->renderer, &damage, &base_damage,
+    swc_renderer_repaint(&compositor->renderer, damage, &base_damage,
                          &compositor->surfaces);
 
-    pixman_region32_subtract(&compositor->damage, &compositor->damage, &damage);
-
-    pixman_region32_fini(&damage);
-    pixman_region32_fini(&previous_damage);
     pixman_region32_fini(&base_damage);
 
     if (!swc_plane_flip(&output->framebuffer_plane))
         fprintf(stderr, "Plane flip failed\n");
+}
+
+static void update_output_damage(struct swc_output * output,
+                                 pixman_region32_t * damage)
+{
+    pixman_region32_union
+        (&output->current_damage, &output->current_damage, damage);
+    pixman_region32_intersect_rect
+        (&output->current_damage, &output->current_damage,
+         output->geometry.x, output->geometry.y,
+         output->geometry.width, output->geometry.height);
+}
+
+static void flush_output_damage(struct swc_output * output,
+                                pixman_region32_t * damage)
+{
+    /* The total damage is composed of the damage from the new frame, and the
+     * damage from the last frame. */
+    pixman_region32_union(damage,
+                          &output->current_damage, &output->previous_damage);
+
+    /* We must save the damage from the previous frame because the back buffer
+     * is also damaged in this region. */
+    pixman_region32_copy(&output->previous_damage, &output->current_damage);
+    pixman_region32_clear(&output->current_damage);
 }
 
 static void perform_update(void * data)
@@ -131,15 +137,29 @@ static void perform_update(void * data)
 
     if (updates)
     {
+        pixman_region32_t damage;
+
         printf("performing update\n");
         calculate_damage(compositor);
+        pixman_region32_init(&damage);
 
         wl_list_for_each(output, &compositor->outputs, link)
         {
-            if (updates & SWC_OUTPUT_MASK(output))
-                repaint_output(compositor, output);
+            if (compositor->scheduled_updates & SWC_OUTPUT_MASK(output))
+            {
+                update_output_damage(output, &compositor->damage);
+
+                if (!(compositor->pending_flips & SWC_OUTPUT_MASK(output)))
+                {
+                    flush_output_damage(output, &damage);
+                    repaint_output(compositor, output, &damage);
+                }
+            }
         }
 
+        pixman_region32_fini(&damage);
+        /* XXX: Should assert that all damage was covered by some output */
+        pixman_region32_clear(&compositor->damage);
         compositor->pending_flips |= updates;
         compositor->scheduled_updates &= ~updates;
     }
