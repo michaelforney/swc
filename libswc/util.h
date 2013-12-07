@@ -59,14 +59,14 @@ static inline uint32_t swc_time()
 extern pixman_box32_t infinite_extents;
 
 static inline bool swc_rectangle_contains_point
-    (pixman_rectangle32_t * rectangle, int32_t x, int32_t y)
+    (const pixman_rectangle32_t * rectangle, int32_t x, int32_t y)
 {
     return x > rectangle->x && x < rectangle->x + rectangle->width
         && y > rectangle->y && y < rectangle->y + rectangle->height;
 }
 
 static inline bool swc_rectangle_overlap
-    (pixman_rectangle32_t * r1, pixman_rectangle32_t * r2)
+    (const pixman_rectangle32_t * r1, const pixman_rectangle32_t * r2)
 {
     return (MAX(r1->x + r1->width, r2->x + r2->width) - MIN(r1->x, r2->x)
             < r1->width + r2->width)
