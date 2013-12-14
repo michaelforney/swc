@@ -174,12 +174,6 @@ static void handle_focus(struct swc_pointer * pointer)
 
     wl_list_for_each(surface, &compositor->surfaces, link)
     {
-        pixman_region32_t region;
-
-        pixman_region32_init_rect
-            (&region, surface->geometry.x, surface->geometry.y,
-             surface->geometry.width, surface->geometry.height);
-
         x = wl_fixed_to_int(pointer->x);
         y = wl_fixed_to_int(pointer->y);
 
