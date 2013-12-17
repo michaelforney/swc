@@ -5,8 +5,6 @@
 #include <stdint.h>
 #include <wayland-server.h>
 
-struct wld_drm_context * context;
-
 enum swc_drm_event_type
 {
     SWC_DRM_PAGE_FLIP
@@ -21,27 +19,14 @@ struct swc_drm_event_data
 struct swc_drm
 {
     int fd;
-    uint32_t id;
-    char * path;
-
     struct wld_drm_context * context;
-
-    uint32_t taken_output_ids;
-
-    struct wl_event_source * source;
-
     struct wl_signal event_signal;
 };
 
-bool swc_drm_initialize(struct swc_drm * drm, const char * seat);
-void swc_drm_finish(struct swc_drm * drm);
+bool swc_drm_initialize(const char * seat);
+void swc_drm_finalize();
 
-void swc_drm_add_event_sources(struct swc_drm * drm,
-                               struct wl_event_loop * event_loop);
-
-void swc_drm_add_globals(struct swc_drm * drm, struct wl_display * display);
-
-struct wl_list * swc_drm_create_outputs(struct swc_drm * drm);
+struct wl_list * swc_drm_create_outputs();
 
 #endif
 

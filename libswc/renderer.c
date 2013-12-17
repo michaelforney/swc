@@ -1,6 +1,8 @@
 #include "renderer.h"
 #include "compositor_surface.h"
+#include "drm.h"
 #include "drm_buffer.h"
+#include "internal.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -127,18 +129,6 @@ static void repaint_surface(struct swc_renderer * renderer,
     pixman_region32_fini(&border_damage);
 }
 
-bool swc_renderer_initialize(struct swc_renderer * renderer,
-                             struct swc_drm * drm)
-{
-    renderer->drm = drm;
-
-    return true;
-}
-
-void swc_renderer_finalize(struct swc_renderer * renderer)
-{
-}
-
 void swc_renderer_set_target(struct swc_renderer * renderer,
                              struct swc_plane * plane)
 {
@@ -206,7 +196,7 @@ void swc_renderer_attach(struct swc_renderer * renderer,
                  pitch = wl_shm_buffer_get_stride(shm_buffer);
         void * data = wl_shm_buffer_get_data(shm_buffer);
 
-        state->drawable = wld_drm_create_drawable(renderer->drm->context,
+        state->drawable = wld_drm_create_drawable(swc.drm->context,
                                                   width, height,
                                                   wld_format(format));
         state->src = pixman_image_create_bits_no_clear(pixman_format(format),

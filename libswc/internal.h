@@ -35,6 +35,7 @@ struct swc
     const struct swc_seat_global * const seat;
     const struct swc_bindings_global * const bindings;
     struct swc_compositor * compositor;
+    struct swc_drm * const drm;
 };
 
 extern struct swc swc;

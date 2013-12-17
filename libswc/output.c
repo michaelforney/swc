@@ -1,5 +1,6 @@
 #include "output.h"
 #include "drm.h"
+#include "internal.h"
 #include "mode.h"
 #include "util.h"
 
@@ -45,7 +46,7 @@ static void bind_output(struct wl_client * client, void * data,
         wl_output_send_done(resource);
 }
 
-bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
+bool swc_output_initialize(struct swc_output * output,
                            uint32_t id, uint32_t crtc_id,
                            drmModeConnector * connector)
 {
@@ -53,8 +54,6 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
     drmModeCrtc * current_crtc;
     struct swc_mode * modes;
     uint32_t index;
-
-    output->drm = drm;
 
     printf("initializing output with id: %u\n", id);
 
@@ -71,8 +70,8 @@ bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
     output->connector_id = connector->connector_id;
 
     /* Determine the current CRTC of this output. */
-    encoder = drmModeGetEncoder(drm->fd, connector->encoder_id);
-    current_crtc = drmModeGetCrtc(drm->fd, encoder->crtc_id);
+    encoder = drmModeGetEncoder(swc.drm->fd, connector->encoder_id);
+    current_crtc = drmModeGetCrtc(swc.drm->fd, encoder->crtc_id);
     drmModeFreeEncoder(encoder);
 
     modes = wl_array_add(&output->modes, connector->count_modes * sizeof *modes);
@@ -125,7 +124,7 @@ void swc_output_finish(struct swc_output * output)
         swc_mode_finish(mode);
     wl_array_release(&output->modes);
 
-    drmModeSetCrtc(output->drm->fd, crtc->crtc_id, crtc->buffer_id, crtc->x,
+    drmModeSetCrtc(swc.drm->fd, crtc->crtc_id, crtc->buffer_id, crtc->x,
                    crtc->y, &output->connector_id, 1, &crtc->mode);
     drmModeFreeCrtc(crtc);
 }

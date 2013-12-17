@@ -16,8 +16,6 @@ struct swc_output
 {
     uint32_t id;
 
-    struct swc_drm * drm;
-
     /* The geometry of this output */
     pixman_rectangle32_t geometry;
     uint32_t physical_width, physical_height;
@@ -44,8 +42,7 @@ struct swc_output
     struct wl_list link;
 };
 
-bool swc_output_initialize(struct swc_output * output, struct swc_drm * drm,
-                           uint32_t id, uint32_t crtc_id,
+bool swc_output_initialize(struct swc_output * output, uint32_t id, uint32_t crtc_id,
                            drmModeConnector * connector);
 
 void swc_output_finish(struct swc_output * output);

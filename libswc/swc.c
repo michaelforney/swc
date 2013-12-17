@@ -25,6 +25,7 @@
 #include "bindings.h"
 #include "compositor.h"
 #include "data_device_manager.h"
+#include "drm.h"
 #include "internal.h"
 #include "keyboard.h"
 #include "pointer.h"
@@ -39,12 +40,14 @@
 
 extern const struct swc_seat_global seat_global;
 extern const struct swc_bindings_global bindings_global;
+extern struct swc_drm drm_global;
 static struct swc_compositor compositor;
 
 struct swc swc = {
     .seat = &seat_global,
     .bindings = &bindings_global,
-    .compositor = &compositor
+    .compositor = &compositor,
+    .drm = &drm_global,
 };
 
 static void setup_compositor()
@@ -83,6 +86,7 @@ bool swc_initialize(struct wl_display * display,
     swc.display = display;
     swc.event_loop = event_loop ?: wl_display_get_event_loop(display);
     swc.manager = manager;
+    const char * default_seat = "seat0";
 
     if (!(swc.udev = udev_new()))
     {
@@ -90,10 +94,16 @@ bool swc_initialize(struct wl_display * display,
         goto error0;
     }
 
+    if (!swc_drm_initialize(default_seat))
+    {
+        ERROR("Could not initialize DRM\n");
+        goto error1;
+    }
+
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         ERROR("Could not initialize compositor\n");
-        goto error1;
+        goto error2;
     }
 
     swc_compositor_add_globals(&compositor, display);
@@ -101,32 +111,32 @@ bool swc_initialize(struct wl_display * display,
     if (!swc_data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
-        goto error2;
+        goto error3;
     }
 
     if (!swc_seat_initialize())
     {
         ERROR("Could not initialize seat\n");
-        goto error3;
+        goto error4;
     }
 
     if (!swc_bindings_initialize())
     {
         ERROR("Could not initialize bindings\n");
-        goto error4;
+        goto error5;
     }
 
     if (!swc_shell_initialize())
     {
         ERROR("Could not initialize shell\n");
-        goto error5;
+        goto error6;
     }
 
 #ifdef ENABLE_XWAYLAND
     if (!swc_xserver_initialize())
     {
         ERROR("Could not initialize xwayland\n");
-        goto error6;
+        goto error7;
     }
 #endif
 
@@ -134,16 +144,18 @@ bool swc_initialize(struct wl_display * display,
 
     return true;
 
-  error6:
+  error7:
     swc_shell_finalize();
-  error5:
+  error6:
     swc_bindings_finalize();
-  error4:
+  error5:
     swc_seat_finalize();
-  error3:
+  error4:
     swc_data_device_manager_finalize();
-  error2:
+  error3:
     swc_compositor_finish(&compositor);
+  error2:
+    swc_drm_finalize();
   error1:
     udev_unref(swc.udev);
   error0:
@@ -161,6 +173,7 @@ void swc_finalize()
     swc_seat_finalize();
     swc_data_device_manager_finalize();
     swc_compositor_finish(&compositor);
+    swc_drm_finalize();
     udev_unref(swc.udev);
 }
 

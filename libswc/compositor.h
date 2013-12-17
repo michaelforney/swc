@@ -1,7 +1,6 @@
 #ifndef SWC_COMPOSITOR_H
 #define SWC_COMPOSITOR_H
 
-#include "drm.h"
 #include "pointer.h"
 #include "renderer.h"
 
@@ -11,7 +10,6 @@ struct swc_compositor
 {
     struct wl_display * display;
 
-    struct swc_drm drm;
     struct swc_renderer renderer;
 
     struct wl_list outputs;

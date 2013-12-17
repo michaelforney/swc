@@ -1,7 +1,6 @@
 #ifndef SWC_RENDERER_H
 #define SWC_RENDERER_H
 
-#include "drm.h"
 #include "output.h"
 #include "surface.h"
 
@@ -13,14 +12,8 @@ struct swc_render_target
 
 struct swc_renderer
 {
-    struct swc_drm * drm;
     struct swc_render_target target;
 };
-
-bool swc_renderer_initialize(struct swc_renderer * renderer,
-                             struct swc_drm * drm);
-
-void swc_renderer_finalize(struct swc_renderer * renderer);
 
 void swc_renderer_set_target(struct swc_renderer * renderer,
                              struct swc_plane * plane);

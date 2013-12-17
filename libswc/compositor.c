@@ -3,6 +3,7 @@
 #include "compositor_surface.h"
 #include "cursor_surface.h"
 #include "data_device_manager.h"
+#include "drm.h"
 #include "internal.h"
 #include "output.h"
 #include "pointer.h"
@@ -14,8 +15,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
-
-static const char default_seat[] = "seat0";
 
 static void calculate_damage(struct swc_compositor * compositor)
 {
@@ -340,23 +339,9 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
         .motion = &handle_motion
     };
 
-    /* TODO: configurable seat */
-    if (!swc_drm_initialize(&compositor->drm, default_seat))
-    {
-        printf("could not initialize drm\n");
-        goto error0;
-    }
+    wl_signal_add(&swc.drm->event_signal, &compositor->drm_listener);
 
-    wl_signal_add(&compositor->drm.event_signal, &compositor->drm_listener);
-    swc_drm_add_event_sources(&compositor->drm, event_loop);
-
-    if (!swc_renderer_initialize(&compositor->renderer, &compositor->drm))
-    {
-        printf("could not initialize renderer\n");
-        goto error1;
-    }
-
-    outputs = swc_drm_create_outputs(&compositor->drm);
+    outputs = swc_drm_create_outputs();
 
     if (outputs)
     {
@@ -367,7 +352,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     else
     {
         printf("could not create outputs\n");
-        goto error2;
+        return false;
     }
 
     pixman_region32_init(&compositor->damage);
@@ -387,13 +372,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
 
     return true;
-
-  error2:
-    swc_renderer_finalize(&compositor->renderer);
-  error1:
-    swc_drm_finish(&compositor->drm);
-  error0:
-    return false;
 }
 
 void swc_compositor_finish(struct swc_compositor * compositor)
@@ -405,8 +383,6 @@ void swc_compositor_finish(struct swc_compositor * compositor)
         swc_output_finish(output);
         free(output);
     }
-
-    swc_drm_finish(&compositor->drm);
 }
 
 void swc_compositor_add_globals(struct swc_compositor * compositor,
@@ -416,8 +392,6 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
 
     wl_global_create(display, &wl_compositor_interface, 3, compositor,
                      &bind_compositor);
-
-    swc_drm_add_globals(&compositor->drm, display);
 
     wl_list_for_each(output, &compositor->outputs, link)
     {

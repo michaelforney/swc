@@ -40,13 +40,25 @@
 #include <wayland-server.h>
 #include "protocol/wayland-drm-server-protocol.h"
 
+struct swc_drm drm_global;
+
+static struct
+{
+    uint32_t id;
+    char * path;
+
+    uint32_t taken_output_ids;
+
+    struct wl_global * global;
+    struct wl_event_source * event_source;
+} drm;
+
 static void authenticate(struct wl_client * client,
                          struct wl_resource * resource, uint32_t magic)
 {
-    struct swc_drm * drm = wl_resource_get_user_data(resource);
     int ret;
 
-    if ((ret = drmAuthMagic(drm->fd, magic)) == 0)
+    if ((ret = drmAuthMagic(swc.drm->fd, magic)) == 0)
         wl_drm_send_authenticated(resource);
     else
     {
@@ -60,11 +72,10 @@ static void create_buffer(struct wl_client * client,
                           uint32_t name, int32_t width, int32_t height,
                           uint32_t stride, uint32_t format)
 {
-    struct swc_drm * drm = wl_resource_get_user_data(resource);
     struct wld_drawable * drawable;
     struct swc_drm_buffer * buffer;
 
-    drawable = wld_drm_import_gem(drm->context, width, height, format,
+    drawable = wld_drm_import_gem(swc.drm->context, width, height, format,
                                   name, stride);
 
     if (!drawable)
@@ -103,11 +114,11 @@ static void create_prime_buffer(struct wl_client * client,
                                 int32_t offset1, int32_t stride1,
                                 int32_t offset2, int32_t stride2)
 {
-    struct swc_drm * drm = wl_resource_get_user_data(resource);
     struct wld_drawable * drawable;
     struct swc_drm_buffer * buffer;
 
-    drawable = wld_drm_import(drm->context, width, height, format, fd, stride0);
+    drawable = wld_drm_import(swc.drm->context, width, height, format,
+                              fd, stride0);
     close(fd);
 
     if (!drawable)
@@ -199,7 +210,7 @@ static struct udev_device * find_primary_drm_device(const char * seat)
     return drm_device;
 }
 
-static bool find_available_crtc(struct swc_drm * drm, drmModeRes * resources,
+static bool find_available_crtc(drmModeRes * resources,
                                 drmModeConnector * connector,
                                 uint32_t taken_crtcs, uint32_t * crtc)
 {
@@ -211,7 +222,8 @@ static bool find_available_crtc(struct swc_drm * drm, drmModeRes * resources,
          encoder_index < connector->count_encoders;
          ++encoder_index)
     {
-        encoder = drmModeGetEncoder(drm->fd, connector->encoders[encoder_index]);
+        encoder = drmModeGetEncoder(swc.drm->fd,
+                                    connector->encoders[encoder_index]);
         possible_crtcs = encoder->possible_crtcs;
         drmModeFreeEncoder(encoder);
 
@@ -232,11 +244,9 @@ static bool find_available_crtc(struct swc_drm * drm, drmModeRes * resources,
     return false;
 }
 
-static bool find_available_id(struct swc_drm * drm, uint32_t * id)
+static bool find_available_id(uint32_t * id)
 {
-    uint32_t index = __builtin_ffsl(~drm->taken_output_ids);
-
-    printf("drm->taken_output_ids: %u, index: %u\n", drm->taken_output_ids, index);
+    uint32_t index = __builtin_ffsl(~drm.taken_output_ids);
 
     if (index == 0)
         return false;
@@ -262,7 +272,7 @@ static void handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
 
     /* XXX: It doesn't make sense for multiple things to be listening for page
      *      flips (or does it?). Maybe this should be a callback instead? */
-    swc_send_event(&output->drm->event_signal, SWC_DRM_PAGE_FLIP, &event_data);
+    swc_send_event(&swc.drm->event_signal, SWC_DRM_PAGE_FLIP, &event_data);
 }
 
 static drmEventContext event_context = {
@@ -278,14 +288,33 @@ static int handle_data(int fd, uint32_t mask, void * data)
     return 1;
 }
 
-bool swc_drm_initialize(struct swc_drm * drm, const char * seat)
+static void bind_drm(struct wl_client * client, void * data, uint32_t version,
+                     uint32_t id)
+{
+    struct wl_resource * resource;
+
+    if (version >= 2)
+        version = 2;
+
+    resource = wl_resource_create(client, &wl_drm_interface, version, id);
+    wl_resource_set_implementation(resource, &drm_implementation, NULL, NULL);
+
+    if (version >= 2)
+        wl_drm_send_capabilities(resource, WL_DRM_CAPABILITY_PRIME);
+
+    wl_drm_send_device(resource, drm.path);
+    wl_drm_send_format(resource, WL_DRM_FORMAT_XRGB8888);
+    wl_drm_send_format(resource, WL_DRM_FORMAT_ARGB8888);
+}
+
+bool swc_drm_initialize(const char * seat_name)
 {
     const char * sysnum;
     char * end;
 
-    wl_signal_init(&drm->event_signal);
+    wl_signal_init(&swc.drm->event_signal);
 
-    struct udev_device * drm_device = find_primary_drm_device(seat);
+    struct udev_device * drm_device = find_primary_drm_device(seat_name);
 
     if (!drm_device)
     {
@@ -295,9 +324,7 @@ bool swc_drm_initialize(struct swc_drm * drm, const char * seat)
 
     /* XXX: Why do we need the sysnum? */
     sysnum = udev_device_get_sysnum(drm_device);
-    drm->id = strtoul(sysnum, &end, 10);
-
-    drm->taken_output_ids = 0;
+    drm.id = strtoul(sysnum, &end, 10);
 
     if (*end != '\0')
     {
@@ -306,74 +333,65 @@ bool swc_drm_initialize(struct swc_drm * drm, const char * seat)
         goto error0;
     }
 
-    printf("sysnum: %s\n", sysnum);
-
-    drm->path = strdup(udev_device_get_devnode(drm_device));
+    drm.taken_output_ids = 0;
+    drm.path = strdup(udev_device_get_devnode(drm_device));
     udev_device_unref(drm_device);
-    drm->fd = swc_launch_open_device(drm->path, O_RDWR | O_CLOEXEC);
+    swc.drm->fd = swc_launch_open_device(drm.path, O_RDWR | O_CLOEXEC);
 
-    if (drm->fd == -1)
+    if (swc.drm->fd == -1)
     {
-        fprintf(stderr, "Could not open %s\n", drm->path);
+        fprintf(stderr, "Could not open %s\n", drm.path);
         goto error1;
     }
 
-    if (!(drm->context = wld_drm_create_context(drm->fd)))
+    if (!(swc.drm->context = wld_drm_create_context(swc.drm->fd)))
     {
         fprintf(stderr, "Could not create WLD DRM context\n");
         goto error2;
     }
 
+    drm.global = wl_global_create(swc.display, &wl_drm_interface, 2,
+                                  NULL, &bind_drm);
+
+    if (!drm.global)
+    {
+        ERROR("Could not create wl_drm global\n");
+        goto error3;
+    }
+
+    drm.event_source = wl_event_loop_add_fd
+        (swc.event_loop, swc.drm->fd, WL_EVENT_READABLE, &handle_data, NULL);
+
+    if (!drm.event_source)
+    {
+        ERROR("Could not create DRM event source\n");
+        goto error4;
+    }
+
     return true;
 
+  error4:
+    wl_global_destroy(drm.global);
+  error3:
+    wld_drm_destroy_context(swc.drm->context);
   error2:
-    close(drm->fd);
+    close(swc.drm->fd);
   error1:
-    free(drm->path);
+    free(drm.path);
   error0:
     return false;
 }
 
-void swc_drm_finish(struct swc_drm * drm)
+void swc_drm_finalize()
 {
-    wld_drm_destroy_context(drm->context);
-    free(drm->path);
-    close(drm->fd);
+    wl_event_source_remove(drm.event_source);
+    wl_global_destroy(drm.global);
+    wld_drm_destroy_context(swc.drm->context);
+    free(drm.path);
+    close(swc.drm->fd);
 }
 
-void swc_drm_add_event_sources(struct swc_drm * drm,
-                               struct wl_event_loop * event_loop)
-{
-    drm->source = wl_event_loop_add_fd(event_loop, drm->fd, WL_EVENT_READABLE,
-                                       &handle_data, NULL);
-}
-
-static void bind_drm(struct wl_client * client, void * data, uint32_t version,
-                     uint32_t id)
-{
-    struct swc_drm * drm = data;
-    struct wl_resource * resource;
-
-    if (version >= 2)
-        version = 2;
-
-    resource = wl_resource_create(client, &wl_drm_interface, version, id);
-    wl_resource_set_implementation(resource, &drm_implementation, drm, NULL);
-
-    if (version >= 2)
-        wl_drm_send_capabilities(resource, WL_DRM_CAPABILITY_PRIME);
-
-    wl_drm_send_device(resource, drm->path);
-    wl_drm_send_format(resource, WL_DRM_FORMAT_XRGB8888);
-    wl_drm_send_format(resource, WL_DRM_FORMAT_ARGB8888);
-}
-
-void swc_drm_add_globals(struct swc_drm * drm, struct wl_display * display)
-{
-    wl_global_create(display, &wl_drm_interface, 2, drm, &bind_drm);
-}
-
-struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
+struct wl_list * swc_drm_create_outputs()
 {
     drmModeRes * resources;
     drmModeConnector * connector;
@@ -387,7 +405,7 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
     outputs = malloc(sizeof(struct wl_list));
     wl_list_init(outputs);
 
-    resources = drmModeGetResources(drm->fd);
+    resources = drmModeGetResources(swc.drm->fd);
     if (!resources)
     {
         printf("couldn't get DRM resources\n");
@@ -400,7 +418,7 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
     for (index = 0; index < resources->count_crtcs; ++index)
     {
         printf("crtc[%u]: %u\n", index, resources->crtcs[index]);
-        crtc = drmModeGetCrtc(drm->fd, resources->crtcs[index]);
+        crtc = drmModeGetCrtc(swc.drm->fd, resources->crtcs[index]);
         printf("crtc, id: %u, x: %u, y: %u, width: %u, height: %u\n",
             crtc->crtc_id, crtc->x, crtc->y, crtc->width, crtc->height);
         drmModeFreeCrtc(crtc);
@@ -409,14 +427,16 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
     for (index = 0; index < resources->count_encoders; ++index)
     {
         printf("encoder[%u]: %u\n", index, resources->encoders[index]);
-        drmModeEncoder * encoder = drmModeGetEncoder(drm->fd, resources->encoders[index]);
+        drmModeEncoder * encoder = drmModeGetEncoder
+            (swc.drm->fd, resources->encoders[index]);
         printf("encoder, id: %u, type: %u\n", encoder->encoder_id, encoder->encoder_type);
         drmModeFreeEncoder(encoder);
     }
 
     for (index = 0; index < resources->count_connectors; ++index)
     {
-        connector = drmModeGetConnector(drm->fd, resources->connectors[index]);
+        connector = drmModeGetConnector(swc.drm->fd,
+                                        resources->connectors[index]);
 
         printf("connector, id: %u, type: %u, type_id: %u, connection: %u\n",
             connector->connector_id, connector->connector_type,
@@ -428,14 +448,14 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
             uint32_t crtc_index;
             uint32_t id;
 
-            if (!find_available_crtc(drm, resources, connector, taken_crtcs,
+            if (!find_available_crtc(resources, connector, taken_crtcs,
                                      &crtc_index))
             {
                 printf("couldn't find crtc for connector %u\n", index);
                 continue;
             }
 
-            if (!find_available_id(drm, &id))
+            if (!find_available_id(&id))
             {
                 printf("no more available output IDs\n");
                 break;
@@ -446,7 +466,7 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
             output->geometry.x = x;
             output->geometry.y = 0;
 
-            if (!swc_output_initialize(output, drm, id,
+            if (!swc_output_initialize(output, id,
                                        resources->crtcs[crtc_index], connector))
             {
                 drmModeFreeConnector(connector);
@@ -455,7 +475,7 @@ struct wl_list * swc_drm_create_outputs(struct swc_drm * drm)
             }
 
             taken_crtcs |= 1 << crtc_index;
-            drm->taken_output_ids |= 1 << id;
+            drm.taken_output_ids |= 1 << id;
 
             wl_list_insert(outputs, &output->link);
             x += output->geometry.width;
