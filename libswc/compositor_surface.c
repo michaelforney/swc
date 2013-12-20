@@ -35,7 +35,7 @@ static void attach(struct swc_surface * surface, struct wl_resource * resource);
 static void update(struct swc_surface * surface);
 static void move(struct swc_surface * surface, int32_t x, int32_t y);
 
-const struct swc_surface_class_interface swc_compositor_class_implementation = {
+const struct swc_view_impl swc_compositor_view_impl = {
     .add = &add,
     .remove = &remove_,
     .attach = &attach,
@@ -50,8 +50,8 @@ const struct swc_surface_class_interface swc_compositor_class_implementation = {
 static void damage_below_surface(struct swc_surface * surface)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
-    struct swc_compositor_surface_state * state = surface->class_state;
+        (surface->view, typeof(*compositor), compositor_view);
+    struct swc_compositor_surface_state * state = surface->view_state;
     pixman_region32_t damage_below;
 
     pixman_region32_init_with_extents(&damage_below, &state->extents);
@@ -66,7 +66,7 @@ static void damage_below_surface(struct swc_surface * surface)
  */
 static void damage_surface(struct swc_surface * surface)
 {
-    struct swc_compositor_surface_state * state = surface->class_state;
+    struct swc_compositor_surface_state * state = surface->view_state;
     printf("damaging surface\n");
 
     pixman_region32_fini(&surface->state.damage);
@@ -78,7 +78,7 @@ static void damage_surface(struct swc_surface * surface)
 
 static void update_extents(struct swc_surface * surface)
 {
-    struct swc_compositor_surface_state * state = surface->class_state;
+    struct swc_compositor_surface_state * state = surface->view_state;
 
     state->extents.x1 = surface->geometry.x - state->border.width;
     state->extents.y1 = surface->geometry.y - state->border.width;
@@ -94,8 +94,8 @@ static void update_extents(struct swc_surface * surface)
 static void update_outputs(struct swc_surface * surface)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
-    struct swc_compositor_surface_state * state = surface->class_state;
+        (surface->view, typeof(*compositor), compositor_view);
+    struct swc_compositor_surface_state * state = surface->view_state;
     uint32_t old_outputs = surface->outputs, new_outputs = 0,
              entered_outputs, left_outputs, changed_outputs;
     struct swc_output * output;
@@ -159,11 +159,11 @@ static void handle_surface_event(struct wl_listener * listener, void * data)
     }
 }
 
-/* Compositor class */
+/* Compositor view */
 bool add(struct swc_surface * surface)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
+        (surface->view, typeof(*compositor), compositor_view);
     struct swc_compositor_surface_state * state;
 
     state = malloc(sizeof *state);
@@ -186,7 +186,7 @@ bool add(struct swc_surface * surface)
 
     pixman_region32_init(&state->clip);
 
-    surface->class_state = state;
+    surface->view_state = state;
 
     return true;
 }
@@ -194,8 +194,8 @@ bool add(struct swc_surface * surface)
 void remove_(struct swc_surface * surface)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
-    struct swc_compositor_surface_state * state = surface->class_state;
+        (surface->view, typeof(*compositor), compositor_view);
+    struct swc_compositor_surface_state * state = surface->view_state;
 
     swc_compositor_surface_hide(surface);
 
@@ -208,7 +208,7 @@ void remove_(struct swc_surface * surface)
 void attach(struct swc_surface * surface, struct wl_resource * resource)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
+        (surface->view, typeof(*compositor), compositor_view);
 
     swc_renderer_attach(&compositor->renderer, surface, resource);
 }
@@ -216,8 +216,8 @@ void attach(struct swc_surface * surface, struct wl_resource * resource)
 void update(struct swc_surface * surface)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
-    struct swc_compositor_surface_state * state = surface->class_state;
+        (surface->view, typeof(*compositor), compositor_view);
+    struct swc_compositor_surface_state * state = surface->view_state;
     struct swc_output * output;
 
     if (!state->mapped)
@@ -233,8 +233,8 @@ void update(struct swc_surface * surface)
 void move(struct swc_surface * surface, int32_t x, int32_t y)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
-    struct swc_compositor_surface_state * state = surface->class_state;
+        (surface->view, typeof(*compositor), compositor_view);
+    struct swc_compositor_surface_state * state = surface->view_state;
 
     if (x == surface->geometry.x && y == surface->geometry.y)
         return;
@@ -263,10 +263,10 @@ void move(struct swc_surface * surface, int32_t x, int32_t y)
 void swc_compositor_surface_show(struct swc_surface * surface)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
-    struct swc_compositor_surface_state * state = surface->class_state;
+        (surface->view, typeof(*compositor), compositor_view);
+    struct swc_compositor_surface_state * state = surface->view_state;
 
-    if (surface->class->interface != &swc_compositor_class_implementation)
+    if (surface->view->impl != &swc_compositor_view_impl)
         return;
 
     if (state->mapped)
@@ -289,10 +289,10 @@ void swc_compositor_surface_show(struct swc_surface * surface)
 void swc_compositor_surface_hide(struct swc_surface * surface)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), compositor_class);
-    struct swc_compositor_surface_state * state = surface->class_state;
+        (surface->view, typeof(*compositor), compositor_view);
+    struct swc_compositor_surface_state * state = surface->view_state;
 
-    if (surface->class->interface != &swc_compositor_class_implementation)
+    if (surface->view->impl != &swc_compositor_view_impl)
         return;
 
     if (!state->mapped)
@@ -311,7 +311,7 @@ void swc_compositor_surface_hide(struct swc_surface * surface)
 void swc_compositor_surface_set_border_width(struct swc_surface * surface,
                                              uint32_t width)
 {
-    struct swc_compositor_surface_state * state = surface->class_state;
+    struct swc_compositor_surface_state * state = surface->view_state;
 
     if (state->border.width == width)
         return;
@@ -328,7 +328,7 @@ void swc_compositor_surface_set_border_width(struct swc_surface * surface,
 void swc_compositor_surface_set_border_color(struct swc_surface * surface,
                                              uint32_t color)
 {
-    struct swc_compositor_surface_state * state = surface->class_state;
+    struct swc_compositor_surface_state * state = surface->view_state;
 
     if (state->border.color == color)
         return;

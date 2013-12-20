@@ -71,35 +71,6 @@ struct swc_surface_state
     struct wl_list frame_callbacks;
 };
 
-/**
- * A surface class is a set of operations that can be performed on a surface.
- * This gives the compositor the ability to classify surfaces, treating some
- * specially (for example, a cursor surface).
- */
-struct swc_surface_class_interface
-{
-    /* Called when a surface is added to the class. */
-    bool (* add)(struct swc_surface * surface);
-
-    /* Called when a surface is removed from the class. */
-    void (* remove)(struct swc_surface * surface);
-
-    /* Called when a new buffer is attached to a surface. */
-    void (* attach)(struct swc_surface * surface,
-                    struct wl_resource * resource);
-
-    /* Called after a surface requests a commit. */
-    void (* update)(struct swc_surface * surface);
-
-    /* Moves the surface to the specified coordinates. */
-    void (* move)(struct swc_surface * surface, int32_t x, int32_t y);
-};
-
-struct swc_surface_class
-{
-    const struct swc_surface_class_interface * interface;
-};
-
 struct swc_surface
 {
     struct wl_resource * resource;
@@ -114,8 +85,8 @@ struct swc_surface
     } pending;
 
     struct swc_window * window;
-    const struct swc_surface_class * class;
-    void * class_state;
+    const struct swc_view * view;
+    void * view_state;
 
     uint32_t outputs;
     pixman_rectangle32_t geometry;
@@ -129,8 +100,8 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
 
 void swc_surface_send_frame_callbacks(struct swc_surface * surface,
                                       uint32_t time);
-void swc_surface_set_class(struct swc_surface * surface,
-                           const struct swc_surface_class * class);
+void swc_surface_set_view(struct swc_surface * surface,
+                          const struct swc_view * view);
 
 void swc_surface_update(struct swc_surface * surface);
 

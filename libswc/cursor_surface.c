@@ -27,7 +27,7 @@
 #include <string.h>
 #include <wld/wld.h>
 
-/* Cursor class */
+/* Cursor view */
 static const uint32_t cursor_buffer_size = 64 * 64 * 4;
 
 static void update_plane(struct swc_plane * plane, void * data)
@@ -42,7 +42,7 @@ static void attach(struct swc_surface * surface,
                    struct wl_resource * resource)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), cursor_class);
+        (surface->view, typeof(*compositor), cursor_view);
 
     if (pixman_region32_not_empty(&surface->state.damage))
     {
@@ -87,7 +87,7 @@ static void update(struct swc_surface * surface)
 static void move(struct swc_surface * surface, int32_t x, int32_t y)
 {
     struct swc_compositor * compositor = CONTAINER_OF
-        (surface->class, typeof(*compositor), cursor_class);
+        (surface->view, typeof(*compositor), cursor_view);
     struct swc_output * output;
 
     surface->geometry.x = x;
@@ -104,7 +104,7 @@ static void move(struct swc_surface * surface, int32_t x, int32_t y)
     }
 }
 
-const struct swc_surface_class_interface swc_cursor_class_implementation = {
+const struct swc_view_impl swc_cursor_view_impl = {
     .attach = &attach,
     .update = &update,
     .move = &move

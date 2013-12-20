@@ -26,6 +26,7 @@
 #include "event.h"
 #include "region.h"
 #include "util.h"
+#include "view.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -300,11 +301,11 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
         wl_list_init(&surface->pending.state.frame_callbacks);
     }
 
-    if (surface->class)
+    if (surface->view)
     {
         if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
-            surface->class->interface->attach(surface, surface->state.buffer);
-        surface->class->interface->update(surface);
+            surface->view->impl->attach(surface, surface->state.buffer);
+        surface->view->impl->update(surface);
     }
 
     surface->pending.commit = 0;
@@ -338,8 +339,8 @@ static void surface_destroy(struct wl_resource * resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
-    if (surface->class && surface->class->interface->remove)
-        surface->class->interface->remove(surface);
+    if (surface->view && surface->view->impl->remove)
+        surface->view->impl->remove(surface);
 
     /* Finish the surface. */
     state_finish(&surface->state);
@@ -374,8 +375,8 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     surface->geometry.height = 0;
     surface->pending.commit = 0;
     surface->window = NULL;
-    surface->class = NULL;
-    surface->class_state = NULL;
+    surface->view = NULL;
+    surface->view_state = NULL;
 
     state_initialize(&surface->state, true);
     state_initialize(&surface->pending.state, false);
@@ -405,41 +406,41 @@ void swc_surface_send_frame_callbacks(struct swc_surface * surface,
     wl_list_init(&surface->state.frame_callbacks);
 }
 
-void swc_surface_set_class(struct swc_surface * surface,
-                           const struct swc_surface_class * class)
+void swc_surface_set_view(struct swc_surface * surface,
+                          const struct swc_view * view)
 {
-    if (surface->class == class)
+    if (surface->view == view)
         return;
 
-    if (surface->class && surface->class->interface->remove)
-        surface->class->interface->remove(surface);
+    if (surface->view && surface->view->impl->remove)
+        surface->view->impl->remove(surface);
 
-    surface->class = class;
+    surface->view = view;
 
-    if (surface->class)
+    if (surface->view)
     {
-        if (surface->class->interface->add
-            && !surface->class->interface->add(surface))
+        if (surface->view->impl->add
+            && !surface->view->impl->add(surface))
         {
-            surface->class = NULL;
+            surface->view = NULL;
             return;
         }
 
 
-        surface->class->interface->attach(surface, surface->state.buffer);
-        surface->class->interface->update(surface);
+        surface->view->impl->attach(surface, surface->state.buffer);
+        surface->view->impl->update(surface);
     }
 }
 
 void swc_surface_update(struct swc_surface * surface)
 {
-    if (surface->class)
-        surface->class->interface->update(surface);
+    if (surface->view)
+        surface->view->impl->update(surface);
 }
 
 void swc_surface_move(struct swc_surface * surface, int32_t x, int32_t y)
 {
-    if (surface->class)
-        surface->class->interface->move(surface, x, y);
+    if (surface->view)
+        surface->view->impl->move(surface, x, y);
 }
 

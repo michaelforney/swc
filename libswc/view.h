@@ -1,4 +1,4 @@
-/* swc: compositor_surface.h
+/* swc: libswc/view.h
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,50 +21,43 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_COMPOSITOR_SURFACE_H
-#define SWC_COMPOSITOR_SURFACE_H
+#ifndef SWC_VIEW_H
+#define SWC_VIEW_H
 
-#include "view.h"
-
-#include <wayland-server.h>
-#include <pixman.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 struct swc_surface;
+struct wl_resource;
 
-struct swc_compositor_surface_state
+struct swc_view
 {
-    struct swc_compositor * compositor;
-
-    /* The box that the surface covers (including it's border). */
-    pixman_box32_t extents;
-
-    /* The region that is covered by opaque regions of surfaces above this
-     * surface. */
-    pixman_region32_t clip;
-
-    struct
-    {
-        uint32_t width;
-        uint32_t color;
-        bool damaged;
-    } border;
-
-    bool mapped;
-
-    struct wl_listener event_listener;
+    const struct swc_view_impl * impl;
 };
 
-extern const struct swc_view_impl swc_compositor_view_impl;
+/**
+ * A view is a set of operations that can be performed on a surface.  This
+ * gives the compositor the ability to classify surfaces, treating some
+ * specially (for example, a cursor surface).
+ */
+struct swc_view_impl
+{
+    /* Called when a surface is added to the view. */
+    bool (* add)(struct swc_surface * surface);
 
-void swc_compositor_surface_show(struct swc_surface * surface);
+    /* Called when a surface is removed from the view. */
+    void (* remove)(struct swc_surface * surface);
 
-void swc_compositor_surface_hide(struct swc_surface * surface);
+    /* Called when a new buffer is attached to a surface. */
+    void (* attach)(struct swc_surface * surface,
+                    struct wl_resource * resource);
 
-void swc_compositor_surface_set_border_width(struct swc_surface * surface,
-                                             uint32_t width);
+    /* Called after a surface requests a commit. */
+    void (* update)(struct swc_surface * surface);
 
-void swc_compositor_surface_set_border_color(struct swc_surface * surface,
-                                             uint32_t color);
+    /* Moves the surface to the specified coordinates. */
+    void (* move)(struct swc_surface * surface, int32_t x, int32_t y);
+};
 
 #endif
 

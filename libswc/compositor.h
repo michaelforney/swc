@@ -3,6 +3,7 @@
 
 #include "pointer.h"
 #include "renderer.h"
+#include "view.h"
 
 #include <wayland-server.h>
 
@@ -30,8 +31,8 @@ struct swc_compositor
         uint32_t scheduled_updates;
     };
 
-    struct swc_surface_class compositor_class;
-    struct swc_surface_class cursor_class;
+    struct swc_view compositor_view;
+    struct swc_view cursor_view;
 
     struct swc_pointer_handler pointer_handler;
 

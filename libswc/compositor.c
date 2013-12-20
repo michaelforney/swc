@@ -28,7 +28,7 @@ static void calculate_damage(struct swc_compositor * compositor)
     /* Go through surfaces top-down to calculate clipping regions. */
     wl_list_for_each(surface, &compositor->surfaces, link)
     {
-        state = surface->class_state;
+        state = surface->view_state;
 
         /* Clip the surface by the opaque region covering it. */
         pixman_region32_copy(&state->clip, &compositor->opaque);
@@ -239,10 +239,10 @@ static void handle_pointer_event(struct wl_listener * listener, void * data)
     {
         case SWC_POINTER_CURSOR_CHANGED:
             if (event_data->old)
-                swc_surface_set_class(event_data->old, NULL);
+                swc_surface_set_view(event_data->old, NULL);
 
             if (event_data->new)
-                swc_surface_set_class(event_data->new, &compositor->cursor_class);
+                swc_surface_set_view(event_data->new, &compositor->cursor_view);
             break;
     }
 }
@@ -325,9 +325,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->pointer_listener.notify = &handle_pointer_event;
     compositor->scheduled_updates = 0;
     compositor->pending_flips = 0;
-    compositor->compositor_class.interface
-        = &swc_compositor_class_implementation;
-    compositor->cursor_class.interface = &swc_cursor_class_implementation;
+    compositor->compositor_view.impl = &swc_compositor_view_impl;
+    compositor->cursor_view.impl = &swc_cursor_view_impl;
     compositor->pointer_handler = (struct swc_pointer_handler) {
         .focus = &handle_focus,
         .motion = &handle_motion

@@ -76,7 +76,7 @@ static void repaint_surface(struct swc_renderer * renderer,
     pixman_region32_t border_damage;
     pixman_region32_t surface_region;
     struct buffer_state * state;
-    struct swc_compositor_surface_state * surface_state = surface->class_state;
+    struct swc_compositor_surface_state * surface_state = surface->view_state;
 
     if (!surface->state.buffer)
         return;

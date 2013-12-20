@@ -24,10 +24,9 @@
 #ifndef SWC_CURSOR_SURFACE_H
 #define SWC_CURSOR_SURFACE_H
 
-#include "surface.h"
+#include "view.h"
 
-extern const struct swc_surface_class_interface
-    swc_cursor_class_implementation;
+extern const struct swc_view_impl swc_cursor_view_impl;
 
 #endif
 

@@ -124,7 +124,7 @@ bool swc_window_initialize(struct swc_window * window,
     INTERNAL(window)->impl = impl;
 
     surface->window = window;
-    swc_surface_set_class(surface, &swc.compositor->compositor_class);
+    swc_surface_set_view(surface, &swc.compositor->compositor_view);
 
     swc.manager->new_window(window);
 
@@ -136,7 +136,7 @@ void swc_window_finalize(struct swc_window * window)
     DEBUG("Finalizing window, %p\n", window);
 
     swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
-    swc_surface_set_class(INTERNAL(window)->surface, NULL);
+    swc_surface_set_view(INTERNAL(window)->surface, NULL);
     INTERNAL(window)->surface->window = NULL;
 }
 
