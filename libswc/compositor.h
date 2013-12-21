@@ -51,8 +51,12 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
 void swc_compositor_schedule_update(struct swc_compositor * compositor,
                                     struct swc_output * output);
 
-void swc_compositor_attach(struct swc_surface * surface,
-                           struct wl_resource * resource);
+void swc_compositor_surface_show(struct swc_surface * surface);
+void swc_compositor_surface_hide(struct swc_surface * surface);
+void swc_compositor_surface_set_border_color(struct swc_surface * surface,
+                                             uint32_t color);
+void swc_compositor_surface_set_border_width(struct swc_surface * surface,
+                                             uint32_t width);
 
 #endif
 

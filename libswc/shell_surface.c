@@ -21,9 +21,9 @@
  * SOFTWARE.
  */
 
-#include "swc.h"
-#include "compositor_surface.h"
 #include "shell_surface.h"
+#include "compositor.h"
+#include "swc.h"
 #include "surface.h"
 #include "util.h"
 #include "window.h"

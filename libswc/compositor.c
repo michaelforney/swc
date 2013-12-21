@@ -1,6 +1,5 @@
 #include "swc.h"
 #include "compositor.h"
-#include "compositor_surface.h"
 #include "cursor_surface.h"
 #include "data_device_manager.h"
 #include "drm.h"
@@ -19,6 +18,29 @@
 #include <wld/wld.h>
 #include <wld/drm.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
+
+struct surface_state
+{
+    struct swc_compositor * compositor;
+
+    /* The box that the surface covers (including it's border). */
+    pixman_box32_t extents;
+
+    /* The region that is covered by opaque regions of surfaces above this
+     * surface. */
+    pixman_region32_t clip;
+
+    struct
+    {
+        uint32_t width;
+        uint32_t color;
+        bool damaged;
+    } border;
+
+    bool mapped;
+
+    struct wl_listener event_listener;
+};
 
 /* Rendering {{{ */
 
@@ -93,7 +115,7 @@ static void repaint_surface(struct render_target * target,
     pixman_region32_t border_damage;
     pixman_region32_t surface_region;
     struct buffer_state * state;
-    struct swc_compositor_surface_state * surface_state = surface->view_state;
+    struct surface_state * surface_state = surface->view_state;
 
     if (!surface->state.buffer)
         return;
@@ -174,8 +196,8 @@ static void renderer_repaint(struct render_target * target,
     wld_flush(target->drawable);
 }
 
-void swc_compositor_attach(struct swc_surface * surface,
-                           struct wl_resource * resource)
+static void renderer_attach(struct swc_surface * surface,
+                            struct wl_resource * resource)
 {
     struct buffer_state * state;
     struct wl_shm_buffer * shm_buffer;
@@ -244,10 +266,318 @@ static void renderer_flush_surface(struct swc_surface * surface)
 
 /* }}} */
 
+/* Surface Views {{{ */
+
+/**
+ * Adds damage from the region below a surface, taking into account it's clip
+ * region, to the region specified by `damage'.
+ */
+static void damage_below_surface(struct swc_surface * surface)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state = surface->view_state;
+    pixman_region32_t damage_below;
+
+    pixman_region32_init_with_extents(&damage_below, &state->extents);
+    pixman_region32_subtract(&damage_below, &damage_below, &state->clip);
+    pixman_region32_union(&compositor->damage, &compositor->damage,
+                          &damage_below);
+    pixman_region32_fini(&damage_below);
+}
+
+/**
+ * Completely damages the surface and its border.
+ */
+static void damage_surface(struct swc_surface * surface)
+{
+    struct surface_state * state = surface->view_state;
+    printf("damaging surface\n");
+
+    pixman_region32_fini(&surface->state.damage);
+    pixman_region32_init_rect(&surface->state.damage, 0, 0,
+                              surface->geometry.width,
+                              surface->geometry.height);
+    state->border.damaged = true;
+}
+
+static void update_extents(struct swc_surface * surface)
+{
+    struct surface_state * state = surface->view_state;
+
+    state->extents.x1 = surface->geometry.x - state->border.width;
+    state->extents.y1 = surface->geometry.y - state->border.width;
+    state->extents.x2 = surface->geometry.x + surface->geometry.width
+        + state->border.width;
+    state->extents.y2 = surface->geometry.y + surface->geometry.height
+        + state->border.width;
+
+    /* Damage border. */
+    state->border.damaged = true;
+}
+
+static void update_outputs(struct swc_surface * surface)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state = surface->view_state;
+    uint32_t old_outputs = surface->outputs, new_outputs = 0,
+             entered_outputs, left_outputs, changed_outputs;
+    struct swc_output * output;
+    struct wl_client * client;
+    struct wl_resource * resource;
+
+    if (state->mapped)
+    {
+        wl_list_for_each(output, &compositor->outputs, link)
+        {
+            if (swc_rectangle_overlap(&output->geometry, &surface->geometry))
+                new_outputs |= SWC_OUTPUT_MASK(output);
+        }
+    }
+
+    if (new_outputs == old_outputs)
+        return;
+
+    entered_outputs = new_outputs & ~old_outputs;
+    left_outputs = old_outputs & ~new_outputs;
+    changed_outputs = old_outputs ^ new_outputs;
+
+    wl_list_for_each(output, &compositor->outputs, link)
+    {
+        if (!(changed_outputs & SWC_OUTPUT_MASK(output)))
+            continue;
+
+        client = wl_resource_get_client(surface->resource);
+        resource = wl_resource_find_for_client(&output->resources, client);
+
+        if (resource)
+        {
+            if (entered_outputs & SWC_OUTPUT_MASK(output))
+                wl_surface_send_enter(surface->resource, resource);
+            else if (left_outputs & SWC_OUTPUT_MASK(output))
+                wl_surface_send_leave(surface->resource, resource);
+        }
+    }
+
+    surface->outputs = new_outputs;
+}
+
+static void update(struct swc_surface * surface);
+
+static void handle_surface_event(struct wl_listener * listener, void * data)
+{
+    struct surface_state * state
+        = CONTAINER_OF(listener, typeof(*state), event_listener);
+    struct swc_event * event = data;
+    struct swc_surface_event_data * event_data = event->data;
+    struct swc_surface * surface = event_data->surface;
+
+    switch (event->type)
+    {
+        case SWC_SURFACE_EVENT_TYPE_RESIZE:
+            damage_below_surface(surface);
+
+            update_extents(surface);
+            update(surface);
+            update_outputs(surface);
+
+            break;
+    }
+}
+
+static bool add(struct swc_surface * surface)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state;
+
+    state = malloc(sizeof *state);
+
+    if (!state)
+        return false;
+
+    state->compositor = compositor;
+    state->extents.x1 = surface->geometry.x;
+    state->extents.y1 = surface->geometry.y;
+    state->extents.x2 = surface->geometry.x + surface->geometry.width;
+    state->extents.y2 = surface->geometry.y + surface->geometry.height;
+    state->border.width = 0;
+    state->border.color = 0x000000;
+    state->border.damaged = false;
+    state->mapped = false;
+    state->event_listener.notify = &handle_surface_event;
+
+    wl_signal_add(&surface->event_signal, &state->event_listener);
+
+    pixman_region32_init(&state->clip);
+
+    surface->view_state = state;
+
+    return true;
+}
+
+static void remove_(struct swc_surface * surface)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state = surface->view_state;
+
+    swc_compositor_surface_hide(surface);
+
+    wl_list_remove(&state->event_listener.link);
+    pixman_region32_fini(&state->clip);
+
+    free(state);
+}
+
+static void attach(struct swc_surface * surface, struct wl_resource * resource)
+{
+    renderer_attach(surface, resource);
+}
+
+static void update(struct swc_surface * surface)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state = surface->view_state;
+    struct swc_output * output;
+
+    if (!state->mapped)
+        return;
+
+    wl_list_for_each(output, &compositor->outputs, link)
+    {
+        if (surface->outputs & SWC_OUTPUT_MASK(output))
+            swc_compositor_schedule_update(compositor, output);
+    }
+}
+
+static void move(struct swc_surface * surface, int32_t x, int32_t y)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state = surface->view_state;
+
+    if (x == surface->geometry.x && y == surface->geometry.y)
+        return;
+
+    if (state->mapped)
+        damage_below_surface(surface);
+
+    surface->geometry.x = x;
+    surface->geometry.y = y;
+
+    update_extents(surface);
+
+    if (state->mapped)
+    {
+        /* Assume worst-case no clipping until we draw the next frame (in case
+         * the surface gets moved again before that). */
+        pixman_region32_init(&state->clip);
+
+        damage_below_surface(surface);
+        update(surface);
+        update_outputs(surface);
+        update(surface);
+    }
+}
+
+const struct swc_view_impl view_impl = {
+    .add = &add,
+    .remove = &remove_,
+    .attach = &attach,
+    .update = &update,
+    .move = &move
+};
+
+void swc_compositor_surface_show(struct swc_surface * surface)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state = surface->view_state;
+
+    if (surface->view->impl != &view_impl)
+        return;
+
+    if (state->mapped)
+        return;
+
+    printf("showing surface %u\n", wl_resource_get_id(surface->resource));
+
+    state->mapped = true;
+
+    /* Assume worst-case no clipping until we draw the next frame (in case the
+     * surface gets moved before that. */
+    pixman_region32_clear(&state->clip);
+
+    damage_surface(surface);
+    update_outputs(surface);
+    update(surface);
+    wl_list_insert(&compositor->surfaces, &surface->link);
+}
+
+void swc_compositor_surface_hide(struct swc_surface * surface)
+{
+    struct swc_compositor * compositor = CONTAINER_OF
+        (surface->view, typeof(*compositor), compositor_view);
+    struct surface_state * state = surface->view_state;
+
+    if (surface->view->impl != &view_impl)
+        return;
+
+    if (!state->mapped)
+        return;
+
+    /* Update all the outputs the surface was on. */
+    update(surface);
+
+    state->mapped = false;
+
+    damage_below_surface(surface);
+    update_outputs(surface);
+    wl_list_remove(&surface->link);
+}
+
+void swc_compositor_surface_set_border_width(struct swc_surface * surface,
+                                             uint32_t width)
+{
+    struct surface_state * state = surface->view_state;
+
+    if (state->border.width == width)
+        return;
+
+    state->border.width = width;
+    state->border.damaged = true;
+
+    /* XXX: Damage above surface for transparent surfaces? */
+
+    update_extents(surface);
+    update(surface);
+}
+
+void swc_compositor_surface_set_border_color(struct swc_surface * surface,
+                                             uint32_t color)
+{
+    struct surface_state * state = surface->view_state;
+
+    if (state->border.color == color)
+        return;
+
+    state->border.color = color;
+    state->border.damaged = true;
+
+    /* XXX: Damage above surface for transparent surfaces? */
+
+    update(surface);
+}
+
+/* }}} */
+
 static void calculate_damage(struct swc_compositor * compositor)
 {
     struct swc_surface * surface;
-    struct swc_compositor_surface_state * state;
+    struct surface_state * state;
     pixman_region32_t surface_opaque;
 
     pixman_region32_clear(&compositor->opaque);
@@ -561,7 +891,7 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->pointer_listener.notify = &handle_pointer_event;
     compositor->scheduled_updates = 0;
     compositor->pending_flips = 0;
-    compositor->compositor_view.impl = &swc_compositor_view_impl;
+    compositor->compositor_view.impl = &view_impl;
     compositor->cursor_view.impl = &swc_cursor_view_impl;
     compositor->pointer_handler = (struct swc_pointer_handler) {
         .focus = &handle_focus,

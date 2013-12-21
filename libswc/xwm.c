@@ -22,7 +22,7 @@
  */
 
 #include "xwm.h"
-#include "compositor_surface.h"
+#include "compositor.h"
 #include "internal.h"
 #include "surface.h"
 #include "swc.h"

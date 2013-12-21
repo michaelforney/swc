@@ -23,7 +23,6 @@
 
 #include "window.h"
 #include "compositor.h"
-#include "compositor_surface.h"
 #include "event.h"
 #include "internal.h"
 #include "keyboard.h"
