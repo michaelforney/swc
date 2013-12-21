@@ -37,7 +37,6 @@ SWC_SOURCES =                       \
     libswc/compositor_surface.c     \
     libswc/cursor_surface.c         \
     libswc/region.c                 \
-    libswc/renderer.c               \
     libswc/input_focus.c            \
     libswc/keyboard.c               \
     libswc/pointer.c                \

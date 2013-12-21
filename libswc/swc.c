@@ -28,6 +28,7 @@
 #include "drm.h"
 #include "internal.h"
 #include "keyboard.h"
+#include "output.h"
 #include "pointer.h"
 #include "seat.h"
 #include "shell.h"

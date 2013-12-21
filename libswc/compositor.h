@@ -2,16 +2,15 @@
 #define SWC_COMPOSITOR_H
 
 #include "pointer.h"
-#include "renderer.h"
 #include "view.h"
 
 #include <wayland-server.h>
 
+struct swc_output;
+
 struct swc_compositor
 {
     struct wl_display * display;
-
-    struct swc_renderer renderer;
 
     struct wl_list outputs;
     struct wl_list surfaces;
@@ -51,6 +50,9 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
 
 void swc_compositor_schedule_update(struct swc_compositor * compositor,
                                     struct swc_output * output);
+
+void swc_compositor_attach(struct swc_surface * surface,
+                           struct wl_resource * resource);
 
 #endif
 

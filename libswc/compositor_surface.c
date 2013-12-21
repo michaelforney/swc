@@ -24,6 +24,7 @@
 #include "compositor_surface.h"
 #include "compositor.h"
 #include "event.h"
+#include "output.h"
 #include "util.h"
 
 #include <stdio.h>
@@ -207,10 +208,7 @@ void remove_(struct swc_surface * surface)
 
 void attach(struct swc_surface * surface, struct wl_resource * resource)
 {
-    struct swc_compositor * compositor = CONTAINER_OF
-        (surface->view, typeof(*compositor), compositor_view);
-
-    swc_renderer_attach(&compositor->renderer, surface, resource);
+    swc_compositor_attach(surface, resource);
 }
 
 void update(struct swc_surface * surface)

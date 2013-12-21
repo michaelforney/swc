@@ -29,6 +29,7 @@
 #include "keyboard.h"
 #include "seat.h"
 #include "swc.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <string.h>

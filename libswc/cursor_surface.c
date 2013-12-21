@@ -23,6 +23,8 @@
 
 #include "cursor_surface.h"
 #include "compositor.h"
+#include "output.h"
+#include "plane.h"
 
 #include <string.h>
 #include <wld/wld.h>
