@@ -113,7 +113,7 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
 
         unlink(keymap_path);
 
-        if (ftruncate(xkb->keymap.fd, xkb->keymap.size) == -1)
+        if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0)
         {
             printf("could not resize XKB keymap file\n");
             goto error_fd;
