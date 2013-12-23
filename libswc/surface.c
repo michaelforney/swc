@@ -419,14 +419,6 @@ void swc_surface_set_view(struct swc_surface * surface,
 
     if (surface->view)
     {
-        if (surface->view->impl->add
-            && !surface->view->impl->add(surface))
-        {
-            surface->view = NULL;
-            return;
-        }
-
-
         surface->view->impl->attach(surface, surface->state.buffer);
         surface->view->impl->update(surface);
     }

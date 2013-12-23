@@ -2,7 +2,6 @@
 #define SWC_COMPOSITOR_H
 
 #include "pointer.h"
-#include "view.h"
 
 #include <wayland-server.h>
 
@@ -30,7 +29,6 @@ struct swc_compositor
         uint32_t scheduled_updates;
     };
 
-    struct swc_view compositor_view;
     struct swc_view cursor_view;
 
     struct swc_pointer_handler pointer_handler;
@@ -50,6 +48,11 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
 
 void swc_compositor_schedule_update(struct swc_compositor * compositor,
                                     struct swc_output * output);
+
+bool swc_compositor_add_surface(struct swc_compositor * compositor,
+                                struct swc_surface * surface);
+bool swc_compositor_remove_surface(struct swc_compositor * compositor,
+                                   struct swc_surface * surface);
 
 void swc_compositor_surface_show(struct swc_surface * surface);
 void swc_compositor_surface_hide(struct swc_surface * surface);

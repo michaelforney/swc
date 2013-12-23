@@ -124,7 +124,7 @@ bool swc_window_initialize(struct swc_window * window,
     INTERNAL(window)->impl = impl;
 
     surface->window = window;
-    swc_surface_set_view(surface, &swc.compositor->compositor_view);
+    swc_compositor_add_surface(swc.compositor, surface);
 
     swc.manager->new_window(window);
 

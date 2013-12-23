@@ -42,9 +42,6 @@ struct swc_view
  */
 struct swc_view_impl
 {
-    /* Called when a surface is added to the view. */
-    bool (* add)(struct swc_surface * surface);
-
     /* Called when a surface is removed from the view. */
     void (* remove)(struct swc_surface * surface);
 
