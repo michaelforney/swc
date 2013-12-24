@@ -30,6 +30,7 @@ $(dir)_PACKAGES =   \
 
 SWC_SOURCES =                       \
     libswc/compositor.c             \
+    libswc/view.c                   \
     libswc/util.c                   \
     libswc/output.c                 \
     libswc/plane.c                  \

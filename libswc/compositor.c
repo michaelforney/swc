@@ -891,8 +891,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     compositor->pointer_listener.notify = &handle_pointer_event;
     compositor->scheduled_updates = 0;
     compositor->pending_flips = 0;
-    compositor->compositor_view.impl = &view_impl;
-    compositor->cursor_view.impl = &swc_cursor_view_impl;
+    swc_view_initialize(&compositor->compositor_view, &view_impl);
+    swc_view_initialize(&compositor->cursor_view, &swc_cursor_view_impl);
     compositor->pointer_handler = (struct swc_pointer_handler) {
         .focus = &handle_focus,
         .motion = &handle_motion

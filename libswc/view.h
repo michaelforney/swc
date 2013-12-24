@@ -59,5 +59,10 @@ struct swc_view_impl
     void (* move)(struct swc_surface * surface, int32_t x, int32_t y);
 };
 
+void swc_view_initialize(struct swc_view * view,
+                         const struct swc_view_impl * impl);
+
+void swc_view_finalize(struct swc_view * view);
+
 #endif
 
