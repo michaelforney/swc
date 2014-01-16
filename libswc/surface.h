@@ -55,7 +55,7 @@ enum swc_surface_commit_info
 
 struct swc_surface_state
 {
-    struct wl_resource * buffer;
+    struct swc_buffer * buffer;
     struct wl_listener buffer_destroy_listener;
     bool current;
 

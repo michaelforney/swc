@@ -11,7 +11,6 @@
 #include "surface.h"
 #include "util.h"
 #include "view.h"
-#include "wayland_buffer.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -46,36 +45,11 @@ struct view
 
 /* Rendering {{{ */
 
-struct buffer_state
-{
-    struct wld_buffer * buffer;
-    struct wl_listener destroy_listener;
-};
-
 struct render_target
 {
     struct wld_buffer * buffer;
     pixman_rectangle32_t geometry;
 };
-
-static void handle_buffer_destroy(struct wl_listener * listener, void * data)
-{
-    struct buffer_state * state
-        = CONTAINER_OF(listener, typeof(*state), destroy_listener);
-
-    wld_destroy_buffer(state->buffer);
-    free(state);
-}
-
-static inline struct buffer_state * buffer_state(struct wl_resource * resource)
-{
-    struct wl_listener * listener
-        = wl_resource_get_destroy_listener(resource, &handle_buffer_destroy);
-
-    return listener ? CONTAINER_OF(listener, struct buffer_state,
-                                   destroy_listener)
-                    : NULL;
-}
 
 static void repaint_surface(struct render_target * target,
                             struct swc_surface * surface,
@@ -84,14 +58,10 @@ static void repaint_surface(struct render_target * target,
     pixman_region32_t surface_damage;
     pixman_region32_t border_damage;
     pixman_region32_t surface_region;
-    struct buffer_state * state;
     struct view * view = (void *) surface->view;
 
     if (!surface->state.buffer)
         return;
-
-    state = buffer_state(surface->state.buffer);
-    assert(state);
 
     pixman_region32_init_with_extents(&surface_damage, &view->extents);
     pixman_region32_init(&border_damage);
@@ -116,7 +86,7 @@ static void repaint_surface(struct render_target * target,
 
         pixman_region32_translate(&surface_damage,
                                   -surface->geometry.x, -surface->geometry.y);
-        wld_copy_region(swc.drm->renderer, state->buffer,
+        wld_copy_region(swc.drm->renderer, surface->state.buffer->wld,
                         surface->geometry.x - target->geometry.x,
                         surface->geometry.y - target->geometry.y,
                         &surface_damage);
@@ -166,36 +136,8 @@ static void renderer_repaint(struct render_target * target,
 }
 
 static void renderer_attach(struct swc_surface * surface,
-                            struct wl_resource * resource)
+                            struct swc_buffer * buffer)
 {
-    struct buffer_state * state;
-    struct swc_buffer * drm_buffer;
-
-    if (!resource)
-        return;
-
-    /* Check if we have already seen this buffer. */
-    if ((state = buffer_state(resource)))
-        return;
-
-    if (!(state = malloc(sizeof *state)))
-        return;
-
-    if ((drm_buffer = swc_wayland_buffer_get(resource)))
-    {
-        if (!(state = malloc(sizeof *state)))
-            return;
-
-        state->buffer = drm_buffer->wld;
-    }
-    else
-    {
-        ERROR("Unsupported buffer type\n");
-        return;
-    }
-
-    state->destroy_listener.notify = &handle_buffer_destroy;
-    wl_resource_add_destroy_listener(resource, &state->destroy_listener);
 }
 
 static void renderer_flush_surface(struct swc_surface * surface)
@@ -334,9 +276,9 @@ static void remove_(struct swc_surface * surface)
     free(view);
 }
 
-static void attach(struct swc_surface * surface, struct wl_resource * resource)
+static void attach(struct swc_surface * surface, struct swc_buffer * buffer)
 {
-    renderer_attach(surface, resource);
+    renderer_attach(surface, buffer);
 }
 
 static void update(struct swc_surface * surface)

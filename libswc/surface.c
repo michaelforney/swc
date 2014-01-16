@@ -122,7 +122,7 @@ static void state_finish(struct swc_surface_state * state)
  * @return: Whether or not the buffer was changed.
  */
 static bool state_set_buffer(struct swc_surface_state * state,
-                             struct wl_resource * buffer)
+                             struct swc_buffer * buffer)
 {
     if (buffer == state->buffer)
         return false;
@@ -137,8 +137,7 @@ static bool state_set_buffer(struct swc_surface_state * state,
     {
         /* Need to watch the new buffer for destruction so we can remove it
          * from state. */
-        wl_resource_add_destroy_listener(buffer,
-                                         &state->buffer_destroy_listener);
+        wl_signal_add(&buffer->destroy_signal, &state->buffer_destroy_listener);
     }
 
     state->buffer = buffer;
@@ -155,10 +154,12 @@ static void attach(struct wl_client * client, struct wl_resource * resource,
                    struct wl_resource * buffer_resource, int32_t x, int32_t y)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct swc_buffer * buffer
+        = buffer_resource ? swc_wayland_buffer_get(buffer_resource) : NULL;
 
     surface->pending.commit |= SWC_SURFACE_COMMIT_ATTACH;
 
-    state_set_buffer(&surface->pending.state, buffer_resource);
+    state_set_buffer(&surface->pending.state, buffer);
 
     surface->pending.x = x;
     surface->pending.y = y;
@@ -235,23 +236,19 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     /* Attach */
     if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
     {
-        struct swc_buffer * buffer;
+        struct swc_buffer * current_buffer = surface->state.buffer,
+                          * pending_buffer = surface->pending.state.buffer;
 
-        if (surface->state.buffer
-            && surface->state.buffer != surface->pending.state.buffer)
-        {
-            wl_buffer_send_release(surface->state.buffer);
-        }
+        if (current_buffer && current_buffer != pending_buffer)
+            swc_wayland_buffer_release(current_buffer);
 
         state_set_buffer(&surface->state, surface->pending.state.buffer);
 
         /* Determine size of buffer. */
-        if (surface->state.buffer)
+        if (current_buffer)
         {
-            if ((buffer = swc_wayland_buffer_get(surface->state.buffer)))
-                set_size(surface, buffer->wld->width, buffer->wld->height);
-            else
-                WARNING("Unknown buffer type attached\n");
+            set_size(surface,
+                     current_buffer->wld->width, current_buffer->wld->height);
         }
         else
             set_size(surface, 0, 0);

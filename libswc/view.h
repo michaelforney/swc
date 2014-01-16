@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+struct swc_buffer;
 struct swc_surface;
 struct wl_resource;
 
@@ -46,8 +47,7 @@ struct swc_view_impl
     void (* remove)(struct swc_surface * surface);
 
     /* Called when a new buffer is attached to a surface. */
-    void (* attach)(struct swc_surface * surface,
-                    struct wl_resource * resource);
+    void (* attach)(struct swc_surface * surface, struct swc_buffer * buffer);
 
     /* Called after a surface requests a commit. */
     void (* update)(struct swc_surface * surface);
