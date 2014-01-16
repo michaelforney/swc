@@ -46,6 +46,7 @@ SWC_SOURCES =                       \
     libswc/mode.c                   \
     libswc/evdev_device.c           \
     libswc/xkb.c                    \
+    libswc/shm.c                    \
     libswc/drm.c                    \
     libswc/drm_buffer.c             \
     protocol/wayland-drm-protocol.c \

@@ -1,4 +1,4 @@
-/* swc: swc/internal.h
+/* swc: libswc/shm.c
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,25 +21,34 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_INTERNAL_H
-#define SWC_INTERNAL_H
+#include "shm.h"
+#include "internal.h"
 
-struct swc
+#include <stddef.h>
+#include <wld/wld.h>
+#include <wld/pixman.h>
+
+struct swc_shm shm_global;
+
+bool swc_shm_initialize()
 {
-    struct wl_display * display;
-    struct wl_event_loop * event_loop;
-    const struct swc_manager * manager;
+    if (!(swc.shm->context = wld_pixman_create_context()))
+        goto error0;
 
-    struct udev * udev;
+    if (!(swc.shm->renderer = wld_create_renderer(swc.shm->context)))
+        goto error1;
 
-    const struct swc_seat_global * const seat;
-    const struct swc_bindings_global * const bindings;
-    struct swc_compositor * compositor;
-    struct swc_shm * const shm;
-    struct swc_drm * const drm;
-};
+    return true;
 
-extern struct swc swc;
+  error1:
+    wld_destroy_context(swc.shm->context);
+  error0:
+    return false;
+}
 
-#endif
+void swc_shm_finalize()
+{
+    wld_destroy_renderer(swc.shm->renderer);
+    wld_destroy_context(swc.shm->context);
+}
 

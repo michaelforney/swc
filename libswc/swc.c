@@ -32,6 +32,7 @@
 #include "pointer.h"
 #include "seat.h"
 #include "shell.h"
+#include "shm.h"
 #include "window.h"
 #ifdef ENABLE_XWAYLAND
 # include "xserver.h"
@@ -42,6 +43,7 @@
 extern const struct swc_seat_global seat_global;
 extern const struct swc_bindings_global bindings_global;
 extern struct swc_drm drm_global;
+extern struct swc_shm shm_global;
 static struct swc_compositor compositor;
 
 struct swc swc = {
@@ -49,6 +51,7 @@ struct swc swc = {
     .bindings = &bindings_global,
     .compositor = &compositor,
     .drm = &drm_global,
+    .shm = &shm_global
 };
 
 static void setup_compositor()
@@ -99,10 +102,16 @@ bool swc_initialize(struct wl_display * display,
         goto error1;
     }
 
+    if (!swc_shm_initialize())
+    {
+        ERROR("Could not initialize SHM\n");
+        goto error2;
+    }
+
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         ERROR("Could not initialize compositor\n");
-        goto error2;
+        goto error3;
     }
 
     swc_compositor_add_globals(&compositor, display);
@@ -110,32 +119,32 @@ bool swc_initialize(struct wl_display * display,
     if (!swc_data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
-        goto error3;
+        goto error4;
     }
 
     if (!swc_seat_initialize())
     {
         ERROR("Could not initialize seat\n");
-        goto error4;
+        goto error5;
     }
 
     if (!swc_bindings_initialize())
     {
         ERROR("Could not initialize bindings\n");
-        goto error5;
+        goto error6;
     }
 
     if (!swc_shell_initialize())
     {
         ERROR("Could not initialize shell\n");
-        goto error6;
+        goto error7;
     }
 
 #ifdef ENABLE_XWAYLAND
     if (!swc_xserver_initialize())
     {
         ERROR("Could not initialize xwayland\n");
-        goto error7;
+        goto error8;
     }
 #endif
 
@@ -143,16 +152,18 @@ bool swc_initialize(struct wl_display * display,
 
     return true;
 
-  error7:
+  error8:
     swc_shell_finalize();
-  error6:
+  error7:
     swc_bindings_finalize();
-  error5:
+  error6:
     swc_seat_finalize();
-  error4:
+  error5:
     swc_data_device_manager_finalize();
-  error3:
+  error4:
     swc_compositor_finish(&compositor);
+  error3:
+    swc_shm_finalize();
   error2:
     swc_drm_finalize();
   error1:
@@ -172,6 +183,7 @@ void swc_finalize()
     swc_seat_finalize();
     swc_data_device_manager_finalize();
     swc_compositor_finish(&compositor);
+    swc_shm_finalize();
     swc_drm_finalize();
     udev_unref(swc.udev);
 }

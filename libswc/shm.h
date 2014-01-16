@@ -1,4 +1,4 @@
-/* swc: swc/internal.h
+/* swc: libswc/shm.h
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,25 +21,20 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_INTERNAL_H
-#define SWC_INTERNAL_H
+#ifndef SWC_SHM_H
+#define SWC_SHM_H
 
-struct swc
+#include <stdbool.h>
+
+struct swc_shm
 {
-    struct wl_display * display;
-    struct wl_event_loop * event_loop;
-    const struct swc_manager * manager;
-
-    struct udev * udev;
-
-    const struct swc_seat_global * const seat;
-    const struct swc_bindings_global * const bindings;
-    struct swc_compositor * compositor;
-    struct swc_shm * const shm;
-    struct swc_drm * const drm;
+    struct wld_context * context;
+    struct wld_renderer * renderer;
 };
 
-extern struct swc swc;
+bool swc_shm_initialize();
+
+void swc_shm_finalize();
 
 #endif
 
