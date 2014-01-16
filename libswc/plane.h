@@ -33,7 +33,7 @@ struct swc_plane_interface
     bool (* initialize)(struct swc_plane * plane);
     void * (* create_buffer)(struct swc_plane * plane);
     void (* destroy_buffer)(struct swc_plane * plane, void * data);
-    struct wld_drawable * (* get_buffer)(void * data);
+    struct wld_buffer * (* get_buffer)(void * data);
     bool (* flip)(struct swc_plane * plane);
     bool (* move)(struct swc_plane * plane, int32_t x, int32_t y);
 };
@@ -57,7 +57,7 @@ bool swc_plane_flip(struct swc_plane * plane);
 
 bool swc_plane_move(struct swc_plane * plane, int32_t x, int32_t y);
 
-struct wld_drawable * swc_plane_get_buffer(struct swc_plane * plane);
+struct wld_buffer * swc_plane_get_buffer(struct swc_plane * plane);
 
 extern const struct swc_plane_interface swc_framebuffer_plane;
 extern const struct swc_plane_interface swc_cursor_plane;

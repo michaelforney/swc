@@ -19,7 +19,8 @@ struct swc_drm_event_data
 struct swc_drm
 {
     int fd;
-    struct wld_drm_context * context;
+    struct wld_context * context;
+    struct wld_renderer * renderer;
     struct wl_signal event_signal;
 };
 

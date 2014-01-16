@@ -31,11 +31,11 @@ struct wl_client;
 struct swc_drm_buffer
 {
     struct wl_resource * resource;
-    struct wld_drawable * drawable;
+    struct wld_buffer * wld;
 };
 
 struct swc_drm_buffer * swc_drm_buffer_new
-    (struct wl_client * client, uint32_t id, struct wld_drawable * drawable);
+    (struct wl_client * client, uint32_t id, struct wld_buffer * wld);
 
 struct swc_drm_buffer * swc_drm_buffer_get(struct wl_resource * resource);
 

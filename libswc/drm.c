@@ -72,16 +72,17 @@ static void create_buffer(struct wl_client * client,
                           uint32_t name, int32_t width, int32_t height,
                           uint32_t stride, uint32_t format)
 {
-    struct wld_drawable * drawable;
+    struct wld_buffer * wld;
     struct swc_drm_buffer * buffer;
+    union wld_object object = { .u32 = name };
 
-    drawable = wld_drm_import_gem(swc.drm->context, width, height, format,
-                                  name, stride);
+    wld = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_GEM_NAME, object,
+                            width, height, format, stride);
 
-    if (!drawable)
+    if (!wld)
         goto error0;
 
-    buffer = swc_drm_buffer_new(client, id, drawable);
+    buffer = swc_drm_buffer_new(client, id, wld);
 
     if (!buffer)
         goto error1;
@@ -89,7 +90,7 @@ static void create_buffer(struct wl_client * client,
     return;
 
   error1:
-    wld_destroy_drawable(drawable);
+    wld_destroy_buffer(wld);
   error0:
     wl_resource_post_no_memory(resource);
 }
@@ -114,17 +115,18 @@ static void create_prime_buffer(struct wl_client * client,
                                 int32_t offset1, int32_t stride1,
                                 int32_t offset2, int32_t stride2)
 {
-    struct wld_drawable * drawable;
+    struct wld_buffer * wld;
     struct swc_drm_buffer * buffer;
+    union wld_object object = { .i = fd };
 
-    drawable = wld_drm_import(swc.drm->context, width, height, format,
-                              fd, stride0);
+    wld = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_PRIME_FD, object,
+                            width, height, format, stride0);
     close(fd);
 
-    if (!drawable)
+    if (!wld)
         goto error0;
 
-    buffer = swc_drm_buffer_new(client, id, drawable);
+    buffer = swc_drm_buffer_new(client, id, wld);
 
     if (!buffer)
         goto error1;
@@ -132,7 +134,7 @@ static void create_prime_buffer(struct wl_client * client,
     return;
 
   error1:
-    wld_destroy_drawable(drawable);
+    wld_destroy_buffer(wld);
   error0:
     wl_resource_post_no_memory(resource);
 }
@@ -350,13 +352,19 @@ bool swc_drm_initialize(const char * seat_name)
         goto error2;
     }
 
+    if (!(swc.drm->renderer = wld_create_renderer(swc.drm->context)))
+    {
+        ERROR("Could not create WLD DRM renderer\n");
+        goto error3;
+    }
+
     drm.global = wl_global_create(swc.display, &wl_drm_interface, 2,
                                   NULL, &bind_drm);
 
     if (!drm.global)
     {
         ERROR("Could not create wl_drm global\n");
-        goto error3;
+        goto error4;
     }
 
     drm.event_source = wl_event_loop_add_fd
@@ -365,15 +373,17 @@ bool swc_drm_initialize(const char * seat_name)
     if (!drm.event_source)
     {
         ERROR("Could not create DRM event source\n");
-        goto error4;
+        goto error5;
     }
 
     return true;
 
-  error4:
+  error5:
     wl_global_destroy(drm.global);
+  error4:
+    wld_destroy_renderer(swc.drm->renderer);
   error3:
-    wld_drm_destroy_context(swc.drm->context);
+    wld_destroy_context(swc.drm->context);
   error2:
     close(swc.drm->fd);
   error1:
@@ -386,7 +396,8 @@ void swc_drm_finalize()
 {
     wl_event_source_remove(drm.event_source);
     wl_global_destroy(drm.global);
-    wld_drm_destroy_context(swc.drm->context);
+    wld_destroy_renderer(swc.drm->renderer);
+    wld_destroy_context(swc.drm->context);
     free(drm.path);
     close(swc.drm->fd);
 }

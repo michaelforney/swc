@@ -35,56 +35,54 @@
 
 struct framebuffer
 {
-    struct wld_drawable * drawable;
-    uint32_t fb_id;
+    struct wld_buffer * buffer;
+    uint32_t id;
 };
 
 static bool framebuffer_initialize(struct swc_plane * plane)
 {
-    struct framebuffer * buffer
-        = swc_double_buffer_front(&plane->double_buffer);
+    struct framebuffer * fb = swc_double_buffer_front(&plane->double_buffer);
 
     return drmModeSetCrtc(swc.drm->fd, plane->output->crtc_id,
-                          buffer->fb_id, 0, 0, &plane->output->connector_id, 1,
+                          fb->id, 0, 0, &plane->output->connector_id, 1,
                           &plane->output->current_mode->info) == 0;
 }
 
 static void * framebuffer_create_buffer(struct swc_plane * plane)
 {
-    struct wld_drawable * drawable;
+    struct wld_buffer * buffer;
     struct swc_output * output = plane->output;
-    struct framebuffer * buffer;
-    uint32_t handle;
+    struct framebuffer * fb;
+    union wld_object object;
 
-    if (!(buffer = malloc(sizeof *buffer)))
+    if (!(fb = malloc(sizeof *fb)))
         goto error0;
 
-    drawable = wld_drm_create_drawable(swc.drm->context,
-                                       output->geometry.width,
-                                       output->geometry.height,
-                                       WLD_FORMAT_XRGB8888);
+    buffer = wld_create_buffer(swc.drm->context,
+                               output->geometry.width, output->geometry.height,
+                               WLD_FORMAT_XRGB8888);
 
-    if (!drawable)
+    if (!buffer)
     {
-        fprintf(stderr, "Could not create DRM drawable for framebuffer\n");
+        fprintf(stderr, "Could not create DRM buffer for framebuffer\n");
         goto error1;
     }
 
-    handle = wld_drm_get_handle(drawable);
+    wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object);
 
-    if (drmModeAddFB(swc.drm->fd, drawable->width, drawable->height,
-                     24, 32, drawable->pitch, handle, &buffer->fb_id) != 0)
+    if (drmModeAddFB(swc.drm->fd, buffer->width, buffer->height,
+                     24, 32, buffer->pitch, object.u32, &fb->id) != 0)
     {
         fprintf(stderr, "drmModeAddFB failed\n");
         goto error2;
     }
 
-    buffer->drawable = drawable;
+    fb->buffer = buffer;
 
     return buffer;
 
   error2:
-    wld_destroy_drawable(drawable);
+    wld_destroy_buffer(buffer);
   error1:
     free(buffer);
   error0:
@@ -93,25 +91,25 @@ static void * framebuffer_create_buffer(struct swc_plane * plane)
 
 static void framebuffer_destroy_buffer(struct swc_plane * plane, void * data)
 {
-    struct framebuffer * buffer = data;
+    struct framebuffer * fb = data;
 
-    drmModeRmFB(swc.drm->fd, buffer->fb_id);
-    wld_destroy_drawable(buffer->drawable);
+    drmModeRmFB(swc.drm->fd, fb->id);
+    wld_destroy_buffer(fb->buffer);
 }
 
-static struct wld_drawable * framebuffer_get_buffer(void * data)
+static struct wld_buffer * framebuffer_get_buffer(void * data)
 {
-    struct framebuffer * buffer = data;
+    struct framebuffer * fb = data;
 
-    return buffer->drawable;
+    return fb->buffer;
 }
 
 static bool framebuffer_flip(struct swc_plane * plane)
 {
     struct swc_output * output = plane->output;
-    struct framebuffer * buffer = swc_double_buffer_back(&plane->double_buffer);
+    struct framebuffer * fb = swc_double_buffer_back(&plane->double_buffer);
 
-    return drmModePageFlip(swc.drm->fd, output->crtc_id, buffer->fb_id,
+    return drmModePageFlip(swc.drm->fd, output->crtc_id, fb->id,
                            DRM_MODE_PAGE_FLIP_EVENT, output) == 0;
 }
 
@@ -130,30 +128,29 @@ static bool cursor_initialize(struct swc_plane * plane)
 
 static void * cursor_create_buffer(struct swc_plane * plane)
 {
-    return wld_drm_create_drawable(swc.drm->context, 64, 64,
-                                   WLD_FORMAT_ARGB8888);
+    return wld_create_buffer(swc.drm->context, 64, 64, WLD_FORMAT_ARGB8888);
 }
 
 static void cursor_destroy_buffer(struct swc_plane * plane, void * data)
 {
-    struct wld_drawable * drawable = data;
+    struct wld_buffer * buffer = data;
 
-    wld_destroy_drawable(drawable);
+    wld_destroy_buffer(buffer);
 }
 
-static struct wld_drawable * cursor_get_buffer(void * data)
+static struct wld_buffer * cursor_get_buffer(void * data)
 {
     return data;
 }
 
 static bool cursor_flip(struct swc_plane * plane)
 {
-    struct wld_drawable * drawable
-        = swc_double_buffer_back(&plane->double_buffer);
-    int handle = wld_drm_get_handle(drawable);
+    struct wld_buffer * buffer = swc_double_buffer_back(&plane->double_buffer);
+    union wld_object object;
 
+    wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object);
     return drmModeSetCursor(swc.drm->fd, plane->output->crtc_id,
-                            handle, 64, 64) == 0;
+                            object.u32, 64, 64) == 0;
 }
 
 static bool cursor_move(struct swc_plane * plane, int32_t x, int32_t y)
@@ -216,7 +213,7 @@ bool swc_plane_move(struct swc_plane * plane, int32_t x, int32_t y)
         return false;
 }
 
-struct wld_drawable * swc_plane_get_buffer(struct swc_plane * plane)
+struct wld_buffer * swc_plane_get_buffer(struct swc_plane * plane)
 {
     void * back = swc_double_buffer_back(&plane->double_buffer);
 

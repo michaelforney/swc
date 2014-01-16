@@ -45,7 +45,7 @@ static void buffer_destroy(struct wl_resource * resource)
 }
 
 struct swc_drm_buffer * swc_drm_buffer_new
-    (struct wl_client * client, uint32_t id, struct wld_drawable * drawable)
+    (struct wl_client * client, uint32_t id, struct wld_buffer * wld)
 {
     struct swc_drm_buffer * buffer;
 
@@ -57,7 +57,7 @@ struct swc_drm_buffer * swc_drm_buffer_new
     buffer->resource = wl_resource_create(client, &wl_buffer_interface, 1, id);
     wl_resource_set_implementation(buffer->resource, &drm_buffer_implementation,
                                    buffer, &buffer_destroy);
-    buffer->drawable = drawable;
+    buffer->wld = wld;
 
     return buffer;
 }

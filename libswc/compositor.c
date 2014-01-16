@@ -1,6 +1,5 @@
 #include "swc.h"
 #include "compositor.h"
-#include "cursor_surface.h"
 #include "data_device_manager.h"
 #include "drm.h"
 #include "drm_buffer.h"
@@ -11,6 +10,7 @@
 #include "seat.h"
 #include "surface.h"
 #include "util.h"
+#include "view.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,54 +47,22 @@ struct view
 
 struct buffer_state
 {
-    struct wld_drawable * drawable;
-    /* Only used for SHM buffers */
-    pixman_image_t * dst, * src;
+    struct wld_buffer * buffer;
     struct wl_listener destroy_listener;
 };
 
 struct render_target
 {
-    struct wld_drawable * drawable;
+    struct wld_buffer * buffer;
     pixman_rectangle32_t geometry;
 };
-
-static inline uint32_t pixman_format(uint32_t format)
-{
-    switch (format)
-    {
-        case WL_SHM_FORMAT_XRGB8888:
-            return PIXMAN_x8r8g8b8;
-        case WL_SHM_FORMAT_ARGB8888:
-            return PIXMAN_a8r8g8b8;
-    }
-
-    return 0;
-}
-
-static inline uint32_t wld_format(uint32_t format)
-{
-    switch (format)
-    {
-        case WL_SHM_FORMAT_XRGB8888:
-            return WLD_FORMAT_XRGB8888;
-        case WL_SHM_FORMAT_ARGB8888:
-            return WLD_FORMAT_ARGB8888;
-    }
-
-    return 0;
-}
 
 static void handle_buffer_destroy(struct wl_listener * listener, void * data)
 {
     struct buffer_state * state
         = CONTAINER_OF(listener, typeof(*state), destroy_listener);
 
-    if (state->dst)
-        pixman_image_unref(state->dst);
-    if (state->src)
-        pixman_image_unref(state->src);
-    wld_destroy_drawable(state->drawable);
+    wld_destroy_buffer(state->buffer);
     free(state);
 }
 
@@ -147,9 +115,10 @@ static void repaint_surface(struct render_target * target,
 
         pixman_region32_translate(&surface_damage,
                                   -surface->geometry.x, -surface->geometry.y);
-        wld_copy_region(state->drawable, target->drawable, &surface_damage,
+        wld_copy_region(swc.drm->renderer, state->buffer,
                         surface->geometry.x - target->geometry.x,
-                        surface->geometry.y - target->geometry.y);
+                        surface->geometry.y - target->geometry.y,
+                        &surface_damage);
     }
 
     pixman_region32_fini(&surface_damage);
@@ -161,7 +130,7 @@ static void repaint_surface(struct render_target * target,
 
         pixman_region32_translate(&border_damage,
                                   -target->geometry.x, -target->geometry.y);
-        wld_fill_region(target->drawable, view->border.color, &border_damage);
+        wld_fill_region(swc.drm->renderer, view->border.color, &border_damage);
     }
 
     pixman_region32_fini(&border_damage);
@@ -183,7 +152,7 @@ static void renderer_repaint(struct render_target * target,
     {
         pixman_region32_translate(base_damage,
                                   -target->geometry.x, -target->geometry.y);
-        wld_fill_region(target->drawable, 0xff000000, base_damage);
+        wld_fill_region(swc.drm->renderer, 0xff000000, base_damage);
     }
 
     wl_list_for_each_reverse(surface, surfaces, link)
@@ -192,14 +161,13 @@ static void renderer_repaint(struct render_target * target,
             repaint_surface(target, surface, damage);
     }
 
-    wld_flush(target->drawable);
+    wld_flush(swc.drm->renderer);
 }
 
 static void renderer_attach(struct swc_surface * surface,
                             struct wl_resource * resource)
 {
     struct buffer_state * state;
-    struct wl_shm_buffer * shm_buffer;
     struct swc_drm_buffer * drm_buffer;
 
     if (!resource)
@@ -212,30 +180,12 @@ static void renderer_attach(struct swc_surface * surface,
     if (!(state = malloc(sizeof *state)))
         return;
 
-    if ((shm_buffer = wl_shm_buffer_get(resource)))
-    {
-        uint32_t width = wl_shm_buffer_get_width(shm_buffer),
-                 height = wl_shm_buffer_get_height(shm_buffer),
-                 format = wl_shm_buffer_get_format(shm_buffer),
-                 pitch = wl_shm_buffer_get_stride(shm_buffer);
-        void * data = wl_shm_buffer_get_data(shm_buffer);
-
-        state->drawable = wld_drm_create_drawable(swc.drm->context,
-                                                  width, height,
-                                                  wld_format(format));
-        state->src = pixman_image_create_bits_no_clear(pixman_format(format),
-                                                       width, height,
-                                                       data, pitch);
-        state->dst = wld_map(state->drawable);
-    }
-    else if ((drm_buffer = swc_drm_buffer_get(resource)))
+    if ((drm_buffer = swc_drm_buffer_get(resource)))
     {
         if (!(state = malloc(sizeof *state)))
             return;
 
-        state->drawable = drm_buffer->drawable;
-        state->src = NULL;
-        state->dst = NULL;
+        state->buffer = drm_buffer->wld;
     }
     else
     {
@@ -249,18 +199,6 @@ static void renderer_attach(struct swc_surface * surface,
 
 static void renderer_flush_surface(struct swc_surface * surface)
 {
-    struct buffer_state * state;
-
-    state = buffer_state(surface->state.buffer);
-    assert(state);
-
-    if (!state->src || !state->dst)
-        return;
-
-    pixman_image_set_clip_region32(state->src, &surface->state.damage);
-    pixman_image_composite32(PIXMAN_OP_SRC, state->src, NULL, state->dst,
-                             0, 0, 0, 0, 0, 0,
-                             state->drawable->width, state->drawable->height);
 }
 
 /* }}} */
@@ -636,13 +574,13 @@ static void repaint_output(struct swc_compositor * compositor,
     pixman_region32_init(&base_damage);
     pixman_region32_subtract(&base_damage, damage, &compositor->opaque);
 
-    target.drawable = swc_plane_get_buffer(&output->framebuffer_plane);
+    target.buffer = swc_plane_get_buffer(&output->framebuffer_plane);
     target.geometry.x = output->framebuffer_plane.output->geometry.x
         + output->framebuffer_plane.x;
     target.geometry.y = output->framebuffer_plane.output->geometry.y
         + output->framebuffer_plane.y;
-    target.geometry.width = target.drawable->width;
-    target.geometry.height = target.drawable->height;
+    target.geometry.width = target.buffer->width;
+    target.geometry.height = target.buffer->height;
 
     renderer_repaint(&target, damage, &base_damage,
                      &compositor->surfaces);
@@ -778,26 +716,6 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
     }
 }
 
-static void handle_pointer_event(struct wl_listener * listener, void * data)
-{
-    struct swc_event * event = data;
-    struct swc_pointer_event_data * event_data = event->data;
-    struct swc_compositor * compositor;
-
-    compositor = CONTAINER_OF(listener, typeof(*compositor), pointer_listener);
-
-    switch (event->type)
-    {
-        case SWC_POINTER_CURSOR_CHANGED:
-            if (event_data->old)
-                swc_surface_set_view(event_data->old, NULL);
-
-            if (event_data->new)
-                swc_surface_set_view(event_data->new, &compositor->cursor_view);
-            break;
-    }
-}
-
 static void handle_terminate(uint32_t time, uint32_t value, void * data)
 {
     struct wl_display * display = data;
@@ -873,10 +791,8 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
     compositor->display = display;
     compositor->drm_listener.notify = &handle_drm_event;
-    compositor->pointer_listener.notify = &handle_pointer_event;
     compositor->scheduled_updates = 0;
     compositor->pending_flips = 0;
-    swc_view_initialize(&compositor->cursor_view, &swc_cursor_view_impl);
     compositor->pointer_handler = (struct swc_pointer_handler) {
         .focus = &handle_focus,
         .motion = &handle_motion

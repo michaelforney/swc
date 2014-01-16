@@ -255,8 +255,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
             }
             else if ((drm_buffer = swc_drm_buffer_get(surface->state.buffer)))
             {
-                set_size(surface, drm_buffer->drawable->width,
-                         drm_buffer->drawable->height);
+                set_size(surface,
+                         drm_buffer->wld->width, drm_buffer->wld->height);
             }
             else
                 WARNING("Unknown buffer type attached\n");

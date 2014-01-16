@@ -35,7 +35,6 @@ SWC_SOURCES =                       \
     libswc/output.c                 \
     libswc/plane.c                  \
     libswc/surface.c                \
-    libswc/cursor_surface.c         \
     libswc/region.c                 \
     libswc/input_focus.c            \
     libswc/keyboard.c               \

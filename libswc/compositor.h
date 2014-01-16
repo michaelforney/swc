@@ -29,12 +29,9 @@ struct swc_compositor
         uint32_t scheduled_updates;
     };
 
-    struct swc_view cursor_view;
-
     struct swc_pointer_handler pointer_handler;
 
     struct wl_listener drm_listener;
-    struct wl_listener pointer_listener;
 };
 
 bool swc_compositor_initialize(struct swc_compositor * compositor,
