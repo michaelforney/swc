@@ -85,7 +85,8 @@ struct swc_surface
     } pending;
 
     struct swc_window * window;
-    const struct swc_view * view;
+    struct swc_view * view;
+    struct wl_listener view_listener;
     void * view_state;
 
     uint32_t outputs;
@@ -98,10 +99,7 @@ struct swc_surface
 struct swc_surface * swc_surface_new(struct wl_client * client,
                                      uint32_t version, uint32_t id);
 
-void swc_surface_send_frame_callbacks(struct swc_surface * surface,
-                                      uint32_t time);
-void swc_surface_set_view(struct swc_surface * surface,
-                          const struct swc_view * view);
+void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view);
 
 void swc_surface_update(struct swc_surface * surface);
 

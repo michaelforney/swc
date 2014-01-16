@@ -22,14 +22,23 @@
  */
 
 #include "view.h"
+#include "event.h"
 
 void swc_view_initialize(struct swc_view * view,
                          const struct swc_view_impl * impl)
 {
     view->impl = impl;
+    wl_signal_init(&view->event_signal);
 }
 
 void swc_view_finalize(struct swc_view * view)
 {
+}
+
+void swc_view_frame(struct swc_view * view, uint32_t time)
+{
+    struct swc_view_event_data data = { .view = view, .frame = { time } };
+
+    swc_send_event(&view->event_signal, SWC_VIEW_EVENT_FRAME, &data);
 }
 

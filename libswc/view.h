@@ -24,16 +24,34 @@
 #ifndef SWC_VIEW_H
 #define SWC_VIEW_H
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "swc.h"
 
-struct swc_buffer;
 struct swc_surface;
-struct wl_resource;
+struct swc_buffer;
+
+enum swc_view_event
+{
+    /* Sent when the view has displayed the next frame. */
+    SWC_VIEW_EVENT_FRAME,
+};
+
+struct swc_view_event_data
+{
+    struct swc_view * view;
+    union
+    {
+        struct
+        {
+            uint32_t time;
+        } frame;
+    };
+};
 
 struct swc_view
 {
     const struct swc_view_impl * impl;
+
+    struct wl_signal event_signal;
 };
 
 /**
@@ -60,6 +78,8 @@ void swc_view_initialize(struct swc_view * view,
                          const struct swc_view_impl * impl);
 
 void swc_view_finalize(struct swc_view * view);
+
+void swc_view_frame(struct swc_view * view, uint32_t time);
 
 #endif
 

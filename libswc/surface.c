@@ -339,6 +339,32 @@ static void surface_destroy(struct wl_resource * resource)
     free(surface);
 }
 
+static void handle_view_event(struct wl_listener * listener, void * data)
+{
+    struct swc_surface * surface
+        = CONTAINER_OF(listener, typeof(*surface), view_listener);
+    struct swc_event * event = data;
+    struct swc_view_event_data * event_data = event->data;
+
+    switch (event->type)
+    {
+        case SWC_VIEW_EVENT_FRAME:
+        {
+            struct wl_resource * resource, * tmp;
+
+            wl_list_for_each_safe(resource, tmp,
+                                  &surface->state.frame_callbacks, link)
+            {
+                wl_callback_send_done(resource, event_data->frame.time);
+                wl_resource_destroy(resource);
+            }
+
+            wl_list_init(&surface->state.frame_callbacks);
+            break;
+        }
+    }
+}
+
 /**
  * Construct a new surface, adding it to the given client as id.
  *
@@ -365,6 +391,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     surface->pending.commit = 0;
     surface->window = NULL;
     surface->view = NULL;
+    surface->view_listener.notify = &handle_view_event;
     surface->view_state = NULL;
 
     state_initialize(&surface->state, true);
@@ -381,33 +408,23 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     return surface;
 }
 
-void swc_surface_send_frame_callbacks(struct swc_surface * surface,
-                                      uint32_t time)
-{
-    struct wl_resource * resource, * tmp;
-
-    wl_list_for_each_safe(resource, tmp, &surface->state.frame_callbacks, link)
-    {
-        wl_callback_send_done(resource, time);
-        wl_resource_destroy(resource);
-    }
-
-    wl_list_init(&surface->state.frame_callbacks);
-}
-
-void swc_surface_set_view(struct swc_surface * surface,
-                          const struct swc_view * view)
+void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view)
 {
     if (surface->view == view)
         return;
 
-    if (surface->view && surface->view->impl->remove)
-        surface->view->impl->remove(surface);
+    if (surface->view)
+    {
+        if (surface->view->impl->remove)
+            surface->view->impl->remove(surface);
+        wl_list_remove(&surface->view_listener.link);
+    }
 
     surface->view = view;
 
-    if (surface->view)
+    if (view)
     {
+        wl_signal_add(&view->event_signal, &surface->view_listener);
         surface->view->impl->attach(surface, surface->state.buffer);
         surface->view->impl->update(surface);
     }

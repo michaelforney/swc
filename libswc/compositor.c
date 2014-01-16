@@ -646,7 +646,7 @@ static void handle_drm_event(struct wl_listener * listener, void * data)
             if (compositor->pending_flips == 0)
             {
                 wl_list_for_each(surface, &compositor->surfaces, link)
-                    swc_surface_send_frame_callbacks(surface, event_data->time);
+                    swc_view_frame(surface->view, event_data->time);
             }
 
             /* If we had scheduled updates that couldn't run because we were
