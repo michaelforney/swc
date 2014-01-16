@@ -1,4 +1,4 @@
-/* swc: drm_buffer.h
+/* swc: libswc/wayland_buffer.h
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,23 +21,21 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_DRM_BUFFER_H
-#define SWC_DRM_BUFFER_H
+#ifndef SWC_WAYLAND_BUFFER_H
+#define SWC_WAYLAND_BUFFER_H
 
 #include <stdint.h>
 
 struct wl_client;
+struct wl_resource;
+struct wld_buffer;
 
-struct swc_drm_buffer
-{
-    struct wl_resource * resource;
-    struct wld_buffer * wld;
-};
+struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource);
 
-struct swc_drm_buffer * swc_drm_buffer_new
-    (struct wl_client * client, uint32_t id, struct wld_buffer * wld);
+struct swc_buffer * swc_wayland_buffer_new
+    (struct wl_client * client, uint32_t id, struct wld_buffer * buffer);
 
-struct swc_drm_buffer * swc_drm_buffer_get(struct wl_resource * resource);
+void swc_wayland_buffer_release(struct swc_buffer * buffer);
 
 #endif
 

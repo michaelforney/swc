@@ -22,10 +22,10 @@
  */
 
 #include "drm.h"
-#include "drm_buffer.h"
 #include "event.h"
 #include "internal.h"
 #include "output.h"
+#include "wayland_buffer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +73,7 @@ static void create_buffer(struct wl_client * client,
                           uint32_t stride, uint32_t format)
 {
     struct wld_buffer * wld;
-    struct swc_drm_buffer * buffer;
+    struct swc_buffer * buffer;
     union wld_object object = { .u32 = name };
 
     wld = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_GEM_NAME, object,
@@ -82,7 +82,7 @@ static void create_buffer(struct wl_client * client,
     if (!wld)
         goto error0;
 
-    buffer = swc_drm_buffer_new(client, id, wld);
+    buffer = swc_wayland_buffer_new(client, id, wld);
 
     if (!buffer)
         goto error1;
@@ -116,7 +116,7 @@ static void create_prime_buffer(struct wl_client * client,
                                 int32_t offset2, int32_t stride2)
 {
     struct wld_buffer * wld;
-    struct swc_drm_buffer * buffer;
+    struct swc_buffer * buffer;
     union wld_object object = { .i = fd };
 
     wld = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_PRIME_FD, object,
@@ -126,7 +126,7 @@ static void create_prime_buffer(struct wl_client * client,
     if (!wld)
         goto error0;
 
-    buffer = swc_drm_buffer_new(client, id, wld);
+    buffer = swc_wayland_buffer_new(client, id, wld);
 
     if (!buffer)
         goto error1;

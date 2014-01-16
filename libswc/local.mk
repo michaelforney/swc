@@ -31,6 +31,8 @@ $(dir)_PACKAGES =   \
 SWC_SOURCES =                       \
     libswc/compositor.c             \
     libswc/view.c                   \
+    libswc/buffer.c                 \
+    libswc/wayland_buffer.c         \
     libswc/util.c                   \
     libswc/output.c                 \
     libswc/plane.c                  \
@@ -48,7 +50,6 @@ SWC_SOURCES =                       \
     libswc/xkb.c                    \
     libswc/shm.c                    \
     libswc/drm.c                    \
-    libswc/drm_buffer.c             \
     protocol/wayland-drm-protocol.c \
     launch/protocol.c
 

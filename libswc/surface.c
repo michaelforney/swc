@@ -22,11 +22,12 @@
  */
 
 #include "surface.h"
-#include "drm_buffer.h"
+#include "buffer.h"
 #include "event.h"
 #include "region.h"
 #include "util.h"
 #include "view.h"
+#include "wayland_buffer.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -234,8 +235,7 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     /* Attach */
     if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
     {
-        struct wl_shm_buffer * shm_buffer;
-        struct swc_drm_buffer * drm_buffer;
+        struct swc_buffer * buffer;
 
         if (surface->state.buffer
             && surface->state.buffer != surface->pending.state.buffer)
@@ -248,16 +248,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
         /* Determine size of buffer. */
         if (surface->state.buffer)
         {
-            if ((shm_buffer = wl_shm_buffer_get(surface->state.buffer)))
-            {
-                set_size(surface, wl_shm_buffer_get_width(shm_buffer),
-                         wl_shm_buffer_get_height(shm_buffer));
-            }
-            else if ((drm_buffer = swc_drm_buffer_get(surface->state.buffer)))
-            {
-                set_size(surface,
-                         drm_buffer->wld->width, drm_buffer->wld->height);
-            }
+            if ((buffer = swc_wayland_buffer_get(surface->state.buffer)))
+                set_size(surface, buffer->wld->width, buffer->wld->height);
             else
                 WARNING("Unknown buffer type attached\n");
         }

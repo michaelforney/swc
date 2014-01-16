@@ -1,8 +1,8 @@
 #include "swc.h"
+#include "buffer.h"
 #include "compositor.h"
 #include "data_device_manager.h"
 #include "drm.h"
-#include "drm_buffer.h"
 #include "internal.h"
 #include "output.h"
 #include "pointer.h"
@@ -11,6 +11,7 @@
 #include "surface.h"
 #include "util.h"
 #include "view.h"
+#include "wayland_buffer.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -168,7 +169,7 @@ static void renderer_attach(struct swc_surface * surface,
                             struct wl_resource * resource)
 {
     struct buffer_state * state;
-    struct swc_drm_buffer * drm_buffer;
+    struct swc_buffer * drm_buffer;
 
     if (!resource)
         return;
@@ -180,7 +181,7 @@ static void renderer_attach(struct swc_surface * surface,
     if (!(state = malloc(sizeof *state)))
         return;
 
-    if ((drm_buffer = swc_drm_buffer_get(resource)))
+    if ((drm_buffer = swc_wayland_buffer_get(resource)))
     {
         if (!(state = malloc(sizeof *state)))
             return;
