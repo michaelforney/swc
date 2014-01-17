@@ -7,6 +7,7 @@
 #include "output.h"
 #include "pointer.h"
 #include "region.h"
+#include "screen.h"
 #include "seat.h"
 #include "surface.h"
 #include "util.h"
@@ -195,50 +196,51 @@ static void update_extents(struct swc_surface * surface)
     view->border.damaged = true;
 }
 
-static void update_outputs(struct swc_surface * surface)
+static void update_screens(struct swc_surface * surface)
 {
     struct view * view = (void *) surface->view;
-    struct swc_compositor * compositor = view->compositor;
-    uint32_t old_outputs = surface->outputs, new_outputs = 0,
-             entered_outputs, left_outputs, changed_outputs;
+    uint32_t old_screens = surface->screens, new_screens = 0,
+             entered_screens, left_screens, changed_screens;
+    struct swc_screen_internal * screen;
     struct swc_output * output;
     struct wl_client * client;
     struct wl_resource * resource;
 
     if (view->mapped)
     {
-        wl_list_for_each(output, &compositor->outputs, link)
+        wl_list_for_each(screen, &swc.screens, link)
         {
-            if (swc_rectangle_overlap(&output->geometry, &surface->geometry))
-                new_outputs |= SWC_OUTPUT_MASK(output);
+            if (swc_rectangle_overlap(&screen->base.geometry, &surface->geometry))
+                new_screens |= swc_screen_mask(screen);
         }
     }
 
-    if (new_outputs == old_outputs)
+    if (new_screens == old_screens)
         return;
 
-    entered_outputs = new_outputs & ~old_outputs;
-    left_outputs = old_outputs & ~new_outputs;
-    changed_outputs = old_outputs ^ new_outputs;
+    entered_screens = new_screens & ~old_screens;
+    left_screens = old_screens & ~new_screens;
+    changed_screens = old_screens ^ new_screens;
 
-    wl_list_for_each(output, &compositor->outputs, link)
+    wl_list_for_each(screen, &swc.screens, link)
     {
-        if (!(changed_outputs & SWC_OUTPUT_MASK(output)))
+        if (!(changed_screens & swc_screen_mask(screen)))
             continue;
 
+        output = CONTAINER_OF(screen->outputs.next, typeof(*output), link);
         client = wl_resource_get_client(surface->resource);
         resource = wl_resource_find_for_client(&output->resources, client);
 
         if (resource)
         {
-            if (entered_outputs & SWC_OUTPUT_MASK(output))
+            if (entered_screens & swc_screen_mask(screen))
                 wl_surface_send_enter(surface->resource, resource);
-            else if (left_outputs & SWC_OUTPUT_MASK(output))
+            else if (left_screens & swc_screen_mask(screen))
                 wl_surface_send_leave(surface->resource, resource);
         }
     }
 
-    surface->outputs = new_outputs;
+    surface->screens = new_screens;
 }
 
 static void update(struct swc_view * view);
@@ -258,7 +260,7 @@ static void handle_surface_event(struct wl_listener * listener, void * data)
 
             update_extents(surface);
             update(&view->base);
-            update_outputs(surface);
+            update_screens(surface);
 
             break;
     }
@@ -284,16 +286,15 @@ static void attach(struct swc_view * base, struct swc_buffer * buffer)
 static void update(struct swc_view * base)
 {
     struct view * view = (void *) base;
-    struct swc_compositor * compositor = view->compositor;
-    struct swc_output * output;
+    struct swc_screen_internal * screen;
 
     if (!view->mapped)
         return;
 
-    wl_list_for_each(output, &compositor->outputs, link)
+    wl_list_for_each(screen, &swc.screens, link)
     {
-        if (view->surface->outputs & SWC_OUTPUT_MASK(output))
-            swc_compositor_schedule_update(compositor, output);
+        if (view->surface->screens & swc_screen_mask(screen))
+            swc_compositor_schedule_update(view->compositor, screen);
     }
 }
 
@@ -321,7 +322,7 @@ static void move(struct swc_view * base, int32_t x, int32_t y)
 
         damage_below_surface(surface);
         update(&view->base);
-        update_outputs(surface);
+        update_screens(surface);
         update(&view->base);
     }
 }
@@ -382,7 +383,7 @@ void swc_compositor_surface_show(struct swc_surface * surface)
     pixman_region32_clear(&view->clip);
 
     damage_surface(surface);
-    update_outputs(surface);
+    update_screens(surface);
     update(&view->base);
     wl_list_insert(&compositor->surfaces, &surface->link);
 }
@@ -403,7 +404,7 @@ void swc_compositor_surface_hide(struct swc_surface * surface)
     view->mapped = false;
 
     damage_below_surface(surface);
-    update_outputs(surface);
+    update_screens(surface);
     wl_list_remove(&surface->link);
 }
 
@@ -509,10 +510,12 @@ static void calculate_damage(struct swc_compositor * compositor)
     pixman_region32_fini(&surface_opaque);
 }
 
-static void repaint_output(struct swc_compositor * compositor,
-                           struct swc_output * output,
+static void repaint_screen(struct swc_compositor * compositor,
+                           struct swc_screen_internal * screen,
                            pixman_region32_t * damage)
 {
+    struct swc_output * output
+        = CONTAINER_OF(screen->outputs.next, typeof(*output), link);
     pixman_region32_t base_damage;
     struct render_target target;
 
@@ -520,10 +523,8 @@ static void repaint_output(struct swc_compositor * compositor,
     pixman_region32_subtract(&base_damage, damage, &compositor->opaque);
 
     target.buffer = swc_plane_get_buffer(&output->framebuffer_plane);
-    target.geometry.x = output->framebuffer_plane.output->geometry.x
-        + output->framebuffer_plane.x;
-    target.geometry.y = output->framebuffer_plane.output->geometry.y
-        + output->framebuffer_plane.y;
+    target.geometry.x = screen->base.geometry.x + output->framebuffer_plane.x;
+    target.geometry.y = screen->base.geometry.y + output->framebuffer_plane.y;
     target.geometry.width = target.buffer->width;
     target.geometry.height = target.buffer->height;
 
@@ -539,12 +540,13 @@ static void repaint_output(struct swc_compositor * compositor,
 static void update_output_damage(struct swc_output * output,
                                  pixman_region32_t * damage)
 {
+    struct swc_rectangle * geometry = &output->screen->base.geometry;
+
     pixman_region32_union
         (&output->current_damage, &output->current_damage, damage);
     pixman_region32_intersect_rect
         (&output->current_damage, &output->current_damage,
-         output->geometry.x, output->geometry.y,
-         output->geometry.width, output->geometry.height);
+         geometry->x, geometry->y, geometry->width, geometry->height);
 }
 
 static void flush_output_damage(struct swc_output * output,
@@ -564,6 +566,7 @@ static void flush_output_damage(struct swc_output * output,
 static void perform_update(void * data)
 {
     struct swc_compositor * compositor = data;
+    struct swc_screen_internal * screen;
     struct swc_output * output;
     pixman_region32_t damage;
     uint32_t updates = compositor->scheduled_updates
@@ -577,19 +580,20 @@ static void perform_update(void * data)
     calculate_damage(compositor);
     pixman_region32_init(&damage);
 
-    wl_list_for_each(output, &compositor->outputs, link)
+    wl_list_for_each(screen, &swc.screens, link)
     {
-        if (!(compositor->scheduled_updates & SWC_OUTPUT_MASK(output)))
+        if (!(compositor->scheduled_updates & swc_screen_mask(screen)))
             continue;
 
+        output = CONTAINER_OF(screen->outputs.next, typeof(*output), link);
         update_output_damage(output, &compositor->damage);
 
         /* Don't repaint the output if it is waiting for a page flip. */
-        if (compositor->pending_flips & SWC_OUTPUT_MASK(output))
+        if (compositor->pending_flips & swc_screen_mask(screen))
             continue;
 
         flush_output_damage(output, &damage);
-        repaint_output(compositor, output, &damage);
+        repaint_screen(compositor, screen, &damage);
     }
 
     pixman_region32_fini(&damage);
@@ -725,7 +729,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
                                struct wl_display * display,
                                struct wl_event_loop * event_loop)
 {
-    struct wl_list * outputs;
     uint32_t keysym;
 
     compositor->display = display;
@@ -738,20 +741,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     };
 
     wl_signal_add(&swc.drm->event_signal, &compositor->drm_listener);
-
-    outputs = swc_drm_create_outputs();
-
-    if (outputs)
-    {
-        wl_list_init(&compositor->outputs);
-        wl_list_insert_list(&compositor->outputs, outputs);
-        free(outputs);
-    }
-    else
-    {
-        printf("could not create outputs\n");
-        return false;
-    }
 
     pixman_region32_init(&compositor->damage);
     pixman_region32_init(&compositor->opaque);
@@ -774,38 +763,24 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
 void swc_compositor_finish(struct swc_compositor * compositor)
 {
-    struct swc_output * output, * tmp;
-
-    wl_list_for_each_safe(output, tmp, &compositor->outputs, link)
-    {
-        swc_output_finish(output);
-        free(output);
-    }
 }
 
 void swc_compositor_add_globals(struct swc_compositor * compositor,
                                 struct wl_display * display)
 {
-    struct swc_output * output;
-
     wl_global_create(display, &wl_compositor_interface, 3, compositor,
                      &bind_compositor);
-
-    wl_list_for_each(output, &compositor->outputs, link)
-    {
-        swc_output_add_globals(output, display);
-    }
 }
 
 void swc_compositor_schedule_update(struct swc_compositor * compositor,
-                                    struct swc_output * output)
+                                    struct swc_screen_internal * screen)
 {
     bool update_scheduled = compositor->scheduled_updates != 0;
 
-    if (compositor->scheduled_updates & SWC_OUTPUT_MASK(output))
+    if (compositor->scheduled_updates & swc_screen_mask(screen))
         return;
 
-    compositor->scheduled_updates |= SWC_OUTPUT_MASK(output);
+    compositor->scheduled_updates |= swc_screen_mask(screen);
 
     if (!update_scheduled)
     {

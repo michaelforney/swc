@@ -26,6 +26,7 @@
 #include "internal.h"
 #include "mode.h"
 #include "output.h"
+#include "screen.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,8 +44,8 @@ static bool framebuffer_initialize(struct swc_plane * plane)
 {
     struct framebuffer * fb = swc_double_buffer_front(&plane->double_buffer);
 
-    return drmModeSetCrtc(swc.drm->fd, plane->output->crtc_id,
-                          fb->id, 0, 0, &plane->output->connector_id, 1,
+    return drmModeSetCrtc(swc.drm->fd, plane->output->crtc,
+                          fb->id, 0, 0, &plane->output->connector, 1,
                           &plane->output->current_mode->info) == 0;
 }
 
@@ -59,7 +60,8 @@ static void * framebuffer_create_buffer(struct swc_plane * plane)
         goto error0;
 
     buffer = wld_create_buffer(swc.drm->context,
-                               output->geometry.width, output->geometry.height,
+                               output->screen->base.geometry.width,
+                               output->screen->base.geometry.height,
                                WLD_FORMAT_XRGB8888);
 
     if (!buffer)
@@ -109,7 +111,7 @@ static bool framebuffer_flip(struct swc_plane * plane)
     struct swc_output * output = plane->output;
     struct framebuffer * fb = swc_double_buffer_back(&plane->double_buffer);
 
-    return drmModePageFlip(swc.drm->fd, output->crtc_id, fb->id,
+    return drmModePageFlip(swc.drm->fd, output->crtc, fb->id,
                            DRM_MODE_PAGE_FLIP_EVENT, output) == 0;
 }
 
@@ -149,13 +151,13 @@ static bool cursor_flip(struct swc_plane * plane)
     union wld_object object;
 
     wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object);
-    return drmModeSetCursor(swc.drm->fd, plane->output->crtc_id,
+    return drmModeSetCursor(swc.drm->fd, plane->output->crtc,
                             object.u32, 64, 64) == 0;
 }
 
 static bool cursor_move(struct swc_plane * plane, int32_t x, int32_t y)
 {
-    return drmModeMoveCursor(swc.drm->fd, plane->output->crtc_id, x, y) == 0;
+    return drmModeMoveCursor(swc.drm->fd, plane->output->crtc, x, y) == 0;
 }
 
 const struct swc_plane_interface swc_cursor_plane = {

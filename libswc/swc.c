@@ -28,11 +28,12 @@
 #include "drm.h"
 #include "internal.h"
 #include "keyboard.h"
-#include "output.h"
 #include "pointer.h"
+#include "screen.h"
 #include "seat.h"
 #include "shell.h"
 #include "shm.h"
+#include "util.h"
 #include "window.h"
 #ifdef ENABLE_XWAYLAND
 # include "xserver.h"
@@ -57,7 +58,8 @@ struct swc swc = {
 static void setup_compositor()
 {
     pixman_region32_t pointer_region;
-    struct swc_output * output;
+    struct swc_screen_internal * screen;
+    struct swc_rectangle * geometry;
 
     wl_list_insert(&swc.seat->keyboard->handlers,
                    &swc.bindings->keyboard_handler->link);
@@ -68,12 +70,12 @@ static void setup_compositor()
     /* Calculate pointer region */
     pixman_region32_init(&pointer_region);
 
-    wl_list_for_each(output, &compositor.outputs, link)
+    wl_list_for_each(screen, &swc.screens, link)
     {
+        geometry = &screen->base.geometry;
         pixman_region32_union_rect(&pointer_region, &pointer_region,
-                                   output->geometry.x, output->geometry.y,
-                                   output->geometry.width,
-                                   output->geometry.height);
+                                   geometry->x, geometry->y,
+                                   geometry->width, geometry->height);
     }
 
     swc_pointer_set_region(swc.seat->pointer, &pointer_region);
@@ -108,10 +110,16 @@ bool swc_initialize(struct wl_display * display,
         goto error2;
     }
 
+    if (!swc_screens_initialize())
+    {
+        ERROR("Could not initialize screens\n");
+        goto error3;
+    }
+
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         ERROR("Could not initialize compositor\n");
-        goto error3;
+        goto error4;
     }
 
     swc_compositor_add_globals(&compositor, display);
@@ -119,32 +127,32 @@ bool swc_initialize(struct wl_display * display,
     if (!swc_data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
-        goto error4;
+        goto error5;
     }
 
     if (!swc_seat_initialize())
     {
         ERROR("Could not initialize seat\n");
-        goto error5;
+        goto error6;
     }
 
     if (!swc_bindings_initialize())
     {
         ERROR("Could not initialize bindings\n");
-        goto error6;
+        goto error7;
     }
 
     if (!swc_shell_initialize())
     {
         ERROR("Could not initialize shell\n");
-        goto error7;
+        goto error8;
     }
 
 #ifdef ENABLE_XWAYLAND
     if (!swc_xserver_initialize())
     {
         ERROR("Could not initialize xwayland\n");
-        goto error8;
+        goto error9;
     }
 #endif
 
@@ -152,16 +160,18 @@ bool swc_initialize(struct wl_display * display,
 
     return true;
 
-  error8:
+  error9:
     swc_shell_finalize();
-  error7:
+  error8:
     swc_bindings_finalize();
-  error6:
+  error7:
     swc_seat_finalize();
-  error5:
+  error6:
     swc_data_device_manager_finalize();
-  error4:
+  error5:
     swc_compositor_finish(&compositor);
+  error4:
+    swc_screens_finalize();
   error3:
     swc_shm_finalize();
   error2:
@@ -183,6 +193,7 @@ void swc_finalize()
     swc_seat_finalize();
     swc_data_device_manager_finalize();
     swc_compositor_finish(&compositor);
+    swc_screens_finalize();
     swc_shm_finalize();
     swc_drm_finalize();
     udev_unref(swc.udev);

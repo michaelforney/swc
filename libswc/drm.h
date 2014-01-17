@@ -27,7 +27,7 @@ struct swc_drm
 bool swc_drm_initialize(const char * seat);
 void swc_drm_finalize();
 
-struct wl_list * swc_drm_create_outputs();
+bool swc_drm_create_screens(struct wl_list * screens);
 
 #endif
 

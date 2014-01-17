@@ -383,7 +383,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
         return NULL;
 
     /* Initialize the surface. */
-    surface->outputs = 0;
+    surface->screens = 0;
     surface->geometry.x = 0;
     surface->geometry.y = 0;
     surface->geometry.width = 0;

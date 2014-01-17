@@ -8,16 +8,13 @@
 #include <wayland-util.h>
 #include <xf86drmMode.h>
 
-#define SWC_OUTPUT_MASK(output) (1 << (output)->id)
-
 struct wl_display;
 
 struct swc_output
 {
-    uint32_t id;
+    struct swc_screen_internal * screen;
 
-    /* The geometry of this output */
-    struct swc_rectangle geometry;
+    /* The physical dimensions (in mm) of this output */
     uint32_t physical_width, physical_height;
 
     struct wl_array modes;
@@ -29,26 +26,21 @@ struct swc_output
 
     pixman_region32_t current_damage, previous_damage;
 
-    /* The CRTC and connector we are using to drive this output */
-    uint32_t crtc_id;
-    uint32_t connector_id;
+    /* The DRM connector corresponding to this output */
+    uint32_t crtc, connector;
 
     struct
     {
         drmModeCrtc * crtc;
     } original_state;
 
+    struct wl_global * global;
     struct wl_list resources;
     struct wl_list link;
 };
 
-bool swc_output_initialize(struct swc_output * output, uint32_t id, uint32_t crtc_id,
-                           drmModeConnector * connector);
-
-void swc_output_finish(struct swc_output * output);
-
-void swc_output_add_globals(struct swc_output * output,
-                            struct wl_display * display);
+struct swc_output * swc_output_new(uint32_t crtc_id, drmModeConnector * connector);
+void swc_output_destroy(struct swc_output * output);
 
 #endif
 

@@ -25,6 +25,7 @@
 #include "event.h"
 #include "internal.h"
 #include "output.h"
+#include "screen.h"
 #include "wayland_buffer.h"
 
 #include <stdio.h>
@@ -47,7 +48,7 @@ static struct
     uint32_t id;
     char * path;
 
-    uint32_t taken_output_ids;
+    uint32_t taken_ids;
 
     struct wl_global * global;
     struct wl_event_source * event_source;
@@ -248,7 +249,7 @@ static bool find_available_crtc(drmModeRes * resources,
 
 static bool find_available_id(uint32_t * id)
 {
-    uint32_t index = __builtin_ffsl(~drm.taken_output_ids);
+    uint32_t index = __builtin_ffsl(~drm.taken_ids);
 
     if (index == 0)
         return false;
@@ -335,7 +336,7 @@ bool swc_drm_initialize(const char * seat_name)
         goto error0;
     }
 
-    drm.taken_output_ids = 0;
+    drm.taken_ids = 0;
     drm.path = strdup(udev_device_get_devnode(drm_device));
     udev_device_unref(drm_device);
     swc.drm->fd = swc_launch_open_device(drm.path, O_RDWR | O_CLOEXEC);
@@ -402,25 +403,19 @@ void swc_drm_finalize()
     close(swc.drm->fd);
 }
 
-struct wl_list * swc_drm_create_outputs()
+bool swc_drm_create_screens(struct wl_list * screens)
 {
     drmModeRes * resources;
     drmModeConnector * connector;
     drmModeCrtc * crtc;
     uint32_t index;
-    uint32_t x = 0;
     struct swc_output * output;
-    struct wl_list * outputs;
     uint32_t taken_crtcs = 0;
 
-    outputs = malloc(sizeof(struct wl_list));
-    wl_list_init(outputs);
-
-    resources = drmModeGetResources(swc.drm->fd);
-    if (!resources)
+    if (!(resources = drmModeGetResources(swc.drm->fd)))
     {
         printf("couldn't get DRM resources\n");
-        goto error;
+        return false;
     }
 
     printf("crtc count: %u\n", resources->count_crtcs);
@@ -444,7 +439,8 @@ struct wl_list * swc_drm_create_outputs()
         drmModeFreeEncoder(encoder);
     }
 
-    for (index = 0; index < resources->count_connectors; ++index)
+    for (index = 0; index < resources->count_connectors;
+         ++index, drmModeFreeConnector(connector))
     {
         connector = drmModeGetConnector(swc.drm->fd,
                                         resources->connectors[index]);
@@ -472,41 +468,22 @@ struct wl_list * swc_drm_create_outputs()
                 break;
             }
 
-            output = malloc(sizeof(struct swc_output));
-
-            output->geometry.x = x;
-            output->geometry.y = 0;
-
-            if (!swc_output_initialize(output, id,
-                                       resources->crtcs[crtc_index], connector))
-            {
-                drmModeFreeConnector(connector);
-                free(output);
+            if (!(output = swc_output_new(resources->crtcs[crtc_index], connector)))
                 continue;
-            }
+
+            output->screen = swc_screen_new(resources->crtcs[crtc_index],
+                                            output);
+            output->screen->id = id;
 
             taken_crtcs |= 1 << crtc_index;
-            drm.taken_output_ids |= 1 << id;
+            drm.taken_ids |= 1 << id;
 
-            wl_list_insert(outputs, &output->link);
-            x += output->geometry.width;
+            wl_list_insert(screens, &output->screen->link);
         }
-
-        drmModeFreeConnector(connector);
     }
 
     drmModeFreeResources(resources);
 
-    if (wl_list_empty(outputs))
-    {
-        printf("couldn't find any outputs\n");
-        goto error;
-    }
-
-    return outputs;
-
-  error:
-    free(outputs);
-    return NULL;
+    return true;
 }
 

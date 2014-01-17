@@ -5,13 +5,11 @@
 
 #include <wayland-server.h>
 
-struct swc_output;
+struct swc_screen_internal;
 
 struct swc_compositor
 {
     struct wl_display * display;
-
-    struct wl_list outputs;
     struct wl_list surfaces;
 
     /* Internal state related to repainting the screen. */
@@ -44,7 +42,7 @@ void swc_compositor_add_globals(struct swc_compositor * compositor,
                                 struct wl_display * display);
 
 void swc_compositor_schedule_update(struct swc_compositor * compositor,
-                                    struct swc_output * output);
+                                    struct swc_screen_internal * screen);
 
 bool swc_compositor_add_surface(struct swc_compositor * compositor,
                                 struct swc_surface * surface);

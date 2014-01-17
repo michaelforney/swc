@@ -1,6 +1,6 @@
-/* swc: swc/internal.h
+/* swc: libswc/screen.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,36 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_INTERNAL_H
-#define SWC_INTERNAL_H
+#ifndef SWC_SCREEN_H
+#define SWC_SCREEN_H
+
+#include "swc.h"
 
 #include <wayland-util.h>
 
-struct swc
+struct swc_output;
+
+struct swc_screen_internal
 {
-    struct wl_display * display;
-    struct wl_event_loop * event_loop;
-    const struct swc_manager * manager;
+    struct swc_screen base;
 
-    struct udev * udev;
+    uint8_t id;
 
-    const struct swc_seat_global * const seat;
-    const struct swc_bindings_global * const bindings;
-    struct wl_list screens;
-    struct swc_compositor * compositor;
-    struct swc_shm * const shm;
-    struct swc_drm * const drm;
+    struct wl_list outputs;
+    struct wl_list modifiers;
+    struct wl_list link;
 };
 
-extern struct swc swc;
+bool swc_screens_initialize();
+void swc_screens_finalize();
+
+struct swc_screen_internal * swc_screen_new(uint32_t crtc,
+                                            struct swc_output * output);
+void swc_screen_destroy(struct swc_screen_internal * screen);
+static inline uint32_t swc_screen_mask(struct swc_screen_internal * screen)
+{
+    return 1 << screen->id;
+}
 
 #endif
 

@@ -134,12 +134,25 @@ void swc_window_set_border(struct swc_window * window,
 enum
 {
     /**
-     * Sent when either the total_geometry or usable_geometry of the screen has
+     * Sent when the screen is about to be destroyed.
+     *
+     * After this event is sent, the screen is not longer valid.
+     */
+    SWC_SCREEN_DESTROYED,
+
+    /**
+     * Sent when the total area of the screen is changed.
+     */
+    SWC_SCREEN_GEOMETRY_CHANGED,
+
+    /**
+     * Sent when the geometry of the screen available for laying out windows is
      * changed.
      *
-     * The data member of this event points to the rectangle which changed.
+     * Display servers should respond to this event by making sure all visible
+     * windows are within this area.
      */
-    SWC_SCREEN_GEOMETRY_CHANGED
+    SWC_SCREEN_USABLE_GEOMETRY_CHANGED
 };
 
 struct swc_screen
@@ -149,7 +162,7 @@ struct swc_screen
     /**
      * The total area of the screen.
      */
-    struct swc_rectangle total_geometry;
+    struct swc_rectangle geometry;
 
     /**
      * The area of the screen available for placing windows.

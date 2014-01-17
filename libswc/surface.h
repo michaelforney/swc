@@ -90,7 +90,7 @@ struct swc_surface
     struct wl_listener view_listener;
     void * view_state;
 
-    uint32_t outputs;
+    uint32_t screens;
     struct swc_rectangle geometry;
 
     struct wl_signal event_signal;

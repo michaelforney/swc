@@ -59,7 +59,8 @@ SWC_SOURCES +=                      \
     libswc/window.c                 \
     libswc/shell.c                  \
     libswc/shell_surface.c          \
-    libswc/bindings.c
+    libswc/bindings.c               \
+    libswc/screen.c
 
 ifeq ($(ENABLE_XWAYLAND),1)
 $(dir)_CFLAGS += -DENABLE_XWAYLAND
