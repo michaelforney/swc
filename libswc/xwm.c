@@ -27,6 +27,7 @@
 #include "surface.h"
 #include "swc.h"
 #include "util.h"
+#include "view.h"
 #include "window.h"
 
 #include <stdio.h>
@@ -341,7 +342,7 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
     if ((geometry_reply = xcb_get_geometry_reply(xwm.connection,
                                                  geometry_cookie, NULL)))
     {
-        swc_surface_move(surface, geometry_reply->x, geometry_reply->y);
+        swc_view_move(surface->view, geometry_reply->x, geometry_reply->y);
     }
 
     if (entry->override_redirect)

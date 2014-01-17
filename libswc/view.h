@@ -26,12 +26,20 @@
 
 #include "swc.h"
 
-struct swc_buffer;
-
 enum swc_view_event
 {
     /* Sent when the view has displayed the next frame. */
     SWC_VIEW_EVENT_FRAME,
+
+    /* Sent when the origin of the view has moved. */
+    SWC_VIEW_EVENT_MOVED,
+
+    /* Sent when the view's size changes. This occurs when a buffer of
+     * different dimensions is attached to the view. */
+    SWC_VIEW_EVENT_RESIZED,
+
+    /* Sent when the set of screens the view is visible on changes. */
+    SWC_VIEW_EVENT_SCREENS_CHANGED
 };
 
 struct swc_view_event_data
@@ -43,6 +51,11 @@ struct swc_view_event_data
         {
             uint32_t time;
         } frame;
+
+        struct
+        {
+            uint32_t left, entered;
+        } screens_changed;
     };
 };
 
@@ -51,21 +64,28 @@ struct swc_view
     const struct swc_view_impl * impl;
 
     struct wl_signal event_signal;
+    bool visible;
+    uint32_t screens;
+
+    struct swc_rectangle geometry;
+    struct swc_buffer * buffer;
+    struct wl_listener buffer_destroy_listener;
 };
 
 struct swc_view_impl
 {
-    /* Called when a source is removed from the view. */
-    void (* remove)(struct swc_view * view);
+    /* Called when the view should present a new frame. */
+    bool (* update)(struct swc_view * view);
 
     /* Called when a new buffer is attached to the view. */
-    void (* attach)(struct swc_view * view, struct swc_buffer * buffer);
+    bool (* attach)(struct swc_view * view, struct swc_buffer * buffer);
 
-    /* Called when the view should present a new frame. */
-    void (* update)(struct swc_view * view);
+    bool (* move)(struct swc_view * view, int32_t x, int32_t y);
 
-    /* Move the view to the specified coordinates. */
-    void (* move)(struct swc_view * view, int32_t x, int32_t y);
+    void (* resize)(struct swc_view * view);
+
+    /* Called when a source is removed from the view. */
+    void (* remove)(struct swc_view * view);
 };
 
 void swc_view_initialize(struct swc_view * view,
@@ -73,6 +93,10 @@ void swc_view_initialize(struct swc_view * view,
 
 void swc_view_finalize(struct swc_view * view);
 
+bool swc_view_attach(struct swc_view * view, struct swc_buffer * buffer);
+bool swc_view_update(struct swc_view * view);
+bool swc_view_move(struct swc_view * view, int32_t x, int32_t y);
+void swc_view_set_visibility(struct swc_view * view, bool visible);
 void swc_view_frame(struct swc_view * view, uint32_t time);
 
 #endif

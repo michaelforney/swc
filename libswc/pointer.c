@@ -1,6 +1,7 @@
 #include "pointer.h"
 #include "event.h"
 #include "util.h"
+#include "view.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -19,8 +20,8 @@ static void enter(struct swc_input_focus_handler * handler,
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
 
-    surface_x = pointer->x - wl_fixed_from_int(surface->geometry.x);
-    surface_y = pointer->y - wl_fixed_from_int(surface->geometry.y);
+    surface_x = pointer->x - wl_fixed_from_int(surface->view->geometry.x);
+    surface_y = pointer->y - wl_fixed_from_int(surface->view->geometry.y);
 
     printf("-> pointer.enter: %p (%d, %d)\n", resource, surface_x, surface_y);
     wl_pointer_send_enter(resource, serial, surface->resource,
@@ -135,8 +136,6 @@ static void set_cursor(struct wl_client * client,
 
     if (surface)
     {
-        surface->geometry.x = wl_fixed_to_int(pointer->x) - hotspot_x;
-        surface->geometry.y = wl_fixed_to_int(pointer->y) - hotspot_y;
         wl_resource_add_destroy_listener(surface->resource,
                                          &pointer->cursor.destroy_listener);
     }
@@ -218,20 +217,12 @@ void swc_pointer_handle_relative_motion
     {
         wl_fixed_t surface_x, surface_y;
         surface_x = pointer->x
-            - wl_fixed_from_int(pointer->focus.surface->geometry.x);
+            - wl_fixed_from_int(pointer->focus.surface->view->geometry.x);
         surface_y = pointer->y
-            - wl_fixed_from_int(pointer->focus.surface->geometry.y);
+            - wl_fixed_from_int(pointer->focus.surface->view->geometry.y);
 
         wl_pointer_send_motion(pointer->focus.resource, time,
                                surface_x, surface_y);
-
-        if (pointer->cursor.surface)
-        {
-            swc_surface_move
-                (pointer->cursor.surface,
-                 wl_fixed_to_int(pointer->x) - pointer->cursor.hotspot_x,
-                 wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot_y);
-        }
     }
 }
 

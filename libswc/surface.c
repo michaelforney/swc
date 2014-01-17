@@ -24,7 +24,10 @@
 #include "surface.h"
 #include "buffer.h"
 #include "event.h"
+#include "internal.h"
+#include "output.h"
 #include "region.h"
+#include "screen.h"
 #include "util.h"
 #include "view.h"
 #include "wayland_buffer.h"
@@ -32,37 +35,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <wld/wld.h>
-
-static void set_size(struct swc_surface * surface,
-                     uint32_t width, uint32_t height)
-{
-    /* Check if the surface was resized. */
-    if (width != surface->geometry.width || height != surface->geometry.height)
-    {
-        struct swc_surface_event_data data = {
-            .surface = surface,
-            .resize = {
-                .old_width = surface->geometry.width,
-                .old_height = surface->geometry.height,
-                .new_width = width,
-                .new_height = height
-            }
-        };
-
-        surface->geometry.width = width;
-        surface->geometry.height = height;
-
-        pixman_region32_intersect_rect
-            (&surface->state.opaque, &surface->state.opaque,
-             0, 0, width, height);
-        pixman_region32_intersect_rect
-            (&surface->state.damage, &surface->state.damage,
-             0, 0, width, height);
-
-        swc_send_event(&surface->event_signal,
-                       SWC_SURFACE_EVENT_TYPE_RESIZE, &data);
-    }
-}
 
 /**
  * Removes a buffer from a surface state.
@@ -73,21 +45,12 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
 
     state = CONTAINER_OF(listener, typeof(*state), buffer_destroy_listener);
     state->buffer = NULL;
-
-    if (state->current)
-    {
-        struct swc_surface * surface;
-
-        surface = CONTAINER_OF(state, typeof(*surface), state);
-        set_size(surface, 0, 0);
-    }
 }
 
-static void state_initialize(struct swc_surface_state * state, bool current)
+static void state_initialize(struct swc_surface_state * state)
 {
     state->buffer = NULL;
     state->buffer_destroy_listener.notify = &handle_buffer_destroy;
-    state->current = current;
 
     pixman_region32_init(&state->damage);
     pixman_region32_init(&state->opaque);
@@ -232,6 +195,7 @@ static void set_input_region(struct wl_client * client,
 static void commit(struct wl_client * client, struct wl_resource * resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct wld_buffer * buffer;
 
     /* Attach */
     if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
@@ -243,24 +207,17 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
             swc_wayland_buffer_release(current_buffer);
 
         state_set_buffer(&surface->state, surface->pending.state.buffer);
-
-        /* Determine size of buffer. */
-        if (current_buffer)
-        {
-            set_size(surface,
-                     current_buffer->wld->width, current_buffer->wld->height);
-        }
-        else
-            set_size(surface, 0, 0);
     }
+
+    buffer = surface->state.buffer ? surface->state.buffer->wld : NULL;
 
     /* Damage */
     if (surface->pending.commit & SWC_SURFACE_COMMIT_DAMAGE)
     {
         pixman_region32_intersect_rect(&surface->pending.state.damage,
                                        &surface->pending.state.damage, 0, 0,
-                                       surface->geometry.width,
-                                       surface->geometry.height);
+                                       buffer ? buffer->width : 0,
+                                       buffer ? buffer->height : 0);
         pixman_region32_union(&surface->state.damage, &surface->state.damage,
                               &surface->pending.state.damage);
         pixman_region32_clear(&surface->pending.state.damage);
@@ -271,8 +228,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     {
         pixman_region32_intersect_rect(&surface->state.opaque,
                                        &surface->pending.state.opaque, 0, 0,
-                                       surface->geometry.width,
-                                       surface->geometry.height);
+                                       buffer ? buffer->width : 0,
+                                       buffer ? buffer->height : 0);
     }
 
     /* Input */
@@ -293,8 +250,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     if (surface->view)
     {
         if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
-            surface->view->impl->attach(surface->view, surface->state.buffer);
-        surface->view->impl->update(surface->view);
+            swc_view_attach(surface->view, surface->state.buffer);
+        swc_view_update(surface->view);
     }
 
     surface->pending.commit = 0;
@@ -335,6 +292,9 @@ static void surface_destroy(struct wl_resource * resource)
     state_finish(&surface->state);
     state_finish(&surface->pending.state);
 
+    if (surface->view)
+        wl_list_remove(&surface->view_listener.link);
+
     printf("freeing surface %p\n", surface);
     free(surface);
 }
@@ -362,6 +322,46 @@ static void handle_view_event(struct wl_listener * listener, void * data)
             wl_list_init(&surface->state.frame_callbacks);
             break;
         }
+        case SWC_VIEW_EVENT_SCREENS_CHANGED:
+        {
+            struct swc_screen_internal * screen;
+            struct swc_output * output;
+            struct wl_client * client;
+            struct wl_resource * resource;
+            uint32_t entered = event_data->screens_changed.entered,
+                     left = event_data->screens_changed.left;
+
+            client = wl_resource_get_client(surface->resource);
+
+            wl_list_for_each(screen, &swc.screens, link)
+            {
+                if (!((entered | left) & swc_screen_mask(screen)))
+                    continue;
+
+                wl_list_for_each(output, &screen->outputs, link)
+                {
+                    resource = wl_resource_find_for_client
+                        (&output->resources, client);
+
+                    if (resource)
+                    {
+                        if (entered & swc_screen_mask(screen))
+                            wl_surface_send_enter(surface->resource, resource);
+                        else if (left & swc_screen_mask(screen))
+                            wl_surface_send_leave(surface->resource, resource);
+                    }
+                }
+            }
+            break;
+        }
+        case SWC_VIEW_EVENT_RESIZED:
+            pixman_region32_intersect_rect
+                (&surface->state.opaque, &surface->state.opaque, 0, 0,
+                 surface->view->geometry.width, surface->view->geometry.height);
+            pixman_region32_intersect_rect
+                (&surface->state.damage, &surface->state.damage, 0, 0,
+                 surface->view->geometry.width, surface->view->geometry.height);
+            break;
     }
 }
 
@@ -383,19 +383,13 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
         return NULL;
 
     /* Initialize the surface. */
-    surface->screens = 0;
-    surface->geometry.x = 0;
-    surface->geometry.y = 0;
-    surface->geometry.width = 0;
-    surface->geometry.height = 0;
     surface->pending.commit = 0;
     surface->window = NULL;
     surface->view = NULL;
     surface->view_listener.notify = &handle_view_event;
-    surface->view_state = NULL;
 
-    state_initialize(&surface->state, true);
-    state_initialize(&surface->pending.state, false);
+    state_initialize(&surface->state);
+    state_initialize(&surface->pending.state);
 
     wl_signal_init(&surface->event_signal);
 
@@ -425,20 +419,8 @@ void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view)
     if (view)
     {
         wl_signal_add(&view->event_signal, &surface->view_listener);
-        surface->view->impl->attach(surface->view, surface->state.buffer);
-        surface->view->impl->update(surface->view);
+        swc_view_attach(view, surface->state.buffer);
+        swc_view_update(surface->view);
     }
-}
-
-void swc_surface_update(struct swc_surface * surface)
-{
-    if (surface->view)
-        surface->view->impl->update(surface->view);
-}
-
-void swc_surface_move(struct swc_surface * surface, int32_t x, int32_t y)
-{
-    if (surface->view)
-        surface->view->impl->move(surface->view, x, y);
 }
 

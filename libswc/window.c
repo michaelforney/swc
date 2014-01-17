@@ -29,6 +29,7 @@
 #include "seat.h"
 #include "swc.h"
 #include "util.h"
+#include "view.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -97,7 +98,7 @@ void swc_window_set_geometry(struct swc_window * window,
     if (INTERNAL(window)->impl->configure)
         INTERNAL(window)->impl->configure(window, geometry);
 
-    swc_surface_move(INTERNAL(window)->surface, geometry->x, geometry->y);
+    swc_view_move(INTERNAL(window)->surface->view, geometry->x, geometry->y);
 }
 
 EXPORT

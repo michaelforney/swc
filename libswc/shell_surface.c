@@ -26,6 +26,7 @@
 #include "swc.h"
 #include "surface.h"
 #include "util.h"
+#include "view.h"
 #include "window.h"
 
 #include <stdlib.h>
@@ -87,8 +88,8 @@ static void set_transient(struct wl_client * client,
         = wl_resource_get_user_data(resource);
     struct swc_surface * parent = wl_resource_get_user_data(parent_resource);
 
-    swc_surface_move(shell_surface->window.surface,
-                     parent->geometry.x + x, parent->geometry.y + y);
+    swc_view_move(shell_surface->window.surface->view,
+                  parent->view->geometry.x + x, parent->view->geometry.y + y);
     swc_compositor_surface_show(shell_surface->window.surface);
 
     /* XXX: Handle transient */
@@ -111,8 +112,8 @@ static void set_popup(struct wl_client * client, struct wl_resource * resource,
         = wl_resource_get_user_data(resource);
     struct swc_surface * parent = wl_resource_get_user_data(parent_resource);
 
-    swc_surface_move(shell_surface->window.surface,
-                     parent->geometry.x + x, parent->geometry.y + y);
+    swc_view_move(shell_surface->window.surface->view,
+                  parent->view->geometry.x + x, parent->view->geometry.y + y);
     swc_compositor_surface_show(shell_surface->window.surface);
 
     /* XXX: Handle popup */

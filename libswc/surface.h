@@ -24,8 +24,7 @@
 #ifndef SWC_SURFACE_H
 #define SWC_SURFACE_H
 
-#include "swc.h"
-
+#include <stdbool.h>
 #include <wayland-server.h>
 #include <pixman.h>
 
@@ -58,7 +57,6 @@ struct swc_surface_state
 {
     struct swc_buffer * buffer;
     struct wl_listener buffer_destroy_listener;
-    bool current;
 
     /* The region that needs to be repainted. */
     pixman_region32_t damage;
@@ -88,10 +86,6 @@ struct swc_surface
     struct swc_window * window;
     struct swc_view * view;
     struct wl_listener view_listener;
-    void * view_state;
-
-    uint32_t screens;
-    struct swc_rectangle geometry;
 
     struct wl_signal event_signal;
     struct wl_list link;
@@ -101,10 +95,6 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
                                      uint32_t version, uint32_t id);
 
 void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view);
-
-void swc_surface_update(struct swc_surface * surface);
-
-void swc_surface_move(struct swc_surface * surface, int32_t x, int32_t y);
 
 #endif
 

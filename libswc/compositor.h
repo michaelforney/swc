@@ -10,7 +10,7 @@ struct swc_screen_internal;
 struct swc_compositor
 {
     struct wl_display * display;
-    struct wl_list surfaces;
+    struct wl_list views;
 
     /* Internal state related to repainting the screen. */
     struct
