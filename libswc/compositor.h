@@ -28,8 +28,6 @@ struct swc_compositor
     };
 
     struct swc_pointer_handler pointer_handler;
-
-    struct wl_listener drm_listener;
 };
 
 bool swc_compositor_initialize(struct swc_compositor * compositor,

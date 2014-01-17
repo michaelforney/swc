@@ -26,6 +26,7 @@
 #include "internal.h"
 #include "mode.h"
 #include "output.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <sys/param.h>
@@ -75,10 +76,28 @@ struct swc_screen_internal * swc_screen_new(uint32_t crtc,
     wl_list_init(&screen->outputs);
     wl_list_insert(&INTERNAL(screen)->outputs, &output->link);
 
+    if (!swc_framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
+                                          &output->preferred_mode->info,
+                                          &output->connector, 1))
+    {
+        ERROR("Failed to initialize framebuffer plane\n");
+        goto error1;
+    }
+
+    if (!swc_cursor_plane_initialize(&screen->planes.cursor, crtc))
+    {
+        ERROR("Failed to initialize cursor plane\n");
+        goto error2;
+    }
+
     swc.manager->new_screen(&screen->base);
 
     return screen;
 
+  error2:
+    swc_framebuffer_plane_finalize(&screen->planes.framebuffer);
+  error1:
+    free(screen);
   error0:
     return NULL;
 }
@@ -89,6 +108,8 @@ void swc_screen_destroy(struct swc_screen_internal * screen)
 
     wl_list_for_each_safe(output, next, &screen->outputs, link)
         swc_output_destroy(output);
+    swc_framebuffer_plane_finalize(&screen->planes.framebuffer);
+    swc_cursor_plane_finalize(&screen->planes.cursor);
     free(screen);
 }
 

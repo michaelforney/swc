@@ -1,4 +1,4 @@
-/* swc: libswc/mode.c
+/* swc: libswc/framebuffer_plane.h
  *
  * Copyright (c) 2013 Michael Forney
  *
@@ -21,28 +21,32 @@
  * SOFTWARE.
  */
 
+#ifndef SWC_FRAMEBUFFER_PLANE_H
+#define SWC_FRAMEBUFFER_PLANE_H
+
+#include "drm.h"
 #include "mode.h"
+#include "surface.h"
+#include "view.h"
 
-bool swc_mode_initialize(struct swc_mode * mode, drmModeModeInfo * mode_info)
+#include <xf86drmMode.h>
+
+struct swc_framebuffer_plane
 {
-    mode->width = mode_info->hdisplay;
-    mode->height = mode_info->vdisplay;
-    mode->refresh = mode_info->vrefresh * 1000;
-    mode->preferred = mode_info->type & DRM_MODE_TYPE_PREFERRED;
+    uint32_t crtc;
+    drmModeCrtcPtr original_crtc_state;
+    struct swc_mode mode;
+    struct swc_view view;
+    struct swc_drm_handler drm_handler;
+    struct wl_array connectors;
+};
 
-    mode->info = *mode_info;
+bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
+                                      uint32_t crtc, drmModeModeInfoPtr mode,
+                                      uint32_t * connectors,
+                                      uint32_t num_connectors);
 
-    return true;
-}
+void swc_framebuffer_plane_finalize(struct swc_framebuffer_plane * plane);
 
-void swc_mode_finish(struct swc_mode * mode)
-{
-}
-
-bool swc_mode_equal(const struct swc_mode * mode1, const struct swc_mode * mode2)
-{
-    return mode1->width == mode2->width
-        && mode1->height == mode2->height
-        && mode1->refresh == mode2->refresh;
-}
+#endif
 

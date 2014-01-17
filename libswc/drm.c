@@ -26,6 +26,7 @@
 #include "internal.h"
 #include "output.h"
 #include "screen.h"
+#include "util.h"
 #include "wayland_buffer.h"
 
 #include <stdio.h>
@@ -267,15 +268,9 @@ static void handle_vblank(int fd, unsigned int sequence, unsigned int sec,
 static void handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
                              unsigned int usec, void * data)
 {
-    struct swc_output * output = data;
-    struct swc_drm_event_data event_data = {
-        .time = sec * 1000 + usec / 1000,
-        .output = output
-    };
+    struct swc_drm_handler * handler = data;
 
-    /* XXX: It doesn't make sense for multiple things to be listening for page
-     *      flips (or does it?). Maybe this should be a callback instead? */
-    swc_send_event(&swc.drm->event_signal, SWC_DRM_PAGE_FLIP, &event_data);
+    handler->page_flip(handler, sec * 1000 + usec / 1000);
 }
 
 static drmEventContext event_context = {
@@ -314,8 +309,6 @@ bool swc_drm_initialize(const char * seat_name)
 {
     const char * sysnum;
     char * end;
-
-    wl_signal_init(&swc.drm->event_signal);
 
     struct udev_device * drm_device = find_primary_drm_device(seat_name);
 
@@ -468,7 +461,7 @@ bool swc_drm_create_screens(struct wl_list * screens)
                 break;
             }
 
-            if (!(output = swc_output_new(resources->crtcs[crtc_index], connector)))
+            if (!(output = swc_output_new(connector)))
                 continue;
 
             output->screen = swc_screen_new(resources->crtcs[crtc_index],

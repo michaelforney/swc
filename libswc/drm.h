@@ -5,15 +5,9 @@
 #include <stdint.h>
 #include <wayland-server.h>
 
-enum swc_drm_event_type
+struct swc_drm_handler
 {
-    SWC_DRM_PAGE_FLIP
-};
-
-struct swc_drm_event_data
-{
-    uint32_t time;
-    struct swc_output * output;
+    void (* page_flip)(struct swc_drm_handler * handler, uint32_t time);
 };
 
 struct swc_drm
@@ -21,7 +15,6 @@ struct swc_drm
     int fd;
     struct wld_context * context;
     struct wld_renderer * renderer;
-    struct wl_signal event_signal;
 };
 
 bool swc_drm_initialize(const char * seat);

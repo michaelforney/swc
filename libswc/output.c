@@ -38,7 +38,7 @@ static void bind_output(struct wl_client * client, void * data,
         flags = 0;
         if (mode->preferred)
             flags |= WL_OUTPUT_MODE_PREFERRED;
-        if (output->current_mode == mode)
+        if (swc_mode_equal(&screen->planes.framebuffer.mode, mode))
             flags |= WL_OUTPUT_MODE_CURRENT;
 
         wl_output_send_mode(resource, flags, mode->width, mode->height,
@@ -49,11 +49,9 @@ static void bind_output(struct wl_client * client, void * data,
         wl_output_send_done(resource);
 }
 
-struct swc_output * swc_output_new(uint32_t crtc_id, drmModeConnector * connector)
+struct swc_output * swc_output_new(drmModeConnectorPtr connector)
 {
     struct swc_output * output;
-    drmModeEncoder * encoder;
-    drmModeCrtc * current_crtc;
     struct swc_mode * modes;
     uint32_t index;
 
@@ -80,44 +78,19 @@ struct swc_output * swc_output_new(uint32_t crtc_id, drmModeConnector * connecto
     pixman_region32_init(&output->current_damage);
     pixman_region32_init(&output->previous_damage);
 
-    output->crtc = crtc_id;
     output->connector = connector->connector_id;
 
-    /* Determine the current CRTC of this output. */
-    encoder = drmModeGetEncoder(swc.drm->fd, connector->encoder_id);
-    current_crtc = drmModeGetCrtc(swc.drm->fd, encoder->crtc_id);
-    drmModeFreeEncoder(encoder);
-
     modes = wl_array_add(&output->modes, connector->count_modes * sizeof *modes);
+
+    if (!modes)
+        goto error2;
 
     for (index = 0; index < connector->count_modes; ++index)
     {
         swc_mode_initialize(&modes[index], &connector->modes[index]);
 
-        if (memcmp(&modes[index].info, &current_crtc->mode,
-                   sizeof(drmModeModeInfo)) == 0)
-            output->current_mode = &modes[index];
         if (modes[index].preferred)
             output->preferred_mode = &modes[index];
-    }
-
-    if (output->preferred_mode)
-        output->current_mode = output->preferred_mode;
-
-    output->original_state.crtc = current_crtc;
-
-    /* Create output planes */
-    if (!swc_plane_initialize(&output->framebuffer_plane,
-                              &swc_framebuffer_plane, output))
-    {
-        printf("failed to initialize framebuffer plane\n");
-        goto error2;
-    }
-
-    if (!swc_plane_initialize(&output->cursor_plane, &swc_cursor_plane, output))
-    {
-        printf("failed to initialize cursor plane\n");
-        goto error2;
     }
 
     return output;
@@ -133,15 +106,11 @@ struct swc_output * swc_output_new(uint32_t crtc_id, drmModeConnector * connecto
 void swc_output_destroy(struct swc_output * output)
 {
     struct swc_mode * mode;
-    drmModeCrtc * crtc = output->original_state.crtc;
 
     wl_array_for_each(mode, &output->modes)
         swc_mode_finish(mode);
     wl_array_release(&output->modes);
 
-    drmModeSetCrtc(swc.drm->fd, crtc->crtc_id, crtc->buffer_id, crtc->x,
-                   crtc->y, &output->connector, 1, &crtc->mode);
-    drmModeFreeCrtc(crtc);
     wl_global_destroy(output->global);
     free(output);
 }

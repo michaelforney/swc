@@ -44,5 +44,7 @@ struct swc_mode
 bool swc_mode_initialize(struct swc_mode * mode, drmModeModeInfo * mode_info);
 void swc_mode_finish(struct swc_mode * mode);
 
+bool swc_mode_equal(const struct swc_mode * mode1, const struct swc_mode * mode2);
+
 #endif
 

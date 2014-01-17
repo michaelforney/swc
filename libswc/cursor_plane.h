@@ -1,6 +1,6 @@
-/* swc: libswc/mode.c
+/* swc: libswc/cursor_plane.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,28 +21,21 @@
  * SOFTWARE.
  */
 
-#include "mode.h"
+#ifndef SWC_CURSOR_PLANE_H
+#define SWC_CURSOR_PLANE_H
 
-bool swc_mode_initialize(struct swc_mode * mode, drmModeModeInfo * mode_info)
+#include "view.h"
+
+struct swc_cursor_plane
 {
-    mode->width = mode_info->hdisplay;
-    mode->height = mode_info->vdisplay;
-    mode->refresh = mode_info->vrefresh * 1000;
-    mode->preferred = mode_info->type & DRM_MODE_TYPE_PREFERRED;
+    struct swc_view view;
+    uint32_t crtc;
+};
 
-    mode->info = *mode_info;
+bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane,
+                                 uint32_t crtc);
 
-    return true;
-}
+void swc_cursor_plane_finalize(struct swc_cursor_plane * plane);
 
-void swc_mode_finish(struct swc_mode * mode)
-{
-}
-
-bool swc_mode_equal(const struct swc_mode * mode1, const struct swc_mode * mode2)
-{
-    return mode1->width == mode2->width
-        && mode1->height == mode2->height
-        && mode1->refresh == mode2->refresh;
-}
+#endif
 

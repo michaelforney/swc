@@ -25,6 +25,8 @@
 #define SWC_SCREEN_H
 
 #include "swc.h"
+#include "cursor_plane.h"
+#include "framebuffer_plane.h"
 
 #include <wayland-util.h>
 
@@ -35,6 +37,12 @@ struct swc_screen_internal
     struct swc_screen base;
 
     uint8_t id;
+
+    struct
+    {
+        struct swc_framebuffer_plane framebuffer;
+        struct swc_cursor_plane cursor;
+    } planes;
 
     struct wl_list outputs;
     struct wl_list modifiers;

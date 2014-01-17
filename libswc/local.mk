@@ -33,9 +33,10 @@ SWC_SOURCES =                       \
     libswc/view.c                   \
     libswc/buffer.c                 \
     libswc/wayland_buffer.c         \
+    libswc/cursor_plane.c           \
+    libswc/framebuffer_plane.c      \
     libswc/util.c                   \
     libswc/output.c                 \
-    libswc/plane.c                  \
     libswc/surface.c                \
     libswc/region.c                 \
     libswc/input_focus.c            \
