@@ -293,8 +293,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     if (surface->view)
     {
         if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
-            surface->view->impl->attach(surface, surface->state.buffer);
-        surface->view->impl->update(surface);
+            surface->view->impl->attach(surface->view, surface->state.buffer);
+        surface->view->impl->update(surface->view);
     }
 
     surface->pending.commit = 0;
@@ -329,7 +329,7 @@ static void surface_destroy(struct wl_resource * resource)
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
     if (surface->view && surface->view->impl->remove)
-        surface->view->impl->remove(surface);
+        surface->view->impl->remove(surface->view);
 
     /* Finish the surface. */
     state_finish(&surface->state);
@@ -416,7 +416,7 @@ void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view)
     if (surface->view)
     {
         if (surface->view->impl->remove)
-            surface->view->impl->remove(surface);
+            surface->view->impl->remove(surface->view);
         wl_list_remove(&surface->view_listener.link);
     }
 
@@ -425,20 +425,20 @@ void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view)
     if (view)
     {
         wl_signal_add(&view->event_signal, &surface->view_listener);
-        surface->view->impl->attach(surface, surface->state.buffer);
-        surface->view->impl->update(surface);
+        surface->view->impl->attach(surface->view, surface->state.buffer);
+        surface->view->impl->update(surface->view);
     }
 }
 
 void swc_surface_update(struct swc_surface * surface)
 {
     if (surface->view)
-        surface->view->impl->update(surface);
+        surface->view->impl->update(surface->view);
 }
 
 void swc_surface_move(struct swc_surface * surface, int32_t x, int32_t y)
 {
     if (surface->view)
-        surface->view->impl->move(surface, x, y);
+        surface->view->impl->move(surface->view, x, y);
 }
 

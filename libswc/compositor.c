@@ -23,6 +23,7 @@ struct view
 {
     struct swc_view base;
     struct swc_compositor * compositor;
+    struct swc_surface * surface;
 
     /* The box that the surface covers (including it's border). */
     pixman_box32_t extents;
@@ -135,8 +136,7 @@ static void renderer_repaint(struct render_target * target,
     wld_flush(swc.drm->renderer);
 }
 
-static void renderer_attach(struct swc_surface * surface,
-                            struct swc_buffer * buffer)
+static void renderer_attach(struct view * view, struct swc_buffer * buffer)
 {
 }
 
@@ -241,7 +241,7 @@ static void update_outputs(struct swc_surface * surface)
     surface->outputs = new_outputs;
 }
 
-static void update(struct swc_surface * surface);
+static void update(struct swc_view * view);
 
 static void handle_surface_event(struct wl_listener * listener, void * data)
 {
@@ -257,33 +257,33 @@ static void handle_surface_event(struct wl_listener * listener, void * data)
             damage_below_surface(surface);
 
             update_extents(surface);
-            update(surface);
+            update(&view->base);
             update_outputs(surface);
 
             break;
     }
 }
 
-static void remove_(struct swc_surface * surface)
+static void remove_(struct swc_view * base)
 {
-    struct view * view = (void *) surface->view;
+    struct view * view = (void *) base;
 
-    swc_compositor_surface_hide(surface);
-
+    swc_compositor_surface_hide(view->surface);
     wl_list_remove(&view->surface_event_listener.link);
     pixman_region32_fini(&view->clip);
-
     free(view);
 }
 
-static void attach(struct swc_surface * surface, struct swc_buffer * buffer)
+static void attach(struct swc_view * base, struct swc_buffer * buffer)
 {
-    renderer_attach(surface, buffer);
+    struct view * view = (void *) base;
+
+    renderer_attach(view, buffer);
 }
 
-static void update(struct swc_surface * surface)
+static void update(struct swc_view * base)
 {
-    struct view * view = (void *) surface->view;
+    struct view * view = (void *) base;
     struct swc_compositor * compositor = view->compositor;
     struct swc_output * output;
 
@@ -292,14 +292,15 @@ static void update(struct swc_surface * surface)
 
     wl_list_for_each(output, &compositor->outputs, link)
     {
-        if (surface->outputs & SWC_OUTPUT_MASK(output))
+        if (view->surface->outputs & SWC_OUTPUT_MASK(output))
             swc_compositor_schedule_update(compositor, output);
     }
 }
 
-static void move(struct swc_surface * surface, int32_t x, int32_t y)
+static void move(struct swc_view * base, int32_t x, int32_t y)
 {
-    struct view * view = (void *) surface->view;
+    struct view * view = (void *) base;
+    struct swc_surface * surface = view->surface;
 
     if (x == surface->geometry.x && y == surface->geometry.y)
         return;
@@ -319,9 +320,9 @@ static void move(struct swc_surface * surface, int32_t x, int32_t y)
         pixman_region32_init(&view->clip);
 
         damage_below_surface(surface);
-        update(surface);
+        update(&view->base);
         update_outputs(surface);
-        update(surface);
+        update(&view->base);
     }
 }
 
@@ -344,6 +345,7 @@ bool swc_compositor_add_surface(struct swc_compositor * compositor,
 
     swc_view_initialize(&view->base, &view_impl);
     view->compositor = compositor;
+    view->surface = surface;
     view->mapped = false;
     view->extents.x1 = surface->geometry.x;
     view->extents.y1 = surface->geometry.y;
@@ -381,7 +383,7 @@ void swc_compositor_surface_show(struct swc_surface * surface)
 
     damage_surface(surface);
     update_outputs(surface);
-    update(surface);
+    update(&view->base);
     wl_list_insert(&compositor->surfaces, &surface->link);
 }
 
@@ -396,7 +398,7 @@ void swc_compositor_surface_hide(struct swc_surface * surface)
         return;
 
     /* Update all the outputs the surface was on. */
-    update(surface);
+    update(&view->base);
 
     view->mapped = false;
 
@@ -419,7 +421,7 @@ void swc_compositor_surface_set_border_width(struct swc_surface * surface,
     /* XXX: Damage above surface for transparent surfaces? */
 
     update_extents(surface);
-    update(surface);
+    update(&view->base);
 }
 
 void swc_compositor_surface_set_border_color(struct swc_surface * surface,
@@ -435,7 +437,7 @@ void swc_compositor_surface_set_border_color(struct swc_surface * surface,
 
     /* XXX: Damage above surface for transparent surfaces? */
 
-    update(surface);
+    update(&view->base);
 }
 
 /* }}} */

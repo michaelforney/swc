@@ -26,7 +26,6 @@
 
 #include "swc.h"
 
-struct swc_surface;
 struct swc_buffer;
 
 enum swc_view_event
@@ -54,24 +53,19 @@ struct swc_view
     struct wl_signal event_signal;
 };
 
-/**
- * A view is a set of operations that can be performed on a surface.  This
- * gives the compositor the ability to classify surfaces, treating some
- * specially (for example, a cursor surface).
- */
 struct swc_view_impl
 {
-    /* Called when a surface is removed from the view. */
-    void (* remove)(struct swc_surface * surface);
+    /* Called when a source is removed from the view. */
+    void (* remove)(struct swc_view * view);
 
-    /* Called when a new buffer is attached to a surface. */
-    void (* attach)(struct swc_surface * surface, struct swc_buffer * buffer);
+    /* Called when a new buffer is attached to the view. */
+    void (* attach)(struct swc_view * view, struct swc_buffer * buffer);
 
-    /* Called after a surface requests a commit. */
-    void (* update)(struct swc_surface * surface);
+    /* Called when the view should present a new frame. */
+    void (* update)(struct swc_view * view);
 
-    /* Moves the surface to the specified coordinates. */
-    void (* move)(struct swc_surface * surface, int32_t x, int32_t y);
+    /* Move the view to the specified coordinates. */
+    void (* move)(struct swc_view * view, int32_t x, int32_t y);
 };
 
 void swc_view_initialize(struct swc_view * view,
