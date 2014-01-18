@@ -309,10 +309,9 @@ bool swc_drm_initialize(const char * seat_name)
 {
     const char * sysnum;
     char * end;
+    struct udev_device * drm_device;
 
-    struct udev_device * drm_device = find_primary_drm_device(seat_name);
-
-    if (!drm_device)
+    if (!(drm_device = find_primary_drm_device(seat_name)))
     {
         printf("couldn't find drm device\n");
         goto error0;
