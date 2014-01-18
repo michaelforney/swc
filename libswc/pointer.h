@@ -1,8 +1,10 @@
 #ifndef SWC_POINTER_H
 #define SWC_POINTER_H
 
+#include "buffer.h"
 #include "input_focus.h"
 #include "surface.h"
+#include "view.h"
 
 #include <wayland-server.h>
 #include <pixman.h>
@@ -19,28 +21,23 @@ struct swc_pointer_handler
                   enum wl_pointer_axis axis, wl_fixed_t amount);
 };
 
-enum swc_pointer_event_type
-{
-    SWC_POINTER_CURSOR_CHANGED
-};
-
-struct swc_pointer_event_data
-{
-    struct swc_surface * old, * new;
-};
-
 struct swc_pointer
 {
     struct swc_input_focus focus;
     struct swc_input_focus_handler focus_handler;
 
-    struct wl_signal event_signal;
-
     struct
     {
+        struct swc_view view;
+        struct wl_listener view_listener;
         struct swc_surface * surface;
-        int32_t hotspot_x, hotspot_y;
         struct wl_listener destroy_listener;
+        struct swc_buffer buffer;
+
+        struct
+        {
+            int32_t x, y;
+        } hotspot;
     } cursor;
 
     struct swc_pointer_handler * handler;
