@@ -35,8 +35,6 @@
 #include <string.h>
 #include <libudev.h>
 
-#define SEAT_NAME "seat0"
-
 static struct
 {
     char * name;
@@ -235,9 +233,14 @@ static void add_devices()
     udev_enumerate_unref(enumerate);
 }
 
-bool swc_seat_initialize()
+bool swc_seat_initialize(const char * seat_name)
 {
-    seat.name = SEAT_NAME;
+    if (!(seat.name = strdup(seat_name)))
+    {
+        ERROR("Could not allocate seat name string\n");
+        goto error0;
+    }
+
     seat.capabilities = 0;
     wl_list_init(&seat.resources);
     wl_list_init(&seat.devices);
@@ -246,12 +249,12 @@ bool swc_seat_initialize()
                                        NULL, &bind_seat);
 
     if (!seat.global)
-        goto error0;
+        goto error1;
 
     if (!swc_data_device_initialize(&seat.data_device))
     {
         ERROR("Could not initialize data device\n");
-        goto error1;
+        goto error2;
     }
 
     wl_signal_add(&seat.data_device.event_signal, &data_device_listener);
@@ -259,7 +262,7 @@ bool swc_seat_initialize()
     if (!swc_keyboard_initialize(&seat.keyboard))
     {
         ERROR("Could not initialize keyboard\n");
-        goto error2;
+        goto error3;
     }
 
     wl_signal_add(&seat.keyboard.focus.event_signal, &keyboard_focus_listener);
@@ -267,19 +270,21 @@ bool swc_seat_initialize()
     if (!swc_pointer_initialize(&seat.pointer))
     {
         ERROR("Could not initialize pointer\n");
-        goto error3;
+        goto error4;
     }
 
     add_devices();
 
     return true;
 
-  error3:
+  error4:
     swc_keyboard_finish(&seat.keyboard);
-  error2:
+  error3:
     swc_data_device_finish(&seat.data_device);
-  error1:
+  error2:
     wl_global_destroy(seat.global);
+  error1:
+    free(seat.name);
   error0:
     return false;
 }
@@ -295,6 +300,7 @@ void swc_seat_finalize()
         swc_evdev_device_destroy(device);
 
     wl_global_destroy(seat.global);
+    free(seat.name);
 }
 
 void swc_seat_reopen_devices()

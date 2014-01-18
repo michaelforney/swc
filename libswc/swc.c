@@ -130,7 +130,7 @@ bool swc_initialize(struct wl_display * display,
         goto error5;
     }
 
-    if (!swc_seat_initialize())
+    if (!swc_seat_initialize(default_seat))
     {
         ERROR("Could not initialize seat\n");
         goto error6;

@@ -33,7 +33,7 @@ struct swc_seat_global
     struct swc_data_device * data_device;
 };
 
-bool swc_seat_initialize();
+bool swc_seat_initialize(const char * seat_name);
 void swc_seat_finalize();
 void swc_seat_reopen_devices();
 
