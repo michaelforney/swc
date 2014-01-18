@@ -84,12 +84,9 @@ static void state_finish(struct swc_surface_state * state)
  *
  * @return: Whether or not the buffer was changed.
  */
-static bool state_set_buffer(struct swc_surface_state * state,
+static void state_set_buffer(struct swc_surface_state * state,
                              struct swc_buffer * buffer)
 {
-    if (buffer == state->buffer)
-        return false;
-
     if (state->buffer)
     {
         /* No longer need to worry about the old buffer being destroyed. */
@@ -104,8 +101,6 @@ static bool state_set_buffer(struct swc_surface_state * state,
     }
 
     state->buffer = buffer;
-
-    return true;
 }
 
 static void destroy(struct wl_client * client, struct wl_resource * resource)
