@@ -9,6 +9,7 @@
 #include "region.h"
 #include "screen.h"
 #include "seat.h"
+#include "shm.h"
 #include "surface.h"
 #include "util.h"
 #include "view.h"
@@ -35,6 +36,7 @@ struct view
     struct wl_listener event_listener;
     struct swc_compositor * compositor;
     struct swc_surface * surface;
+    struct wld_buffer * wld;
 
     /* The box that the surface covers (including it's border). */
     pixman_box32_t extents;
@@ -230,7 +232,7 @@ static void repaint_view(struct render_target * target, struct view * view,
     if (pixman_region32_not_empty(&view_damage))
     {
         pixman_region32_translate(&view_damage, -geometry->x, -geometry->y);
-        wld_copy_region(swc.drm->renderer, view->base.buffer->wld,
+        wld_copy_region(swc.drm->renderer, view->wld,
                         geometry->x - target->geometry->x,
                         geometry->y - target->geometry->y, &view_damage);
     }
@@ -282,11 +284,62 @@ static void renderer_repaint(struct render_target * target,
 
 static bool renderer_attach(struct view * view, struct swc_buffer * buffer)
 {
+    struct wld_buffer * wld;
+    bool was_proxy = view->base.buffer && view->wld != view->base.buffer->wld;
+    bool needs_proxy = buffer
+        && !(wld_capabilities(swc.drm->renderer,
+                              buffer->wld) & WLD_CAPABILITY_READ);
+    bool resized = view->wld && buffer
+        && (view->wld->width != buffer->wld->width
+            || view->wld->height != buffer->wld->height);
+
+    if (buffer)
+    {
+        /* Create a proxy buffer if necessary (for example a hardware buffer
+         * backing a SHM buffer). */
+        if (needs_proxy)
+        {
+            if (!was_proxy || resized)
+            {
+                DEBUG("Creating a proxy buffer\n");
+                wld = wld_create_buffer(swc.drm->context,
+                                        buffer->wld->width, buffer->wld->height,
+                                        buffer->wld->format);
+
+                if (!wld)
+                    return false;
+            }
+            else
+            {
+                /* Otherwise we can keep the original proxy buffer. */
+                wld = view->wld;
+            }
+        }
+        else
+            wld = buffer->wld;
+    }
+    else
+        wld = NULL;
+
+    /* If we no longer need a proxy buffer, or the original buffer is of a
+     * different size, destroy the old proxy image. */
+    if (view->wld && ((!needs_proxy && was_proxy) || (needs_proxy && resized)))
+        wld_destroy_buffer(view->wld);
+
+    view->wld = wld;
+
     return true;
 }
 
 static void renderer_flush_view(struct view * view)
 {
+    if (view->wld == view->base.buffer->wld)
+        return;
+
+    wld_set_target_buffer(swc.shm->renderer, view->wld);
+    wld_copy_region(swc.shm->renderer, view->base.buffer->wld,
+                    0, 0, &view->surface->state.damage);
+    wld_flush(swc.shm->renderer);
 }
 
 /* }}} */
@@ -447,6 +500,7 @@ bool swc_compositor_add_surface(struct swc_compositor * compositor,
     wl_signal_add(&view->base.event_signal, &view->event_listener);
     view->compositor = compositor;
     view->surface = surface;
+    view->wld = NULL;
     view->extents.x1 = 0;
     view->extents.y1 = 0;
     view->extents.x2 = 0;
