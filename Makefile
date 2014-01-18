@@ -8,7 +8,7 @@ VERSION_MINOR   := 0
 VERSION         := $(VERSION_MAJOR).$(VERSION_MINOR)
 
 TARGETS         := swc.pc
-SUBDIRS         := launch libswc protocol
+SUBDIRS         := launch libswc protocol cursor
 CLEAN_FILES     := $(TARGETS)
 
 include config.mk
@@ -27,7 +27,7 @@ define check_deps
     @$(PKG_CONFIG) --exists --print-errors $2
 endef
 
-FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden
+FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden -std=gnu99
 FINAL_CPPFLAGS = $(CPPFLAGS)
 
 # Warning/error flags
