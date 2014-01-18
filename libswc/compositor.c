@@ -678,13 +678,7 @@ static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
 static void create_surface(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
 {
-    struct swc_compositor * compositor = wl_resource_get_user_data(resource);
     struct swc_surface * surface;
-    struct swc_output * output;
-
-    printf("compositor.create_surface\n");
-
-    output = CONTAINER_OF(compositor->outputs.next, typeof(*output), link);
 
     /* Initialize surface. */
     surface = swc_surface_new(client, wl_resource_get_version(resource), id);
