@@ -313,7 +313,7 @@ bool swc_drm_initialize(const char * seat_name)
 
     if (!(drm_device = find_primary_drm_device(seat_name)))
     {
-        printf("couldn't find drm device\n");
+        ERROR("Could not find DRM device\n");
         goto error0;
     }
 
@@ -323,7 +323,7 @@ bool swc_drm_initialize(const char * seat_name)
 
     if (*end != '\0')
     {
-        printf("couldn't get drm device sysnum\n");
+        ERROR("Could not get DRM device sysnum\n");
         udev_device_unref(drm_device);
         goto error0;
     }
@@ -335,13 +335,13 @@ bool swc_drm_initialize(const char * seat_name)
 
     if (swc.drm->fd == -1)
     {
-        fprintf(stderr, "Could not open %s\n", drm.path);
+        ERROR("Could not open DRM device at %s\n", drm.path);
         goto error1;
     }
 
     if (!(swc.drm->context = wld_drm_create_context(swc.drm->fd)))
     {
-        fprintf(stderr, "Could not create WLD DRM context\n");
+        ERROR("Could not create WLD DRM context\n");
         goto error2;
     }
 
@@ -410,11 +410,9 @@ bool swc_drm_create_screens(struct wl_list * screens)
 
     if (!(resources = drmModeGetResources(swc.drm->fd)))
     {
-        printf("couldn't get DRM resources\n");
+        ERROR("Could not get DRM resources\n");
         return false;
     }
-
-    printf("crtc count: %u\n", resources->count_crtcs);
 
     /* XXX: crtcs */
     for (index = 0; index < resources->count_crtcs; ++index)
