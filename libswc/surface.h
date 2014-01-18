@@ -24,7 +24,8 @@
 #ifndef SWC_SURFACE_H
 #define SWC_SURFACE_H
 
-#include <stdbool.h>
+#include "swc.h"
+
 #include <wayland-server.h>
 #include <pixman.h>
 
@@ -90,7 +91,7 @@ struct swc_surface
     void * view_state;
 
     uint32_t outputs;
-    pixman_rectangle32_t geometry;
+    struct swc_rectangle geometry;
 
     struct wl_signal event_signal;
     struct wl_list link;

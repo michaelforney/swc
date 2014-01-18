@@ -1,6 +1,8 @@
 #ifndef SWC_UTIL_H
 #define SWC_UTIL_H
 
+#include "swc.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -59,14 +61,14 @@ static inline uint32_t swc_time()
 extern pixman_box32_t infinite_extents;
 
 static inline bool swc_rectangle_contains_point
-    (const pixman_rectangle32_t * rectangle, int32_t x, int32_t y)
+    (const struct swc_rectangle * rectangle, int32_t x, int32_t y)
 {
     return x > rectangle->x && x < rectangle->x + rectangle->width
         && y > rectangle->y && y < rectangle->y + rectangle->height;
 }
 
 static inline bool swc_rectangle_overlap
-    (const pixman_rectangle32_t * r1, const pixman_rectangle32_t * r2)
+    (const struct swc_rectangle * r1, const struct swc_rectangle * r2)
 {
     return (MAX(r1->x + r1->width, r2->x + r2->width) - MIN(r1->x, r2->x)
             < r1->width + r2->width)

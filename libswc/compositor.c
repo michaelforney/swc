@@ -49,7 +49,7 @@ struct view
 struct render_target
 {
     struct wld_buffer * buffer;
-    pixman_rectangle32_t geometry;
+    struct swc_rectangle geometry;
 };
 
 static void repaint_surface(struct render_target * target,

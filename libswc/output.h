@@ -17,7 +17,7 @@ struct swc_output
     uint32_t id;
 
     /* The geometry of this output */
-    pixman_rectangle32_t geometry;
+    struct swc_rectangle geometry;
     uint32_t physical_width, physical_height;
 
     struct wl_array modes;
