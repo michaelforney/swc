@@ -352,28 +352,31 @@ bool swc_drm_initialize(const char * seat_name)
         goto error3;
     }
 
-    drm.global = wl_global_create(swc.display, &wl_drm_interface, 2,
-                                  NULL, &bind_drm);
-
-    if (!drm.global)
-    {
-        ERROR("Could not create wl_drm global\n");
-        goto error4;
-    }
-
     drm.event_source = wl_event_loop_add_fd
         (swc.event_loop, swc.drm->fd, WL_EVENT_READABLE, &handle_data, NULL);
 
     if (!drm.event_source)
     {
         ERROR("Could not create DRM event source\n");
-        goto error5;
+        goto error4;
+    }
+
+    if (!wld_drm_is_dumb(swc.drm->context))
+    {
+        drm.global = wl_global_create(swc.display, &wl_drm_interface, 2,
+                                      NULL, &bind_drm);
+
+        if (!drm.global)
+        {
+            ERROR("Could not create wl_drm global\n");
+            goto error5;
+        }
     }
 
     return true;
 
   error5:
-    wl_global_destroy(drm.global);
+    wl_event_source_remove(drm.event_source);
   error4:
     wld_destroy_renderer(swc.drm->renderer);
   error3:
@@ -388,8 +391,9 @@ bool swc_drm_initialize(const char * seat_name)
 
 void swc_drm_finalize()
 {
+    if (drm.global)
+        wl_global_destroy(drm.global);
     wl_event_source_remove(drm.event_source);
-    wl_global_destroy(drm.global);
     wld_destroy_renderer(swc.drm->renderer);
     wld_destroy_context(swc.drm->context);
     free(drm.path);
