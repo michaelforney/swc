@@ -130,6 +130,19 @@ static void handle_motion_events(struct swc_evdev_device * device,
     }
 }
 
+static void handle_event(struct swc_evdev_device * device,
+                         struct input_event * event)
+{
+    if (!is_motion_event(event))
+        handle_motion_events(device, timeval_to_msec(&event->time));
+
+    if (event->type < ARRAY_SIZE(event_handlers)
+        && event_handlers[event->type])
+    {
+        event_handlers[event->type](device, event);
+    }
+}
+
 static int handle_data(int fd, uint32_t mask, void * data)
 {
     struct swc_evdev_device * device = data;
@@ -141,23 +154,30 @@ static int handle_data(int fd, uint32_t mask, void * data)
         ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_NORMAL,
                                   &event);
 
-        if (ret == -EAGAIN)
-            break;
-
-        while (ret == LIBEVDEV_READ_STATUS_SYNC)
+        if (ret < 0)
+            goto done;
+        else if (ret == LIBEVDEV_READ_STATUS_SUCCESS)
+            handle_event(device, &event);
+        else
         {
-            ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_SYNC,
-                                      &event);
-        }
+            while (ret == LIBEVDEV_READ_STATUS_SYNC)
+            {
+                ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_SYNC,
+                                          &event);
 
-        if (!is_motion_event(&event))
-            handle_motion_events(device, timeval_to_msec(&event.time));
+                if (ret < 0)
+                    goto done;
 
-        if (event.type < ARRAY_SIZE(event_handlers)
-            && event_handlers[event.type])
-        {
-            event_handlers[event.type](device, &event);
+                handle_event(device, &event);
+            }
         }
+    }
+
+  done:
+    if (ret == -ENODEV)
+    {
+        wl_event_source_remove(device->source);
+        device->source = NULL;
     }
 
     handle_motion_events(device, timeval_to_msec(&event.time));
