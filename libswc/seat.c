@@ -27,6 +27,7 @@
 #include "event.h"
 #include "internal.h"
 #include "keyboard.h"
+#include "launch.h"
 #include "pointer.h"
 #include "util.h"
 
@@ -126,6 +127,25 @@ static void handle_data_device_event(struct wl_listener * listener, void * data)
 
 static struct wl_listener data_device_listener = {
     .notify = &handle_data_device_event
+};
+
+static void handle_launch_event(struct wl_listener * listener, void * data)
+{
+    struct swc_event * event = data;
+    struct swc_evdev_device * device;
+
+    switch (event->type)
+    {
+        case SWC_LAUNCH_EVENT_ACTIVATED:
+            /* Re-open all input devices */
+            wl_list_for_each(device, &seat.devices, link)
+                swc_evdev_device_reopen(device);
+            break;
+    }
+}
+
+static struct wl_listener launch_listener = {
+    .notify = &handle_launch_event
 };
 
 /* Wayland Seat Interface */
@@ -240,15 +260,16 @@ bool swc_seat_initialize(const char * seat_name)
         goto error0;
     }
 
-    seat.capabilities = 0;
-    wl_list_init(&seat.resources);
-    wl_list_init(&seat.devices);
-
     seat.global = wl_global_create(swc.display, &wl_seat_interface, 2,
                                        NULL, &bind_seat);
 
     if (!seat.global)
         goto error1;
+
+    seat.capabilities = 0;
+    wl_list_init(&seat.resources);
+    wl_list_init(&seat.devices);
+    wl_signal_add(&swc.launch->event_signal, &launch_listener);
 
     if (!swc_data_device_initialize(&seat.data_device))
     {
@@ -300,13 +321,5 @@ void swc_seat_finalize()
 
     wl_global_destroy(seat.global);
     free(seat.name);
-}
-
-void swc_seat_reopen_devices()
-{
-    struct swc_evdev_device * device;
-
-    wl_list_for_each(device, &seat.devices, link)
-        swc_evdev_device_reopen(device);
 }
 
