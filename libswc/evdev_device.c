@@ -200,17 +200,17 @@ struct swc_evdev_device * swc_evdev_device_new
     if (device->fd == -1)
     {
         ERROR("Failed to open input device at %s\n", path);
-        goto error0;
-    }
-
-    if (libevdev_new_from_fd(device->fd, &device->dev) != 0)
-    {
-        ERROR("Failed to create libevdev device\n");
         goto error1;
     }
 
     if (!(device->path = strdup(path)))
         goto error2;
+
+    if (libevdev_new_from_fd(device->fd, &device->dev) != 0)
+    {
+        ERROR("Failed to create libevdev device\n");
+        goto error3;
+    }
 
     device->source = wl_event_loop_add_fd
         (swc.event_loop, device->fd, WL_EVENT_READABLE, handle_data, device);
@@ -218,7 +218,7 @@ struct swc_evdev_device * swc_evdev_device_new
     if (!device->source)
     {
         ERROR("Failed to add event source\n");
-        goto error3;
+        goto error4;
     }
 
     DEBUG("Adding device %s\n", libevdev_get_name(device->dev));
@@ -245,12 +245,14 @@ struct swc_evdev_device * swc_evdev_device_new
 
     return device;
 
+  error4:
+    libevdev_free(device->dev);
   error3:
-    libevdev_free(device->dev);
+    free(device->path);
   error2:
-    libevdev_free(device->dev);
-  error1:
     close(device->fd);
+  error1:
+    free(device);
   error0:
     return NULL;
 }
