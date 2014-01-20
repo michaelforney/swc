@@ -29,6 +29,7 @@ $(dir)_PACKAGES =   \
     xkbcommon
 
 SWC_SOURCES =                       \
+    libswc/launch.c                 \
     libswc/compositor.c             \
     libswc/view.c                   \
     libswc/buffer.c                 \

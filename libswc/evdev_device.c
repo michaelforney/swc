@@ -1,6 +1,6 @@
 /* swc: libswc/evdev_device.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Based in part upon evdev.c from weston, which is:
  *
@@ -27,6 +27,7 @@
 
 #include "evdev_device.h"
 #include "event.h"
+#include "launch.h"
 #include "seat.h"
 #include "util.h"
 

@@ -1,6 +1,6 @@
-/* swc: swc/internal.h
+/* swc: libswc/launch.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,29 +21,28 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_INTERNAL_H
-#define SWC_INTERNAL_H
+#ifndef SWC_LAUNCH_H
+#define SWC_LAUNCH_H
 
-#include <wayland-util.h>
+#include <stdbool.h>
+#include <wayland-server.h>
 
-struct swc
+enum
 {
-    struct wl_display * display;
-    struct wl_event_loop * event_loop;
-    const struct swc_manager * manager;
-
-    struct udev * udev;
-
-    struct swc_launch * const launch;
-    const struct swc_seat_global * const seat;
-    const struct swc_bindings_global * const bindings;
-    struct wl_list screens;
-    struct swc_compositor * compositor;
-    struct swc_shm * const shm;
-    struct swc_drm * const drm;
+    SWC_LAUNCH_EVENT_ACTIVATED,
+    SWC_LAUNCH_EVENT_DEACTIVATED
 };
 
-extern struct swc swc;
+struct swc_launch
+{
+    struct wl_signal event_signal;
+};
+
+bool swc_launch_initialize();
+void swc_launch_finalize();
+
+int swc_launch_open_device(const char * path, int flags);
+bool swc_launch_activate_vt(unsigned vt);
 
 #endif
 

@@ -2,6 +2,7 @@
 #define SWC_LAUNCH_PROTOCOL_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #define SWC_LAUNCH_SOCKET_ENV "SWC_LAUNCH_SOCKET"
@@ -14,6 +15,9 @@ struct swc_launch_request
         SWC_LAUNCH_REQUEST_OPEN_DEVICE,
         SWC_LAUNCH_REQUEST_ACTIVATE_VT
     } type;
+
+    uint32_t serial;
+
     union
     {
         struct /* OPEN_DEVICE */
@@ -28,9 +32,23 @@ struct swc_launch_request
     };
 };
 
-struct swc_launch_response
+struct swc_launch_event
 {
-    bool success;
+    enum
+    {
+        SWC_LAUNCH_EVENT_RESPONSE,
+        SWC_LAUNCH_EVENT_ACTIVATE,
+        SWC_LAUNCH_EVENT_DEACTIVATE,
+    } type;
+
+    union
+    {
+        struct /* RESPONSE */
+        {
+            uint32_t serial;
+            bool success;
+        };
+    };
 };
 
 ssize_t send_fd(int socket, int fd, const void * buffer, ssize_t buffer_size);

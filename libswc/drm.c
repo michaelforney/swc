@@ -24,6 +24,7 @@
 #include "drm.h"
 #include "event.h"
 #include "internal.h"
+#include "launch.h"
 #include "output.h"
 #include "screen.h"
 #include "util.h"

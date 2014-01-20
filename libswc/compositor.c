@@ -4,6 +4,7 @@
 #include "data_device_manager.h"
 #include "drm.h"
 #include "internal.h"
+#include "launch.h"
 #include "output.h"
 #include "pointer.h"
 #include "region.h"

@@ -85,10 +85,6 @@ static inline void swc_array_remove(struct wl_array * array,
     array->size -= size;
 }
 
-/* Launch Utilities */
-int swc_launch_open_device(const char * path, int flags);
-bool swc_launch_activate_vt(unsigned vt);
-
 /* Double Buffers */
 struct swc_double_buffer
 {

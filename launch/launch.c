@@ -57,6 +57,7 @@ pid_t child_pid = -1;
 
 static struct
 {
+    int socket;
     int input_fds[128];
     unsigned num_input_fds;
     int drm_fds[16];
@@ -163,14 +164,20 @@ static void handle_chld(int signal)
 
 static void handle_usr1(int signal)
 {
+    struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_DEACTIVATE };
+
     stop_devices(true);
     ioctl(launcher.tty_fd, VT_RELDISP, 1);
+    send(launcher.socket, &event, sizeof event, 0);
 }
 
 static void handle_usr2(int signal)
 {
+    struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_ACTIVATE };
+
     start_devices();
     ioctl(launcher.tty_fd, VT_RELDISP, VT_ACKACQ);
+    send(launcher.socket, &event, sizeof event, 0);
 }
 
 static void forward_signal(int signal)
@@ -182,8 +189,8 @@ static void handle_socket_data(int socket)
 {
     char buffer[BUFSIZ];
     struct swc_launch_request * request = (void *) &buffer;
-    struct swc_launch_response response;
-    int fd;
+    struct swc_launch_event response;
+    int fd = -1;
     struct stat st;
     ssize_t size;
 
@@ -191,6 +198,9 @@ static void handle_socket_data(int socket)
 
     if (size == -1 || size == 0)
         return;
+
+    response.type = SWC_LAUNCH_EVENT_RESPONSE;
+    response.serial = request->serial;
 
     switch (request->type)
     {
@@ -429,6 +439,8 @@ int main(int argc, char * argv[])
 
     if (socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, sockets) == -1)
         die("Could not create socket pair");
+
+    launcher.socket = sockets[0];
 
     if (fcntl(sockets[0], F_SETFD, FD_CLOEXEC) == -1)
         die("Could not set CLOEXEC on socket");
