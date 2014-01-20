@@ -133,9 +133,9 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
 
             swc.compositor->pending_flips &= ~swc_screen_mask(base);
 
-            if (swc.compositor->pending_flips == 0)
+            wl_list_for_each(view, &swc.compositor->views, link)
             {
-                wl_list_for_each(view, &swc.compositor->views, link)
+                if (view->base.screens & swc_screen_mask(base))
                     swc_view_frame(&view->base, event_data->frame.time);
             }
 
