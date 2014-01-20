@@ -817,6 +817,9 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     struct swc_screen_internal * screen;
     uint32_t keysym;
 
+    wl_global_create(swc.display, &wl_compositor_interface, 3, compositor,
+                     &bind_compositor);
+
     compositor->display = display;
     compositor->scheduled_updates = 0;
     compositor->pending_flips = 0;
@@ -849,13 +852,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
 void swc_compositor_finish(struct swc_compositor * compositor)
 {
-}
-
-void swc_compositor_add_globals(struct swc_compositor * compositor,
-                                struct wl_display * display)
-{
-    wl_global_create(display, &wl_compositor_interface, 3, compositor,
-                     &bind_compositor);
 }
 
 void swc_compositor_schedule_update(struct swc_compositor * compositor,

@@ -122,8 +122,6 @@ bool swc_initialize(struct wl_display * display,
         goto error4;
     }
 
-    swc_compositor_add_globals(&compositor, display);
-
     if (!swc_data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
