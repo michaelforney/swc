@@ -1,6 +1,6 @@
 /* swc: libswc/swc.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -119,33 +119,33 @@ bool swc_initialize(struct wl_display * display,
         goto error3;
     }
 
+    if (!swc_bindings_initialize())
+    {
+        ERROR("Could not initialize bindings\n");
+        goto error4;
+    }
+
     if (!swc_screens_initialize())
     {
         ERROR("Could not initialize screens\n");
-        goto error4;
+        goto error5;
     }
 
     if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
     {
         ERROR("Could not initialize compositor\n");
-        goto error5;
+        goto error6;
     }
 
     if (!swc_data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
-        goto error6;
+        goto error7;
     }
 
     if (!swc_seat_initialize(default_seat))
     {
         ERROR("Could not initialize seat\n");
-        goto error7;
-    }
-
-    if (!swc_bindings_initialize())
-    {
-        ERROR("Could not initialize bindings\n");
         goto error8;
     }
 
@@ -170,15 +170,15 @@ bool swc_initialize(struct wl_display * display,
   error10:
     swc_shell_finalize();
   error9:
-    swc_bindings_finalize();
-  error8:
     swc_seat_finalize();
-  error7:
+  error8:
     swc_data_device_manager_finalize();
-  error6:
+  error7:
     swc_compositor_finish(&compositor);
-  error5:
+  error6:
     swc_screens_finalize();
+  error5:
+    swc_bindings_finalize();
   error4:
     swc_shm_finalize();
   error3:
@@ -198,11 +198,11 @@ void swc_finalize()
     swc_xserver_finalize();
 #endif
     swc_shell_finalize();
-    swc_bindings_finalize();
     swc_seat_finalize();
     swc_data_device_manager_finalize();
     swc_compositor_finish(&compositor);
     swc_screens_finalize();
+    swc_bindings_finalize();
     swc_shm_finalize();
     swc_drm_finalize();
     udev_unref(swc.udev);
