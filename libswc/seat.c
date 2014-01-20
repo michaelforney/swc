@@ -206,7 +206,6 @@ static void add_device(struct udev_device * udev_device)
     }
 
     wl_list_insert(&seat.devices, &device->link);
-    swc_evdev_device_add_event_sources(device, swc.event_loop);
 }
 
 static void add_devices()

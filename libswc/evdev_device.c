@@ -27,6 +27,7 @@
 
 #include "evdev_device.h"
 #include "event.h"
+#include "internal.h"
 #include "launch.h"
 #include "seat.h"
 #include "util.h"
@@ -211,6 +212,15 @@ struct swc_evdev_device * swc_evdev_device_new
     if (!(device->path = strdup(path)))
         goto error2;
 
+    device->source = wl_event_loop_add_fd
+        (swc.event_loop, device->fd, WL_EVENT_READABLE, handle_data, device);
+
+    if (!device->source)
+    {
+        ERROR("Failed to add event source\n");
+        goto error3;
+    }
+
     DEBUG("Adding device %s\n", libevdev_get_name(device->dev));
 
     device->handler = handler;
@@ -235,6 +245,8 @@ struct swc_evdev_device * swc_evdev_device_new
 
     return device;
 
+  error3:
+    libevdev_free(device->dev);
   error2:
     libevdev_free(device->dev);
   error1:
@@ -250,15 +262,6 @@ void swc_evdev_device_destroy(struct swc_evdev_device * device)
     close(device->fd);
     free(device->path);
     free(device);
-}
-
-void swc_evdev_device_add_event_sources(struct swc_evdev_device * device,
-                                        struct wl_event_loop * event_loop)
-{
-    DEBUG("Adding event source for %s\n", libevdev_get_name(device->dev));
-    device->source
-        = wl_event_loop_add_fd(event_loop, device->fd, WL_EVENT_READABLE,
-                               handle_data, device);
 }
 
 bool swc_evdev_device_reopen(struct swc_evdev_device * device)

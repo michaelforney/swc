@@ -82,9 +82,6 @@ struct swc_evdev_device * swc_evdev_device_new
 
 void swc_evdev_device_destroy(struct swc_evdev_device * device);
 
-void swc_evdev_device_add_event_sources(struct swc_evdev_device * device,
-                                        struct wl_event_loop * event_loop);
-
 bool swc_evdev_device_reopen(struct swc_evdev_device * device);
 
 #endif
