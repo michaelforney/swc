@@ -145,16 +145,27 @@ static void handle_event(struct swc_evdev_device * device,
     }
 }
 
+static void close_device(struct swc_evdev_device * device)
+{
+    wl_event_source_remove(device->source);
+    close(device->fd);
+    device->source = NULL;
+    device->fd = -1;
+}
+
 static int handle_data(int fd, uint32_t mask, void * data)
 {
     struct swc_evdev_device * device = data;
     struct input_event event;
+    unsigned flags = device->needs_sync ? LIBEVDEV_READ_FLAG_FORCE_SYNC
+                                        : LIBEVDEV_READ_FLAG_NORMAL;
     int ret;
+
+    device->needs_sync = false;
 
     while (true)
     {
-        ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_NORMAL,
-                                  &event);
+        ret = libevdev_next_event(device->dev, flags, &event);
 
         if (ret < 0)
             goto done;
@@ -177,10 +188,7 @@ static int handle_data(int fd, uint32_t mask, void * data)
 
   done:
     if (ret == -ENODEV)
-    {
-        wl_event_source_remove(device->source);
-        device->source = NULL;
-    }
+        close_device(device);
 
     handle_motion_events(device, timeval_to_msec(&event.time));
 
@@ -223,6 +231,7 @@ struct swc_evdev_device * swc_evdev_device_new
 
     DEBUG("Adding device %s\n", libevdev_get_name(device->dev));
 
+    device->needs_sync = false;
     device->handler = handler;
     device->capabilities = 0;
     memset(&device->motion, 0, sizeof device->motion);
@@ -268,7 +277,8 @@ void swc_evdev_device_destroy(struct swc_evdev_device * device)
 
 bool swc_evdev_device_reopen(struct swc_evdev_device * device)
 {
-    close(device->fd);
+    if (device->source)
+        close_device(device);
 
     device->fd = swc_launch_open_device(device->path,
                                         O_RDWR | O_NONBLOCK | O_CLOEXEC);
@@ -285,8 +295,23 @@ bool swc_evdev_device_reopen(struct swc_evdev_device * device)
         goto error1;
     }
 
+    /* According to libevdev documentation, after changing the fd for the
+     * device, you should force a sync to bring it's state up to date. */
+    device->needs_sync = true;
+    device->source = wl_event_loop_add_fd
+        (swc.event_loop, device->fd, WL_EVENT_READABLE, handle_data, device);
+
+    if (!device->source)
+    {
+        ERROR("Failed to create event source\n");
+        goto error1;
+    }
+
+    return true;
+
   error1:
     close(device->fd);
+    device->fd = -1;
   error0:
     return false;
 }

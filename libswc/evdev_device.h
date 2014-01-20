@@ -48,6 +48,7 @@ struct swc_evdev_device
     char * path;
     int fd;
     struct libevdev * dev;
+    bool needs_sync;
 
     const struct swc_evdev_device_handler * handler;
 
