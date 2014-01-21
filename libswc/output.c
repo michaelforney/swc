@@ -24,6 +24,13 @@ static void bind_output(struct wl_client * client, void * data,
         version = 2;
 
     resource = wl_resource_create(client, &wl_output_interface, version, id);
+
+    if (!resource)
+    {
+        wl_client_post_no_memory(client);
+        return;
+    }
+
     wl_resource_set_implementation(resource, NULL, output,
                                    &swc_remove_resource);
     wl_list_insert(&output->resources, wl_resource_get_link(resource));
