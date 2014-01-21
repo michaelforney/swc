@@ -175,8 +175,8 @@ static void handle_usr2(int signal)
 {
     struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_ACTIVATE };
 
-    start_devices();
     ioctl(launcher.tty_fd, VT_RELDISP, VT_ACKACQ);
+    start_devices();
     send(launcher.socket, &event, sizeof event, 0);
 }
 
