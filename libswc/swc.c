@@ -45,15 +45,15 @@
 extern struct swc_launch swc_launch;
 extern const struct swc_seat_global seat_global;
 extern const struct swc_bindings_global bindings_global;
+extern const struct swc_compositor swc_compositor;
 extern struct swc_drm drm_global;
 extern struct swc_shm shm_global;
-static struct swc_compositor compositor;
 
 struct swc swc = {
     .launch = &swc_launch,
     .seat = &seat_global,
     .bindings = &bindings_global,
-    .compositor = &compositor,
+    .compositor = &swc_compositor,
     .drm = &drm_global,
     .shm = &shm_global
 };
@@ -66,7 +66,7 @@ static void setup_compositor()
 
     wl_list_insert(&swc.seat->keyboard->handlers,
                    &swc.bindings->keyboard_handler->link);
-    swc.seat->pointer->handler = &compositor.pointer_handler;
+    swc.seat->pointer->handler = &swc.compositor->pointer_handler;
     wl_signal_add(&swc.seat->pointer->focus.event_signal,
                   swc_window_enter_listener);
 
@@ -131,7 +131,7 @@ bool swc_initialize(struct wl_display * display,
         goto error5;
     }
 
-    if (!swc_compositor_initialize(&compositor, display, swc.event_loop))
+    if (!swc_compositor_initialize())
     {
         ERROR("Could not initialize compositor\n");
         goto error6;
@@ -174,7 +174,7 @@ bool swc_initialize(struct wl_display * display,
   error8:
     swc_data_device_manager_finalize();
   error7:
-    swc_compositor_finish(&compositor);
+    swc_compositor_finalize();
   error6:
     swc_screens_finalize();
   error5:
@@ -200,7 +200,7 @@ void swc_finalize()
     swc_shell_finalize();
     swc_seat_finalize();
     swc_data_device_manager_finalize();
-    swc_compositor_finish(&compositor);
+    swc_compositor_finalize();
     swc_screens_finalize();
     swc_bindings_finalize();
     swc_shm_finalize();

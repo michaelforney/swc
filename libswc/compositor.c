@@ -35,7 +35,6 @@ struct view
 {
     struct swc_view base;
     struct wl_listener event_listener;
-    struct swc_compositor * compositor;
     struct swc_surface * surface;
     struct wld_buffer * wld;
 
@@ -56,7 +55,32 @@ struct view
     struct wl_list link;
 };
 
+static void handle_focus(struct swc_pointer * pointer);
+static bool handle_motion(struct swc_pointer * pointer, uint32_t time);
 static void perform_update(void * data);
+
+static struct
+{
+    struct wl_list views;
+    pixman_region32_t damage, opaque;
+
+    /* A mask of screens that have been repainted but are waiting on a page
+     * flip. */
+    uint32_t pending_flips;
+
+    /* A mask of screens that are scheduled to be repainted on the next
+     * idle. */
+    uint32_t scheduled_updates;
+
+    struct wl_global * global;
+} compositor;
+
+const struct swc_compositor swc_compositor = {
+    .pointer_handler = {
+        .focus = &handle_focus,
+        .motion = &handle_motion
+    }
+};
 
 static void buffer_destroy(void * data)
 {
@@ -131,9 +155,9 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
             if (!(screen = screen_get(&base->base)))
                 return;
 
-            swc.compositor->pending_flips &= ~swc_screen_mask(base);
+            compositor.pending_flips &= ~swc_screen_mask(base);
 
-            wl_list_for_each(view, &swc.compositor->views, link)
+            wl_list_for_each(view, &compositor.views, link)
             {
                 if (view->base.screens & swc_screen_mask(base))
                     swc_view_frame(&view->base, event_data->frame.time);
@@ -146,8 +170,8 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
 
             /* If we had scheduled updates that couldn't run because we were
              * waiting on a page flip, run them now. */
-            if (swc.compositor->scheduled_updates)
-                perform_update(swc.compositor);
+            if (compositor.scheduled_updates)
+                perform_update(NULL);
             break;
         }
     }
@@ -353,12 +377,11 @@ static void renderer_flush_view(struct view * view)
  */
 static void damage_below_view(struct view * view)
 {
-    struct swc_compositor * compositor = view->compositor;
     pixman_region32_t damage_below;
 
     pixman_region32_init_with_extents(&damage_below, &view->extents);
     pixman_region32_subtract(&damage_below, &damage_below, &view->clip);
-    pixman_region32_union(&compositor->damage, &compositor->damage,
+    pixman_region32_union(&compositor.damage, &compositor.damage,
                           &damage_below);
     pixman_region32_fini(&damage_below);
 }
@@ -385,22 +408,20 @@ static void update_extents(struct view * view)
     view->border.damaged = true;
 }
 
-static void schedule_updates(struct swc_compositor * compositor, uint32_t screens)
+static void schedule_updates(uint32_t screens)
 {
-    if (compositor->scheduled_updates == 0)
+    if (compositor.scheduled_updates == 0)
         wl_event_loop_add_idle(swc.event_loop, &perform_update, NULL);
 
-    compositor->scheduled_updates |= screens;
+    compositor.scheduled_updates |= screens;
 }
 
-static bool update(struct swc_view * base)
+static bool update(struct swc_view * view)
 {
-    struct view * view = (void *) base;
-
-    if (!view->base.visible)
+    if (!view->visible)
         return false;
 
-    schedule_updates(view->compositor, view->base.screens);
+    schedule_updates(view->screens);
 
     return true;
 }
@@ -488,8 +509,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
     }
 }
 
-bool swc_compositor_add_surface(struct swc_compositor * compositor,
-                                struct swc_surface * surface)
+bool swc_compositor_add_surface(struct swc_surface * surface)
 {
     struct view * view;
 
@@ -502,7 +522,6 @@ bool swc_compositor_add_surface(struct swc_compositor * compositor,
     view->base.visible = false;
     view->event_listener.notify = &handle_view_event;
     wl_signal_add(&view->base.event_signal, &view->event_listener);
-    view->compositor = compositor;
     view->surface = surface;
     view->wld = NULL;
     view->extents.x1 = 0;
@@ -537,7 +556,7 @@ void swc_compositor_surface_show(struct swc_surface * surface)
     damage_view(view);
     swc_view_set_visibility(&view->base, true);
     update(&view->base);
-    wl_list_insert(&view->compositor->views, &view->link);
+    wl_list_insert(&compositor.views, &view->link);
 }
 
 void swc_compositor_surface_hide(struct swc_surface * surface)
@@ -593,19 +612,19 @@ void swc_compositor_surface_set_border_color(struct swc_surface * surface,
 
 /* }}} */
 
-static void calculate_damage(struct swc_compositor * compositor)
+static void calculate_damage()
 {
     struct view * view;
     pixman_region32_t surface_opaque, * surface_damage;
 
-    pixman_region32_clear(&compositor->opaque);
+    pixman_region32_clear(&compositor.opaque);
     pixman_region32_init(&surface_opaque);
 
     /* Go through views top-down to calculate clipping regions. */
-    wl_list_for_each(view, &compositor->views, link)
+    wl_list_for_each(view, &compositor.views, link)
     {
         /* Clip the surface by the opaque region covering it. */
-        pixman_region32_copy(&view->clip, &compositor->opaque);
+        pixman_region32_copy(&view->clip, &compositor.opaque);
 
         /* Translate the opaque region to global coordinates. */
         pixman_region32_copy(&surface_opaque, &view->surface->state.opaque);
@@ -614,7 +633,7 @@ static void calculate_damage(struct swc_compositor * compositor)
 
         /* Add the surface's opaque region to the accumulated opaque
          * region. */
-        pixman_region32_union(&compositor->opaque, &compositor->opaque,
+        pixman_region32_union(&compositor.opaque, &compositor.opaque,
                               &surface_opaque);
 
         surface_damage = &view->surface->state.damage;
@@ -628,7 +647,7 @@ static void calculate_damage(struct swc_compositor * compositor)
                 (surface_damage, view->base.geometry.x, view->base.geometry.y);
 
             /* Add the surface damage to the compositor damage. */
-            pixman_region32_union(&compositor->damage, &compositor->damage,
+            pixman_region32_union(&compositor.damage, &compositor.damage,
                                   surface_damage);
             pixman_region32_clear(surface_damage);
         }
@@ -645,7 +664,7 @@ static void calculate_damage(struct swc_compositor * compositor)
             pixman_region32_subtract(&border_region, &border_region,
                                      &view_region);
 
-            pixman_region32_union(&compositor->damage, &compositor->damage,
+            pixman_region32_union(&compositor.damage, &compositor.damage,
                                   &border_region);
 
             pixman_region32_fini(&border_region);
@@ -658,21 +677,20 @@ static void calculate_damage(struct swc_compositor * compositor)
     pixman_region32_fini(&surface_opaque);
 }
 
-static void update_screen(struct swc_compositor * compositor,
-                          struct swc_screen_internal * base)
+static void update_screen(struct swc_screen_internal * base)
 {
     struct screen * screen;
     const struct swc_rectangle * geometry = &base->base.geometry;
     pixman_region32_t damage;
 
-    if (!(compositor->scheduled_updates & swc_screen_mask(base)))
+    if (!(compositor.scheduled_updates & swc_screen_mask(base)))
         return;
 
     if (!(screen = screen_get(&base->base)))
         return;
 
     pixman_region32_init(&damage);
-    pixman_region32_intersect_rect(&damage, &compositor->damage,
+    pixman_region32_intersect_rect(&damage, &compositor.damage,
                                    geometry->x, geometry->y,
                                    geometry->width, geometry->height);
     pixman_region32_translate(&damage, -geometry->x, -geometry->y);
@@ -680,7 +698,7 @@ static void update_screen(struct swc_compositor * compositor,
                           &screen->next_buffer->damage, &damage);
 
     /* Don't repaint the screen if it is waiting for a page flip. */
-    if (compositor->pending_flips & swc_screen_mask(base))
+    if (compositor.pending_flips & swc_screen_mask(base))
         return;
 
     struct render_target target;
@@ -690,48 +708,45 @@ static void update_screen(struct swc_compositor * compositor,
                                       &screen->next_buffer->damage);
     pixman_region32_translate(total_damage, geometry->x, geometry->y);
     pixman_region32_init(&base_damage);
-    pixman_region32_subtract(&base_damage, total_damage, &compositor->opaque);
+    pixman_region32_subtract(&base_damage, total_damage, &compositor.opaque);
 
     target.surface = screen->surface;
     target.mask = swc_screen_mask(base);
     target.geometry = geometry;
 
-    renderer_repaint(&target, total_damage, &base_damage, &compositor->views);
+    renderer_repaint(&target, total_damage, &base_damage, &compositor.views);
     pixman_region32_fini(&base_damage);
     screen_swap_buffers(screen);
 }
 
 static void perform_update(void * data)
 {
-    struct swc_compositor * compositor = data;
     struct swc_screen_internal * screen;
-    uint32_t updates = compositor->scheduled_updates
-                     & ~compositor->pending_flips;
+    uint32_t updates = compositor.scheduled_updates
+                     & ~compositor.pending_flips;
 
     if (!updates)
         return;
 
     DEBUG("Performing update\n");
 
-    calculate_damage(compositor);
+    calculate_damage();
 
     wl_list_for_each(screen, &swc.screens, link)
-        update_screen(compositor, screen);
+        update_screen(screen);
 
     /* XXX: Should assert that all damage was covered by some output */
-    pixman_region32_clear(&compositor->damage);
-    compositor->pending_flips |= updates;
-    compositor->scheduled_updates &= ~updates;
+    pixman_region32_clear(&compositor.damage);
+    compositor.pending_flips |= updates;
+    compositor.scheduled_updates &= ~updates;
 }
 
-static void handle_focus(struct swc_pointer * pointer)
+void handle_focus(struct swc_pointer * pointer)
 {
-    /* XXX: Temporary hack */
-    struct swc_compositor * compositor = swc.compositor;
     struct view * view;
     int32_t x, y;
 
-    wl_list_for_each(view, &compositor->views, link)
+    wl_list_for_each(view, &compositor.views, link)
     {
         x = wl_fixed_to_int(pointer->x);
         y = wl_fixed_to_int(pointer->y);
@@ -749,16 +764,15 @@ static void handle_focus(struct swc_pointer * pointer)
     swc_pointer_set_focus(pointer, NULL);
 }
 
-static bool handle_motion(struct swc_pointer * pointer, uint32_t time)
+bool handle_motion(struct swc_pointer * pointer, uint32_t time)
 {
     return false;
 }
 
 static void handle_terminate(uint32_t time, uint32_t value, void * data)
 {
-    struct wl_display * display = data;
     printf("handling terminate\n");
-    wl_display_terminate(display);
+    wl_display_terminate(swc.display);
 }
 
 static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
@@ -814,33 +828,28 @@ static void bind_compositor(struct wl_client * client, void * data,
                                    compositor, NULL);
 }
 
-bool swc_compositor_initialize(struct swc_compositor * compositor,
-                               struct wl_display * display,
-                               struct wl_event_loop * event_loop)
+bool swc_compositor_initialize()
 {
     struct swc_screen_internal * screen;
     uint32_t keysym;
 
-    wl_global_create(swc.display, &wl_compositor_interface, 3, compositor,
-                     &bind_compositor);
+    compositor.global = wl_global_create
+        (swc.display, &wl_compositor_interface, 3, NULL, &bind_compositor);
 
-    compositor->display = display;
-    compositor->scheduled_updates = 0;
-    compositor->pending_flips = 0;
-    compositor->pointer_handler = (struct swc_pointer_handler) {
-        .focus = &handle_focus,
-        .motion = &handle_motion
-    };
+    if (!compositor.global)
+        return false;
 
-    pixman_region32_init(&compositor->damage);
-    pixman_region32_init(&compositor->opaque);
-    wl_list_init(&compositor->views);
+    compositor.scheduled_updates = 0;
+    compositor.pending_flips = 0;
+    pixman_region32_init(&compositor.damage);
+    pixman_region32_init(&compositor.opaque);
+    wl_list_init(&compositor.views);
 
     wl_list_for_each(screen, &swc.screens, link)
         screen_new(screen);
 
     swc_add_key_binding(SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace,
-                        &handle_terminate, display);
+                        &handle_terminate, NULL);
 
     for (keysym = XKB_KEY_XF86Switch_VT_1;
          keysym <= XKB_KEY_XF86Switch_VT_12;
@@ -854,7 +863,10 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
     return true;
 }
 
-void swc_compositor_finish(struct swc_compositor * compositor)
+void swc_compositor_finalize()
 {
+    pixman_region32_fini(&compositor.damage);
+    pixman_region32_fini(&compositor.opaque);
+    wl_global_destroy(compositor.global);
 }
 

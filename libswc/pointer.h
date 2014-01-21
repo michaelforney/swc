@@ -40,7 +40,7 @@ struct swc_pointer
         } hotspot;
     } cursor;
 
-    struct swc_pointer_handler * handler;
+    const struct swc_pointer_handler * handler;
 
     wl_fixed_t x, y;
     pixman_region32_t region;
