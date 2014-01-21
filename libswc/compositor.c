@@ -385,19 +385,22 @@ static void update_extents(struct view * view)
     view->border.damaged = true;
 }
 
+static void schedule_updates(struct swc_compositor * compositor, uint32_t screens)
+{
+    if (compositor->scheduled_updates == 0)
+        wl_event_loop_add_idle(swc.event_loop, &perform_update, NULL);
+
+    compositor->scheduled_updates |= screens;
+}
+
 static bool update(struct swc_view * base)
 {
     struct view * view = (void *) base;
-    struct swc_screen_internal * screen;
 
     if (!view->base.visible)
         return false;
 
-    wl_list_for_each(screen, &swc.screens, link)
-    {
-        if (view->base.screens & swc_screen_mask(screen))
-            swc_compositor_schedule_update(view->compositor, screen);
-    }
+    schedule_updates(view->compositor, view->base.screens);
 
     return true;
 }
@@ -853,24 +856,5 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
 void swc_compositor_finish(struct swc_compositor * compositor)
 {
-}
-
-void swc_compositor_schedule_update(struct swc_compositor * compositor,
-                                    struct swc_screen_internal * screen)
-{
-    bool update_scheduled = compositor->scheduled_updates != 0;
-
-    if (compositor->scheduled_updates & swc_screen_mask(screen))
-        return;
-
-    compositor->scheduled_updates |= swc_screen_mask(screen);
-
-    if (!update_scheduled)
-    {
-        struct wl_event_loop * event_loop;
-
-        event_loop = wl_display_get_event_loop(compositor->display);
-        wl_event_loop_add_idle(event_loop, &perform_update, compositor);
-    }
 }
 

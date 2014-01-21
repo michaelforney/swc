@@ -36,9 +36,6 @@ bool swc_compositor_initialize(struct swc_compositor * compositor,
 
 void swc_compositor_finish(struct swc_compositor * compositor);
 
-void swc_compositor_schedule_update(struct swc_compositor * compositor,
-                                    struct swc_screen_internal * screen);
-
 bool swc_compositor_add_surface(struct swc_compositor * compositor,
                                 struct swc_surface * surface);
 bool swc_compositor_remove_surface(struct swc_compositor * compositor,
