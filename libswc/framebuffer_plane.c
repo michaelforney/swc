@@ -97,6 +97,13 @@ static bool update(struct swc_view * view)
     return true;
 }
 
+static void send_frame(void * data)
+{
+    struct swc_framebuffer_plane * plane = data;
+
+    swc_view_frame(&plane->view, swc_time());
+}
+
 static bool attach(struct swc_view * view, struct swc_buffer * buffer)
 {
     struct swc_framebuffer_plane * plane
@@ -112,7 +119,7 @@ static bool attach(struct swc_view * view, struct swc_buffer * buffer)
                            plane->connectors.data, plane->connectors.size / 4,
                            &plane->mode.info) == 0)
         {
-            swc_view_frame(&plane->view, swc_time());
+            wl_event_loop_add_idle(swc.event_loop, &send_frame, plane);
             plane->need_modeset = false;
         }
         else
