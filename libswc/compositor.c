@@ -72,6 +72,8 @@ static struct
      * idle. */
     uint32_t scheduled_updates;
 
+    bool active, updating;
+
     struct wl_global * global;
 } compositor;
 
@@ -170,7 +172,7 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
 
             /* If we had scheduled updates that couldn't run because we were
              * waiting on a page flip, run them now. */
-            if (compositor.scheduled_updates)
+            if (compositor.scheduled_updates && !compositor.updating)
                 perform_update(NULL);
             break;
         }
@@ -413,12 +415,21 @@ static void schedule_updates(uint32_t screens)
     if (compositor.scheduled_updates == 0)
         wl_event_loop_add_idle(swc.event_loop, &perform_update, NULL);
 
+    if (screens == -1)
+    {
+        struct swc_screen_internal * screen;
+
+        screens = 0;
+        wl_list_for_each(screen, &swc.screens, link)
+            screens |= swc_screen_mask(screen);
+    }
+
     compositor.scheduled_updates |= screens;
 }
 
 static bool update(struct swc_view * view)
 {
-    if (!view->visible)
+    if (!compositor.active || !view->visible)
         return false;
 
     schedule_updates(view->screens);
@@ -725,11 +736,12 @@ static void perform_update(void * data)
     uint32_t updates = compositor.scheduled_updates
                      & ~compositor.pending_flips;
 
-    if (!updates)
+    if (!compositor.active || !updates)
         return;
 
     DEBUG("Performing update\n");
 
+    compositor.updating = true;
     calculate_damage();
 
     wl_list_for_each(screen, &swc.screens, link)
@@ -739,6 +751,7 @@ static void perform_update(void * data)
     pixman_region32_clear(&compositor.damage);
     compositor.pending_flips |= updates;
     compositor.scheduled_updates &= ~updates;
+    compositor.updating = false;
 }
 
 void handle_focus(struct swc_pointer * pointer)
@@ -781,6 +794,30 @@ static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
     printf("handle switch vt%u\n", vt);
     swc_launch_activate_vt(vt);
 }
+
+static void handle_launch_event(struct wl_listener * listener, void * data)
+{
+    struct swc_event * event = data;
+    struct swc_screen_internal * screen;
+
+    switch (event->type)
+    {
+        case SWC_LAUNCH_EVENT_ACTIVATED:
+            compositor.active = true;
+            schedule_updates(-1);
+            wl_list_for_each(screen, &swc.screens, link)
+                screen->planes.framebuffer.need_modeset = true;
+            break;
+        case SWC_LAUNCH_EVENT_DEACTIVATED:
+            compositor.active = false;
+            compositor.scheduled_updates = 0;
+            break;
+    }
+}
+
+static struct wl_listener launch_listener = {
+    .notify = &handle_launch_event
+};
 
 static void create_surface(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
@@ -841,9 +878,12 @@ bool swc_compositor_initialize()
 
     compositor.scheduled_updates = 0;
     compositor.pending_flips = 0;
+    compositor.active = true;
+    compositor.updating = false;
     pixman_region32_init(&compositor.damage);
     pixman_region32_init(&compositor.opaque);
     wl_list_init(&compositor.views);
+    wl_signal_add(&swc.launch->event_signal, &launch_listener);
 
     wl_list_for_each(screen, &swc.screens, link)
         screen_new(screen);
