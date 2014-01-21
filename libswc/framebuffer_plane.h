@@ -39,6 +39,7 @@ struct swc_framebuffer_plane
     struct swc_view view;
     struct swc_drm_handler drm_handler;
     struct wl_array connectors;
+    bool need_modeset;
 };
 
 bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,

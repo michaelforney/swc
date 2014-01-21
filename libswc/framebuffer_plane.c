@@ -106,30 +106,28 @@ static bool attach(struct swc_view * view, struct swc_buffer * buffer)
     if (!framebuffer)
         return false;
 
-    if (drmModePageFlip(swc.drm->fd, plane->crtc, framebuffer->id,
-                        DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler) != 0)
+    if (plane->need_modeset)
     {
-        if (errno == EINVAL)
+        if (drmModeSetCrtc(swc.drm->fd, plane->crtc, framebuffer->id, 0, 0,
+                           plane->connectors.data, plane->connectors.size / 4,
+                           &plane->mode.info) == 0)
         {
-            WARNING("Page flip failed with EINVAL, trying to set CRTC\n");
-
-            if (drmModeSetCrtc(swc.drm->fd, plane->crtc, framebuffer->id, 0, 0,
-                               plane->connectors.data,
-                               plane->connectors.size / 4,
-                               &plane->mode.info) == 0)
-            {
-                swc_view_frame(&plane->view, swc_time());
-            }
-            else
-            {
-                ERROR("Could not set CRTC to next framebuffer: %s\n",
-                      strerror(errno));
-                return false;
-            }
+            swc_view_frame(&plane->view, swc_time());
+            plane->need_modeset = false;
         }
         else
         {
-            ERROR("Could not schedule page flip: %s\n", strerror(errno));
+            ERROR("Could not set CRTC to next framebuffer: %s\n",
+                  strerror(errno));
+            return false;
+        }
+    }
+    else
+    {
+        if (drmModePageFlip(swc.drm->fd, plane->crtc, framebuffer->id,
+                            DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler) != 0)
+        {
+            ERROR("Page flip failed: %s\n", strerror(errno));
             return false;
         }
     }
@@ -185,6 +183,7 @@ bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
 
     plane->crtc = crtc;
     plane->drm_handler.page_flip = &handle_page_flip;
+    plane->need_modeset = true;
     swc_view_initialize(&plane->view, &view_impl);
     swc_mode_initialize(&plane->mode, mode);
 
