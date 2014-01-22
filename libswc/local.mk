@@ -63,6 +63,11 @@ SWC_SOURCES +=                      \
     libswc/bindings.c               \
     libswc/screen.c
 
+ifeq ($(ENABLE_HOTPLUGGING),1)
+$(dir)_CFLAGS += -DENABLE_HOTPLUGGING
+$(dir)_PACKAGES += libudev
+endif
+
 ifeq ($(ENABLE_XWAYLAND),1)
 $(dir)_CFLAGS += -DENABLE_XWAYLAND
 $(dir)_PACKAGES +=                  \

@@ -35,12 +35,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <libudev.h>
+#ifdef ENABLE_HOTPLUGGING
+# include <libudev.h>
+#endif
 
 static struct
 {
     char * name;
     uint32_t capabilities;
+
+#ifdef ENABLE_HOTPLUGGING
+    struct udev * udev;
+    struct udev_monitor * monitor;
+    struct wl_event_source * monitor_source;
+#endif
 
     struct swc_keyboard keyboard;
     struct swc_pointer pointer;
@@ -249,6 +257,105 @@ static bool add_devices()
     return true;
 }
 
+#ifdef ENABLE_HOTPLUGGING
+static int handle_monitor_data(int fd, uint32_t mask, void * data)
+{
+    struct udev_device * udev_device;
+    const char * path, * action, * sysname;
+    unsigned num;
+
+    if (!(udev_device = udev_monitor_receive_device(seat.monitor)))
+        return 0;
+
+    if (!(action = udev_device_get_action(udev_device)))
+        goto done;
+
+    sysname = udev_device_get_sysname(udev_device);
+
+    if (sscanf(sysname, "event%u", &num) != 1)
+        goto done;
+
+    path = udev_device_get_devnode(udev_device);
+
+    if (strcmp(action, "add") == 0)
+        add_device(path);
+    else if (strcmp(action, "remove") == 0)
+    {
+        struct swc_evdev_device * device, * next;
+
+        wl_list_for_each_safe(device, next, &seat.devices, link)
+        {
+            if (strcmp(device->path, path) == 0)
+            {
+                wl_list_remove(&device->link);
+                swc_evdev_device_destroy(device);
+                break;
+            }
+        }
+    }
+
+  done:
+    udev_device_unref(udev_device);
+    return 0;
+}
+
+bool initialize_monitor()
+{
+    int fd;
+
+    if (!(seat.udev = udev_new()))
+    {
+        ERROR("Could not create udev context\n");
+        goto error0;
+    }
+
+    if (!(seat.monitor = udev_monitor_new_from_netlink(seat.udev, "udev")))
+    {
+        ERROR("Could not create udev monitor\n");
+        goto error1;
+    }
+
+    if (udev_monitor_filter_add_match_subsystem_devtype(seat.monitor,
+                                                        "input", NULL) != 0)
+    {
+        ERROR("Could not set up udev monitor filter\n");
+        goto error2;
+    }
+
+    if (udev_monitor_enable_receiving(seat.monitor) != 0)
+    {
+        ERROR("Could not enable receiving for udev monitor\n");
+        goto error2;
+    }
+
+    fd = udev_monitor_get_fd(seat.monitor);
+    seat.monitor_source = wl_event_loop_add_fd
+        (swc.event_loop, fd, WL_EVENT_READABLE, &handle_monitor_data, NULL);
+
+    if (!seat.monitor_source)
+    {
+        ERROR("Could not create event source for udev monitor\n");
+        goto error2;
+    }
+
+    return true;
+
+  error2:
+    udev_monitor_unref(seat.monitor);
+  error1:
+    udev_unref(seat.udev);
+  error0:
+    return false;
+}
+
+void finalize_monitor()
+{
+    wl_event_source_remove(seat.monitor_source);
+    udev_monitor_unref(seat.monitor);
+    udev_unref(seat.udev);
+}
+#endif
+
 bool swc_seat_initialize(const char * seat_name)
 {
     if (!(seat.name = strdup(seat_name)))
@@ -290,12 +397,21 @@ bool swc_seat_initialize(const char * seat_name)
         goto error4;
     }
 
-    if (!add_devices())
+#ifdef ENABLE_HOTPLUGGING
+    if (!initialize_monitor())
         goto error5;
+#endif
+
+    if (!add_devices())
+        goto error6;
 
     return true;
 
+  error6:
+#ifdef ENABLE_HOTPLUGGING
+    finalize_monitor();
   error5:
+#endif
     swc_pointer_finalize(&seat.pointer);
   error4:
     swc_keyboard_finalize(&seat.keyboard);
@@ -313,6 +429,9 @@ void swc_seat_finalize()
 {
     struct swc_evdev_device * device, * tmp;
 
+#ifdef ENABLE_HOTPLUGGING
+    finalize_monitor();
+#endif
     swc_pointer_finalize(&seat.pointer);
     swc_keyboard_finalize(&seat.keyboard);
 

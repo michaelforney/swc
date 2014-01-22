@@ -19,6 +19,9 @@ Dependencies
 * [wld](http://github.com/michaelforney/wld)
 * linux\[>=3.12\] (for EVIOCREVOKE)
 
+For input hotplugging support, the following is also required:
+* libudev
+
 For XWayland support, the following are also required:
 * libxcb
 * xcb-util-wm
