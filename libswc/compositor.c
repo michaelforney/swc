@@ -466,15 +466,6 @@ static bool update(struct swc_view * view)
     return true;
 }
 
-static void remove_(struct swc_view * base)
-{
-    struct view * view = (void *) base;
-
-    swc_compositor_surface_hide(view->surface);
-    pixman_region32_fini(&view->clip);
-    free(view);
-}
-
 static bool attach(struct swc_view * base, struct swc_buffer * buffer)
 {
     struct view * view = (void *) base;
@@ -514,7 +505,6 @@ const static struct swc_view_impl view_impl = {
     .attach = &attach,
     .move = &move,
     .resize = &resize,
-    .remove = &remove_,
 };
 
 static void handle_view_event(struct wl_listener * listener, void * data)
@@ -573,6 +563,22 @@ bool swc_compositor_add_surface(struct swc_surface * surface)
     view->border.damaged = false;
     pixman_region32_init(&view->clip);
     swc_surface_set_view(surface, &view->base);
+
+    return true;
+}
+
+bool swc_compositor_remove_surface(struct swc_surface * surface)
+{
+    struct view * view = (void *) surface->view;
+
+    if (view->base.impl != &view_impl)
+        return false;
+
+    swc_compositor_surface_hide(view->surface);
+    swc_surface_set_view(view->surface, NULL);
+    swc_view_finalize(&view->base);
+    pixman_region32_fini(&view->clip);
+    free(view);
 
     return true;
 }

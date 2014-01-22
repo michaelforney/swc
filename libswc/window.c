@@ -137,7 +137,7 @@ void swc_window_finalize(struct swc_window * window)
     DEBUG("Finalizing window, %p\n", window);
 
     swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
-    swc_surface_set_view(INTERNAL(window)->surface, NULL);
+    swc_compositor_remove_surface(INTERNAL(window)->surface);
     INTERNAL(window)->surface->window = NULL;
 }
 

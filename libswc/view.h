@@ -83,9 +83,6 @@ struct swc_view_impl
     bool (* move)(struct swc_view * view, int32_t x, int32_t y);
 
     void (* resize)(struct swc_view * view);
-
-    /* Called when a source is removed from the view. */
-    void (* remove)(struct swc_view * view);
 };
 
 void swc_view_initialize(struct swc_view * view,

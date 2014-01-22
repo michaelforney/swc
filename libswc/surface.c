@@ -280,9 +280,6 @@ static void surface_destroy(struct wl_resource * resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
-    if (surface->view && surface->view->impl->remove)
-        surface->view->impl->remove(surface->view);
-
     /* Finish the surface. */
     state_finish(&surface->state);
     state_finish(&surface->pending.state);
@@ -403,11 +400,7 @@ void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view)
         return;
 
     if (surface->view)
-    {
-        if (surface->view->impl->remove)
-            surface->view->impl->remove(surface->view);
         wl_list_remove(&surface->view_listener.link);
-    }
 
     surface->view = view;
 
