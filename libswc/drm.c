@@ -227,9 +227,6 @@ static bool find_available_crtc(drmModeRes * resources,
         possible_crtcs = encoder->possible_crtcs;
         drmModeFreeEncoder(encoder);
 
-        printf("possible_crtcs: %u\n", possible_crtcs);
-        printf("taken_crtcs: %u\n", taken_crtcs);
-
         for (crtc_index = 0; crtc_index < resources->count_crtcs; ++crtc_index)
         {
             if ((possible_crtcs & (1 << crtc_index))
@@ -258,7 +255,6 @@ static bool find_available_id(uint32_t * id)
 static void handle_vblank(int fd, unsigned int sequence, unsigned int sec,
                           unsigned int usec, void * data)
 {
-    printf("vblank\n");
 }
 
 static void handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
@@ -382,7 +378,6 @@ bool swc_drm_create_screens(struct wl_list * screens)
 {
     drmModeRes * resources;
     drmModeConnector * connector;
-    drmModeCrtc * crtc;
     uint32_t index;
     struct swc_output * output;
     uint32_t taken_crtcs = 0;
@@ -393,36 +388,12 @@ bool swc_drm_create_screens(struct wl_list * screens)
         return false;
     }
 
-    /* XXX: crtcs */
-    for (index = 0; index < resources->count_crtcs; ++index)
-    {
-        printf("crtc[%u]: %u\n", index, resources->crtcs[index]);
-        crtc = drmModeGetCrtc(swc.drm->fd, resources->crtcs[index]);
-        printf("crtc, id: %u, x: %u, y: %u, width: %u, height: %u\n",
-            crtc->crtc_id, crtc->x, crtc->y, crtc->width, crtc->height);
-        drmModeFreeCrtc(crtc);
-    }
-
-    for (index = 0; index < resources->count_encoders; ++index)
-    {
-        printf("encoder[%u]: %u\n", index, resources->encoders[index]);
-        drmModeEncoder * encoder = drmModeGetEncoder
-            (swc.drm->fd, resources->encoders[index]);
-        printf("encoder, id: %u, type: %u\n", encoder->encoder_id, encoder->encoder_type);
-        drmModeFreeEncoder(encoder);
-    }
-
     for (index = 0; index < resources->count_connectors;
          ++index, drmModeFreeConnector(connector))
     {
         connector = drmModeGetConnector(swc.drm->fd,
                                         resources->connectors[index]);
 
-        printf("connector, id: %u, type: %u, type_id: %u, connection: %u\n",
-            connector->connector_id, connector->connector_type,
-            connector->connector_type_id, connector->connection);
-
-        /* XXX: connector id? */
         if (connector->connection == DRM_MODE_CONNECTED)
         {
             uint32_t crtc_index;
