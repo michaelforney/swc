@@ -1,6 +1,6 @@
 /* swc: launch/launch.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Based in part upon weston-launch.c from weston which is:
  *
@@ -106,8 +106,8 @@ static void stop_devices(bool fatal)
     {
         if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1 && fatal)
         {
-            perror("FATAL: Your kernel does not support EVIOCREVOKE; "
-                   "input devices cannot be revoked");
+            die("FATAL: Your kernel does not support EVIOCREVOKE; "
+                "input devices cannot be revoked: %s", strerror(errno));
         }
         close(launcher.input_fds[index]);
     }
