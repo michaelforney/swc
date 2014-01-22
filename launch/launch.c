@@ -104,7 +104,8 @@ static void stop_devices(bool fatal)
 
     for (index = 0; index < launcher.num_input_fds; ++index)
     {
-        if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1 && fatal)
+        if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1
+            && errno != ENODEV && fatal)
         {
             die("FATAL: Your kernel does not support EVIOCREVOKE; "
                 "input devices cannot be revoked: %s", strerror(errno));
