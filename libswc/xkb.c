@@ -102,9 +102,6 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
     xkb->indices.shift
         = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_SHIFT);
 
-    printf("indices { ctrl: %x, alt: %x, super: %x, shift: %x }\n",
-        xkb->indices.ctrl, xkb->indices.alt, xkb->indices.super, xkb->indices.shift);
-
     /* Keymap string */
     {
         const char * keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
