@@ -141,14 +141,21 @@ static struct wl_listener data_device_listener = {
 static void handle_launch_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct swc_evdev_device * device;
+    struct swc_evdev_device * device, * next;
 
     switch (event->type)
     {
         case SWC_LAUNCH_EVENT_ACTIVATED:
             /* Re-open all input devices */
-            wl_list_for_each(device, &seat.devices, link)
-                swc_evdev_device_reopen(device);
+            wl_list_for_each_safe(device, next, &seat.devices, link)
+            {
+                if (!swc_evdev_device_reopen(device))
+                {
+                    wl_list_remove(&device->link);
+                    swc_evdev_device_destroy(device);
+                }
+            }
+
             break;
     }
 }

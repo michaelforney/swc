@@ -286,7 +286,8 @@ bool swc_evdev_device_reopen(struct swc_evdev_device * device)
 
     if (device->fd == -1)
     {
-        ERROR("Failed to open input device at %s\n", device->path);
+        WARNING("Failed to reopen input device at %s: %s\n",
+                device->path, strerror(errno));
         goto error0;
     }
 
