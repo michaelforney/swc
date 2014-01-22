@@ -28,40 +28,37 @@ $(dir)_PACKAGES =   \
     xkbcommon
 
 SWC_SOURCES =                       \
-    libswc/launch.c                 \
-    libswc/compositor.c             \
-    libswc/view.c                   \
+    launch/protocol.c               \
+    libswc/bindings.c               \
     libswc/buffer.c                 \
-    libswc/wayland_buffer.c         \
+    libswc/compositor.c             \
     libswc/cursor_plane.c           \
+    libswc/data.c                   \
+    libswc/data_device.c            \
+    libswc/data_device_manager.c    \
+    libswc/drm.c                    \
+    libswc/evdev_device.c           \
     libswc/framebuffer_plane.c      \
-    libswc/util.c                   \
-    libswc/output.c                 \
-    libswc/surface.c                \
-    libswc/region.c                 \
     libswc/input_focus.c            \
     libswc/keyboard.c               \
-    libswc/pointer.c                \
-    libswc/seat.c                   \
-    libswc/data_device_manager.c    \
-    libswc/data_device.c            \
-    libswc/data.c                   \
+    libswc/launch.c                 \
     libswc/mode.c                   \
-    libswc/evdev_device.c           \
-    libswc/xkb.c                    \
-    libswc/shm.c                    \
-    libswc/drm.c                    \
-    protocol/wayland-drm-protocol.c \
-    launch/protocol.c
-
-# Public interface
-SWC_SOURCES +=                      \
-    libswc/swc.c                    \
-    libswc/window.c                 \
+    libswc/output.c                 \
+    libswc/pointer.c                \
+    libswc/region.c                 \
+    libswc/screen.c                 \
+    libswc/seat.c                   \
     libswc/shell.c                  \
     libswc/shell_surface.c          \
-    libswc/bindings.c               \
-    libswc/screen.c
+    libswc/shm.c                    \
+    libswc/surface.c                \
+    libswc/swc.c                    \
+    libswc/util.c                   \
+    libswc/view.c                   \
+    libswc/wayland_buffer.c         \
+    libswc/window.c                 \
+    libswc/xkb.c                    \
+    protocol/wayland-drm-protocol.c
 
 ifeq ($(ENABLE_HOTPLUGGING),1)
 $(dir)_CFLAGS += -DENABLE_HOTPLUGGING
