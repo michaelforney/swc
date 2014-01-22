@@ -17,7 +17,7 @@ struct swc_drm
     struct wld_renderer * renderer;
 };
 
-bool swc_drm_initialize(const char * seat);
+bool swc_drm_initialize();
 void swc_drm_finalize();
 
 bool swc_drm_create_screens(struct wl_list * screens);

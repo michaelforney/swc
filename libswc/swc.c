@@ -107,7 +107,7 @@ bool swc_initialize(struct wl_display * display,
         goto error1;
     }
 
-    if (!swc_drm_initialize(default_seat))
+    if (!swc_drm_initialize())
     {
         ERROR("Could not initialize DRM\n");
         goto error2;

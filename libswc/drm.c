@@ -1,6 +1,6 @@
 /* swc: drm.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,12 +30,12 @@
 #include "util.h"
 #include "wayland_buffer.h"
 
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <libudev.h>
 #include <libdrm/drm.h>
 #include <xf86drm.h>
 #include <wld/wld.h>
@@ -47,7 +47,6 @@ struct swc_drm swc_drm;
 
 static struct
 {
-    uint32_t id;
     char * path;
 
     uint32_t taken_ids;
@@ -149,70 +148,66 @@ static const struct wl_drm_interface drm_implementation = {
         .create_prime_buffer = &create_prime_buffer
 };
 
-static struct udev_device * find_primary_drm_device(const char * seat)
+static int select_card(const struct dirent * entry)
 {
-    struct udev_enumerate * enumerate;
-    struct udev_list_entry * entry;
-    const char * path;
-    const char * device_seat;
-    const char * boot_vga;
-    struct udev_device * pci;
-    struct udev_device * device, * drm_device = NULL;
+    unsigned num;
 
-    enumerate = udev_enumerate_new(swc.udev);
-    udev_enumerate_add_match_subsystem(enumerate, "drm");
-    udev_enumerate_add_match_sysname(enumerate, "card[0-9]*");
+    return sscanf(entry->d_name, "card%u", &num) == 1;
+}
 
-    udev_enumerate_scan_devices(enumerate);
+static bool find_primary_drm_device(char ** device_path)
+{
+    struct dirent ** cards, * card = NULL;
+    int num_cards, ret;
+    unsigned index;
+    char path[64];
+    FILE * file;
+    unsigned char boot_vga;
 
-    udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(enumerate))
+    num_cards = scandir("/dev/dri", &cards, &select_card, &alphasort);
+
+    if (num_cards == -1)
+        return false;
+
+    for (index = 0; index < num_cards; ++index)
     {
-        path = udev_list_entry_get_name(entry);
-        device = udev_device_new_from_syspath(swc.udev, path);
+        snprintf(path, sizeof path,
+                 "/sys/class/drm/%s/device/boot_vga", cards[index]->d_name);
 
-        printf("device node path: %s\n", udev_device_get_devnode(device));
-
-        device_seat = udev_device_get_property_value(device, "ID_SEAT");
-
-        /* If the ID_SEAT property is not set, the device belongs to seat0. */
-        if (!device_seat)
-            device_seat = "seat0";
-        else
-            printf("device seat: %s\n", device_seat);
-
-        /* Make sure the DRM device belongs to the seat we are in. */
-        if (strcmp(device_seat, seat) != 0)
+        if ((file = fopen(path, "r")))
         {
-            udev_device_unref(device);
-            continue;
-        }
+            ret = fscanf(file, "%hhu", &boot_vga);
+            fclose(file);
 
-        pci = udev_device_get_parent_with_subsystem_devtype(device, "pci",
-                                                            NULL);
-
-        if (pci)
-        {
-            /* boot_vga = 1 indicates that this DRM device is the primary GPU. */
-            boot_vga = udev_device_get_sysattr_value(pci, "boot_vga");
-            if (boot_vga && strcmp(boot_vga, "1") == 0)
+            if (ret == 1 && boot_vga)
             {
-                if (drm_device)
-                    udev_device_unref(drm_device);
-                drm_device = device;
+                free(card);
+                card = cards[index];
+                DEBUG("/dev/dri/%s is the primary GPU\n", card->d_name);
                 break;
             }
         }
 
-        /* Make sure we have a backup device. */
-        if (!drm_device)
-            drm_device = device;
+        if (!card)
+            card = cards[index];
         else
-            udev_device_unref(device);
+            free(cards[index]);
     }
 
-    udev_enumerate_unref(enumerate);
+    free(cards);
 
-    return drm_device;
+    if (!card)
+        return false;
+
+    *device_path = malloc(sizeof "/dev/dri/" + strlen(card->d_name));
+
+    if (!*device_path)
+        return false;
+
+    sprintf(*device_path, "/dev/dri/%s", card->d_name);
+    free(card);
+
+    return true;
 }
 
 static bool find_available_crtc(drmModeRes * resources,
@@ -306,32 +301,15 @@ static void bind_drm(struct wl_client * client, void * data, uint32_t version,
     wl_drm_send_format(resource, WL_DRM_FORMAT_ARGB8888);
 }
 
-bool swc_drm_initialize(const char * seat_name)
+bool swc_drm_initialize()
 {
-    const char * sysnum;
-    char * end;
-    struct udev_device * drm_device;
-
-    if (!(drm_device = find_primary_drm_device(seat_name)))
+    if (!find_primary_drm_device(&drm.path))
     {
         ERROR("Could not find DRM device\n");
         goto error0;
     }
 
-    /* XXX: Why do we need the sysnum? */
-    sysnum = udev_device_get_sysnum(drm_device);
-    drm.id = strtoul(sysnum, &end, 10);
-
-    if (*end != '\0')
-    {
-        ERROR("Could not get DRM device sysnum\n");
-        udev_device_unref(drm_device);
-        goto error0;
-    }
-
     drm.taken_ids = 0;
-    drm.path = strdup(udev_device_get_devnode(drm_device));
-    udev_device_unref(drm_device);
     swc.drm->fd = swc_launch_open_device(drm.path, O_RDWR | O_CLOEXEC);
 
     if (swc.drm->fd == -1)
