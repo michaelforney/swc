@@ -402,13 +402,13 @@ bool swc_drm_create_screens(struct wl_list * screens)
             if (!find_available_crtc(resources, connector, taken_crtcs,
                                      &crtc_index))
             {
-                printf("couldn't find crtc for connector %u\n", index);
+                WARNING("Could not find CRTC for connector %u\n", index);
                 continue;
             }
 
             if (!find_available_id(&id))
             {
-                printf("no more available output IDs\n");
+                WARNING("No more available output IDs\n");
                 break;
             }
 
