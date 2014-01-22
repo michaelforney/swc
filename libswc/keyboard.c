@@ -128,16 +128,16 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
     return true;
 
   error1:
-    swc_xkb_finish(&keyboard->xkb);
+    swc_xkb_finalize(&keyboard->xkb);
   error0:
     return false;
 }
 
-void swc_keyboard_finish(struct swc_keyboard * keyboard)
+void swc_keyboard_finalize(struct swc_keyboard * keyboard)
 {
     wl_array_release(&keyboard->client_handler.keys);
-    swc_input_focus_finish(&keyboard->focus);
-    swc_xkb_finish(&keyboard->xkb);
+    swc_input_focus_finalize(&keyboard->focus);
+    swc_xkb_finalize(&keyboard->xkb);
 }
 
 /**

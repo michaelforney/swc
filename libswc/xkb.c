@@ -21,7 +21,7 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
     if (!xkb->context)
     {
         printf("could not create XKB context\n");
-        goto error_base;
+        goto error0;
     }
 
     xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, &rule_names, 0);
@@ -29,7 +29,7 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
     if (!xkb->keymap.map)
     {
         printf("could not create XKB keymap\n");
-        goto error_context;
+        goto error1;
     }
 
     xkb->state = xkb_state_new(xkb->keymap.map);
@@ -37,28 +37,28 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
     if (!xkb->state)
     {
         printf("could not create XKB state\n");
-        goto error_keymap;
+        goto error2;
     }
 
     if (!swc_xkb_update_keymap(xkb))
     {
         printf("could not update XKB keymap\n");
-        goto error_state;
+        goto error3;
     }
 
     return true;
 
-  error_state:
+  error3:
     xkb_state_unref(xkb->state);
-  error_keymap:
+  error2:
     xkb_keymap_unref(xkb->keymap.map);
-  error_context:
+  error1:
     xkb_context_unref(xkb->context);
-  error_base:
+  error0:
     return false;
 }
 
-void swc_xkb_finish(struct swc_xkb * xkb)
+void swc_xkb_finalize(struct swc_xkb * xkb)
 {
     munmap(xkb->keymap.area, xkb->keymap.size);
     close(xkb->keymap.fd);
@@ -97,7 +97,7 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
         if (!keymap_string)
         {
             printf("could not get XKB keymap as a string\n");
-            goto error_base;
+            goto error0;
         }
 
         sprintf(keymap_path, "%s/%s", keymap_directory, keymap_file_template);
@@ -108,7 +108,7 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
         if (xkb->keymap.fd == -1)
         {
             printf("could not create XKB keymap file\n");
-            goto error_string;
+            goto error1;
         }
 
         unlink(keymap_path);
@@ -116,7 +116,7 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
         if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0)
         {
             printf("could not resize XKB keymap file\n");
-            goto error_fd;
+            goto error2;
         }
 
         xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE,
@@ -125,7 +125,7 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
         if (xkb->keymap.area == MAP_FAILED)
         {
             printf("could not mmap XKB keymap string\n");
-            goto error_fd;
+            goto error2;
         }
 
         strcpy(xkb->keymap.area, keymap_string);
@@ -135,11 +135,11 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
 
     return true;
 
-  error_fd:
+  error2:
     close(xkb->keymap.fd);
-  error_string:
+  error1:
     free(keymap_string);
-  error_base:
+  error0:
     return false;
 }
 

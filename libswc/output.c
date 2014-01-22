@@ -48,8 +48,8 @@ static void bind_output(struct wl_client * client, void * data,
         if (swc_mode_equal(&screen->planes.framebuffer.mode, mode))
             flags |= WL_OUTPUT_MODE_CURRENT;
 
-        wl_output_send_mode(resource, flags, mode->width, mode->height,
-                            mode->refresh);
+        wl_output_send_mode(resource, flags,
+                            mode->width, mode->height, mode->refresh);
     }
 
     if (version >= 2)

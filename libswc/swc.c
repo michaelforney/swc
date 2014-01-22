@@ -43,19 +43,19 @@
 #include <libudev.h>
 
 extern struct swc_launch swc_launch;
-extern const struct swc_seat_global seat_global;
-extern const struct swc_bindings_global bindings_global;
+extern const struct swc_seat swc_seat;
+extern const struct swc_bindings swc_bindings;
 extern const struct swc_compositor swc_compositor;
-extern struct swc_drm drm_global;
-extern struct swc_shm shm_global;
+extern struct swc_drm swc_drm;
+extern struct swc_shm swc_shm;
 
 struct swc swc = {
     .launch = &swc_launch,
-    .seat = &seat_global,
-    .bindings = &bindings_global,
+    .seat = &swc_seat,
+    .bindings = &swc_bindings,
     .compositor = &swc_compositor,
-    .drm = &drm_global,
-    .shm = &shm_global
+    .drm = &swc_drm,
+    .shm = &swc_shm
 };
 
 static void setup_compositor()
@@ -66,7 +66,7 @@ static void setup_compositor()
 
     wl_list_insert(&swc.seat->keyboard->handlers,
                    &swc.bindings->keyboard_handler->link);
-    swc.seat->pointer->handler = &swc.compositor->pointer_handler;
+    swc.seat->pointer->handler = swc.compositor->pointer_handler;
     wl_signal_add(&swc.seat->pointer->focus.event_signal,
                   swc_window_enter_listener);
 

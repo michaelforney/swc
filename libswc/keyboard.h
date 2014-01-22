@@ -66,7 +66,7 @@ struct swc_keyboard
 };
 
 bool swc_keyboard_initialize(struct swc_keyboard * keyboard);
-void swc_keyboard_finish(struct swc_keyboard * keyboard);
+void swc_keyboard_finalize(struct swc_keyboard * keyboard);
 void swc_keyboard_set_focus(struct swc_keyboard * keyboard,
                             struct swc_surface * surface);
 struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,

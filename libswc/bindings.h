@@ -26,7 +26,7 @@
 
 #include <stdbool.h>
 
-struct swc_bindings_global
+struct swc_bindings
 {
     struct swc_keyboard_handler * keyboard_handler;
 };

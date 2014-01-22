@@ -27,8 +27,7 @@ struct swc_xkb
 };
 
 bool swc_xkb_initialize(struct swc_xkb * xkb);
-
-void swc_xkb_finish(struct swc_xkb * xkb);
+void swc_xkb_finalize(struct swc_xkb * xkb);
 
 bool swc_xkb_update_keymap(struct swc_xkb * xkb);
 

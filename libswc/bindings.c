@@ -36,10 +36,21 @@ struct binding
     void * data;
 };
 
+static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
+                       uint32_t key, uint32_t state);
+
+static struct swc_keyboard_handler binding_handler = {
+    .key = &handle_key,
+};
+
 static struct
 {
     struct wl_array keys;
 } bindings;
+
+const struct swc_bindings swc_bindings = {
+    .keyboard_handler = &binding_handler
+};
 
 static bool handle_keysym(xkb_keysym_t keysym,
                           uint32_t modifiers, uint32_t time)
@@ -60,8 +71,8 @@ static bool handle_keysym(xkb_keysym_t keysym,
     return false;
 }
 
-static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
-                       uint32_t key, uint32_t state)
+bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
+                uint32_t key, uint32_t state)
 {
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
@@ -85,14 +96,6 @@ static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
 
     return false;
 }
-
-static struct swc_keyboard_handler binding_handler = {
-    .key = &handle_key,
-};
-
-const struct swc_bindings_global bindings_global = {
-    .keyboard_handler = &binding_handler
-};
 
 bool swc_bindings_initialize()
 {

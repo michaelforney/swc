@@ -50,7 +50,7 @@ static struct
     struct wl_list devices;
 } seat;
 
-const struct swc_seat_global seat_global = {
+const struct swc_seat swc_seat = {
     .pointer = &seat.pointer,
     .keyboard = &seat.keyboard,
     .data_device = &seat.data_device
@@ -298,9 +298,9 @@ bool swc_seat_initialize(const char * seat_name)
     return true;
 
   error4:
-    swc_keyboard_finish(&seat.keyboard);
+    swc_keyboard_finalize(&seat.keyboard);
   error3:
-    swc_data_device_finish(&seat.data_device);
+    swc_data_device_finalize(&seat.data_device);
   error2:
     wl_global_destroy(seat.global);
   error1:
@@ -313,8 +313,8 @@ void swc_seat_finalize()
 {
     struct swc_evdev_device * device, * tmp;
 
-    swc_pointer_finish(&seat.pointer);
-    swc_keyboard_finish(&seat.keyboard);
+    swc_pointer_finalize(&seat.pointer);
+    swc_keyboard_finalize(&seat.keyboard);
 
     wl_list_for_each_safe(device, tmp, &seat.devices, link)
         swc_evdev_device_destroy(device);

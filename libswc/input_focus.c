@@ -80,7 +80,7 @@ bool swc_input_focus_initialize(struct swc_input_focus * input_focus,
     return true;
 }
 
-void swc_input_focus_finish(struct swc_input_focus * input_focus)
+void swc_input_focus_finalize(struct swc_input_focus * input_focus)
 {
     /* XXX: Destroy resources? */
 }

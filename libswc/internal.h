@@ -35,8 +35,8 @@ struct swc
     struct udev * udev;
 
     struct swc_launch * const launch;
-    const struct swc_seat_global * const seat;
-    const struct swc_bindings_global * const bindings;
+    const struct swc_seat * const seat;
+    const struct swc_bindings * const bindings;
     struct wl_list screens;
     const struct swc_compositor * const compositor;
     struct swc_shm * const shm;

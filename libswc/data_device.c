@@ -85,7 +85,7 @@ bool swc_data_device_initialize(struct swc_data_device * data_device)
     return true;
 }
 
-void swc_data_device_finish(struct swc_data_device * data_device)
+void swc_data_device_finalize(struct swc_data_device * data_device)
 {
     struct wl_resource * resource, * tmp;
 

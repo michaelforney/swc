@@ -24,11 +24,13 @@
 #ifndef SWC_COMPOSITOR_H
 #define SWC_COMPOSITOR_H
 
-#include "pointer.h"
+#include <stdbool.h>
+
+struct swc_surface;
 
 struct swc_compositor
 {
-    struct swc_pointer_handler pointer_handler;
+    const struct swc_pointer_handler * pointer_handler;
 };
 
 bool swc_compositor_initialize();

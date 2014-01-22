@@ -62,7 +62,7 @@ struct swc_input_focus
 bool swc_input_focus_initialize(struct swc_input_focus * input_focus,
                                 struct swc_input_focus_handler * input_handler);
 
-void swc_input_focus_finish(struct swc_input_focus * input_focus);
+void swc_input_focus_finalize(struct swc_input_focus * input_focus);
 
 void swc_input_focus_add_resource(struct swc_input_focus * input_focus,
                                   struct wl_resource * resource);

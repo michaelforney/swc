@@ -47,7 +47,7 @@ struct swc_pointer
 };
 
 bool swc_pointer_initialize(struct swc_pointer * pointer);
-void swc_pointer_finish(struct swc_pointer * pointer);
+void swc_pointer_finalize(struct swc_pointer * pointer);
 void swc_pointer_set_focus(struct swc_pointer * pointer,
                            struct swc_surface * surface);
 void swc_pointer_set_region(struct swc_pointer * pointer,

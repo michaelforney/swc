@@ -180,9 +180,9 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
     return true;
 }
 
-void swc_pointer_finish(struct swc_pointer * pointer)
+void swc_pointer_finalize(struct swc_pointer * pointer)
 {
-    swc_input_focus_finish(&pointer->focus);
+    swc_input_focus_finalize(&pointer->focus);
     pixman_region32_fini(&pointer->region);
 }
 

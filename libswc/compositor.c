@@ -88,6 +88,11 @@ static void handle_focus(struct swc_pointer * pointer);
 static bool handle_motion(struct swc_pointer * pointer, uint32_t time);
 static void perform_update(void * data);
 
+static const struct swc_pointer_handler pointer_handler = {
+    .focus = &handle_focus,
+    .motion = &handle_motion
+};
+
 static struct
 {
     struct wl_list views;
@@ -107,10 +112,7 @@ static struct
 } compositor;
 
 const struct swc_compositor swc_compositor = {
-    .pointer_handler = {
-        .focus = &handle_focus,
-        .motion = &handle_motion
-    }
+    .pointer_handler = &pointer_handler
 };
 
 static void buffer_destroy(void * data)

@@ -26,7 +26,7 @@
 
 #include <stdbool.h>
 
-struct swc_seat_global
+struct swc_seat
 {
     struct swc_pointer * pointer;
     struct swc_keyboard * keyboard;

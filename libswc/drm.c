@@ -43,7 +43,7 @@
 #include <wayland-server.h>
 #include "protocol/wayland-drm-server-protocol.h"
 
-struct swc_drm drm_global;
+struct swc_drm swc_drm;
 
 static struct
 {

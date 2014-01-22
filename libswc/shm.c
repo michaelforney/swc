@@ -28,7 +28,7 @@
 #include <wld/wld.h>
 #include <wld/pixman.h>
 
-struct swc_shm shm_global;
+struct swc_shm swc_shm;
 
 bool swc_shm_initialize()
 {
