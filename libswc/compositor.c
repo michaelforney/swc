@@ -129,20 +129,13 @@ struct swc_buffer * buffer_get(struct wld_buffer * wld)
     struct swc_buffer * buffer;
 
     if (!(buffer = malloc(sizeof *buffer)))
-        goto error0;
+        return NULL;
 
-    if (!swc_buffer_initialize(buffer, wld))
-        goto error1;
-
+    swc_buffer_initialize(buffer, wld);
     wld->data = buffer;
     wld->destroy_data = &buffer_destroy;
 
     return buffer;
-
-error1:
-    free(buffer);
-error0:
-    return NULL;
 }
 
 static void handle_screen_event(struct wl_listener * listener, void * data)

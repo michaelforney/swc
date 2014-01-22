@@ -112,9 +112,7 @@ struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
             if (!(buffer = malloc(sizeof *buffer)))
                 goto error0;
 
-            if (!swc_buffer_initialize(&buffer->base, wld))
-                goto error1;
-
+            swc_buffer_initialize(&buffer->base, wld);
             buffer->resource = resource;
             buffer->destroy_listener.notify = &handle_buffer_destroy;
             wl_resource_add_destroy_listener(resource,
@@ -124,8 +122,6 @@ struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
 
     return &buffer->base;
 
-  error1:
-    free(buffer);
   error0:
     return NULL;
 }
@@ -147,25 +143,21 @@ struct swc_buffer * swc_wayland_buffer_new
     if (!buffer)
         goto error0;
 
-    if (!swc_buffer_initialize(&buffer->base, wld))
-        goto error1;
-
     buffer->resource = wl_resource_create(client, &wl_buffer_interface, 1, id);
 
     if (!buffer->resource)
-        goto error2;
+        goto error1;
 
     wl_resource_set_implementation(buffer->resource, &buffer_implementation,
                                    buffer, &destroy_buffer);
+    swc_buffer_initialize(&buffer->base, wld);
 
     return &buffer->base;
 
-  error2:
-    wl_client_post_no_memory(client);
-    swc_buffer_finalize(&buffer->base);
   error1:
     free(buffer);
   error0:
+    wl_client_post_no_memory(client);
     return NULL;
 }
 

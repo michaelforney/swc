@@ -25,12 +25,10 @@
 
 #include <wld/wld.h>
 
-bool swc_buffer_initialize(struct swc_buffer * buffer, struct wld_buffer * wld)
+void swc_buffer_initialize(struct swc_buffer * buffer, struct wld_buffer * wld)
 {
     buffer->wld = wld;
     wl_signal_init(&buffer->destroy_signal);
-
-    return true;
 }
 
 void swc_buffer_finalize(struct swc_buffer * buffer)

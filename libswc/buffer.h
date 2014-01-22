@@ -33,9 +33,7 @@ struct swc_buffer
     struct wl_signal destroy_signal;
 };
 
-bool swc_buffer_initialize(struct swc_buffer * buffer,
-                           struct wld_buffer * wld);
-
+void swc_buffer_initialize(struct swc_buffer * buffer, struct wld_buffer * wld);
 void swc_buffer_finalize(struct swc_buffer * buffer);
 
 #endif
