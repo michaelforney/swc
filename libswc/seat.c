@@ -1,6 +1,6 @@
 /* swc: libswc/seat.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 #include "pointer.h"
 #include "util.h"
 
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -192,25 +193,11 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
     wl_seat_send_capabilities(resource, seat.capabilities);
 }
 
-static void add_device(struct udev_device * udev_device)
+static void add_device(const char * path)
 {
-    const char * device_seat;
-    const char * device_path;
     struct swc_evdev_device * device;
 
-    device_seat = udev_device_get_property_value(udev_device, "ID_SEAT");
-
-    /* If the ID_SEAT property is not set, the device belongs to seat0. */
-    if (!device_seat)
-        device_seat = "seat0";
-
-    if (strcmp(device_seat, seat.name) != 0)
-        return;
-
-    device_path = udev_device_get_devnode(udev_device);
-    device = swc_evdev_device_new(device_path, &evdev_handler);
-
-    if (!device)
+    if (!(device = swc_evdev_device_new(path, &evdev_handler)))
     {
         ERROR("Could not create evdev device\n");
         return;
@@ -228,28 +215,38 @@ static void add_device(struct udev_device * udev_device)
     wl_list_insert(&seat.devices, &device->link);
 }
 
-static void add_devices()
+static int select_device(const struct dirent * entry)
 {
-    struct udev_enumerate * enumerate;
-    struct udev_list_entry * entry;
-    const char * path;
-    struct udev_device * device;
+    unsigned num;
 
-    enumerate = udev_enumerate_new(swc.udev);
-    udev_enumerate_add_match_subsystem(enumerate, "input");
-    udev_enumerate_add_match_sysname(enumerate, "event[0-9]*");
+    return sscanf(entry->d_name, "event%u", &num) == 1;
+}
 
-    udev_enumerate_scan_devices(enumerate);
+static bool add_devices()
+{
+    struct dirent ** devices;
+    int num_devices;
+    char path[64];
+    unsigned index;
 
-    udev_list_entry_foreach(entry, udev_enumerate_get_list_entry(enumerate))
+    num_devices = scandir("/dev/input", &devices, &select_device, &alphasort);
+
+    if (num_devices == -1)
     {
-        path = udev_list_entry_get_name(entry);
-        device = udev_device_new_from_syspath(swc.udev, path);
-        add_device(device);
-        udev_device_unref(device);
+        ERROR("Failed to scan /dev/input for event devices\n");
+        return false;
     }
 
-    udev_enumerate_unref(enumerate);
+    for (index = 0; index < num_devices; ++index)
+    {
+        snprintf(path, sizeof path, "/dev/input/%s", devices[index]->d_name);
+        free(devices[index]);
+        add_device(path);
+    }
+
+    free(devices);
+
+    return true;
 }
 
 bool swc_seat_initialize(const char * seat_name)
@@ -293,10 +290,13 @@ bool swc_seat_initialize(const char * seat_name)
         goto error4;
     }
 
-    add_devices();
+    if (!add_devices())
+        goto error5;
 
     return true;
 
+  error5:
+    swc_pointer_finalize(&seat.pointer);
   error4:
     swc_keyboard_finalize(&seat.keyboard);
   error3:

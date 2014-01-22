@@ -22,7 +22,6 @@ endif
 $(dir)_PACKAGES =   \
     libdrm          \
     libevdev        \
-    libudev         \
     pixman-1        \
     wayland-server  \
     wld             \
