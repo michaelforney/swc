@@ -7,9 +7,7 @@
 #include <sys/mman.h>
 
 const struct xkb_rule_names rule_names = {
-    .layout = "us,us",
-    .variant = "dvorak,",
-    .options = "grp:alt_shift_toggle"
+    .layout = "us"
 };
 
 static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
