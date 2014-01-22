@@ -71,57 +71,58 @@ static inline uint32_t format_shm_to_wld(uint32_t format)
 
 struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
 {
-    struct wayland_buffer * buffer;
-
     if (wl_resource_instance_of(resource, &wl_buffer_interface,
                                 &buffer_implementation))
     {
-        buffer = wl_resource_get_user_data(resource);
+        return wl_resource_get_user_data(resource);
     }
-    else
+
+    struct wl_listener * listener;
+    struct wayland_buffer * buffer;
+
+    listener = wl_resource_get_destroy_listener(resource,
+                                                &handle_buffer_destroy);
+
+    if (listener)
     {
-        struct wl_listener * listener;
+        buffer = CONTAINER_OF(listener, typeof(*buffer), destroy_listener);
 
-        listener = wl_resource_get_destroy_listener(resource,
-                                                    &handle_buffer_destroy);
-
-        if (listener)
-            buffer = CONTAINER_OF(listener, typeof(*buffer), destroy_listener);
-        else
-        {
-            struct wl_shm_buffer * shm_buffer;
-            struct wld_buffer * wld = NULL;
-
-            if ((shm_buffer = wl_shm_buffer_get(resource)))
-            {
-                union wld_object object = {
-                    .ptr = wl_shm_buffer_get_data(shm_buffer)
-                };
-
-                wld = wld_import_buffer
-                    (swc.shm->context, WLD_OBJECT_DATA, object,
-                     wl_shm_buffer_get_width(shm_buffer),
-                     wl_shm_buffer_get_height(shm_buffer),
-                     format_shm_to_wld(wl_shm_buffer_get_format(shm_buffer)),
-                     wl_shm_buffer_get_stride(shm_buffer));
-            }
-
-            if (!wld)
-                goto error0;
-
-            if (!(buffer = malloc(sizeof *buffer)))
-                goto error0;
-
-            swc_buffer_initialize(&buffer->base, wld);
-            buffer->resource = resource;
-            buffer->destroy_listener.notify = &handle_buffer_destroy;
-            wl_resource_add_destroy_listener(resource,
-                                             &buffer->destroy_listener);
-        }
+        return &buffer->base;
     }
+
+    struct wl_shm_buffer * shm_buffer;
+    struct wld_buffer * wld = NULL;
+
+    if ((shm_buffer = wl_shm_buffer_get(resource)))
+    {
+        union wld_object object = {
+            .ptr = wl_shm_buffer_get_data(shm_buffer)
+        };
+
+        wld = wld_import_buffer
+            (swc.shm->context, WLD_OBJECT_DATA, object,
+             wl_shm_buffer_get_width(shm_buffer),
+             wl_shm_buffer_get_height(shm_buffer),
+             format_shm_to_wld(wl_shm_buffer_get_format(shm_buffer)),
+             wl_shm_buffer_get_stride(shm_buffer));
+    }
+
+    if (!wld)
+        goto error0;
+
+    if (!(buffer = malloc(sizeof *buffer)))
+        goto error1;
+
+    swc_buffer_initialize(&buffer->base, wld);
+    buffer->resource = resource;
+    buffer->destroy_listener.notify = &handle_buffer_destroy;
+    wl_resource_add_destroy_listener(resource,
+                                     &buffer->destroy_listener);
 
     return &buffer->base;
 
+  error1:
+    wld_destroy_buffer(wld);
   error0:
     return NULL;
 }
