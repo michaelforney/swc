@@ -268,9 +268,10 @@ struct swc_evdev_device * swc_evdev_device_new
 
 void swc_evdev_device_destroy(struct swc_evdev_device * device)
 {
-    wl_event_source_remove(device->source);
+    if (device->source)
+        close_device(device);
+
     libevdev_free(device->dev);
-    close(device->fd);
     free(device->path);
     free(device);
 }
