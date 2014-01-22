@@ -54,6 +54,7 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
         = CONTAINER_OF(listener, typeof(*buffer), destroy_listener);
 
     swc_buffer_finalize(&buffer->base);
+    free(buffer);
 }
 
 static inline uint32_t format_shm_to_wld(uint32_t format)
@@ -132,6 +133,7 @@ static void destroy_buffer(struct wl_resource * resource)
     struct wayland_buffer * buffer = wl_resource_get_user_data(resource);
 
     swc_buffer_finalize(&buffer->base);
+    free(buffer);
 }
 
 struct swc_buffer * swc_wayland_buffer_new

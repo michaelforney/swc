@@ -51,7 +51,7 @@ void swc_screens_finalize()
     struct swc_screen_internal * screen, * tmp;
 
     wl_list_for_each_safe(screen, tmp, &swc.screens, link)
-        free(screen);
+        swc_screen_destroy(screen);
 }
 
 struct swc_screen_internal * swc_screen_new(uint32_t crtc,

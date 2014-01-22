@@ -68,6 +68,8 @@ static void update_name(struct xwl_window * xwl_window)
 
     swc_window_set_title(&xwl_window->window.base,
                          wm_name_reply.strings, wm_name_reply.strings_len);
+
+    xcb_ewmh_get_utf8_strings_reply_wipe(&wm_name_reply);
 }
 
 static struct xwl_window_entry * find_window(xcb_window_t id)
@@ -154,6 +156,7 @@ static int connection_data(int fd, uint32_t mask, void * data)
                 property_notify((xcb_property_notify_event_t *) event);
         }
 
+        free(event);
         ++count;
     }
 
@@ -343,6 +346,7 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
                                                  geometry_cookie, NULL)))
     {
         swc_view_move(surface->view, geometry_reply->x, geometry_reply->y);
+        free(geometry_reply);
     }
 
     if (entry->override_redirect)

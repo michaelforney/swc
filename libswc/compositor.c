@@ -735,6 +735,7 @@ static void update_screen(struct swc_screen_internal * base)
     pixman_region32_translate(&damage, -geometry->x, -geometry->y);
     pixman_region32_union(&screen->next_buffer->damage,
                           &screen->next_buffer->damage, &damage);
+    pixman_region32_fini(&damage);
 
     /* Don't repaint the screen if it is waiting for a page flip. */
     if (compositor.pending_flips & swc_screen_mask(base))

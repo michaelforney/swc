@@ -139,6 +139,8 @@ void swc_window_finalize(struct swc_window * window)
     swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
     swc_compositor_remove_surface(INTERNAL(window)->surface);
     INTERNAL(window)->surface->window = NULL;
+    free(window->title);
+    free(window->class);
 }
 
 void swc_window_set_title(struct swc_window * window,

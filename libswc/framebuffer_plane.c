@@ -206,6 +206,7 @@ bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
 
 void swc_framebuffer_plane_finalize(struct swc_framebuffer_plane * plane)
 {
+    wl_array_release(&plane->connectors);
     drmModeCrtcPtr crtc = plane->original_crtc_state;
     drmModeSetCrtc(swc.drm->fd, crtc->crtc_id, crtc->buffer_id,
                    crtc->x, crtc->y, NULL, 0, &crtc->mode);
