@@ -110,8 +110,10 @@ static void stop_devices(bool fatal)
             die("FATAL: Your kernel does not support EVIOCREVOKE; "
                 "input devices cannot be revoked: %s", strerror(errno));
         }
+
         close(launcher.input_fds[index]);
     }
+
     launcher.num_input_fds = 0;
 }
 
