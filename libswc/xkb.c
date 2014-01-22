@@ -22,6 +22,7 @@
  */
 
 #include "xkb.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <fcntl.h>
@@ -41,7 +42,7 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
 
     if (!xkb->context)
     {
-        printf("could not create XKB context\n");
+        ERROR("Could not create XKB context\n");
         goto error0;
     }
 
@@ -49,7 +50,7 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
 
     if (!xkb->keymap.map)
     {
-        printf("could not create XKB keymap\n");
+        ERROR("Could not create XKB keymap\n");
         goto error1;
     }
 
@@ -57,13 +58,13 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
 
     if (!xkb->state)
     {
-        printf("could not create XKB state\n");
+        ERROR("Could not create XKB state\n");
         goto error2;
     }
 
     if (!swc_xkb_update_keymap(xkb))
     {
-        printf("could not update XKB keymap\n");
+        ERROR("Could not update XKB keymap\n");
         goto error3;
     }
 
