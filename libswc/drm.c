@@ -409,6 +409,7 @@ bool swc_drm_create_screens(struct wl_list * screens)
             if (!find_available_id(&id))
             {
                 WARNING("No more available output IDs\n");
+                drmModeFreeConnector(connector);
                 break;
             }
 
