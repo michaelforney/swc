@@ -60,7 +60,7 @@ display = wl_display_create();
 Then call `swc_initialize`.
 
 ```C
-swc_initialize(display, NULL, manager);
+swc_initialize(display, NULL, &manager);
 ```
 
 Finally, run the main event loop.
