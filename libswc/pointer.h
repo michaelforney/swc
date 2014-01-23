@@ -34,6 +34,9 @@ struct swc_pointer
         struct wl_listener destroy_listener;
         struct swc_buffer buffer;
 
+        /* Used for cursors set with swc_pointer_set_cursor */
+        struct swc_buffer internal_buffer;
+
         struct
         {
             int32_t x, y;
@@ -52,6 +55,8 @@ void swc_pointer_set_focus(struct swc_pointer * pointer,
                            struct swc_surface * surface);
 void swc_pointer_set_region(struct swc_pointer * pointer,
                             pixman_region32_t * region);
+void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id);
+
 struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
                                       struct wl_client * client, uint32_t id);
 void swc_pointer_handle_button(struct swc_pointer * pointer, uint32_t time,

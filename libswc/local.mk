@@ -85,6 +85,7 @@ SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,xserver): protocol/xserver-server-protocol.h
+$(call objects,pointer): cursor/cursor_data.h
 
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
 	$(call quiet,AR) cru $@ $^

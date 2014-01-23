@@ -4,6 +4,7 @@
 #include "screen.h"
 #include "shm.h"
 #include "util.h"
+#include "cursor/cursor_data.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -158,6 +159,30 @@ static inline void update_cursor(struct swc_pointer * pointer)
                   wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot.y);
 }
 
+void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id)
+{
+    struct cursor * cursor = &cursor_metadata[id];
+    union wld_object object = { .ptr = &cursor_data[cursor->offset] };
+
+    if (pointer->cursor.internal_buffer.wld)
+        wld_destroy_buffer(pointer->cursor.internal_buffer.wld);
+
+    pointer->cursor.internal_buffer.wld = wld_import_buffer
+        (swc.shm->context, WLD_OBJECT_DATA, object,
+         cursor->width, cursor->height, WLD_FORMAT_ARGB8888, cursor->width * 4);
+
+    if (!pointer->cursor.internal_buffer.wld)
+    {
+        ERROR("Failed to create cursor buffer\n");
+        return;
+    }
+
+    pointer->cursor.hotspot.x = cursor->hotspot_x;
+    pointer->cursor.hotspot.y = cursor->hotspot_y;
+    swc_view_attach(&pointer->cursor.view, &pointer->cursor.internal_buffer);
+    update_cursor(pointer);
+}
+
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
     struct wld_buffer * buffer;
@@ -185,6 +210,8 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
         return false;
 
     swc_buffer_initialize(&pointer->cursor.buffer, buffer);
+    swc_buffer_initialize(&pointer->cursor.internal_buffer, NULL);
+    swc_pointer_set_cursor(pointer, cursor_left_ptr);
 
     swc_input_focus_initialize(&pointer->focus, &pointer->focus_handler);
     pixman_region32_init(&pointer->region);
