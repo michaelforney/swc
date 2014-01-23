@@ -202,8 +202,8 @@ void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id)
 
     pointer->cursor.hotspot.x = cursor->hotspot_x;
     pointer->cursor.hotspot.y = cursor->hotspot_y;
-    swc_view_attach(&pointer->cursor.view, &pointer->cursor.internal_buffer);
     update_cursor(pointer);
+    swc_view_attach(&pointer->cursor.view, &pointer->cursor.internal_buffer);
 }
 
 bool swc_pointer_initialize(struct swc_pointer * pointer)
