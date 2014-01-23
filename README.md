@@ -83,17 +83,9 @@ implement a window manager using swc.
 
 TODO
 ----
-* VT switching
 * XWayland copy-paste integration
 * Better multi-screen support, including mirroring and screen arrangement
 * Mouse button bindings
 * Resizing/moving windows by dragging
 * Touchpad support
-
-Future Plans
-------------
-* I'd like to revisit `wld` and set it up in such a way that an EGL backend can
-  be implemented so more hardware is supported.
-* I also want to revisit the planes implementation, allowing full screen
-  surfaces to be scanned out directly, or to a hardware plane.
 
