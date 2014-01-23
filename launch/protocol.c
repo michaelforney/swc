@@ -29,7 +29,7 @@ ssize_t send_fd(int socket, int fd, const void * buffer, ssize_t buffer_size)
         cmsg->cmsg_level = SOL_SOCKET;
         cmsg->cmsg_type = SCM_RIGHTS;
 
-        *((int *) CMSG_DATA(cmsg)) = fd;
+        memcpy(CMSG_DATA(cmsg), &fd, sizeof fd);
     }
     else
     {
@@ -76,7 +76,7 @@ ssize_t receive_fd(int socket, int * fd, void * buffer,
             goto nofd;
         }
 
-        *fd = *((int *) CMSG_DATA(cmsg));
+        memcpy(fd, CMSG_DATA(cmsg), sizeof *fd);
     }
     else
     {
