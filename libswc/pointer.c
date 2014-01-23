@@ -151,6 +151,13 @@ static void handle_view_event(struct wl_listener * listener, void * data)
     }
 }
 
+static inline void update_cursor(struct swc_pointer * pointer)
+{
+    swc_view_move(&pointer->cursor.view,
+                  wl_fixed_to_int(pointer->x) - pointer->cursor.hotspot.x,
+                  wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot.y);
+}
+
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
     struct wld_buffer * buffer;
@@ -254,9 +261,7 @@ static void set_cursor(struct wl_client * client,
         swc_surface_set_view(surface, &pointer->cursor.view);
         wl_resource_add_destroy_listener(surface->resource,
                                          &pointer->cursor.destroy_listener);
-        swc_view_move(&pointer->cursor.view,
-                      wl_fixed_to_int(pointer->x) - hotspot_x,
-                      wl_fixed_to_int(pointer->y) - hotspot_y);
+        update_cursor(pointer);
     }
 }
 
@@ -336,8 +341,6 @@ void swc_pointer_handle_relative_motion
                                surface_x, surface_y);
     }
 
-    swc_view_move(&pointer->cursor.view,
-                  wl_fixed_to_int(pointer->x) - pointer->cursor.hotspot.x,
-                  wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot.y);
+    update_cursor(pointer);
 }
 
