@@ -134,14 +134,14 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
             wl_list_for_each(screen, &swc.screens, link)
             {
+                swc_view_move(&screen->planes.cursor.view,
+                              view->geometry.x - screen->base.geometry.x,
+                              view->geometry.y - screen->base.geometry.y);
+
                 if (view->screens & swc_screen_mask(screen))
                 {
                     struct swc_pointer * pointer
                         = CONTAINER_OF(view, typeof(*pointer), cursor.view);
-
-                    swc_view_move(&screen->planes.cursor.view,
-                                  view->geometry.x - screen->base.geometry.x,
-                                  view->geometry.y - screen->base.geometry.y);
 
                     if (!screen->planes.cursor.view.buffer)
                     {
