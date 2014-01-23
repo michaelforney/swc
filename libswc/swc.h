@@ -62,7 +62,7 @@ enum
     /**
      * Sent when the window's state changes.
      *
-     * The display server should adjust the windows placement and visibility
+     * The display server should adjust the window's placement and visibility
      * accordingly.
      */
     SWC_WINDOW_STATE_CHANGED,
@@ -121,7 +121,7 @@ void swc_window_set_geometry(struct swc_window * window,
 /**
  * Set the window's border color and width.
  *
- * NOTE: The windows geometry remains unchanged, and should be updated if a
+ * NOTE: The window's geometry remains unchanged, and should be updated if a
  *       fixed top-left corner of the border is desired.
  */
 void swc_window_set_border(struct swc_window * window,
