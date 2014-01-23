@@ -358,6 +358,9 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
         mask = XCB_CW_EVENT_MASK;
         values[0] = XCB_EVENT_MASK_PROPERTY_CHANGE;
         xcb_change_window_attributes(xwm.connection, id, mask, values);
+        mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
+        values[0] = 0;
+        xcb_configure_window(xwm.connection, id, mask, values);
         update_name(xwl_window);
 
         swc_window_set_state(&xwl_window->window.base,
