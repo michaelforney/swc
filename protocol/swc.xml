@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="swc">
+    <interface name="swc_panel_manager" version="1">
+        <request name="create_panel">
+            <arg name="id" type="new_id" interface="swc_panel" />
+            <arg name="surface" type="object" interface="wl_surface" />
+        </request>
+    </interface>
+
+    <interface name="swc_panel" version="1">
+        <enum name="edge">
+            <entry name="top" value="0" />
+            <entry name="bottom" value="1" />
+            <entry name="left" value="2" />
+            <entry name="right" value="3" />
+        </enum>
+
+        <request name="dock">
+            <arg name="edge" type="uint" />
+            <arg name="output" type="object" interface="wl_output"
+                 allow-null="true" />
+            <arg name="focus" type="uint" />
+        </request>
+
+        <request name="set_offset">
+            <arg name="offset" type="uint" />
+        </request>
+
+        <request name="set_strut">
+            <arg name="size" type="uint" />
+            <arg name="begin" type="uint" />
+            <arg name="end" type="uint" />
+        </request>
+
+        <event name="docked">
+            <arg name="length" type="uint" />
+        </event>
+    </interface>
+</protocol>
+

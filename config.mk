@@ -4,6 +4,7 @@ PREFIX          = /usr/local
 BINDIR          = $(PREFIX)/bin
 LIBDIR          = $(PREFIX)/lib
 INCLUDEDIR      = $(PREFIX)/include
+DATADIR         = $(PREFIX)/share
 PKGCONFIGDIR    = $(LIBDIR)/pkgconfig
 
 CC              = gcc

@@ -29,6 +29,7 @@
 #include "internal.h"
 #include "launch.h"
 #include "keyboard.h"
+#include "panel_manager.h"
 #include "pointer.h"
 #include "screen.h"
 #include "seat.h"
@@ -147,11 +148,17 @@ bool swc_initialize(struct wl_display * display,
         goto error8;
     }
 
+    if (!swc_panel_manager_initialize())
+    {
+        ERROR("Could not initialize panel manager\n");
+        goto error9;
+    }
+
 #ifdef ENABLE_XWAYLAND
     if (!swc_xserver_initialize())
     {
         ERROR("Could not initialize xwayland\n");
-        goto error9;
+        goto error10;
     }
 #endif
 
@@ -159,6 +166,10 @@ bool swc_initialize(struct wl_display * display,
 
     return true;
 
+#ifdef ENABLE_XWAYLAND
+  error10:
+    swc_panel_manager_finalize();
+#endif
   error9:
     swc_shell_finalize();
   error8:
@@ -187,6 +198,7 @@ void swc_finalize()
 #ifdef ENABLE_XWAYLAND
     swc_xserver_finalize();
 #endif
+    swc_panel_manager_finalize();
     swc_shell_finalize();
     swc_seat_finalize();
     swc_data_device_manager_finalize();

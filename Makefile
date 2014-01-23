@@ -48,7 +48,7 @@ pkgconfig   = $(sort $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
 
 include $(SUBDIRS:%=%/local.mk)
 
-$(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)):
+$(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)) $(DESTDIR)$(DATADIR)/swc:
 	mkdir -p "$@"
 
 .PHONY: check-dependencies

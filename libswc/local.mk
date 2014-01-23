@@ -44,6 +44,8 @@ SWC_SOURCES =                       \
     libswc/launch.c                 \
     libswc/mode.c                   \
     libswc/output.c                 \
+    libswc/panel.c                  \
+    libswc/panel_manager.c          \
     libswc/pointer.c                \
     libswc/region.c                 \
     libswc/screen.c                 \
@@ -58,6 +60,7 @@ SWC_SOURCES =                       \
     libswc/wayland_buffer.c         \
     libswc/window.c                 \
     libswc/xkb.c                    \
+    protocol/swc-protocol.c         \
     protocol/wayland-drm-protocol.c
 
 ifeq ($(ENABLE_HOTPLUGGING),1)
@@ -85,6 +88,7 @@ SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,xserver): protocol/xserver-server-protocol.h
+$(call objects,panel_manager panel): protocol/swc-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)

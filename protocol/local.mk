@@ -3,6 +3,7 @@
 dir := protocol
 
 PROTOCOL_EXTENSIONS =           \
+    $(dir)/swc.xml              \
     $(dir)/wayland-drm.xml      \
     $(dir)/xserver.xml
 
@@ -14,6 +15,9 @@ $(dir)/%-protocol.c: $(dir)/%.xml
 
 $(dir)/%-server-protocol.h: $(dir)/%.xml
 	$(call quiet,GEN,$(WAYLAND_SCANNER)) server-header < $< > $@
+
+install-protocol: | $(DESTDIR)$(DATADIR)/swc
+	install -m0644 protocol/swc.xml "$(DESTDIR)$(DATADIR)/swc"
 
 include common.mk
 
