@@ -154,9 +154,14 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
     struct wld_buffer * buffer;
+    struct swc_screen_internal * screen;
 
-    pointer->x = wl_fixed_from_int(0);
-    pointer->y = wl_fixed_from_int(0);
+    /* Center cursor in the geometry of the first screen. */
+    screen = CONTAINER_OF(swc.screens.next, typeof(*screen), link);
+    pointer->x = wl_fixed_from_int
+        (screen->base.geometry.x + screen->base.geometry.width / 2);
+    pointer->y = wl_fixed_from_int
+        (screen->base.geometry.y + screen->base.geometry.height / 2);
 
     pointer->focus_handler.enter = &enter;
     pointer->focus_handler.leave = &leave;
