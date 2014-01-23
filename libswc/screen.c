@@ -23,6 +23,7 @@
 
 #include "screen.h"
 #include "drm.h"
+#include "event.h"
 #include "internal.h"
 #include "mode.h"
 #include "output.h"
@@ -75,6 +76,7 @@ struct swc_screen_internal * swc_screen_new(uint32_t crtc,
     wl_signal_init(&screen->base.event_signal);
     wl_list_init(&screen->outputs);
     wl_list_insert(&INTERNAL(screen)->outputs, &output->link);
+    wl_list_init(&screen->modifiers);
 
     if (!swc_framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
                                           &output->preferred_mode->info,
@@ -111,5 +113,42 @@ void swc_screen_destroy(struct swc_screen_internal * screen)
     swc_framebuffer_plane_finalize(&screen->planes.framebuffer);
     swc_cursor_plane_finalize(&screen->planes.cursor);
     free(screen);
+}
+
+void swc_screen_update_usable_geometry(struct swc_screen_internal * screen)
+{
+    pixman_region32_t total_usable, usable;
+    pixman_box32_t * extents;
+    struct swc_screen_modifier * modifier;
+
+    DEBUG("Updating usable geometry\n");
+
+    pixman_region32_init_rect(&total_usable,
+                              screen->base.geometry.x, screen->base.geometry.y,
+                              screen->base.geometry.width,
+                              screen->base.geometry.height);
+    pixman_region32_init(&usable);
+
+    wl_list_for_each(modifier, &screen->modifiers, link)
+    {
+        modifier->modify(modifier, &screen->base.geometry, &usable);
+        pixman_region32_intersect(&total_usable, &total_usable, &usable);
+    }
+
+    extents = pixman_region32_extents(&total_usable);
+
+    if (extents->x1 != screen->base.usable_geometry.x
+        || extents->y1 != screen->base.usable_geometry.y
+        || (extents->x2 - extents->x1) != screen->base.usable_geometry.width
+        || (extents->y2 - extents->y1) != screen->base.usable_geometry.height)
+    {
+        screen->base.usable_geometry.x = extents->x1;
+        screen->base.usable_geometry.y = extents->y1;
+        screen->base.usable_geometry.width = extents->x2 - extents->x1;
+        screen->base.usable_geometry.height = extents->y2 - extents->y1;
+
+        swc_send_event(&screen->base.event_signal,
+                       SWC_SCREEN_USABLE_GEOMETRY_CHANGED, NULL);
+    }
 }
 

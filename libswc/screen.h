@@ -31,6 +31,15 @@
 #include <wayland-util.h>
 
 struct swc_output;
+struct pixman_region32;
+
+struct swc_screen_modifier
+{
+    void (* modify)(struct swc_screen_modifier * modifier,
+                    const struct swc_rectangle * geometry,
+                    struct pixman_region32 * usable);
+    struct wl_list link;
+};
 
 struct swc_screen_internal
 {
@@ -59,6 +68,8 @@ static inline uint32_t swc_screen_mask(struct swc_screen_internal * screen)
 {
     return 1 << screen->id;
 }
+
+void swc_screen_update_usable_geometry(struct swc_screen_internal * screen);
 
 #endif
 
