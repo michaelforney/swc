@@ -60,6 +60,7 @@ static void update_position(struct swc_panel * panel)
             x = screen->x + screen->width - view->width;
             y = screen->y + panel->offset;
             break;
+        default: return;
     }
 
     swc_view_move(panel->surface->view, x, y);
@@ -78,6 +79,19 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     bool screen_changed = screen != panel->screen;
     uint32_t length;
 
+    switch (edge)
+    {
+        case SWC_PANEL_EDGE_TOP:
+        case SWC_PANEL_EDGE_BOTTOM:
+            length = screen->base.geometry.width;
+            break;
+        case SWC_PANEL_EDGE_LEFT:
+        case SWC_PANEL_EDGE_RIGHT:
+            length = screen->base.geometry.height;
+            break;
+        default: return;
+    }
+
     if (panel->docked)
         wl_list_remove(&panel->view_listener.link);
 
@@ -90,18 +104,6 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     panel->screen = screen;
     panel->edge = edge;
     panel->docked = true;
-
-    switch (edge)
-    {
-        case SWC_PANEL_EDGE_TOP:
-        case SWC_PANEL_EDGE_BOTTOM:
-            length = panel->screen->base.geometry.width;
-            break;
-        case SWC_PANEL_EDGE_LEFT:
-        case SWC_PANEL_EDGE_RIGHT:
-            length = panel->screen->base.geometry.height;
-            break;
-    }
 
     swc_compositor_add_surface(panel->surface);
     update_position(panel);

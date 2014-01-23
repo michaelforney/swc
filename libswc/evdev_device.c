@@ -93,6 +93,7 @@ static void handle_rel_event(struct swc_evdev_device * device,
             axis = WL_POINTER_AXIS_HORIZONTAL_SCROLL;
             amount = AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
             break;
+        default: return;
     }
 
     device->handler->axis(time, axis, amount);
