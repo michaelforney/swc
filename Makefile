@@ -33,11 +33,6 @@ else
     quiet = $(if $2,$2,$($1))
 endif
 
-define check_deps
-    @echo "Checking for dependencies of $1 ($2)"
-    @$(PKG_CONFIG) --exists --print-errors $2
-endef
-
 FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden -std=gnu99
 FINAL_CPPFLAGS = $(CPPFLAGS) -D_GNU_SOURCE # Required for mkostemp
 
@@ -61,9 +56,6 @@ include $(SUBDIRS:%=%/local.mk)
 
 $(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)) $(DESTDIR)$(DATADIR)/swc:
 	mkdir -p "$@"
-
-.PHONY: check-dependencies
-check-dependencies: $(SUBDIRS:%=check-dependencies-%)
 
 .PHONY: build
 build: $(SUBDIRS:%=build-%) $(TARGETS)

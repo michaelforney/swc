@@ -1,8 +1,5 @@
 # swc: common.mk
 
-.PHONY: check-dependencies-$(dir)
-check-dependencies-$(dir):
-
 .PHONY: build-$(dir)
 build-$(dir): $($(dir)_TARGETS)
 
