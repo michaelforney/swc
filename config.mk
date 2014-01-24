@@ -1,17 +1,19 @@
 # swc: config.mk
 
-PREFIX          = /usr/local
-BINDIR          = $(PREFIX)/bin
-LIBDIR          = $(PREFIX)/lib
-INCLUDEDIR      = $(PREFIX)/include
-DATADIR         = $(PREFIX)/share
-PKGCONFIGDIR    = $(LIBDIR)/pkgconfig
+# The commented out options are defaults
+
+# PREFIX          = /usr/local
+# BINDIR          = $(PREFIX)/bin
+# LIBDIR          = $(PREFIX)/lib
+# INCLUDEDIR      = $(PREFIX)/include
+# DATADIR         = $(PREFIX)/share
+# PKGCONFIGDIR    = $(LIBDIR)/pkgconfig
 
 CC              = gcc
 CPPFLAGS        = -D_GNU_SOURCE # Required for mkostemp
 CFLAGS          = -pipe
-PKG_CONFIG      ?= pkg-config
-WAYLAND_SCANNER ?= wayland-scanner
+# PKG_CONFIG      = pkg-config
+# WAYLAND_SCANNER = wayland-scanner
 
 ENABLE_DEBUG        = 1
 

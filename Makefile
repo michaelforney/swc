@@ -3,6 +3,17 @@
 .PHONY: all
 all: build
 
+# Defaults for config.mk
+PREFIX          ?= /usr
+BINDIR          ?= $(PREFIX)/bin
+LIBDIR          ?= $(PREFIX)/lib
+INCLUDEDIR      ?= $(PREFIX)/include
+DATADIR         ?= $(PREFIX)/share
+PKGCONFIGDIR    ?= $(LIBDIR)/pkgconfig
+
+PKG_CONFIG      ?= pkg-config
+WAYLAND_SCANNER ?= wayland-scanner
+
 VERSION_MAJOR   := 0
 VERSION_MINOR   := 0
 VERSION         := $(VERSION_MAJOR).$(VERSION_MINOR)
