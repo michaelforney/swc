@@ -11,11 +11,10 @@ $(dir)_TARGETS += $(dir)/libswc.a
 endif
 
 ifneq ($(ENABLE_SHARED), 0)
-$(dir)_SHARED_TARGETS :=            \
+$(dir)_TARGETS +=                   \
     $(dir)/$(LIBSWC_LIB)            \
     $(dir)/$(LIBSWC_SO)             \
     $(dir)/$(LIBSWC_LINK)
-$(dir)_TARGETS += libswc-shared
 endif
 
 # Dependencies
@@ -110,19 +109,18 @@ libswc-shared: $($(dir)_SHARED_TARGETS)
 install-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)
 	install -m0644 $< "$(DESTDIR)$(LIBDIR)"
 
-.PHONY: install-libswc-shared
-install-libswc-shared: $(dir)/$(LIBSWC_LIB) | $(DESTDIR)$(LIBDIR)
+.PHONY: install-$(LIBSWC_LIB)
+install-$(LIBSWC_LIB): $(dir)/$(LIBSWC_LIB) | $(DESTDIR)$(LIBDIR)
 	install -m0755 $< "$(DESTDIR)$(LIBDIR)"
-	ln -sf $(LIBSWC_LIB) "$(DESTDIR)$(LIBDIR)/$(LIBSWC_SO)"
-	ln -sf $(LIBSWC_SO) "$(DESTDIR)$(LIBDIR)/$(LIBSWC_LINK)"
 
-check-dependencies-libswc:
-	$(call check_deps,libswc,$(SWC_PACKAGES))
+.PHONY: install-$(LIBSWC_SO) install-$(LIBSWC_LINK)
+install-$(LIBSWC_SO) install-$(LIBSWC_LINK): install-$(LIBSWC_LIB)
+	ln -sf $(LIBSWC_LIB) "$(DESTDIR)$(LIBDIR)"/${@:install-%=%}
 
 install-libswc: $($(dir)_TARGETS:$(dir)/%=install-%) | $(DESTDIR)$(INCLUDEDIR)
 	install -m0644 libswc/swc.h "$(DESTDIR)$(INCLUDEDIR)"
 
-CLEAN_FILES += $(SWC_SHARED_OBJECTS) $(SWC_STATIC_OBJECTS) $($(dir)_SHARED_TARGETS)
+CLEAN_FILES += $(SWC_SHARED_OBJECTS) $(SWC_STATIC_OBJECTS)
 
 include common.mk
 
