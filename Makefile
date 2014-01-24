@@ -39,7 +39,7 @@ define check_deps
 endef
 
 FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden -std=gnu99
-FINAL_CPPFLAGS = $(CPPFLAGS)
+FINAL_CPPFLAGS = $(CPPFLAGS) -D_GNU_SOURCE # Required for mkostemp
 
 # Warning/error flags
 FINAL_CFLAGS += -Werror=implicit-function-declaration -Werror=implicit-int \
