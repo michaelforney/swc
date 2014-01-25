@@ -25,6 +25,7 @@
 #include "buffer.h"
 #include "drm.h"
 #include "internal.h"
+#include "launch.h"
 #include "util.h"
 
 #include <errno.h>
@@ -89,12 +90,29 @@ static const struct swc_view_impl view_impl = {
     .move = &move
 };
 
+static void handle_launch_event(struct wl_listener * listener, void * data)
+{
+    struct swc_event * event = data;
+    struct swc_cursor_plane * plane
+        = CONTAINER_OF(listener, typeof(*plane), launch_listener);
+
+    switch (event->type)
+    {
+        case SWC_LAUNCH_EVENT_ACTIVATED:
+            move(&plane->view, plane->view.geometry.x, plane->view.geometry.y);
+            attach(&plane->view, plane->view.buffer);
+            break;
+    }
+}
+
 bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane, uint32_t crtc)
 {
     if (drmModeSetCursor(swc.drm->fd, crtc, 0, 0, 0) != 0)
         return false;
 
     plane->crtc = crtc;
+    plane->launch_listener.notify = &handle_launch_event;
+    wl_signal_add(&swc.launch->event_signal, &plane->launch_listener);
     swc_view_initialize(&plane->view, &view_impl);
 
     return true;

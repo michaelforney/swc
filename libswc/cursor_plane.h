@@ -30,6 +30,7 @@ struct swc_cursor_plane
 {
     struct swc_view view;
     uint32_t crtc;
+    struct wl_listener launch_listener;
 };
 
 bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane,
