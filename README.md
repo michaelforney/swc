@@ -69,6 +69,9 @@ Finally, run the main event loop.
 wl_display_run(display);
 ```
 
+An example window manager that arranges it's windows in a grid can be found in
+example/, and can be built with `make example`.
+
 Why not write a Weston shell plugin?
 ------------------------------------
 In my opinion the goals of Weston and swc are rather orthogonal. Weston seeks to
