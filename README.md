@@ -34,12 +34,12 @@ allocate your own window window structure, and register a listener for the
 window's event signal. More information can be found in `swc.h`.
 
 ```C
-void new_window(struct swc_window * window)
+static void new_window(struct swc_window * window)
 {
     /* TODO: Implement */
 }
 
-void new_screen(struct swc_screen * screen)
+static void new_screen(struct swc_screen * screen)
 {
     /* TODO: Implement */
 }
@@ -48,7 +48,7 @@ void new_screen(struct swc_screen * screen)
 Create a `struct swc_manager` containing pointers to these functions.
 
 ```C
-const struct swc_manager manager = { &new_window, &new_screen };
+static const struct swc_manager manager = { &new_window, &new_screen };
 ```
 
 In your startup code, you must create a Wayland display.
