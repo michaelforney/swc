@@ -383,8 +383,6 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     state_initialize(&surface->state);
     state_initialize(&surface->pending.state);
 
-    wl_signal_init(&surface->event_signal);
-
     /* Add the surface to the client. */
     surface->resource = wl_resource_create(client, &wl_surface_interface,
                                            version, id);
