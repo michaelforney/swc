@@ -28,7 +28,7 @@
 #include <wayland-server.h>
 #include <pixman.h>
 
-enum swc_surface_commit_info
+enum
 {
     SWC_SURFACE_COMMIT_ATTACH = (1 << 0),
     SWC_SURFACE_COMMIT_DAMAGE = (1 << 1),

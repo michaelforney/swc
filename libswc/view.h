@@ -26,7 +26,7 @@
 
 #include "swc.h"
 
-enum swc_view_event
+enum
 {
     /* Sent when the view has displayed the next frame. */
     SWC_VIEW_EVENT_FRAME,

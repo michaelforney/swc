@@ -27,7 +27,7 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-enum swc_input_focus_event_type
+enum
 {
     SWC_INPUT_FOCUS_EVENT_CHANGED
 };

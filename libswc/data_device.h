@@ -29,7 +29,7 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-enum swc_data_device_event_type
+enum
 {
     SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED
 };
