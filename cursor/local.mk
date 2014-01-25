@@ -8,7 +8,7 @@ $(dir)/convert_font: $(dir)/convert_font.o
 	$(link)
 
 $(dir)/cursor_data.h: $(dir)/cursor.pcf $(dir)/convert_font
-	$(call quiet,GEN,$(dir)/convert_font) $< $@ 2> /dev/null
+	$(call quiet,GEN,cursor/convert_font) $< $@ 2> /dev/null
 
 CLEAN_FILES += $(dir)/convert_font.o
 
