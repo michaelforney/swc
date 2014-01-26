@@ -96,7 +96,7 @@ bool swc_initialize(struct wl_display * display,
 
     if (!(swc_launch_initialize()))
     {
-        ERROR("Could not connect to launch\n");
+        ERROR("Could not connect to swc-launch\n");
         goto error0;
     }
 
