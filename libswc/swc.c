@@ -67,7 +67,7 @@ static void setup_compositor()
                    &swc.bindings->keyboard_handler->link);
     swc.seat->pointer->handler = swc.compositor->pointer_handler;
     wl_signal_add(&swc.seat->pointer->focus.event_signal,
-                  swc_window_enter_listener);
+                  &window_enter_listener);
 
     /* Calculate pointer region */
     pixman_region32_init(&pointer_region);

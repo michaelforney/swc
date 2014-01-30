@@ -33,7 +33,7 @@
 
 struct swc_shell_surface
 {
-    struct swc_window_internal window;
+    struct window window;
 
     struct wl_resource * resource;
     struct wl_listener surface_destroy_listener;
@@ -75,8 +75,7 @@ static void set_toplevel(struct wl_client * client,
         return;
 
     shell_surface->type = SHELL_SURFACE_TYPE_TOPLEVEL;
-    swc_window_set_state(&shell_surface->window.base,
-                         SWC_WINDOW_STATE_TOPLEVEL);
+    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_TOPLEVEL);
 }
 
 static void set_transient(struct wl_client * client,
@@ -132,7 +131,7 @@ static void set_title(struct wl_client * client, struct wl_resource * resource,
     struct swc_shell_surface * shell_surface
         = wl_resource_get_user_data(resource);
 
-    swc_window_set_title(&shell_surface->window.base, title, -1);
+    window_set_title(&shell_surface->window, title, -1);
 }
 
 static void set_class(struct wl_client * client, struct wl_resource * resource,
@@ -141,7 +140,7 @@ static void set_class(struct wl_client * client, struct wl_resource * resource,
     struct swc_shell_surface * shell_surface
         = wl_resource_get_user_data(resource);
 
-    swc_window_set_class(&shell_surface->window.base, class);
+    window_set_class(&shell_surface->window, class);
 }
 
 static const struct wl_shell_surface_interface shell_surface_implementation = {
@@ -157,18 +156,18 @@ static const struct wl_shell_surface_interface shell_surface_implementation = {
     .set_class = &set_class
 };
 
-static void configure(struct swc_window * window,
+static void configure(struct window * window,
                       const struct swc_rectangle * geometry)
 {
     struct swc_shell_surface * shell_surface
-        = CONTAINER_OF(window, typeof(*shell_surface), window.base);
+        = CONTAINER_OF(window, typeof(*shell_surface), window);
 
     wl_shell_surface_send_configure(shell_surface->resource,
                                     WL_SHELL_SURFACE_RESIZE_NONE,
                                     geometry->width, geometry->height);
 }
 
-static const struct swc_window_impl shell_window_impl = {
+static const struct window_impl shell_window_impl = {
     .configure = &configure
 };
 
@@ -185,7 +184,7 @@ static void destroy_shell_surface(struct wl_resource * resource)
     struct swc_shell_surface * shell_surface
         = wl_resource_get_user_data(resource);
 
-    swc_window_finalize(&shell_surface->window.base);
+    window_finalize(&shell_surface->window);
     free(shell_surface);
 }
 
@@ -199,13 +198,11 @@ struct swc_shell_surface * swc_shell_surface_new
     if (!shell_surface)
         goto error0;
 
+    window_initialize(&shell_surface->window, &shell_window_impl, surface);
     shell_surface->type = SHELL_SURFACE_TYPE_UNSPECIFIED;
     shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
     wl_resource_add_destroy_listener(surface->resource,
                                      &shell_surface->surface_destroy_listener);
-
-    swc_window_initialize(&shell_surface->window.base,
-                          &shell_window_impl, surface);
 
     shell_surface->resource = wl_resource_create
         (client, &wl_shell_surface_interface, 1, id);

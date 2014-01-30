@@ -34,13 +34,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define INTERNAL(window) ((struct swc_window_internal *) (window))
+#define INTERNAL(w) ((struct window *) (w))
 
 static void handle_window_enter(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
     struct swc_input_focus_event_data * event_data = event->data;
-    struct swc_window * window;
+    struct window * window;
 
     if (event->type != SWC_INPUT_FOCUS_EVENT_CHANGED)
         return;
@@ -48,13 +48,12 @@ static void handle_window_enter(struct wl_listener * listener, void * data)
     if (!event_data->new || !(window = event_data->new->window))
         return;
 
-    swc_send_event(&window->event_signal, SWC_WINDOW_ENTERED, NULL);
+    swc_send_event(&window->base.event_signal, SWC_WINDOW_ENTERED, NULL);
 }
 
-static struct wl_listener window_enter_listener = {
+struct wl_listener window_enter_listener = {
     .notify = &handle_window_enter
 };
-struct wl_listener * swc_window_enter_listener = &window_enter_listener;
 
 EXPORT
 void swc_window_show(struct swc_window * window)
@@ -69,8 +68,9 @@ void swc_window_hide(struct swc_window * window)
 }
 
 EXPORT
-void swc_window_focus(struct swc_window * window)
+void swc_window_focus(struct swc_window * base)
 {
+    struct window * window = INTERNAL(base);
     struct swc_surface * new_focus = window ? INTERNAL(window)->surface : NULL,
                        * old_focus = swc.seat->keyboard->focus.surface;
 
@@ -78,27 +78,28 @@ void swc_window_focus(struct swc_window * window)
      * focus to either NULL, or a window with a different implementation, set
      * the focus of the previous focus window's implementation to NULL. */
     if (old_focus && old_focus->window
-        && !(window && INTERNAL(window)->impl
-                    == INTERNAL(old_focus->window)->impl)
+        && !(window && window->impl == INTERNAL(old_focus->window)->impl)
         && INTERNAL(old_focus->window)->impl->focus)
     {
         INTERNAL(old_focus->window)->impl->focus(NULL);
     }
 
-    if (window && INTERNAL(window)->impl->focus)
-        INTERNAL(window)->impl->focus(window);
+    if (window && window->impl->focus)
+        window->impl->focus(window);
 
     swc_keyboard_set_focus(swc.seat->keyboard, new_focus);
 }
 
 EXPORT
-void swc_window_set_geometry(struct swc_window * window,
+void swc_window_set_geometry(struct swc_window * base,
                              const struct swc_rectangle * geometry)
 {
-    if (INTERNAL(window)->impl->configure)
-        INTERNAL(window)->impl->configure(window, geometry);
+    struct window * window = INTERNAL(base);
 
-    swc_view_move(INTERNAL(window)->surface->view, geometry->x, geometry->y);
+    if (window->impl->configure)
+        window->impl->configure(window, geometry);
+
+    swc_view_move(window->surface->view, geometry->x, geometry->y);
 }
 
 EXPORT
@@ -111,56 +112,54 @@ void swc_window_set_border(struct swc_window * window,
     swc_compositor_surface_set_border_width(surface, border_width);
 }
 
-bool swc_window_initialize(struct swc_window * window,
-                           const struct swc_window_impl * impl,
-                           struct swc_surface * surface)
+bool window_initialize(struct window * window, const struct window_impl * impl,
+                       struct swc_surface * surface)
 {
     DEBUG("Initializing window, %p\n", window);
 
-    window->title = NULL;
-    window->class = NULL;
-    window->state = SWC_WINDOW_STATE_WITHDRAWN;
-    wl_signal_init(&window->event_signal);
-    INTERNAL(window)->surface = surface;
-    INTERNAL(window)->impl = impl;
+    window->base.title = NULL;
+    window->base.class = NULL;
+    window->base.state = SWC_WINDOW_STATE_WITHDRAWN;
+    wl_signal_init(&window->base.event_signal);
+    window->surface = surface;
+    window->impl = impl;
 
     surface->window = window;
     swc_compositor_add_surface(surface);
 
-    swc.manager->new_window(window);
+    swc.manager->new_window(&window->base);
 
     return true;
 }
 
-void swc_window_finalize(struct swc_window * window)
+void window_finalize(struct window * window)
 {
     DEBUG("Finalizing window, %p\n", window);
 
-    swc_send_event(&window->event_signal, SWC_WINDOW_DESTROYED, NULL);
-    swc_compositor_remove_surface(INTERNAL(window)->surface);
-    INTERNAL(window)->surface->window = NULL;
-    free(window->title);
-    free(window->class);
+    swc_send_event(&window->base.event_signal, SWC_WINDOW_DESTROYED, NULL);
+    swc_compositor_remove_surface(window->surface);
+    window->surface->window = NULL;
+    free(window->base.title);
+    free(window->base.class);
 }
 
-void swc_window_set_title(struct swc_window * window,
-                          const char * title, size_t length)
+void window_set_title(struct window * window, const char * title, size_t length)
 {
-    free(window->title);
-    window->title = strndup(title, length);
-    swc_send_event(&window->event_signal, SWC_WINDOW_TITLE_CHANGED, NULL);
+    free(window->base.title);
+    window->base.title = strndup(title, length);
+    swc_send_event(&window->base.event_signal, SWC_WINDOW_TITLE_CHANGED, NULL);
 }
 
-void swc_window_set_class(struct swc_window * window, const char * class)
+void window_set_class(struct window * window, const char * class)
 {
-    free(window->class);
-    window->class = strdup(class);
-    swc_send_event(&window->event_signal, SWC_WINDOW_CLASS_CHANGED, NULL);
+    free(window->base.class);
+    window->base.class = strdup(class);
+    swc_send_event(&window->base.event_signal, SWC_WINDOW_CLASS_CHANGED, NULL);
 }
 
-void swc_window_set_state(struct swc_window * window, uint32_t state)
+void window_set_state(struct window * window, uint32_t state)
 {
-    window->state = state;
-    swc_send_event(&window->event_signal, SWC_WINDOW_STATE_CHANGED, NULL);
+    window->base.state = state;
+    swc_send_event(&window->base.event_signal, SWC_WINDOW_STATE_CHANGED, NULL);
 }
 

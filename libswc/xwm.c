@@ -37,7 +37,7 @@
 struct xwl_window
 {
     xcb_window_t id;
-    struct swc_window_internal window;
+    struct window window;
     struct wl_listener surface_destroy_listener;
 };
 
@@ -66,8 +66,8 @@ static void update_name(struct xwl_window * xwl_window)
     xcb_ewmh_get_wm_name_reply(&xwm.ewmh, wm_name_cookie,
                                &wm_name_reply, NULL);
 
-    swc_window_set_title(&xwl_window->window.base,
-                         wm_name_reply.strings, wm_name_reply.strings_len);
+    window_set_title(&xwl_window->window,
+                     wm_name_reply.strings, wm_name_reply.strings_len);
 
     xcb_ewmh_get_utf8_strings_reply_wipe(&wm_name_reply);
 }
@@ -265,12 +265,12 @@ void swc_xwm_finalize()
     xcb_disconnect(xwm.connection);
 }
 
-static void configure(struct swc_window * window,
+static void configure(struct window * window,
                       const struct swc_rectangle * geometry)
 {
     uint32_t mask, values[4];
     struct xwl_window * xwl_window
-        = CONTAINER_OF(window, typeof(*xwl_window), window.base);
+        = CONTAINER_OF(window, typeof(*xwl_window), window);
 
     mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
          | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
@@ -283,10 +283,10 @@ static void configure(struct swc_window * window,
     xcb_flush(xwm.connection);
 }
 
-static void focus(struct swc_window * window)
+static void focus(struct window * window)
 {
     xcb_window_t id = window ? CONTAINER_OF(window, struct xwl_window,
-                                            window.base)->id
+                                            window)->id
                              : XCB_NONE;
 
     xcb_set_input_focus(xwm.connection, XCB_INPUT_FOCUS_NONE,
@@ -294,7 +294,7 @@ static void focus(struct swc_window * window)
     xcb_flush(xwm.connection);
 }
 
-static const struct swc_window_impl xwl_window_handler = {
+static const struct window_impl xwl_window_handler = {
     .configure = &configure,
     .focus = &focus
 };
@@ -305,7 +305,7 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
     struct xwl_window * xwl_window
         = CONTAINER_OF(listener, typeof(*xwl_window), surface_destroy_listener);
 
-    swc_window_finalize(&xwl_window->window.base);
+    window_finalize(&xwl_window->window);
     free(xwl_window);
 
     wl_array_for_each(entry, &xwm.windows)
@@ -333,12 +333,11 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
 
     geometry_cookie = xcb_get_geometry(xwm.connection, id);
 
+    window_initialize(&xwl_window->window, &xwl_window_handler, surface);
     xwl_window->id = id;
     xwl_window->surface_destroy_listener.notify = &handle_surface_destroy;
     wl_resource_add_destroy_listener(surface->resource,
                                      &xwl_window->surface_destroy_listener);
-    swc_window_initialize(&xwl_window->window.base,
-                          &xwl_window_handler, surface);
 
     entry->xwl_window = xwl_window;
 
@@ -363,8 +362,7 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
         xcb_configure_window(xwm.connection, id, mask, values);
         update_name(xwl_window);
 
-        swc_window_set_state(&xwl_window->window.base,
-                             SWC_WINDOW_STATE_TOPLEVEL);
+        window_set_state(&xwl_window->window, SWC_WINDOW_STATE_TOPLEVEL);
     }
 }
 

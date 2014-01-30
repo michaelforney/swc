@@ -29,35 +29,34 @@
 #include <stdint.h>
 #include <wayland-server.h>
 
-struct swc_window_impl
-{
-    void (* configure)(struct swc_window * window,
-                       const struct swc_rectangle * geometry);
-    void (* focus)(struct swc_window * window);
-};
-
-struct swc_window_internal
+struct window
 {
     struct swc_window base;
 
     struct swc_surface * surface;
-    const struct swc_window_impl * impl;
+    const struct window_impl * impl;
 };
 
-extern struct wl_listener * swc_window_enter_listener;
+struct window_impl
+{
+    void (* configure)(struct window * window,
+                       const struct swc_rectangle * geometry);
+    void (* focus)(struct window * window);
+};
 
-bool swc_window_initialize(struct swc_window * window,
-                           const struct swc_window_impl * impl,
-                           struct swc_surface * surface);
+extern struct wl_listener window_enter_listener;
 
-void swc_window_finalize(struct swc_window * window);
+bool window_initialize(struct window * window, const struct window_impl * impl,
+                       struct swc_surface * surface);
 
-void swc_window_set_title(struct swc_window * window,
-                          const char * title, size_t length);
+void window_finalize(struct window * window);
 
-void swc_window_set_class(struct swc_window * window, const char * class);
+void window_set_title(struct window * window,
+                      const char * title, size_t length);
 
-void swc_window_set_state(struct swc_window * window, uint32_t state);
+void window_set_class(struct window * window, const char * class);
+
+void window_set_state(struct window * window, uint32_t state);
 
 #endif
 
