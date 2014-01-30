@@ -65,7 +65,7 @@ static void arrange(struct screen * screen)
 
     if (screen->num_windows == 0) return;
 
-    num_columns = round(sqrt(screen->num_windows));
+    num_columns = ceil(sqrt(screen->num_windows));
     num_rows = screen->num_windows / num_columns + 1;
     window = wl_container_of(screen->windows.next, window, link);
 
