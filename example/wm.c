@@ -72,7 +72,7 @@ static void arrange(struct screen * screen)
     for (column_index = 0; &window->link != &screen->windows; ++column_index)
     {
         geometry.x = screen_geometry->x + border_width
-            + screen_geometry->width * column_index / num_columns + border_width;
+            + screen_geometry->width * column_index / num_columns;
         geometry.width = screen_geometry->width / num_columns
             - 2 * border_width;
 
