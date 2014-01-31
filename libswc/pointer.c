@@ -227,7 +227,8 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
                   &pointer->cursor.view_listener);
     pointer->cursor.surface = NULL;
     pointer->cursor.destroy_listener.notify = &handle_cursor_surface_destroy;
-    buffer = wld_create_buffer(swc.drm->context, 64, 64, WLD_FORMAT_ARGB8888);
+    buffer = wld_create_buffer(swc.drm->context, 64, 64, WLD_FORMAT_ARGB8888,
+                               WLD_FLAG_MAP);
 
     if (!buffer)
         return false;

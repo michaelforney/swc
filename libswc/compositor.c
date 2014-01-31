@@ -229,7 +229,8 @@ static struct screen * screen_new(struct swc_screen_internal * base)
     screen->surface = wld_create_surface(swc.drm->context,
                                          base->base.geometry.width,
                                          base->base.geometry.height,
-                                         WLD_FORMAT_XRGB8888);
+                                         WLD_FORMAT_XRGB8888,
+                                         WLD_DRM_FLAG_SCANOUT);
 
     if (!screen->surface)
         goto error1;
@@ -355,7 +356,7 @@ static bool renderer_attach(struct view * view, struct swc_buffer * buffer)
                 DEBUG("Creating a proxy buffer\n");
                 wld = wld_create_buffer(swc.drm->context,
                                         buffer->wld->width, buffer->wld->height,
-                                        buffer->wld->format);
+                                        buffer->wld->format, WLD_FLAG_MAP);
 
                 if (!wld)
                     return false;
