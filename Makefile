@@ -66,6 +66,7 @@ swc.pc: swc.pc.in
 	    -e "s:@PREFIX@:$(PREFIX):"          \
 	    -e "s:@LIBDIR@:$(LIBDIR):"          \
 	    -e "s:@INCLUDEDIR@:$(INCLUDEDIR):"  \
+	    -e "s:@DATADIR@:$(DATADIR):"        \
 	    $< > $@
 
 .PHONY: install-swc.pc
