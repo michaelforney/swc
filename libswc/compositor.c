@@ -57,6 +57,8 @@ struct target
     struct wld_buffer * next_buffer, * current_buffer;
     struct swc_view * view;
     struct wl_listener view_listener;
+    uint32_t mask;
+
     struct wl_listener screen_listener;
 };
 
@@ -238,10 +240,12 @@ static struct target * target_new(struct swc_screen_internal * screen)
     target->view = &screen->planes.framebuffer.view;
     target->view_listener.notify = &handle_screen_view_event;
     wl_signal_add(&target->view->event_signal, &target->view_listener);
+    target->current_buffer = NULL;
+    target->mask = swc_screen_mask(screen);
+    target_swap_buffers(target);
+
     target->screen_listener.notify = &handle_screen_event;
     wl_signal_add(&screen->base.event_signal, &target->screen_listener);
-    target->current_buffer = NULL;
-    target_swap_buffers(target);
 
     return target;
 
@@ -253,14 +257,7 @@ error0:
 
 /* Rendering {{{ */
 
-struct render_target
-{
-    struct wld_surface * surface;
-    const struct swc_rectangle * geometry;
-    uint32_t mask;
-};
-
-static void repaint_view(struct render_target * target, struct view * view,
+static void repaint_view(struct target * target, struct view * view,
                          pixman_region32_t * damage)
 {
     pixman_region32_t view_region, view_damage, border_damage;
@@ -285,8 +282,8 @@ static void repaint_view(struct render_target * target, struct view * view,
     {
         pixman_region32_translate(&view_damage, -geometry->x, -geometry->y);
         wld_copy_region(swc.drm->renderer, view->wld,
-                        geometry->x - target->geometry->x,
-                        geometry->y - target->geometry->y, &view_damage);
+                        geometry->x - target->view->geometry.x,
+                        geometry->y - target->view->geometry.y, &view_damage);
     }
 
     pixman_region32_fini(&view_damage);
@@ -297,14 +294,15 @@ static void repaint_view(struct render_target * target, struct view * view,
         DEBUG("\t\tRedrawing border\n");
 
         pixman_region32_translate(&border_damage,
-                                  -target->geometry->x, -target->geometry->y);
+                                  -target->view->geometry.x,
+                                  -target->view->geometry.y);
         wld_fill_region(swc.drm->renderer, view->border.color, &border_damage);
     }
 
     pixman_region32_fini(&border_damage);
 }
 
-static void renderer_repaint(struct render_target * target,
+static void renderer_repaint(struct target * target,
                              pixman_region32_t * damage,
                              pixman_region32_t * base_damage,
                              struct wl_list * views)
@@ -312,8 +310,8 @@ static void renderer_repaint(struct render_target * target,
     struct view * view;
 
     DEBUG("Rendering to target { x: %d, y: %d, w: %u, h: %u }\n",
-          target->geometry->x, target->geometry->y,
-          target->geometry->width, target->geometry->height);
+          target->view->geometry.x, target->view->geometry.y,
+          target->view->geometry.width, target->view->geometry.height);
 
     wld_set_target_surface(swc.drm->renderer, target->surface);
 
@@ -321,7 +319,8 @@ static void renderer_repaint(struct render_target * target,
     if (pixman_region32_not_empty(base_damage))
     {
         pixman_region32_translate(base_damage,
-                                  -target->geometry->x, -target->geometry->y);
+                                  -target->view->geometry.x,
+                                  -target->view->geometry.y);
         wld_fill_region(swc.drm->renderer, 0xff000000, base_damage);
     }
 
@@ -744,7 +743,6 @@ static void update_screen(struct swc_screen_internal * screen)
     if (compositor.pending_flips & swc_screen_mask(screen))
         return;
 
-    struct render_target render_target;
     pixman_region32_t * total_damage, base_damage;
 
     total_damage = wld_surface_damage(target->surface,
@@ -752,13 +750,7 @@ static void update_screen(struct swc_screen_internal * screen)
     pixman_region32_translate(total_damage, geometry->x, geometry->y);
     pixman_region32_init(&base_damage);
     pixman_region32_subtract(&base_damage, total_damage, &compositor.opaque);
-
-    render_target.surface = target->surface;
-    render_target.mask = swc_screen_mask(screen);
-    render_target.geometry = geometry;
-
-    renderer_repaint(&render_target, total_damage, &base_damage,
-                     &compositor.views);
+    renderer_repaint(target, total_damage, &base_damage, &compositor.views);
     pixman_region32_fini(&base_damage);
     target_swap_buffers(target);
 }
