@@ -51,13 +51,13 @@
 #include <wld/drm.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-struct screen
+struct target
 {
     struct wld_surface * surface;
     struct wld_buffer * next_buffer, * current_buffer;
     struct swc_view * view;
     struct wl_listener view_listener;
-    struct wl_listener event_listener;
+    struct wl_listener screen_listener;
 };
 
 struct view
@@ -146,22 +146,22 @@ static void handle_screen_event(struct wl_listener * listener, void * data)
 
     if (event->type == SWC_SCREEN_DESTROYED)
     {
-        struct screen * screen
-            = CONTAINER_OF(listener, typeof(*screen), event_listener);
+        struct target * target
+            = CONTAINER_OF(listener, typeof(*target), screen_listener);
 
-        wld_destroy_surface(screen->surface);
-        free(screen);
+        wld_destroy_surface(target->surface);
+        free(target);
     }
 }
 
-static struct screen * screen_get(struct swc_screen * base)
+static struct target * target_get(struct swc_screen_internal * screen)
 {
     struct wl_listener * listener
-        = wl_signal_get(&base->event_signal, &handle_screen_event);
-    struct screen * screen;
+        = wl_signal_get(&screen->base.event_signal, &handle_screen_event);
+    struct target * target;
 
-    return listener ? CONTAINER_OF(listener, typeof(*screen), event_listener)
-        : NULL;
+    return listener ? CONTAINER_OF(listener, typeof(*target), screen_listener)
+                    : NULL;
 }
 
 static void handle_screen_view_event(struct wl_listener * listener, void * data)
@@ -173,26 +173,26 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
     {
         case SWC_VIEW_EVENT_FRAME:
         {
-            struct swc_screen_internal * base = CONTAINER_OF
-                (event_data->view, typeof(*base), planes.framebuffer.view);
-            struct screen * screen;
+            struct swc_screen_internal * screen = CONTAINER_OF
+                (event_data->view, typeof(*screen), planes.framebuffer.view);
+            struct target * target;
             struct view * view;
 
-            if (!(screen = screen_get(&base->base)))
+            if (!(target = target_get(screen)))
                 return;
 
-            compositor.pending_flips &= ~swc_screen_mask(base);
+            compositor.pending_flips &= ~swc_screen_mask(screen);
 
             wl_list_for_each(view, &compositor.views, link)
             {
-                if (view->base.screens & swc_screen_mask(base))
+                if (view->base.screens & swc_screen_mask(screen))
                     swc_view_frame(&view->base, event_data->frame.time);
             }
 
-            if (screen->current_buffer)
-                wld_surface_release(screen->surface, screen->current_buffer);
+            if (target->current_buffer)
+                wld_surface_release(target->surface, target->current_buffer);
 
-            screen->current_buffer = screen->next_buffer;
+            target->current_buffer = target->next_buffer;
 
             /* If we had scheduled updates that couldn't run because we were
              * waiting on a page flip, run them now. */
@@ -203,14 +203,14 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
     }
 }
 
-static bool screen_swap_buffers(struct screen * screen)
+static bool target_swap_buffers(struct target * target)
 {
     struct swc_buffer * buffer;
 
-    screen->next_buffer = wld_surface_take(screen->surface);
-    buffer = buffer_get(screen->next_buffer);
+    target->next_buffer = wld_surface_take(target->surface);
+    buffer = buffer_get(target->next_buffer);
 
-    if (!swc_view_attach(screen->view, buffer))
+    if (!swc_view_attach(target->view, buffer))
     {
         ERROR("Failed to attach next frame to screen\n");
         return false;
@@ -219,34 +219,34 @@ static bool screen_swap_buffers(struct screen * screen)
     return true;
 }
 
-static struct screen * screen_new(struct swc_screen_internal * base)
+static struct target * target_new(struct swc_screen_internal * screen)
 {
-    struct screen * screen;
+    struct target * target;
 
-    if (!(screen = malloc(sizeof *screen)))
+    if (!(target = malloc(sizeof *target)))
         goto error0;
 
-    screen->surface = wld_create_surface(swc.drm->context,
-                                         base->base.geometry.width,
-                                         base->base.geometry.height,
+    target->surface = wld_create_surface(swc.drm->context,
+                                         screen->base.geometry.width,
+                                         screen->base.geometry.height,
                                          WLD_FORMAT_XRGB8888,
                                          WLD_DRM_FLAG_SCANOUT);
 
-    if (!screen->surface)
+    if (!target->surface)
         goto error1;
 
-    screen->view = &base->planes.framebuffer.view;
-    screen->view_listener.notify = &handle_screen_view_event;
-    wl_signal_add(&screen->view->event_signal, &screen->view_listener);
-    screen->event_listener.notify = &handle_screen_event;
-    wl_signal_add(&base->base.event_signal, &screen->event_listener);
-    screen->current_buffer = NULL;
-    screen_swap_buffers(screen);
+    target->view = &screen->planes.framebuffer.view;
+    target->view_listener.notify = &handle_screen_view_event;
+    wl_signal_add(&target->view->event_signal, &target->view_listener);
+    target->screen_listener.notify = &handle_screen_event;
+    wl_signal_add(&screen->base.event_signal, &target->screen_listener);
+    target->current_buffer = NULL;
+    target_swap_buffers(target);
 
-    return screen;
+    return target;
 
 error1:
-    free(screen);
+    free(target);
 error0:
     return NULL;
 }
@@ -719,16 +719,16 @@ static void calculate_damage()
     pixman_region32_fini(&surface_opaque);
 }
 
-static void update_screen(struct swc_screen_internal * base)
+static void update_screen(struct swc_screen_internal * screen)
 {
-    struct screen * screen;
-    const struct swc_rectangle * geometry = &base->base.geometry;
+    struct target * target;
+    const struct swc_rectangle * geometry = &screen->base.geometry;
     pixman_region32_t damage;
 
-    if (!(compositor.scheduled_updates & swc_screen_mask(base)))
+    if (!(compositor.scheduled_updates & swc_screen_mask(screen)))
         return;
 
-    if (!(screen = screen_get(&base->base)))
+    if (!(target = target_get(screen)))
         return;
 
     pixman_region32_init(&damage);
@@ -736,30 +736,31 @@ static void update_screen(struct swc_screen_internal * base)
                                    geometry->x, geometry->y,
                                    geometry->width, geometry->height);
     pixman_region32_translate(&damage, -geometry->x, -geometry->y);
-    pixman_region32_union(&screen->next_buffer->damage,
-                          &screen->next_buffer->damage, &damage);
+    pixman_region32_union(&target->next_buffer->damage,
+                          &target->next_buffer->damage, &damage);
     pixman_region32_fini(&damage);
 
     /* Don't repaint the screen if it is waiting for a page flip. */
-    if (compositor.pending_flips & swc_screen_mask(base))
+    if (compositor.pending_flips & swc_screen_mask(screen))
         return;
 
-    struct render_target target;
+    struct render_target render_target;
     pixman_region32_t * total_damage, base_damage;
 
-    total_damage = wld_surface_damage(screen->surface,
-                                      &screen->next_buffer->damage);
+    total_damage = wld_surface_damage(target->surface,
+                                      &target->next_buffer->damage);
     pixman_region32_translate(total_damage, geometry->x, geometry->y);
     pixman_region32_init(&base_damage);
     pixman_region32_subtract(&base_damage, total_damage, &compositor.opaque);
 
-    target.surface = screen->surface;
-    target.mask = swc_screen_mask(base);
-    target.geometry = geometry;
+    render_target.surface = target->surface;
+    render_target.mask = swc_screen_mask(screen);
+    render_target.geometry = geometry;
 
-    renderer_repaint(&target, total_damage, &base_damage, &compositor.views);
+    renderer_repaint(&render_target, total_damage, &base_damage,
+                     &compositor.views);
     pixman_region32_fini(&base_damage);
-    screen_swap_buffers(screen);
+    target_swap_buffers(target);
 }
 
 static void perform_update(void * data)
@@ -918,7 +919,7 @@ bool swc_compositor_initialize()
     wl_signal_add(&swc.launch->event_signal, &launch_listener);
 
     wl_list_for_each(screen, &swc.screens, link)
-        screen_new(screen);
+        target_new(screen);
 
     swc_add_key_binding(SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace,
                         &handle_terminate, NULL);
