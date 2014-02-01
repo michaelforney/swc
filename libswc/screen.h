@@ -33,15 +33,15 @@
 struct swc_output;
 struct pixman_region32;
 
-struct swc_screen_modifier
+struct screen_modifier
 {
-    void (* modify)(struct swc_screen_modifier * modifier,
+    void (* modify)(struct screen_modifier * modifier,
                     const struct swc_rectangle * geometry,
                     struct pixman_region32 * usable);
     struct wl_list link;
 };
 
-struct swc_screen_internal
+struct screen
 {
     struct swc_screen base;
 
@@ -58,18 +58,18 @@ struct swc_screen_internal
     struct wl_list link;
 };
 
-bool swc_screens_initialize();
-void swc_screens_finalize();
+bool screens_initialize();
+void screens_finalize();
 
-struct swc_screen_internal * swc_screen_new(uint32_t crtc,
-                                            struct swc_output * output);
-void swc_screen_destroy(struct swc_screen_internal * screen);
-static inline uint32_t swc_screen_mask(struct swc_screen_internal * screen)
+struct screen * screen_new(uint32_t crtc, struct swc_output * output);
+void screen_destroy(struct screen * screen);
+
+static inline uint32_t screen_mask(struct screen * screen)
 {
     return 1 << screen->id;
 }
 
-void swc_screen_update_usable_geometry(struct swc_screen_internal * screen);
+void screen_update_usable_geometry(struct screen * screen);
 
 #endif
 

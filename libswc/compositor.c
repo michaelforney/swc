@@ -156,7 +156,7 @@ static void handle_screen_event(struct wl_listener * listener, void * data)
     }
 }
 
-static struct target * target_get(struct swc_screen_internal * screen)
+static struct target * target_get(struct screen * screen)
 {
     struct wl_listener * listener
         = wl_signal_get(&screen->base.event_signal, &handle_screen_event);
@@ -175,7 +175,7 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
     {
         case SWC_VIEW_EVENT_FRAME:
         {
-            struct swc_screen_internal * screen = CONTAINER_OF
+            struct screen * screen = CONTAINER_OF
                 (event_data->view, typeof(*screen), planes.framebuffer.view);
             struct target * target;
             struct view * view;
@@ -183,11 +183,11 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
             if (!(target = target_get(screen)))
                 return;
 
-            compositor.pending_flips &= ~swc_screen_mask(screen);
+            compositor.pending_flips &= ~screen_mask(screen);
 
             wl_list_for_each(view, &compositor.views, link)
             {
-                if (view->base.screens & swc_screen_mask(screen))
+                if (view->base.screens & screen_mask(screen))
                     swc_view_frame(&view->base, event_data->frame.time);
             }
 
@@ -221,7 +221,7 @@ static bool target_swap_buffers(struct target * target)
     return true;
 }
 
-static struct target * target_new(struct swc_screen_internal * screen)
+static struct target * target_new(struct screen * screen)
 {
     struct target * target;
 
@@ -241,7 +241,7 @@ static struct target * target_new(struct swc_screen_internal * screen)
     target->view_listener.notify = &handle_screen_view_event;
     wl_signal_add(&target->view->event_signal, &target->view_listener);
     target->current_buffer = NULL;
-    target->mask = swc_screen_mask(screen);
+    target->mask = screen_mask(screen);
     target_swap_buffers(target);
 
     target->screen_listener.notify = &handle_screen_event;
@@ -441,11 +441,11 @@ static void schedule_updates(uint32_t screens)
 
     if (screens == -1)
     {
-        struct swc_screen_internal * screen;
+        struct screen * screen;
 
         screens = 0;
         wl_list_for_each(screen, &swc.screens, link)
-            screens |= swc_screen_mask(screen);
+            screens |= screen_mask(screen);
     }
 
     compositor.scheduled_updates |= screens;
@@ -718,13 +718,13 @@ static void calculate_damage()
     pixman_region32_fini(&surface_opaque);
 }
 
-static void update_screen(struct swc_screen_internal * screen)
+static void update_screen(struct screen * screen)
 {
     struct target * target;
     const struct swc_rectangle * geometry = &screen->base.geometry;
     pixman_region32_t damage;
 
-    if (!(compositor.scheduled_updates & swc_screen_mask(screen)))
+    if (!(compositor.scheduled_updates & screen_mask(screen)))
         return;
 
     if (!(target = target_get(screen)))
@@ -740,7 +740,7 @@ static void update_screen(struct swc_screen_internal * screen)
     pixman_region32_fini(&damage);
 
     /* Don't repaint the screen if it is waiting for a page flip. */
-    if (compositor.pending_flips & swc_screen_mask(screen))
+    if (compositor.pending_flips & screen_mask(screen))
         return;
 
     pixman_region32_t * total_damage, base_damage;
@@ -757,7 +757,7 @@ static void update_screen(struct swc_screen_internal * screen)
 
 static void perform_update(void * data)
 {
-    struct swc_screen_internal * screen;
+    struct screen * screen;
     uint32_t updates = compositor.scheduled_updates
                      & ~compositor.pending_flips;
 
@@ -823,7 +823,7 @@ static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
 static void handle_launch_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct swc_screen_internal * screen;
+    struct screen * screen;
 
     switch (event->type)
     {
@@ -892,7 +892,7 @@ static void bind_compositor(struct wl_client * client, void * data,
 
 bool swc_compositor_initialize()
 {
-    struct swc_screen_internal * screen;
+    struct screen * screen;
     uint32_t keysym;
 
     compositor.global = wl_global_create

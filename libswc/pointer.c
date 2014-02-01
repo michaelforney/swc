@@ -130,14 +130,14 @@ static void handle_view_event(struct wl_listener * listener, void * data)
     {
         case SWC_VIEW_EVENT_MOVED:
         {
-            struct swc_screen_internal * screen;
+            struct screen * screen;
 
             wl_list_for_each(screen, &swc.screens, link)
             {
                 swc_view_move(&screen->planes.cursor.view,
                               view->geometry.x, view->geometry.y);
 
-                if (view->screens & swc_screen_mask(screen))
+                if (view->screens & screen_mask(screen))
                 {
                     struct swc_pointer * pointer
                         = CONTAINER_OF(view, typeof(*pointer), cursor.view);
@@ -155,18 +155,18 @@ static void handle_view_event(struct wl_listener * listener, void * data)
         }
         case SWC_VIEW_EVENT_SCREENS_CHANGED:
         {
-            struct swc_screen_internal * screen;
+            struct screen * screen;
             uint32_t entered = event_data->screens_changed.entered,
                      left = event_data->screens_changed.left;
 
             wl_list_for_each(screen, &swc.screens, link)
             {
-                if (entered & swc_screen_mask(screen))
+                if (entered & screen_mask(screen))
                 {
                     swc_view_attach(&screen->planes.cursor.view,
                                     &pointer->cursor.buffer);
                 }
-                else if (left & swc_screen_mask(screen))
+                else if (left & screen_mask(screen))
                     swc_view_attach(&screen->planes.cursor.view, NULL);
             }
             break;
@@ -208,7 +208,7 @@ void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id)
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
     struct wld_buffer * buffer;
-    struct swc_screen_internal * screen;
+    struct screen * screen;
 
     /* Center cursor in the geometry of the first screen. */
     screen = CONTAINER_OF(swc.screens.next, typeof(*screen), link);

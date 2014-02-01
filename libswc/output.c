@@ -15,7 +15,7 @@ static void bind_output(struct wl_client * client, void * data,
                         uint32_t version, uint32_t id)
 {
     struct swc_output * output = data;
-    struct swc_screen_internal * screen = output->screen;
+    struct screen * screen = output->screen;
     struct swc_mode * mode;
     struct wl_resource * resource;
     uint32_t flags;

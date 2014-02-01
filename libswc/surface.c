@@ -316,7 +316,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
         }
         case SWC_VIEW_EVENT_SCREENS_CHANGED:
         {
-            struct swc_screen_internal * screen;
+            struct screen * screen;
             struct swc_output * output;
             struct wl_client * client;
             struct wl_resource * resource;
@@ -327,7 +327,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
             wl_list_for_each(screen, &swc.screens, link)
             {
-                if (!((entered | left) & swc_screen_mask(screen)))
+                if (!((entered | left) & screen_mask(screen)))
                     continue;
 
                 wl_list_for_each(output, &screen->outputs, link)
@@ -337,9 +337,9 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
                     if (resource)
                     {
-                        if (entered & swc_screen_mask(screen))
+                        if (entered & screen_mask(screen))
                             wl_surface_send_enter(surface->resource, resource);
-                        else if (left & swc_screen_mask(screen))
+                        else if (left & screen_mask(screen))
                             wl_surface_send_leave(surface->resource, resource);
                     }
                 }

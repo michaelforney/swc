@@ -32,9 +32,9 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-#define INTERNAL(screen) ((struct swc_screen_internal *) (screen))
+#define INTERNAL(s) ((struct screen *) (s))
 
-bool swc_screens_initialize()
+bool screens_initialize()
 {
     wl_list_init(&swc.screens);
 
@@ -47,18 +47,17 @@ bool swc_screens_initialize()
     return true;
 }
 
-void swc_screens_finalize()
+void screens_finalize()
 {
-    struct swc_screen_internal * screen, * tmp;
+    struct screen * screen, * tmp;
 
     wl_list_for_each_safe(screen, tmp, &swc.screens, link)
-        swc_screen_destroy(screen);
+        screen_destroy(screen);
 }
 
-struct swc_screen_internal * swc_screen_new(uint32_t crtc,
-                                            struct swc_output * output)
+struct screen * screen_new(uint32_t crtc, struct swc_output * output)
 {
-    struct swc_screen_internal * screen;
+    struct screen * screen;
     int32_t x = 0;
 
     /* Simple heuristic for initial screen positioning. */
@@ -70,7 +69,7 @@ struct swc_screen_internal * swc_screen_new(uint32_t crtc,
 
     wl_signal_init(&screen->base.event_signal);
     wl_list_init(&screen->outputs);
-    wl_list_insert(&INTERNAL(screen)->outputs, &output->link);
+    wl_list_insert(&screen->outputs, &output->link);
     wl_list_init(&screen->modifiers);
 
     if (!swc_framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
@@ -106,7 +105,7 @@ struct swc_screen_internal * swc_screen_new(uint32_t crtc,
     return NULL;
 }
 
-void swc_screen_destroy(struct swc_screen_internal * screen)
+void screen_destroy(struct screen * screen)
 {
     struct swc_output * output, * next;
 
@@ -117,11 +116,11 @@ void swc_screen_destroy(struct swc_screen_internal * screen)
     free(screen);
 }
 
-void swc_screen_update_usable_geometry(struct swc_screen_internal * screen)
+void screen_update_usable_geometry(struct screen * screen)
 {
     pixman_region32_t total_usable, usable;
     pixman_box32_t * extents;
-    struct swc_screen_modifier * modifier;
+    struct screen_modifier * modifier;
 
     DEBUG("Updating usable geometry\n");
 

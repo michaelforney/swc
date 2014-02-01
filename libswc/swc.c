@@ -60,7 +60,7 @@ struct swc swc = {
 static void setup_compositor()
 {
     pixman_region32_t pointer_region;
-    struct swc_screen_internal * screen;
+    struct screen * screen;
     struct swc_rectangle * geometry;
 
     wl_list_insert(&swc.seat->keyboard->handlers,
@@ -118,7 +118,7 @@ bool swc_initialize(struct wl_display * display,
         goto error3;
     }
 
-    if (!swc_screens_initialize())
+    if (!screens_initialize())
     {
         ERROR("Could not initialize screens\n");
         goto error4;
@@ -179,7 +179,7 @@ bool swc_initialize(struct wl_display * display,
   error6:
     swc_compositor_finalize();
   error5:
-    swc_screens_finalize();
+    screens_finalize();
   error4:
     swc_bindings_finalize();
   error3:
@@ -203,7 +203,7 @@ void swc_finalize()
     swc_seat_finalize();
     swc_data_device_manager_finalize();
     swc_compositor_finalize();
-    swc_screens_finalize();
+    screens_finalize();
     swc_bindings_finalize();
     swc_shm_finalize();
     swc_drm_finalize();

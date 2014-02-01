@@ -34,14 +34,14 @@ static void update_screens(struct swc_view * view)
 {
     struct swc_view_event_data data = { .view = view };
     uint32_t old = view->screens, new = 0;
-    struct swc_screen_internal * screen;
+    struct screen * screen;
 
     if (view->visible)
     {
         wl_list_for_each(screen, &swc.screens, link)
         {
             if (swc_rectangle_overlap(&screen->base.geometry, &view->geometry))
-                new |= swc_screen_mask(screen);
+                new |= screen_mask(screen);
         }
     }
 

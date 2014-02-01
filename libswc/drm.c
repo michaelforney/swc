@@ -416,8 +416,7 @@ bool swc_drm_create_screens(struct wl_list * screens)
             if (!(output = swc_output_new(connector)))
                 continue;
 
-            output->screen = swc_screen_new(resources->crtcs[crtc_index],
-                                            output);
+            output->screen = screen_new(resources->crtcs[crtc_index], output);
             output->screen->id = id;
 
             taken_crtcs |= 1 << crtc_index;

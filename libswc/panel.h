@@ -36,8 +36,8 @@ struct swc_panel
     struct swc_surface * surface;
     struct wl_listener surface_destroy_listener;
     struct wl_listener view_listener;
-    struct swc_screen_internal * screen;
-    struct swc_screen_modifier modifier;
+    struct screen * screen;
+    struct screen_modifier modifier;
     uint32_t edge;
     uint32_t offset, strut_size;
     bool docked;

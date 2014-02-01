@@ -10,7 +10,7 @@ struct wl_display;
 
 struct swc_output
 {
-    struct swc_screen_internal * screen;
+    struct screen * screen;
 
     /* The physical dimensions (in mm) of this output */
     uint32_t physical_width, physical_height;

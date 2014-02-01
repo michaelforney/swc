@@ -73,9 +73,8 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     struct swc_panel * panel = wl_resource_get_user_data(resource);
     struct swc_output * output = output_resource
         ? wl_resource_get_user_data(output_resource) : NULL;
-    struct swc_screen_internal * screen = output
-        ? output->screen : CONTAINER_OF(swc.screens.next,
-                                        struct swc_screen_internal, link);
+    struct screen * screen = output
+        ? output->screen : CONTAINER_OF(swc.screens.next, struct screen, link);
     bool screen_changed = screen != panel->screen;
     uint32_t length;
 
@@ -98,7 +97,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     if (panel->screen && screen_changed)
     {
         wl_list_remove(&panel->modifier.link);
-        swc_screen_update_usable_geometry(panel->screen);
+        screen_update_usable_geometry(panel->screen);
     }
 
     panel->screen = screen;
@@ -136,7 +135,7 @@ static void set_strut(struct wl_client * client, struct wl_resource * resource,
     panel->strut_size = size;
 
     if (panel->docked)
-        swc_screen_update_usable_geometry(panel->screen);
+        screen_update_usable_geometry(panel->screen);
 }
 
 static const struct swc_panel_interface panel_implementation = {
@@ -145,7 +144,7 @@ static const struct swc_panel_interface panel_implementation = {
     .set_strut = &set_strut
 };
 
-static void modify(struct swc_screen_modifier * modifier,
+static void modify(struct screen_modifier * modifier,
                    const struct swc_rectangle * geometry,
                    pixman_region32_t * usable)
 {
@@ -193,7 +192,7 @@ static void destroy_panel(struct wl_resource * resource)
     {
         wl_list_remove(&panel->view_listener.link);
         wl_list_remove(&panel->modifier.link);
-        swc_screen_update_usable_geometry(panel->screen);
+        screen_update_usable_geometry(panel->screen);
         swc_compositor_remove_surface(panel->surface);
     }
 
