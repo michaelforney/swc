@@ -156,7 +156,7 @@ static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
 }
 
 bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
-                                      uint32_t crtc, drmModeModeInfoPtr mode,
+                                      uint32_t crtc, struct swc_mode * mode,
                                       uint32_t * connectors,
                                       uint32_t num_connectors)
 {
@@ -182,7 +182,7 @@ bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
     memcpy(plane_connectors, connectors, num_connectors * sizeof connectors[0]);
 
     if (drmModeSetCrtc(swc.drm->fd, crtc, -1, 0, 0,
-                       connectors, num_connectors, mode) != 0)
+                       connectors, num_connectors, &mode->info) != 0)
     {
         ERROR("Failed to set CRTC: %s\n", strerror(errno));
         goto error2;
@@ -192,7 +192,7 @@ bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
     plane->drm_handler.page_flip = &handle_page_flip;
     plane->need_modeset = true;
     swc_view_initialize(&plane->view, &view_impl);
-    swc_mode_initialize(&plane->mode, mode);
+    plane->mode = *mode;
 
     return true;
 

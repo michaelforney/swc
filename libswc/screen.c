@@ -79,7 +79,7 @@ struct swc_screen_internal * swc_screen_new(uint32_t crtc,
     wl_list_init(&screen->modifiers);
 
     if (!swc_framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
-                                          &output->preferred_mode->info,
+                                          output->preferred_mode,
                                           &output->connector, 1))
     {
         ERROR("Failed to initialize framebuffer plane\n");

@@ -29,8 +29,6 @@
 #include "surface.h"
 #include "view.h"
 
-#include <xf86drmMode.h>
-
 struct swc_framebuffer_plane
 {
     uint32_t crtc;
@@ -43,7 +41,7 @@ struct swc_framebuffer_plane
 };
 
 bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
-                                      uint32_t crtc, drmModeModeInfoPtr mode,
+                                      uint32_t crtc, struct swc_mode * mode,
                                       uint32_t * connectors,
                                       uint32_t num_connectors);
 
