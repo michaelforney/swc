@@ -86,6 +86,13 @@ struct swc_view
     uint32_t screens;
 
     struct swc_rectangle geometry;
+
+    /**
+     * The screen that the view belongs to (for example if framebuffer or
+     * cursor plane), or NULL.
+     */
+    struct screen * screen;
+
     struct swc_buffer * buffer;
     struct wl_listener buffer_destroy_listener;
 };

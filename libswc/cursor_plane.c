@@ -26,6 +26,7 @@
 #include "drm.h"
 #include "internal.h"
 #include "launch.h"
+#include "screen.h"
 #include "util.h"
 
 #include <errno.h>
@@ -75,7 +76,9 @@ static bool move(struct swc_view * view, int32_t x, int32_t y)
 {
     struct swc_cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
 
-    if (drmModeMoveCursor(swc.drm->fd, plane->crtc, x, y) != 0)
+    if (drmModeMoveCursor(swc.drm->fd, plane->crtc,
+                          x - view->screen->base.geometry.x,
+                          y - view->screen->base.geometry.y) != 0)
     {
         ERROR("Could not move cursor: %s\n", strerror(errno));
         return false;

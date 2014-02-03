@@ -142,9 +142,15 @@ static bool attach(struct swc_view * view, struct swc_buffer * buffer)
     return true;
 }
 
+static bool move(struct swc_view * view, int32_t x, int32_t y)
+{
+    return true;
+}
+
 const static struct swc_view_impl view_impl = {
     .update = &update,
-    .attach = &attach
+    .attach = &attach,
+    .move = &move
 };
 
 static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
@@ -192,6 +198,8 @@ bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
     plane->drm_handler.page_flip = &handle_page_flip;
     plane->need_modeset = true;
     swc_view_initialize(&plane->view, &view_impl);
+    plane->view.geometry.width = mode->width;
+    plane->view.geometry.height = mode->height;
     plane->mode = *mode;
 
     return true;

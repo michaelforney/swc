@@ -68,11 +68,6 @@ struct swc_screen_internal * swc_screen_new(uint32_t crtc,
     if (!(screen = malloc(sizeof *screen)))
         goto error0;
 
-    screen->base.geometry.x = x;
-    screen->base.geometry.y = 0;
-    screen->base.geometry.width = output->preferred_mode->width;
-    screen->base.geometry.height = output->preferred_mode->height;
-    screen->base.usable_geometry = screen->base.geometry;
     wl_signal_init(&screen->base.event_signal);
     wl_list_init(&screen->outputs);
     wl_list_insert(&INTERNAL(screen)->outputs, &output->link);
@@ -91,6 +86,13 @@ struct swc_screen_internal * swc_screen_new(uint32_t crtc,
         ERROR("Failed to initialize cursor plane\n");
         goto error2;
     }
+
+    screen->planes.framebuffer.view.screen = screen;
+    screen->planes.cursor.view.screen = screen;
+
+    swc_view_move(&screen->planes.framebuffer.view, x, 0);
+    screen->base.geometry = screen->planes.framebuffer.view.geometry;
+    screen->base.usable_geometry = screen->base.geometry;
 
     swc.manager->new_screen(&screen->base);
 
