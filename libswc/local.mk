@@ -29,7 +29,6 @@ $(dir)_PACKAGES =   \
 SWC_SOURCES =                       \
     launch/protocol.c               \
     libswc/bindings.c               \
-    libswc/buffer.c                 \
     libswc/compositor.c             \
     libswc/cursor_plane.c           \
     libswc/data.c                   \

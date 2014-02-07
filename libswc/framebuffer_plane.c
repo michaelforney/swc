@@ -22,7 +22,6 @@
  */
 
 #include "framebuffer_plane.h"
-#include "buffer.h"
 #include "drm.h"
 #include "internal.h"
 #include "util.h"
@@ -33,63 +32,43 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
-struct framebuffer
+enum
 {
-    uint32_t id;
-    struct wl_listener destroy_listener;
+    WLD_USER_OBJECT_FRAMEBUFFER = WLD_USER_ID
 };
 
-static void handle_buffer_destroy(struct wl_listener * listener, void * data)
+struct framebuffer
+{
+    struct wld_exporter exporter;
+    struct wld_destructor destructor;
+    uint32_t id;
+};
+
+static bool framebuffer_export(struct wld_exporter * exporter,
+                               struct wld_buffer * buffer,
+                               uint32_t type, union wld_object * object)
 {
     struct framebuffer * framebuffer
-        = CONTAINER_OF(listener, typeof(*framebuffer), destroy_listener);
+        = CONTAINER_OF(exporter, typeof(*framebuffer), exporter);
+
+    switch (type)
+    {
+        case WLD_USER_OBJECT_FRAMEBUFFER:
+            object->u32 = framebuffer->id;
+            break;
+        default: return false;
+    }
+
+    return true;
+}
+
+static void framebuffer_destroy(struct wld_destructor * destructor)
+{
+    struct framebuffer * framebuffer
+        = CONTAINER_OF(destructor, typeof(*framebuffer), destructor);
 
     drmModeRmFB(swc.drm->fd, framebuffer->id);
     free(framebuffer);
-}
-
-static struct framebuffer * framebuffer_get(struct swc_buffer * buffer)
-{
-    struct wl_listener * listener
-        = wl_signal_get(&buffer->destroy_signal, &handle_buffer_destroy);
-    struct framebuffer * framebuffer;
-
-    if (listener)
-    {
-        framebuffer = CONTAINER_OF(listener, typeof(*framebuffer),
-                                   destroy_listener);
-    }
-    else
-    {
-        struct wld_buffer * wld = buffer->wld;
-        union wld_object object;
-
-        if (!wld_export(wld, WLD_DRM_OBJECT_HANDLE, &object))
-        {
-            ERROR("Could not get buffer handle\n");
-            goto error0;
-        }
-
-
-        if (!(framebuffer = malloc(sizeof *framebuffer)))
-            goto error0;
-
-        if (drmModeAddFB(swc.drm->fd, wld->width, wld->height, 24, 32,
-                         wld->pitch, object.u32, &framebuffer->id) != 0)
-        {
-            goto error1;
-        }
-
-        framebuffer->destroy_listener.notify = &handle_buffer_destroy;
-        wl_signal_add(&buffer->destroy_signal, &framebuffer->destroy_listener);
-    }
-
-    return framebuffer;
-
-  error1:
-    free(framebuffer);
-  error0:
-    return NULL;
 }
 
 static bool update(struct swc_view * view)
@@ -104,18 +83,43 @@ static void send_frame(void * data)
     swc_view_frame(&plane->view, swc_time());
 }
 
-static bool attach(struct swc_view * view, struct swc_buffer * buffer)
+static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 {
     struct swc_framebuffer_plane * plane
         = CONTAINER_OF(view, typeof(*plane), view);
-    struct framebuffer * framebuffer = framebuffer_get(buffer);
+    union wld_object object;
 
-    if (!framebuffer)
-        return false;
+    if (!wld_export(buffer, WLD_USER_OBJECT_FRAMEBUFFER, &object))
+    {
+        struct framebuffer * framebuffer;
+
+        if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object))
+        {
+            ERROR("Could not get buffer handle\n");
+            return false;
+        }
+
+        if (!(framebuffer = malloc(sizeof *framebuffer)))
+            return false;
+
+        if (drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32,
+                         buffer->pitch, object.u32, &framebuffer->id) != 0)
+        {
+            free(framebuffer);
+            return false;
+        }
+
+        framebuffer->exporter.export = &framebuffer_export;
+        wld_buffer_add_exporter(buffer, &framebuffer->exporter);
+        framebuffer->destructor.destroy = &framebuffer_destroy;
+        wld_buffer_add_destructor(buffer, &framebuffer->destructor);
+
+        object.u32 = framebuffer->id;
+    }
 
     if (plane->need_modeset)
     {
-        if (drmModeSetCrtc(swc.drm->fd, plane->crtc, framebuffer->id, 0, 0,
+        if (drmModeSetCrtc(swc.drm->fd, plane->crtc, object.u32, 0, 0,
                            plane->connectors.data, plane->connectors.size / 4,
                            &plane->mode.info) == 0)
         {
@@ -131,7 +135,7 @@ static bool attach(struct swc_view * view, struct swc_buffer * buffer)
     }
     else
     {
-        if (drmModePageFlip(swc.drm->fd, plane->crtc, framebuffer->id,
+        if (drmModePageFlip(swc.drm->fd, plane->crtc, object.u32,
                             DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler) != 0)
         {
             ERROR("Page flip failed: %s\n", strerror(errno));

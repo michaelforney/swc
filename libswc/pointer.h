@@ -24,7 +24,6 @@
 #ifndef SWC_POINTER_H
 #define SWC_POINTER_H
 
-#include "buffer.h"
 #include "input_focus.h"
 #include "surface.h"
 #include "view.h"
@@ -55,10 +54,10 @@ struct swc_pointer
         struct wl_listener view_listener;
         struct swc_surface * surface;
         struct wl_listener destroy_listener;
-        struct swc_buffer buffer;
+        struct wld_buffer * buffer;
 
         /* Used for cursors set with swc_pointer_set_cursor */
-        struct swc_buffer internal_buffer;
+        struct wld_buffer * internal_buffer;
 
         struct
         {

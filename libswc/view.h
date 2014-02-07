@@ -93,8 +93,7 @@ struct swc_view
      */
     struct screen * screen;
 
-    struct swc_buffer * buffer;
-    struct wl_listener buffer_destroy_listener;
+    struct wld_buffer * buffer;
 };
 
 /**
@@ -105,7 +104,7 @@ struct swc_view
 struct swc_view_impl
 {
     bool (* update)(struct swc_view * view);
-    bool (* attach)(struct swc_view * view, struct swc_buffer * buffer);
+    bool (* attach)(struct swc_view * view, struct wld_buffer * buffer);
     bool (* move)(struct swc_view * view, int32_t x, int32_t y);
 
     /**
@@ -135,7 +134,7 @@ void swc_view_finalize(struct swc_view * view);
  *
  * @return Whether or not the buffer was successfully attached to the view.
  */
-bool swc_view_attach(struct swc_view * view, struct swc_buffer * buffer);
+bool swc_view_attach(struct swc_view * view, struct wld_buffer * buffer);
 
 /**
  * Display a new frame consisting of the currently attached buffer.

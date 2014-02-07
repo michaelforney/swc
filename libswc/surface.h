@@ -39,7 +39,8 @@ enum
 
 struct swc_surface_state
 {
-    struct swc_buffer * buffer;
+    struct wld_buffer * buffer;
+    struct wl_resource * buffer_resource;
     struct wl_listener buffer_destroy_listener;
 
     /* The region that needs to be repainted. */

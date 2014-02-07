@@ -84,7 +84,7 @@ static bool update(struct swc_view * view)
     return true;
 }
 
-static bool attach(struct swc_view * view, struct swc_buffer * buffer)
+static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 {
     struct swc_pointer * pointer
         = CONTAINER_OF(view, typeof(*pointer), cursor.view);
@@ -93,10 +93,10 @@ static bool attach(struct swc_view * view, struct swc_buffer * buffer)
     if (surface && !pixman_region32_not_empty(&surface->state.damage))
         return true;
 
-    wld_set_target_buffer(swc.shm->renderer, pointer->cursor.buffer.wld);
+    wld_set_target_buffer(swc.shm->renderer, pointer->cursor.buffer);
     wld_fill_rectangle(swc.shm->renderer, 0x00000000, 0, 0, 64, 64);
-    wld_copy_rectangle(swc.shm->renderer, buffer->wld, 0, 0, 0, 0,
-                       buffer->wld->width, buffer->wld->height);
+    wld_copy_rectangle(swc.shm->renderer, buffer, 0, 0, 0, 0,
+                       buffer->width, buffer->height);
     wld_flush(swc.shm->renderer);
 
     if (surface)
@@ -145,7 +145,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
                     if (!screen->planes.cursor.view.buffer)
                     {
                         swc_view_attach(&screen->planes.cursor.view,
-                                        &pointer->cursor.buffer);
+                                        pointer->cursor.buffer);
                     }
                 }
                 else if (screen->planes.cursor.view.buffer)
@@ -164,7 +164,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
                 if (entered & screen_mask(screen))
                 {
                     swc_view_attach(&screen->planes.cursor.view,
-                                    &pointer->cursor.buffer);
+                                    pointer->cursor.buffer);
                 }
                 else if (left & screen_mask(screen))
                     swc_view_attach(&screen->planes.cursor.view, NULL);
@@ -186,14 +186,14 @@ void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id)
     struct cursor * cursor = &cursor_metadata[id];
     union wld_object object = { .ptr = &cursor_data[cursor->offset] };
 
-    if (pointer->cursor.internal_buffer.wld)
-        wld_destroy_buffer(pointer->cursor.internal_buffer.wld);
+    if (pointer->cursor.internal_buffer)
+        wld_buffer_unreference(pointer->cursor.internal_buffer);
 
-    pointer->cursor.internal_buffer.wld = wld_import_buffer
+    pointer->cursor.internal_buffer = wld_import_buffer
         (swc.shm->context, WLD_OBJECT_DATA, object,
          cursor->width, cursor->height, WLD_FORMAT_ARGB8888, cursor->width * 4);
 
-    if (!pointer->cursor.internal_buffer.wld)
+    if (!pointer->cursor.internal_buffer)
     {
         ERROR("Failed to create cursor buffer\n");
         return;
@@ -202,12 +202,11 @@ void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id)
     pointer->cursor.hotspot.x = cursor->hotspot_x;
     pointer->cursor.hotspot.y = cursor->hotspot_y;
     update_cursor(pointer);
-    swc_view_attach(&pointer->cursor.view, &pointer->cursor.internal_buffer);
+    swc_view_attach(&pointer->cursor.view, pointer->cursor.internal_buffer);
 }
 
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
-    struct wld_buffer * buffer;
     struct screen * screen;
 
     /* Center cursor in the geometry of the first screen. */
@@ -226,14 +225,13 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
                   &pointer->cursor.view_listener);
     pointer->cursor.surface = NULL;
     pointer->cursor.destroy_listener.notify = &handle_cursor_surface_destroy;
-    buffer = wld_create_buffer(swc.drm->context, 64, 64, WLD_FORMAT_ARGB8888,
-                               WLD_FLAG_MAP);
+    pointer->cursor.buffer = wld_create_buffer
+        (swc.drm->context, 64, 64, WLD_FORMAT_ARGB8888, WLD_FLAG_MAP);
+    pointer->cursor.internal_buffer = NULL;
 
-    if (!buffer)
+    if (!pointer->cursor.buffer)
         return false;
 
-    swc_buffer_initialize(&pointer->cursor.buffer, buffer);
-    swc_buffer_initialize(&pointer->cursor.internal_buffer, NULL);
     swc_pointer_set_cursor(pointer, cursor_left_ptr);
 
     swc_input_focus_initialize(&pointer->focus, &pointer->focus_handler);

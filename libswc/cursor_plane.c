@@ -22,7 +22,6 @@
  */
 
 #include "cursor_plane.h"
-#include "buffer.h"
 #include "drm.h"
 #include "internal.h"
 #include "launch.h"
@@ -39,7 +38,7 @@ static bool update(struct swc_view * view)
     return true;
 }
 
-static bool attach(struct swc_view * view, struct swc_buffer * buffer)
+static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 {
     struct swc_cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
 
@@ -47,14 +46,14 @@ static bool attach(struct swc_view * view, struct swc_buffer * buffer)
     {
         union wld_object object;
 
-        if (!wld_export(buffer->wld, WLD_DRM_OBJECT_HANDLE, &object))
+        if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object))
         {
             ERROR("Could not get export buffer to DRM handle\n");
             return false;
         }
 
         if (drmModeSetCursor(swc.drm->fd, plane->crtc, object.u32,
-                             buffer->wld->width, buffer->wld->height) != 0)
+                             buffer->width, buffer->height) != 0)
         {
             ERROR("Could not set cursor: %s\n", strerror(errno));
             return false;

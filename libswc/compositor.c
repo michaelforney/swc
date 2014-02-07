@@ -28,7 +28,6 @@
  */
 
 #include "swc.h"
-#include "buffer.h"
 #include "compositor.h"
 #include "data_device_manager.h"
 #include "drm.h"
@@ -67,7 +66,7 @@ struct view
     struct swc_view base;
     struct wl_listener event_listener;
     struct swc_surface * surface;
-    struct wld_buffer * wld;
+    struct wld_buffer * buffer;
 
     /* The box that the surface covers (including it's border). */
     pixman_box32_t extents;
@@ -116,31 +115,6 @@ static struct
 const struct swc_compositor swc_compositor = {
     .pointer_handler = &pointer_handler
 };
-
-static void buffer_destroy(void * data)
-{
-    struct swc_buffer * buffer = data;
-
-    swc_buffer_finalize(buffer);
-    free(buffer);
-}
-
-struct swc_buffer * buffer_get(struct wld_buffer * wld)
-{
-    if (wld->destroy_data)
-        return wld->data;
-
-    struct swc_buffer * buffer;
-
-    if (!(buffer = malloc(sizeof *buffer)))
-        return NULL;
-
-    swc_buffer_initialize(buffer, wld);
-    wld->data = buffer;
-    wld->destroy_data = &buffer_destroy;
-
-    return buffer;
-}
 
 static void handle_screen_event(struct wl_listener * listener, void * data)
 {
@@ -207,12 +181,9 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
 
 static bool target_swap_buffers(struct target * target)
 {
-    struct swc_buffer * buffer;
-
     target->next_buffer = wld_surface_take(target->surface);
-    buffer = buffer_get(target->next_buffer);
 
-    if (!swc_view_attach(target->view, buffer))
+    if (!swc_view_attach(target->view, target->next_buffer))
     {
         ERROR("Failed to attach next frame to screen\n");
         return false;
@@ -281,7 +252,7 @@ static void repaint_view(struct target * target, struct view * view,
     if (pixman_region32_not_empty(&view_damage))
     {
         pixman_region32_translate(&view_damage, -geometry->x, -geometry->y);
-        wld_copy_region(swc.drm->renderer, view->wld,
+        wld_copy_region(swc.drm->renderer, view->buffer,
                         geometry->x - target->view->geometry.x,
                         geometry->y - target->view->geometry.y, &view_damage);
     }
@@ -333,18 +304,18 @@ static void renderer_repaint(struct target * target,
     wld_flush(swc.drm->renderer);
 }
 
-static bool renderer_attach(struct view * view, struct swc_buffer * buffer)
+static bool renderer_attach(struct view * view, struct wld_buffer * client_buffer)
 {
-    struct wld_buffer * wld;
-    bool was_proxy = view->base.buffer && view->wld != view->base.buffer->wld;
-    bool needs_proxy = buffer
+    struct wld_buffer * buffer;
+    bool was_proxy = view->buffer != view->base.buffer;
+    bool needs_proxy = client_buffer
         && !(wld_capabilities(swc.drm->renderer,
-                              buffer->wld) & WLD_CAPABILITY_READ);
-    bool resized = view->wld && buffer
-        && (view->wld->width != buffer->wld->width
-            || view->wld->height != buffer->wld->height);
+                              client_buffer) & WLD_CAPABILITY_READ);
+    bool resized = view->buffer && client_buffer
+        && (view->buffer->width != client_buffer->width
+            || view->buffer->height != client_buffer->height);
 
-    if (buffer)
+    if (client_buffer)
     {
         /* Create a proxy buffer if necessary (for example a hardware buffer
          * backing a SHM buffer). */
@@ -353,42 +324,46 @@ static bool renderer_attach(struct view * view, struct swc_buffer * buffer)
             if (!was_proxy || resized)
             {
                 DEBUG("Creating a proxy buffer\n");
-                wld = wld_create_buffer(swc.drm->context,
-                                        buffer->wld->width, buffer->wld->height,
-                                        buffer->wld->format, WLD_FLAG_MAP);
+                buffer = wld_create_buffer(swc.drm->context,
+                                           client_buffer->width,
+                                           client_buffer->height,
+                                           client_buffer->format, WLD_FLAG_MAP);
 
-                if (!wld)
+                if (!buffer)
                     return false;
             }
             else
             {
                 /* Otherwise we can keep the original proxy buffer. */
-                wld = view->wld;
+                buffer = view->buffer;
             }
         }
         else
-            wld = buffer->wld;
+            buffer = client_buffer;
     }
     else
-        wld = NULL;
+        buffer = NULL;
 
     /* If we no longer need a proxy buffer, or the original buffer is of a
      * different size, destroy the old proxy image. */
-    if (view->wld && ((!needs_proxy && was_proxy) || (needs_proxy && resized)))
-        wld_destroy_buffer(view->wld);
+    if (view->buffer && ((!needs_proxy && was_proxy)
+                         || (needs_proxy && resized)))
+    {
+        wld_buffer_unreference(view->buffer);
+    }
 
-    view->wld = wld;
+    view->buffer = buffer;
 
     return true;
 }
 
 static void renderer_flush_view(struct view * view)
 {
-    if (view->wld == view->base.buffer->wld)
+    if (view->buffer == view->base.buffer)
         return;
 
-    wld_set_target_buffer(swc.shm->renderer, view->wld);
-    wld_copy_region(swc.shm->renderer, view->base.buffer->wld,
+    wld_set_target_buffer(swc.shm->renderer, view->buffer);
+    wld_copy_region(swc.shm->renderer, view->base.buffer,
                     0, 0, &view->surface->state.damage);
     wld_flush(swc.shm->renderer);
 }
@@ -461,7 +436,7 @@ static bool update(struct swc_view * view)
     return true;
 }
 
-static bool attach(struct swc_view * base, struct swc_buffer * buffer)
+static bool attach(struct swc_view * base, struct wld_buffer * buffer)
 {
     struct view * view = (void *) base;
 
@@ -548,7 +523,7 @@ bool swc_compositor_add_surface(struct swc_surface * surface)
     view->event_listener.notify = &handle_view_event;
     wl_signal_add(&view->base.event_signal, &view->event_listener);
     view->surface = surface;
-    view->wld = NULL;
+    view->buffer = NULL;
     view->extents.x1 = 0;
     view->extents.y1 = 0;
     view->extents.x2 = 0;

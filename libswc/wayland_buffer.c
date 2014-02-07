@@ -22,7 +22,6 @@
  */
 
 #include "wayland_buffer.h"
-#include "buffer.h"
 #include "internal.h"
 #include "shm.h"
 #include "util.h"
@@ -32,8 +31,7 @@
 
 struct wayland_buffer
 {
-    struct swc_buffer base;
-    struct wl_resource * resource;
+    struct wld_buffer * wld;
     struct wl_listener destroy_listener;
 };
 
@@ -53,7 +51,7 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
     struct wayland_buffer * buffer
         = CONTAINER_OF(listener, typeof(*buffer), destroy_listener);
 
-    swc_buffer_finalize(&buffer->base);
+    wld_buffer_unreference(buffer->wld);
     free(buffer);
 }
 
@@ -70,7 +68,7 @@ static inline uint32_t format_shm_to_wld(uint32_t format)
     }
 }
 
-struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
+struct wld_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
 {
     if (wl_resource_instance_of(resource, &wl_buffer_interface,
                                 &buffer_implementation))
@@ -88,11 +86,13 @@ struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
     {
         buffer = CONTAINER_OF(listener, typeof(*buffer), destroy_listener);
 
-        return &buffer->base;
+        return buffer->wld;
     }
 
+    if (!(buffer = malloc(sizeof *buffer)))
+        goto error0;
+
     struct wl_shm_buffer * shm_buffer;
-    struct wld_buffer * wld = NULL;
 
     if ((shm_buffer = wl_shm_buffer_get(resource)))
     {
@@ -100,7 +100,7 @@ struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
             .ptr = wl_shm_buffer_get_data(shm_buffer)
         };
 
-        wld = wld_import_buffer
+        buffer->wld = wld_import_buffer
             (swc.shm->context, WLD_OBJECT_DATA, object,
              wl_shm_buffer_get_width(shm_buffer),
              wl_shm_buffer_get_height(shm_buffer),
@@ -108,64 +108,44 @@ struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
              wl_shm_buffer_get_stride(shm_buffer));
     }
 
-    if (!wld)
-        goto error0;
-
-    if (!(buffer = malloc(sizeof *buffer)))
+    if (!buffer->wld)
         goto error1;
 
-    swc_buffer_initialize(&buffer->base, wld);
-    buffer->resource = resource;
     buffer->destroy_listener.notify = &handle_buffer_destroy;
     wl_resource_add_destroy_listener(resource,
                                      &buffer->destroy_listener);
 
-    return &buffer->base;
+    return buffer->wld;
 
   error1:
-    wld_destroy_buffer(wld);
+    free(buffer);
   error0:
     return NULL;
 }
 
 static void destroy_buffer(struct wl_resource * resource)
 {
-    struct wayland_buffer * buffer = wl_resource_get_user_data(resource);
+    struct wld_buffer * buffer = wl_resource_get_user_data(resource);
 
-    swc_buffer_finalize(&buffer->base);
-    free(buffer);
+    wld_buffer_unreference(buffer);
 }
 
-struct swc_buffer * swc_wayland_buffer_new
-    (struct wl_client * client, uint32_t id, struct wld_buffer * wld)
+struct wl_resource * swc_wayland_buffer_create_resource
+    (struct wl_client * client, uint32_t id, struct wld_buffer * buffer)
 {
-    struct wayland_buffer * buffer;
+    struct wl_resource * resource;
 
-    buffer = malloc(sizeof *buffer);
+    resource = wl_resource_create(client, &wl_buffer_interface, 1, id);
 
-    if (!buffer)
-        goto error0;
+    if (!resource)
+    {
+        wl_client_post_no_memory(client);
+        return NULL;
+    }
 
-    buffer->resource = wl_resource_create(client, &wl_buffer_interface, 1, id);
-
-    if (!buffer->resource)
-        goto error1;
-
-    wl_resource_set_implementation(buffer->resource, &buffer_implementation,
+    wl_resource_set_implementation(resource, &buffer_implementation,
                                    buffer, &destroy_buffer);
-    swc_buffer_initialize(&buffer->base, wld);
 
-    return &buffer->base;
-
-  error1:
-    free(buffer);
-  error0:
-    wl_client_post_no_memory(client);
-    return NULL;
-}
-
-void swc_wayland_buffer_release(struct swc_buffer * buffer)
-{
-    wl_buffer_send_release(((struct wayland_buffer *) buffer)->resource);
+    return resource;
 }
 

@@ -74,25 +74,25 @@ static void create_buffer(struct wl_client * client,
                           uint32_t name, int32_t width, int32_t height,
                           uint32_t stride, uint32_t format)
 {
-    struct wld_buffer * wld;
-    struct swc_buffer * buffer;
+    struct wld_buffer * buffer;
+    struct wl_resource * buffer_resource;
     union wld_object object = { .u32 = name };
 
-    wld = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_GEM_NAME, object,
-                            width, height, format, stride);
-
-    if (!wld)
-        goto error0;
-
-    buffer = swc_wayland_buffer_new(client, id, wld);
+    buffer = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_GEM_NAME,
+                               object, width, height, format, stride);
 
     if (!buffer)
+        goto error0;
+
+    buffer_resource = swc_wayland_buffer_create_resource(client, id, buffer);
+
+    if (!buffer_resource)
         goto error1;
 
     return;
 
   error1:
-    wld_destroy_buffer(wld);
+    wld_buffer_unreference(buffer);
   error0:
     wl_resource_post_no_memory(resource);
 }
@@ -117,26 +117,26 @@ static void create_prime_buffer(struct wl_client * client,
                                 int32_t offset1, int32_t stride1,
                                 int32_t offset2, int32_t stride2)
 {
-    struct wld_buffer * wld;
-    struct swc_buffer * buffer;
+    struct wld_buffer * buffer;
+    struct wl_resource * buffer_resource;
     union wld_object object = { .i = fd };
 
-    wld = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_PRIME_FD, object,
-                            width, height, format, stride0);
+    buffer = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_PRIME_FD,
+                               object, width, height, format, stride0);
     close(fd);
 
-    if (!wld)
+    if (!buffer)
         goto error0;
 
-    buffer = swc_wayland_buffer_new(client, id, wld);
+    buffer_resource = swc_wayland_buffer_create_resource(client, id, buffer);
 
-    if (!buffer)
+    if (!buffer_resource)
         goto error1;
 
     return;
 
   error1:
-    wld_destroy_buffer(wld);
+    wld_buffer_unreference(buffer);
   error0:
     wl_resource_post_no_memory(resource);
 }

@@ -28,14 +28,11 @@
 
 struct wl_client;
 struct wl_resource;
-struct wld_buffer;
 
-struct swc_buffer * swc_wayland_buffer_get(struct wl_resource * resource);
+struct wld_buffer * swc_wayland_buffer_get(struct wl_resource * resource);
 
-struct swc_buffer * swc_wayland_buffer_new
+struct wl_resource * swc_wayland_buffer_create_resource
     (struct wl_client * client, uint32_t id, struct wld_buffer * buffer);
-
-void swc_wayland_buffer_release(struct swc_buffer * buffer);
 
 #endif
 

@@ -22,7 +22,6 @@
  */
 
 #include "view.h"
-#include "buffer.h"
 #include "event.h"
 #include "internal.h"
 #include "screen.h"
@@ -72,16 +71,6 @@ static void set_size(struct swc_view * view, uint32_t width, uint32_t height)
     }
 }
 
-static void handle_buffer_destroy(struct wl_listener * listener, void * data)
-{
-    struct swc_view * view
-        = CONTAINER_OF(listener, typeof(*view), buffer_destroy_listener);
-
-    view->impl->attach(view, NULL);
-    view->buffer = NULL;
-    set_size(view, 0, 0);
-}
-
 void swc_view_initialize(struct swc_view * view,
                          const struct swc_view_impl * impl)
 {
@@ -92,7 +81,6 @@ void swc_view_initialize(struct swc_view * view,
     view->geometry.width = 0;
     view->geometry.height = 0;
     view->buffer = NULL;
-    view->buffer_destroy_listener.notify = &handle_buffer_destroy;
     view->screens = 0;
     wl_signal_init(&view->event_signal);
 }
@@ -100,21 +88,20 @@ void swc_view_initialize(struct swc_view * view,
 void swc_view_finalize(struct swc_view * view)
 {
     if (view->buffer)
-        wl_list_remove(&view->buffer_destroy_listener.link);
+        wld_buffer_unreference(view->buffer);
 }
 
-bool swc_view_attach(struct swc_view * view, struct swc_buffer * buffer)
+bool swc_view_attach(struct swc_view * view, struct wld_buffer * buffer)
 {
     if (view->impl->attach(view, buffer))
     {
         if (view->buffer)
-            wl_list_remove(&view->buffer_destroy_listener.link);
+            wld_buffer_unreference(view->buffer);
 
         if (buffer)
         {
-            wl_signal_add(&buffer->destroy_signal,
-                          &view->buffer_destroy_listener);
-            set_size(view, buffer->wld->width, buffer->wld->height);
+            wld_buffer_reference(buffer);
+            set_size(view, buffer->width, buffer->height);
         }
         else
             set_size(view, 0, 0);
