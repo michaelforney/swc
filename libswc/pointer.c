@@ -125,38 +125,29 @@ static void handle_view_event(struct wl_listener * listener, void * data)
     struct swc_event * event = data;
     struct swc_view_event_data * event_data = event->data;
     struct swc_view * view = event_data->view;
+    struct screen * screen;
 
     switch (event->type)
     {
         case SWC_VIEW_EVENT_MOVED:
-        {
-            struct screen * screen;
-
             wl_list_for_each(screen, &swc.screens, link)
             {
                 swc_view_move(&screen->planes.cursor.view,
                               view->geometry.x, view->geometry.y);
             }
             break;
-        }
         case SWC_VIEW_EVENT_SCREENS_CHANGED:
-        {
-            struct screen * screen;
-            uint32_t entered = event_data->screens_changed.entered,
-                     left = event_data->screens_changed.left;
-
             wl_list_for_each(screen, &swc.screens, link)
             {
-                if (entered & screen_mask(screen))
+                if (event_data->screens_changed.entered & screen_mask(screen))
                 {
                     swc_view_attach(&screen->planes.cursor.view,
                                     pointer->cursor.buffer);
                 }
-                else if (left & screen_mask(screen))
+                else if (event_data->screens_changed.left & screen_mask(screen))
                     swc_view_attach(&screen->planes.cursor.view, NULL);
             }
             break;
-        }
     }
 }
 
