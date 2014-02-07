@@ -1,6 +1,10 @@
 /* swc: libswc/shm.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
+ *
+ * Based in part upon wayland-shm.c from wayland, which is:
+ *
+ *     Copyright © 2008 Kristian Høgsberg
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,12 +27,209 @@
 
 #include "shm.h"
 #include "internal.h"
+#include "util.h"
+#include "wayland_buffer.h"
 
-#include <stddef.h>
-#include <wld/wld.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <wayland-server.h>
 #include <wld/pixman.h>
+#include <wld/wld.h>
 
 struct swc_shm swc_shm;
+
+static struct
+{
+    struct wl_global * global;
+} shm;
+
+struct pool
+{
+    struct wl_resource * resource;
+    void * data;
+    uint32_t size;
+    unsigned references;
+};
+
+struct pool_reference
+{
+    struct wld_destructor destructor;
+    struct pool * pool;
+};
+
+static void unref_pool(struct wl_resource * resource)
+{
+    struct pool * pool = wl_resource_get_user_data(resource);
+
+    if (--pool->references > 0)
+        return;
+
+    munmap(pool->data, pool->size);
+    free(pool);
+}
+
+static void handle_buffer_destroy(struct wld_destructor * destructor)
+{
+    struct pool_reference * reference
+        = CONTAINER_OF(destructor, typeof(*reference), destructor);
+
+    unref_pool(reference->pool->resource);
+}
+
+static inline uint32_t format_shm_to_wld(uint32_t format)
+{
+    switch (format)
+    {
+        case WL_SHM_FORMAT_ARGB8888:
+            return WLD_FORMAT_ARGB8888;
+        case WL_SHM_FORMAT_XRGB8888:
+            return WLD_FORMAT_XRGB8888;
+        default:
+            return format;
+    }
+}
+
+static void create_buffer(struct wl_client * client,
+                          struct wl_resource * resource, uint32_t id,
+                          int32_t offset, int32_t width, int32_t height,
+                          int32_t stride, uint32_t format)
+{
+    struct pool * pool = wl_resource_get_user_data(resource);
+    struct pool_reference * reference;
+    struct wld_buffer * buffer;
+    struct wl_resource * buffer_resource;
+    union wld_object object;
+
+    if (offset > pool->size || offset < 0)
+    {
+        wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_STRIDE,
+                               "offset is too big or negative");
+        return;
+    }
+
+    object.ptr = (void *)((uintptr_t) pool->data + offset);
+    buffer = wld_import_buffer(swc.shm->context, WLD_OBJECT_DATA, object,
+                               width, height, format_shm_to_wld(format),
+                               stride);
+
+    if (!buffer)
+        goto error0;
+
+    buffer_resource = swc_wayland_buffer_create_resource(client, id, buffer);
+
+    if (!buffer_resource)
+        goto error1;
+
+    if (!(reference = malloc(sizeof *reference)))
+        goto error2;
+
+    reference->pool = pool;
+    reference->destructor.destroy = &handle_buffer_destroy;
+    wld_buffer_add_destructor(buffer, &reference->destructor);
+    ++pool->references;
+
+    return;
+
+  error2:
+    wl_resource_destroy(buffer_resource);
+  error1:
+    wld_buffer_unreference(buffer);
+  error0:
+    wl_resource_post_no_memory(resource);
+}
+
+static void destroy(struct wl_client * client, struct wl_resource * resource)
+{
+    wl_resource_destroy(resource);
+}
+
+static void resize(struct wl_client * client, struct wl_resource * resource,
+                   int32_t size)
+{
+    struct pool * pool = wl_resource_get_user_data(resource);
+    void * data;
+
+    data = mremap(pool->data, pool->size, size, MREMAP_MAYMOVE);
+
+    if (data == MAP_FAILED)
+    {
+        wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD,
+                               "mremap failed: %s", strerror(errno));
+        return;
+    }
+
+    pool->data = data;
+    pool->size = size;
+}
+
+static struct wl_shm_pool_interface shm_pool_implementation = {
+    .create_buffer = &create_buffer,
+    .destroy = &destroy,
+    .resize = &resize
+};
+
+static void create_pool(struct wl_client * client,
+                        struct wl_resource * resource, uint32_t id,
+                        int32_t fd, int32_t size)
+{
+    struct pool * pool;
+
+    if (!(pool = malloc(sizeof *pool)))
+    {
+        wl_resource_post_no_memory(resource);
+        return;
+    }
+
+    pool->resource = wl_resource_create(client, &wl_shm_pool_interface,
+                                        wl_resource_get_version(resource), id);
+
+    if (!pool->resource)
+    {
+        wl_resource_post_no_memory(resource);
+        goto error0;
+    }
+
+    wl_resource_set_implementation(pool->resource, &shm_pool_implementation,
+                                   pool, &unref_pool);
+    pool->data = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+
+    if (pool->data == MAP_FAILED)
+    {
+        wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD,
+                               "mmap failed: %s", strerror(errno));
+        goto error1;
+    }
+
+    pool->size = size;
+    pool->references = 1;
+
+    return;
+
+  error1:
+    wl_resource_destroy(pool->resource);
+  error0:
+    free(pool);
+}
+
+static struct wl_shm_interface shm_implementation = {
+    .create_pool = &create_pool
+};
+
+static void bind_shm(struct wl_client * client, void * data, uint32_t version,
+                     uint32_t id)
+{
+    struct wl_resource * resource;
+
+    if (version >= 1)
+        version = 1;
+
+    resource = wl_resource_create(client, &wl_shm_interface, version, id);
+    wl_resource_set_implementation(resource, &shm_implementation, NULL, NULL);
+
+    wl_shm_send_format(resource, WL_SHM_FORMAT_XRGB8888);
+    wl_shm_send_format(resource, WL_SHM_FORMAT_ARGB8888);
+}
 
 bool swc_shm_initialize()
 {
@@ -38,8 +239,16 @@ bool swc_shm_initialize()
     if (!(swc.shm->renderer = wld_create_renderer(swc.shm->context)))
         goto error1;
 
+    shm.global = wl_global_create(swc.display, &wl_shm_interface, 1,
+                                  NULL, &bind_shm);
+
+    if (!shm.global)
+        goto error2;
+
     return true;
 
+  error2:
+    wld_destroy_renderer(swc.shm->renderer);
   error1:
     wld_destroy_context(swc.shm->context);
   error0:
@@ -48,6 +257,7 @@ bool swc_shm_initialize()
 
 void swc_shm_finalize()
 {
+    wl_global_destroy(shm.global);
     wld_destroy_renderer(swc.shm->renderer);
     wld_destroy_context(swc.shm->context);
 }
