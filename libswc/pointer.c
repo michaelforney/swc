@@ -136,20 +136,6 @@ static void handle_view_event(struct wl_listener * listener, void * data)
             {
                 swc_view_move(&screen->planes.cursor.view,
                               view->geometry.x, view->geometry.y);
-
-                if (view->screens & screen_mask(screen))
-                {
-                    struct swc_pointer * pointer
-                        = CONTAINER_OF(view, typeof(*pointer), cursor.view);
-
-                    if (!screen->planes.cursor.view.buffer)
-                    {
-                        swc_view_attach(&screen->planes.cursor.view,
-                                        pointer->cursor.buffer);
-                    }
-                }
-                else if (screen->planes.cursor.view.buffer)
-                    swc_view_attach(&screen->planes.cursor.view, NULL);
             }
             break;
         }
