@@ -283,9 +283,6 @@ int main(int argc, char * argv[])
     if (wl_display_add_socket(display, NULL) != 0)
         return EXIT_FAILURE;
 
-    if (wl_display_init_shm(display) != 0)
-        return EXIT_FAILURE;
-
     if (!swc_initialize(display, NULL, &manager))
         return EXIT_FAILURE;
 
