@@ -566,8 +566,6 @@ void swc_compositor_surface_show(struct swc_surface * surface)
     if (view->visible)
         return;
 
-    printf("showing surface %u\n", wl_resource_get_id(surface->resource));
-
     /* Assume worst-case no clipping until we draw the next frame (in case the
      * surface gets moved before that. */
     pixman_region32_clear(&view->clip);
@@ -591,8 +589,8 @@ void swc_compositor_surface_hide(struct swc_surface * surface)
 
     /* Update all the screens the view was on. */
     update(&view->base);
-
     damage_below_view(view);
+
     wl_list_remove(&view->link);
     swc_view_set_screens(&view->base, 0);
     view->visible = false;
@@ -793,14 +791,13 @@ bool handle_motion(struct swc_pointer * pointer, uint32_t time)
 
 static void handle_terminate(uint32_t time, uint32_t value, void * data)
 {
-    printf("handling terminate\n");
     wl_display_terminate(swc.display);
 }
 
 static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
 {
     uint8_t vt = value - XKB_KEY_XF86Switch_VT_1 + 1;
-    printf("handle switch vt%u\n", vt);
+
     swc_launch_activate_vt(vt);
 }
 

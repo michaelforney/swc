@@ -15,7 +15,6 @@ CFLAGS          = -pipe
 # WAYLAND_SCANNER = wayland-scanner
 
 ENABLE_DEBUG        = 1
-
 ENABLE_STATIC       = 1
 ENABLE_SHARED       = 1
 ENABLE_HOTPLUGGING  = 1

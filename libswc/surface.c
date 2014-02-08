@@ -289,7 +289,6 @@ static void surface_destroy(struct wl_resource * resource)
     if (surface->view)
         wl_list_remove(&surface->view_listener.link);
 
-    printf("freeing surface %p\n", surface);
     free(surface);
 }
 

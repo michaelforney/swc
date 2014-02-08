@@ -198,17 +198,17 @@ struct swc_shell_surface * swc_shell_surface_new
     if (!shell_surface)
         goto error0;
 
-    window_initialize(&shell_surface->window, &shell_window_impl, surface);
-    shell_surface->type = SHELL_SURFACE_TYPE_UNSPECIFIED;
-    shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
-    wl_resource_add_destroy_listener(surface->resource,
-                                     &shell_surface->surface_destroy_listener);
-
     shell_surface->resource = wl_resource_create
         (client, &wl_shell_surface_interface, 1, id);
 
     if (!shell_surface->resource)
         goto error1;
+
+    window_initialize(&shell_surface->window, &shell_window_impl, surface);
+    shell_surface->type = SHELL_SURFACE_TYPE_UNSPECIFIED;
+    shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
+    wl_resource_add_destroy_listener(surface->resource,
+                                     &shell_surface->surface_destroy_listener);
 
     wl_resource_set_implementation(shell_surface->resource,
                                    &shell_surface_implementation,

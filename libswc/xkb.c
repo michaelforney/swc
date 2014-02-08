@@ -136,7 +136,7 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
     }
 
     xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE,
-        MAP_SHARED, xkb->keymap.fd, 0);
+                            MAP_SHARED, xkb->keymap.fd, 0);
 
     if (xkb->keymap.area == MAP_FAILED)
     {

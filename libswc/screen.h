@@ -42,6 +42,7 @@ struct screen_modifier
     void (* modify)(struct screen_modifier * modifier,
                     const struct swc_rectangle * geometry,
                     struct pixman_region32 * usable);
+
     struct wl_list link;
 };
 

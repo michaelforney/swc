@@ -50,7 +50,6 @@ static void enter(struct swc_input_focus_handler * handler,
     surface_x = pointer->x - wl_fixed_from_int(surface->view->geometry.x);
     surface_y = pointer->y - wl_fixed_from_int(surface->view->geometry.y);
 
-    printf("-> pointer.enter: %p (%d, %d)\n", resource, surface_x, surface_y);
     wl_pointer_send_enter(resource, serial, surface->resource,
                           surface_x, surface_y);
 }
@@ -66,7 +65,6 @@ static void leave(struct swc_input_focus_handler * handler,
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
 
-    printf("-> pointer.leave: %p\n", resource);
     wl_pointer_send_leave(resource, serial, surface->resource);
 }
 
@@ -314,8 +312,6 @@ struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
                                       struct wl_client * client, uint32_t id)
 {
     struct wl_resource * client_resource;
-
-    printf("pointer: adding client %p\n", client);
 
     client_resource = wl_resource_create(client, &wl_pointer_interface, 1, id);
     wl_resource_set_implementation(client_resource, &pointer_implementation,
