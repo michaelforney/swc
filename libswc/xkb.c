@@ -91,7 +91,10 @@ void swc_xkb_finalize(struct swc_xkb * xkb)
 
 bool swc_xkb_update_keymap(struct swc_xkb * xkb)
 {
+    const char * keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
     char * keymap_string;
+    char keymap_path[strlen(keymap_directory) + 1
+                     + sizeof keymap_file_template];
 
     xkb->indices.ctrl
         = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_CTRL);
@@ -102,55 +105,48 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
     xkb->indices.shift
         = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_SHIFT);
 
-    /* Keymap string */
+    /* In order to send the keymap to clients, we must first convert it to a
+     * string and then mmap it to a file. */
+    keymap_string = xkb_keymap_get_as_string(xkb->keymap.map,
+                                             XKB_KEYMAP_FORMAT_TEXT_V1);
+
+    if (!keymap_string)
     {
-        const char * keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
-        char keymap_path[strlen(keymap_directory) + 1
-                         + sizeof keymap_file_template];
-
-        /* In order to send the keymap to clients, we must first convert it to a
-         * string and then mmap it to a file. */
-        keymap_string = xkb_keymap_get_as_string(xkb->keymap.map,
-                                                 XKB_KEYMAP_FORMAT_TEXT_V1);
-
-        if (!keymap_string)
-        {
-            printf("could not get XKB keymap as a string\n");
-            goto error0;
-        }
-
-        sprintf(keymap_path, "%s/%s", keymap_directory, keymap_file_template);
-
-        xkb->keymap.size = strlen(keymap_string) + 1;
-        xkb->keymap.fd = mkostemp(keymap_path, O_CLOEXEC);
-
-        if (xkb->keymap.fd == -1)
-        {
-            printf("could not create XKB keymap file\n");
-            goto error1;
-        }
-
-        unlink(keymap_path);
-
-        if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0)
-        {
-            printf("could not resize XKB keymap file\n");
-            goto error2;
-        }
-
-        xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE,
-            MAP_SHARED, xkb->keymap.fd, 0);
-
-        if (xkb->keymap.area == MAP_FAILED)
-        {
-            printf("could not mmap XKB keymap string\n");
-            goto error2;
-        }
-
-        strcpy(xkb->keymap.area, keymap_string);
-
-        free(keymap_string);
+        printf("could not get XKB keymap as a string\n");
+        goto error0;
     }
+
+    sprintf(keymap_path, "%s/%s", keymap_directory, keymap_file_template);
+
+    xkb->keymap.size = strlen(keymap_string) + 1;
+    xkb->keymap.fd = mkostemp(keymap_path, O_CLOEXEC);
+
+    if (xkb->keymap.fd == -1)
+    {
+        printf("could not create XKB keymap file\n");
+        goto error1;
+    }
+
+    unlink(keymap_path);
+
+    if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0)
+    {
+        printf("could not resize XKB keymap file\n");
+        goto error2;
+    }
+
+    xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE,
+        MAP_SHARED, xkb->keymap.fd, 0);
+
+    if (xkb->keymap.area == MAP_FAILED)
+    {
+        printf("could not mmap XKB keymap string\n");
+        goto error2;
+    }
+
+    strcpy(xkb->keymap.area, keymap_string);
+
+    free(keymap_string);
 
     return true;
 
