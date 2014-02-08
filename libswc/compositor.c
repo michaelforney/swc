@@ -88,12 +88,10 @@ struct view
     struct wl_list link;
 };
 
-static void handle_focus(struct swc_pointer * pointer);
 static bool handle_motion(struct swc_pointer * pointer, uint32_t time);
 static void perform_update(void * data);
 
 static const struct swc_pointer_handler pointer_handler = {
-    .focus = &handle_focus,
     .motion = &handle_motion
 };
 
@@ -761,9 +759,10 @@ static void perform_update(void * data)
     compositor.updating = false;
 }
 
-void handle_focus(struct swc_pointer * pointer)
+bool handle_motion(struct swc_pointer * pointer, uint32_t time)
 {
     struct view * view;
+    struct swc_surface * surface = NULL;
     int32_t x, y;
 
     wl_list_for_each(view, &compositor.views, link)
@@ -776,16 +775,13 @@ void handle_focus(struct swc_pointer * pointer)
                                               x - view->base.geometry.x,
                                               y - view->base.geometry.y, NULL))
         {
-            swc_pointer_set_focus(pointer, view->surface);
-            return;
+            surface = view->surface;
+            break;
         }
     }
 
-    swc_pointer_set_focus(pointer, NULL);
-}
+    swc_pointer_set_focus(pointer, surface);
 
-bool handle_motion(struct swc_pointer * pointer, uint32_t time)
-{
     return false;
 }
 

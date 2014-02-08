@@ -354,9 +354,6 @@ void swc_pointer_handle_relative_motion
 {
     clip_position(pointer, pointer->x + dx, pointer->y + dy);
 
-    if (pointer->handler && pointer->handler->focus)
-        pointer->handler->focus(pointer);
-
     if ((!pointer->handler || !pointer->handler->motion
          || !pointer->handler->motion(pointer, time))
         && pointer->focus.resource)
