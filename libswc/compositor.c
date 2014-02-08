@@ -68,6 +68,9 @@ struct view
     struct swc_surface * surface;
     struct wld_buffer * buffer;
 
+    /* Whether or not the view is visible (mapped). */
+    bool visible;
+
     /* The box that the surface covers (including it's border). */
     pixman_box32_t extents;
 
@@ -426,12 +429,14 @@ static void schedule_updates(uint32_t screens)
     compositor.scheduled_updates |= screens;
 }
 
-static bool update(struct swc_view * view)
+static bool update(struct swc_view * base)
 {
+    struct view * view = (void *) base;
+
     if (!compositor.active || !view->visible)
         return false;
 
-    schedule_updates(view->screens);
+    schedule_updates(view->base.screens);
 
     return true;
 }
@@ -443,6 +448,14 @@ static bool attach(struct swc_view * base, struct wld_buffer * buffer)
     if (!renderer_attach(view, buffer))
         return false;
 
+    if (view->visible && view->base.buffer)
+    {
+        damage_below_view(view);
+        update(&view->base);
+    }
+
+    swc_view_set_size_from_buffer(&view->base, buffer);
+
     return true;
 }
 
@@ -450,31 +463,21 @@ static bool move(struct swc_view * base, int32_t x, int32_t y)
 {
     struct view * view = (void *) base;
 
-    if (view->base.visible)
+    if (view->visible)
     {
         damage_below_view(view);
         update(&view->base);
     }
+
+    swc_view_set_position(&view->base, x, y);
 
     return true;
-}
-
-static void resize(struct swc_view * base)
-{
-    struct view * view = (void *) base;
-
-    if (view->base.visible)
-    {
-        damage_below_view(view);
-        update(&view->base);
-    }
 }
 
 const static struct swc_view_impl view_impl = {
     .update = &update,
     .attach = &attach,
-    .move = &move,
-    .resize = &resize,
+    .move = &move
 };
 
 static void handle_view_event(struct wl_listener * listener, void * data)
@@ -487,22 +490,24 @@ static void handle_view_event(struct wl_listener * listener, void * data)
         case SWC_VIEW_EVENT_MOVED:
             update_extents(view);
 
-            if (view->base.visible)
+            if (view->visible)
             {
                 /* Assume worst-case no clipping until we draw the next frame (in case
                  * the surface gets moved again before that). */
                 pixman_region32_init(&view->clip);
 
                 damage_below_view(view);
+                swc_view_update_screens(&view->base);
                 update(&view->base);
             }
             break;
         case SWC_VIEW_EVENT_RESIZED:
             update_extents(view);
 
-            if (view->base.visible)
+            if (view->visible)
             {
                 damage_below_view(view);
+                swc_view_update_screens(&view->base);
                 update(&view->base);
             }
             break;
@@ -519,11 +524,11 @@ bool swc_compositor_add_surface(struct swc_surface * surface)
         return false;
 
     swc_view_initialize(&view->base, &view_impl);
-    view->base.visible = false;
     view->event_listener.notify = &handle_view_event;
     wl_signal_add(&view->base.event_signal, &view->event_listener);
     view->surface = surface;
     view->buffer = NULL;
+    view->visible = false;
     view->extents.x1 = 0;
     view->extents.y1 = 0;
     view->extents.x2 = 0;
@@ -560,7 +565,7 @@ void swc_compositor_surface_show(struct swc_surface * surface)
     if (view->base.impl != &view_impl)
         return;
 
-    if (view->base.visible)
+    if (view->visible)
         return;
 
     printf("showing surface %u\n", wl_resource_get_id(surface->resource));
@@ -569,8 +574,10 @@ void swc_compositor_surface_show(struct swc_surface * surface)
      * surface gets moved before that. */
     pixman_region32_clear(&view->clip);
 
+    view->visible = true;
+    swc_view_update_screens(&view->base);
+
     damage_view(view);
-    swc_view_set_visibility(&view->base, true);
     update(&view->base);
     wl_list_insert(&compositor.views, &view->link);
 }
@@ -582,15 +589,16 @@ void swc_compositor_surface_hide(struct swc_surface * surface)
     if (view->base.impl != &view_impl)
         return;
 
-    if (!view->base.visible)
+    if (!view->visible)
         return;
 
     /* Update all the outputs the surface was on. */
     update(&view->base);
 
     damage_below_view(view);
-    swc_view_set_visibility(&view->base, false);
     wl_list_remove(&view->link);
+    swc_view_set_screens(&view->base, 0);
+    view->visible = false;
 }
 
 void swc_compositor_surface_set_border_width(struct swc_surface * surface,

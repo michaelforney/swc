@@ -104,11 +104,15 @@ static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 
     /* TODO: Send an early release to the buffer */
 
+    swc_view_set_size_from_buffer(view, buffer);
+
     return true;
 }
 
 static bool move(struct swc_view * view, int32_t x, int32_t y)
 {
+    swc_view_set_position(view, x, y);
+
     return true;
 }
 
@@ -135,6 +139,11 @@ static void handle_view_event(struct wl_listener * listener, void * data)
                 swc_view_move(&screen->planes.cursor.view,
                               view->geometry.x, view->geometry.y);
             }
+
+            swc_view_update_screens(view);
+            break;
+        case SWC_VIEW_EVENT_RESIZED:
+            swc_view_update_screens(view);
             break;
         case SWC_VIEW_EVENT_SCREENS_CHANGED:
             wl_list_for_each(screen, &swc.screens, link)

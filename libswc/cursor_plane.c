@@ -68,6 +68,8 @@ static bool attach(struct swc_view * view, struct wld_buffer * buffer)
         }
     }
 
+    swc_view_set_size_from_buffer(view, buffer);
+
     return true;
 }
 
@@ -76,12 +78,13 @@ static bool move(struct swc_view * view, int32_t x, int32_t y)
     struct swc_cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
 
     if (drmModeMoveCursor(swc.drm->fd, plane->crtc,
-                          x - view->screen->base.geometry.x,
-                          y - view->screen->base.geometry.y) != 0)
+                          x - plane->origin->x, y - plane->origin->y) != 0)
     {
         ERROR("Could not move cursor: %s\n", strerror(errno));
         return false;
     }
+
+    swc_view_set_position(view, x, y);
 
     return true;
 }
@@ -107,11 +110,13 @@ static void handle_launch_event(struct wl_listener * listener, void * data)
     }
 }
 
-bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane, uint32_t crtc)
+bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane, uint32_t crtc,
+                                 const struct swc_rectangle * origin)
 {
     if (drmModeSetCursor(swc.drm->fd, crtc, 0, 0, 0) != 0)
         return false;
 
+    plane->origin = origin;
     plane->crtc = crtc;
     plane->launch_listener.notify = &handle_launch_event;
     wl_signal_add(&swc.launch->event_signal, &plane->launch_listener);

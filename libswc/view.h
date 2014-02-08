@@ -34,8 +34,7 @@ enum
     /* Sent when the origin of the view has moved. */
     SWC_VIEW_EVENT_MOVED,
 
-    /* Sent when the view's size changes. This occurs when a buffer of
-     * different dimensions is attached to the view. */
+    /* Sent when the view's size changes. */
     SWC_VIEW_EVENT_RESIZED,
 
     /* Sent when the set of screens the view is visible on changes. */
@@ -82,16 +81,8 @@ struct swc_view
     const struct swc_view_impl * impl;
 
     struct wl_signal event_signal;
-    bool visible;
-    uint32_t screens;
-
     struct swc_rectangle geometry;
-
-    /**
-     * The screen that the view belongs to (for example if framebuffer or
-     * cursor plane), or NULL.
-     */
-    struct screen * screen;
+    uint32_t screens;
 
     struct wld_buffer * buffer;
 };
@@ -106,14 +97,6 @@ struct swc_view_impl
     bool (* update)(struct swc_view * view);
     bool (* attach)(struct swc_view * view, struct wld_buffer * buffer);
     bool (* move)(struct swc_view * view, int32_t x, int32_t y);
-
-    /**
-     * This function indicates to the view that it is about to be resized.
-     *
-     * The view can use this function to do any necessary damage calculations
-     * with the geometry of the view before the resize occurs.
-     */
-    void (* resize)(struct swc_view * view);
 };
 
 /**
@@ -150,14 +133,14 @@ bool swc_view_update(struct swc_view * view);
  */
 bool swc_view_move(struct swc_view * view, int32_t x, int32_t y);
 
-/**
- * Set the visibility flag of the view.
- *
- * This retains the view's geometry, but indicates that it will not be shown
- * when the next frame is finished. This is useful when an unmapped or
- * minimized state is desired.
- */
-void swc_view_set_visibility(struct swc_view * view, bool visible);
+/**** For internal view use only ****/
+
+void swc_view_set_position(struct swc_view * view, int32_t x, int32_t y);
+void swc_view_set_size(struct swc_view * view, uint32_t width, uint32_t height);
+void swc_view_set_size_from_buffer(struct swc_view * view,
+                                   struct wld_buffer * bufer);
+void swc_view_set_screens(struct swc_view * view, uint32_t screens);
+void swc_view_update_screens(struct swc_view * view);
 
 /**
  * Send a new frame event through the view's event signal.

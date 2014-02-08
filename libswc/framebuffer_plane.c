@@ -148,6 +148,8 @@ static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 
 static bool move(struct swc_view * view, int32_t x, int32_t y)
 {
+    swc_view_set_position(view, x, y);
+
     return true;
 }
 

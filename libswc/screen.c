@@ -80,14 +80,12 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
         goto error1;
     }
 
-    if (!swc_cursor_plane_initialize(&screen->planes.cursor, crtc))
+    if (!swc_cursor_plane_initialize(&screen->planes.cursor, crtc,
+                                     &screen->base.geometry))
     {
         ERROR("Failed to initialize cursor plane\n");
         goto error2;
     }
-
-    screen->planes.framebuffer.view.screen = screen;
-    screen->planes.cursor.view.screen = screen;
 
     swc_view_move(&screen->planes.framebuffer.view, x, 0);
     screen->base.geometry = screen->planes.framebuffer.view.geometry;
