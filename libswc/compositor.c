@@ -546,8 +546,7 @@ bool swc_compositor_remove_surface(struct swc_surface * surface)
 {
     struct view * view = (void *) surface->view;
 
-    if (view->base.impl != &view_impl)
-        return false;
+    assert(view->base.impl == &view_impl);
 
     swc_compositor_surface_hide(view->surface);
     swc_surface_set_view(view->surface, NULL);
@@ -562,8 +561,7 @@ void swc_compositor_surface_show(struct swc_surface * surface)
 {
     struct view * view = (void *) surface->view;
 
-    if (view->base.impl != &view_impl)
-        return;
+    assert(view->base.impl == &view_impl);
 
     if (view->visible)
         return;
@@ -586,8 +584,7 @@ void swc_compositor_surface_hide(struct swc_surface * surface)
 {
     struct view * view = (void *) surface->view;
 
-    if (view->base.impl != &view_impl)
-        return;
+    assert(view->base.impl == &view_impl);
 
     if (!view->visible)
         return;
@@ -606,6 +603,8 @@ void swc_compositor_surface_set_border_width(struct swc_surface * surface,
 {
     struct view * view = (void *) surface->view;
 
+    assert(view->base.impl == &view_impl);
+
     if (view->border.width == width)
         return;
 
@@ -622,6 +621,8 @@ void swc_compositor_surface_set_border_color(struct swc_surface * surface,
                                              uint32_t color)
 {
     struct view * view = (void *) surface->view;
+
+    assert(view->base.impl == &view_impl);
 
     if (view->border.color == color)
         return;
