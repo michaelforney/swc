@@ -589,7 +589,7 @@ void swc_compositor_surface_hide(struct swc_surface * surface)
     if (!view->visible)
         return;
 
-    /* Update all the outputs the surface was on. */
+    /* Update all the screens the view was on. */
     update(&view->base);
 
     damage_below_view(view);

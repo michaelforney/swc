@@ -35,6 +35,10 @@ struct pixman_region32;
 
 struct screen_modifier
 {
+    /**
+     * Takes the screen geometry and sets 'usable' to the usable region of the
+     * screen. 'usable' is an already initialized pixman region.
+     */
     void (* modify)(struct screen_modifier * modifier,
                     const struct swc_rectangle * geometry,
                     struct pixman_region32 * usable);
