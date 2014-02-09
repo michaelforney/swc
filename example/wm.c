@@ -260,7 +260,7 @@ static void new_screen(struct swc_screen * swc)
 
 const struct swc_manager manager = { &new_window, &new_screen };
 
-static void spawn(uint32_t time, uint32_t value, void * data)
+static void spawn(void * data, uint32_t time, uint32_t value)
 {
     char * const * command = data;
 
@@ -286,8 +286,10 @@ int main(int argc, char * argv[])
     if (!swc_initialize(display, NULL, &manager))
         return EXIT_FAILURE;
 
-    swc_add_key_binding(SWC_MOD_LOGO, XKB_KEY_Return, &spawn, terminal_command);
-    swc_add_key_binding(SWC_MOD_LOGO, XKB_KEY_r, &spawn, dmenu_command);
+    swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_Return,
+                    &spawn, terminal_command);
+    swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_r,
+                    &spawn, dmenu_command);
 
     event_loop = wl_display_get_event_loop(display);
     wl_display_run(display);

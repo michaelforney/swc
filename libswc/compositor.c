@@ -785,12 +785,12 @@ bool handle_motion(struct swc_pointer * pointer, uint32_t time)
     return false;
 }
 
-static void handle_terminate(uint32_t time, uint32_t value, void * data)
+static void handle_terminate(void * data, uint32_t time, uint32_t value)
 {
     wl_display_terminate(swc.display);
 }
 
-static void handle_switch_vt(uint32_t time, uint32_t value, void * data)
+static void handle_switch_vt(void * data, uint32_t time, uint32_t value)
 {
     uint8_t vt = value - XKB_KEY_XF86Switch_VT_1 + 1;
 
@@ -890,15 +890,15 @@ bool swc_compositor_initialize()
     wl_list_for_each(screen, &swc.screens, link)
         target_new(screen);
 
-    swc_add_key_binding(SWC_MOD_CTRL | SWC_MOD_ALT, XKB_KEY_BackSpace,
-                        &handle_terminate, NULL);
+    swc_add_binding(SWC_BINDING_KEY, SWC_MOD_CTRL | SWC_MOD_ALT,
+                    XKB_KEY_BackSpace, &handle_terminate, NULL);
 
     for (keysym = XKB_KEY_XF86Switch_VT_1;
          keysym <= XKB_KEY_XF86Switch_VT_12;
          ++keysym)
     {
-        swc_add_key_binding(SWC_MOD_ANY, keysym,
-                            &handle_switch_vt, NULL);
+        swc_add_binding(SWC_BINDING_KEY, SWC_MOD_ANY, keysym,
+                        &handle_switch_vt, NULL);
     }
 
 
