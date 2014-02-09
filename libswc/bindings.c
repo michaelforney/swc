@@ -73,6 +73,7 @@ bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
 {
     xkb_keysym_t keysym;
 
+    /* First try the keysym the keymap generates in it's current state. */
     keysym = xkb_state_key_get_one_sym(keyboard->xkb.state, XKB_KEY(key));
 
     if (handle_binding(&key_bindings, time, keyboard->modifiers, keysym, state))
@@ -81,6 +82,7 @@ bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
     xkb_layout_index_t layout;
     const xkb_keysym_t * keysyms;
 
+    /* Then try the keysym associated with shift-level 0 for the key. */
     layout = xkb_state_key_get_layout(keyboard->xkb.state, XKB_KEY(key));
     xkb_keymap_key_get_syms_by_level(keyboard->xkb.keymap.map, XKB_KEY(key),
                                      layout, 0, &keysyms);
