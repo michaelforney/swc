@@ -174,11 +174,14 @@ struct swc_screen
 
 /* Bindings {{{ */
 
-#define SWC_MOD_CTRL    (1 << 0)
-#define SWC_MOD_ALT     (1 << 1)
-#define SWC_MOD_LOGO    (1 << 2)
-#define SWC_MOD_SHIFT   (1 << 3)
-#define SWC_MOD_ANY     (-1)
+enum
+{
+    SWC_MOD_CTRL    = 1 << 0,
+    SWC_MOD_ALT     = 1 << 1,
+    SWC_MOD_LOGO    = 1 << 2,
+    SWC_MOD_SHIFT   = 1 << 3,
+    SWC_MOD_ANY     = ~0
+};
 
 typedef void (* swc_binding_handler_t)(uint32_t time, uint32_t value,
                                        void * data);
