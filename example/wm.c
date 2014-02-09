@@ -260,9 +260,12 @@ static void new_screen(struct swc_screen * swc)
 
 const struct swc_manager manager = { &new_window, &new_screen };
 
-static void spawn(void * data, uint32_t time, uint32_t value)
+static void spawn(void * data, uint32_t time, uint32_t value, uint32_t state)
 {
     char * const * command = data;
+
+    if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+        return;
 
     if (fork() == 0)
     {

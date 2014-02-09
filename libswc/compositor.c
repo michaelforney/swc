@@ -785,16 +785,20 @@ bool handle_motion(struct swc_pointer * pointer, uint32_t time)
     return false;
 }
 
-static void handle_terminate(void * data, uint32_t time, uint32_t value)
+static void handle_terminate(void * data, uint32_t time,
+                             uint32_t value, uint32_t state)
 {
-    wl_display_terminate(swc.display);
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+        wl_display_terminate(swc.display);
 }
 
-static void handle_switch_vt(void * data, uint32_t time, uint32_t value)
+static void handle_switch_vt(void * data, uint32_t time,
+                             uint32_t value, uint32_t state)
 {
     uint8_t vt = value - XKB_KEY_XF86Switch_VT_1 + 1;
 
-    swc_launch_activate_vt(vt);
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+        swc_launch_activate_vt(vt);
 }
 
 static void handle_launch_event(struct wl_listener * listener, void * data)

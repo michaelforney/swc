@@ -50,7 +50,7 @@ const struct swc_bindings swc_bindings = {
 };
 
 static bool handle_binding(struct wl_array * bindings, uint32_t time,
-                           uint32_t modifiers, uint32_t value)
+                           uint32_t modifiers, uint32_t value, uint32_t state)
 {
     struct binding * binding;
 
@@ -60,7 +60,7 @@ static bool handle_binding(struct wl_array * bindings, uint32_t time,
             && (binding->modifiers == modifiers
                 || binding->modifiers == SWC_MOD_ANY))
         {
-            binding->handler(binding->data, time, value);
+            binding->handler(binding->data, time, value, state);
             return true;
         }
     }
@@ -71,27 +71,24 @@ static bool handle_binding(struct wl_array * bindings, uint32_t time,
 bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
                 uint32_t key, uint32_t state)
 {
-    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+    xkb_keysym_t keysym;
+
+    keysym = xkb_state_key_get_one_sym(keyboard->xkb.state, XKB_KEY(key));
+
+    if (handle_binding(&key_bindings, time, keyboard->modifiers, keysym, state))
+        return true;
+
+    xkb_layout_index_t layout;
+    const xkb_keysym_t * keysyms;
+
+    layout = xkb_state_key_get_layout(keyboard->xkb.state, XKB_KEY(key));
+    xkb_keymap_key_get_syms_by_level(keyboard->xkb.keymap.map, XKB_KEY(key),
+                                     layout, 0, &keysyms);
+
+    if (keysyms && handle_binding(&key_bindings, time,
+                                  keyboard->modifiers, keysyms[0], state))
     {
-        xkb_keysym_t keysym;
-
-        keysym = xkb_state_key_get_one_sym(keyboard->xkb.state, XKB_KEY(key));
-
-        if (handle_binding(&key_bindings, time, keyboard->modifiers, keysym))
-            return true;
-
-        xkb_layout_index_t layout;
-        const xkb_keysym_t * keysyms;
-
-        layout = xkb_state_key_get_layout(keyboard->xkb.state, XKB_KEY(key));
-        xkb_keymap_key_get_syms_by_level(keyboard->xkb.keymap.map, XKB_KEY(key),
-                                         layout, 0, &keysyms);
-
-        if (keysyms && handle_binding(&key_bindings, time,
-                                      keyboard->modifiers, keysyms[0]))
-        {
-            return true;
-        }
+        return true;
     }
 
     return false;
