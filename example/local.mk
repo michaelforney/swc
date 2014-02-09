@@ -3,6 +3,7 @@
 dir := example
 
 $(dir)_PACKAGES = wayland-server
+$(dir)_CFLAGS = -Ilibswc
 
 $(dir): $(dir)/wm
 
