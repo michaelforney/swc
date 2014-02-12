@@ -58,5 +58,7 @@ void window_set_class(struct window * window, const char * class);
 
 void window_set_state(struct window * window, uint32_t state);
 
+void window_set_parent(struct window * window, struct window * parent);
+
 #endif
 

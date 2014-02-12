@@ -75,7 +75,15 @@ enum
     /**
      * Sent when the window's size has changed.
      */
-    SWC_WINDOW_RESIZED
+    SWC_WINDOW_RESIZED,
+
+    /**
+     * Sent when the window's parent changes.
+     *
+     * This can occur when the window becomes a transient for another window,
+     * or becomes a toplevel window.
+     */
+    SWC_WINDOW_PARENT_CHANGED
 };
 
 struct swc_window
@@ -90,6 +98,8 @@ struct swc_window
         SWC_WINDOW_STATE_WITHDRAWN,
         SWC_WINDOW_STATE_TOPLEVEL
     } state;
+
+    struct swc_window * parent;
 };
 
 /**

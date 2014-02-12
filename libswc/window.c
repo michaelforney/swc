@@ -120,6 +120,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     window->base.title = NULL;
     window->base.class = NULL;
     window->base.state = SWC_WINDOW_STATE_WITHDRAWN;
+    window->base.parent = NULL;
     wl_signal_init(&window->base.event_signal);
     window->surface = surface;
     window->impl = impl;
@@ -161,5 +162,14 @@ void window_set_state(struct window * window, uint32_t state)
 {
     window->base.state = state;
     swc_send_event(&window->base.event_signal, SWC_WINDOW_STATE_CHANGED, NULL);
+}
+
+void window_set_parent(struct window * window, struct window * parent)
+{
+    if (window->base.parent == &parent->base)
+        return;
+
+    window->base.parent = &parent->base;
+    swc_send_event(&window->base.event_signal, SWC_WINDOW_PARENT_CHANGED, NULL);
 }
 
