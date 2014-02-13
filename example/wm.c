@@ -189,9 +189,9 @@ static void window_event(struct wl_listener * listener, void * data)
             free(window);
             break;
         case SWC_WINDOW_STATE_CHANGED:
-            /* When the window changes state to TOPLEVEL, we can add it to the
+            /* When the window changes state to NORMAL, we can add it to the
              * current screen and then rearrange the windows on that screen. */
-            if (window->swc->state == SWC_WINDOW_STATE_TOPLEVEL)
+            if (window->swc->state == SWC_WINDOW_STATE_NORMAL)
             {
                 screen_add_window(active_screen, window);
                 focus(window);

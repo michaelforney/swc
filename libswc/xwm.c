@@ -362,7 +362,7 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
         xcb_configure_window(xwm.connection, id, mask, values);
         update_name(xwl_window);
 
-        window_set_state(&xwl_window->window, SWC_WINDOW_STATE_TOPLEVEL);
+        window_set_state(&xwl_window->window, SWC_WINDOW_STATE_NORMAL);
     }
 }
 

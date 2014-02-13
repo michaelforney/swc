@@ -95,8 +95,8 @@ struct swc_window
 
     enum
     {
-        SWC_WINDOW_STATE_WITHDRAWN,
-        SWC_WINDOW_STATE_TOPLEVEL
+        SWC_WINDOW_STATE_NONE,
+        SWC_WINDOW_STATE_NORMAL
     } state;
 
     struct swc_window * parent;

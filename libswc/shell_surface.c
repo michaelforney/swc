@@ -75,7 +75,7 @@ static void set_toplevel(struct wl_client * client,
         return;
 
     shell_surface->type = SHELL_SURFACE_TYPE_TOPLEVEL;
-    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_TOPLEVEL);
+    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
 }
 
 static void set_transient(struct wl_client * client,

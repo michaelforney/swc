@@ -119,7 +119,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
 
     window->base.title = NULL;
     window->base.class = NULL;
-    window->base.state = SWC_WINDOW_STATE_WITHDRAWN;
+    window->base.state = SWC_WINDOW_STATE_NONE;
     window->base.parent = NULL;
     wl_signal_init(&window->base.event_signal);
     window->surface = surface;
