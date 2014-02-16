@@ -36,6 +36,21 @@
 #include <assert.h>
 #include <stdlib.h>
 
+struct swc_panel
+{
+    struct wl_resource * resource;
+
+    struct swc_surface * surface;
+    struct wl_listener surface_destroy_listener;
+    struct swc_view * view;
+    struct wl_listener view_listener;
+    struct screen * screen;
+    struct screen_modifier modifier;
+    uint32_t edge;
+    uint32_t offset, strut_size;
+    bool docked;
+};
+
 static void update_position(struct swc_panel * panel)
 {
     int32_t x, y;

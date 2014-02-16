@@ -29,21 +29,6 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-struct swc_panel
-{
-    struct wl_resource * resource;
-
-    struct swc_surface * surface;
-    struct wl_listener surface_destroy_listener;
-    struct swc_view * view;
-    struct wl_listener view_listener;
-    struct screen * screen;
-    struct screen_modifier modifier;
-    uint32_t edge;
-    uint32_t offset, strut_size;
-    bool docked;
-};
-
 struct swc_panel * swc_panel_new(struct wl_client * client, uint32_t id,
                                  struct swc_surface * surface);
 
