@@ -35,7 +35,8 @@ struct swc_pointer;
 
 struct swc_pointer_handler
 {
-    bool (* motion)(struct swc_pointer * pointer, uint32_t time);
+    bool (* motion)(struct swc_pointer * pointer, uint32_t time,
+                    wl_fixed_t x, wl_fixed_t y);
     bool (* button)(struct swc_pointer * pointer, uint32_t time,
                     uint32_t button, uint32_t state);
     bool (* axis)(struct swc_pointer * pointer, uint32_t time,

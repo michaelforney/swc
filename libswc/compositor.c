@@ -88,7 +88,8 @@ struct view
     struct wl_list link;
 };
 
-static bool handle_motion(struct swc_pointer * pointer, uint32_t time);
+static bool handle_motion(struct swc_pointer * pointer, uint32_t time,
+                          wl_fixed_t x, wl_fixed_t y);
 static void perform_update(void * data);
 
 static const struct swc_pointer_handler pointer_handler = {
@@ -755,7 +756,8 @@ static void perform_update(void * data)
     compositor.updating = false;
 }
 
-bool handle_motion(struct swc_pointer * pointer, uint32_t time)
+bool handle_motion(struct swc_pointer * pointer, uint32_t time,
+                   wl_fixed_t fx, wl_fixed_t fy)
 {
     struct view * view;
     struct swc_surface * surface = NULL;
@@ -763,8 +765,8 @@ bool handle_motion(struct swc_pointer * pointer, uint32_t time)
 
     wl_list_for_each(view, &compositor.views, link)
     {
-        x = wl_fixed_to_int(pointer->x);
-        y = wl_fixed_to_int(pointer->y);
+        x = wl_fixed_to_int(fx);
+        y = wl_fixed_to_int(fy);
 
         if (swc_rectangle_contains_point(&view->base.geometry, x, y)
             && pixman_region32_contains_point(&view->surface->state.input,
@@ -776,7 +778,7 @@ bool handle_motion(struct swc_pointer * pointer, uint32_t time)
         }
     }
 
-    swc_pointer_set_focus(pointer, surface);
+    swc_pointer_set_focus(swc.seat->pointer, surface);
 
     return false;
 }

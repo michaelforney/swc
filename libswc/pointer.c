@@ -355,7 +355,7 @@ void swc_pointer_handle_relative_motion
     clip_position(pointer, pointer->x + dx, pointer->y + dy);
 
     if ((!pointer->handler || !pointer->handler->motion
-         || !pointer->handler->motion(pointer, time))
+         || !pointer->handler->motion(pointer, time, pointer->x, pointer->y))
         && pointer->focus.resource)
     {
         wl_fixed_t surface_x, surface_y;
