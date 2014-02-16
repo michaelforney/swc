@@ -325,7 +325,7 @@ void swc_pointer_handle_button(struct swc_pointer * pointer, uint32_t time,
                                uint32_t button, uint32_t state)
 {
     if ((!pointer->handler || !pointer->handler->button
-         || !pointer->handler->button(pointer, time, button, state))
+         || !pointer->handler->button(pointer->handler, time, button, state))
         && pointer->focus.resource)
     {
         struct wl_client * client
@@ -342,7 +342,7 @@ void swc_pointer_handle_axis(struct swc_pointer * pointer, uint32_t time,
                              uint32_t axis, wl_fixed_t amount)
 {
     if ((!pointer->handler || !pointer->handler->axis
-         || !pointer->handler->axis(pointer, time, axis, amount))
+         || !pointer->handler->axis(pointer->handler, time, axis, amount))
         && pointer->focus.resource)
     {
         wl_pointer_send_axis(pointer->focus.resource, time, axis, amount);
@@ -355,7 +355,8 @@ void swc_pointer_handle_relative_motion
     clip_position(pointer, pointer->x + dx, pointer->y + dy);
 
     if ((!pointer->handler || !pointer->handler->motion
-         || !pointer->handler->motion(pointer, time, pointer->x, pointer->y))
+         || !pointer->handler->motion(pointer->handler, time,
+                                      pointer->x, pointer->y))
         && pointer->focus.resource)
     {
         wl_fixed_t surface_x, surface_y;
