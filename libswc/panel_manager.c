@@ -31,7 +31,6 @@
 static struct
 {
     struct wl_global * global;
-    struct wl_resource * resource;
 } panel_manager;
 
 static void create_panel(struct wl_client * client,
