@@ -58,13 +58,13 @@ struct wl_listener window_enter_listener = {
 EXPORT
 void swc_window_show(struct swc_window * window)
 {
-    swc_compositor_surface_show(INTERNAL(window)->surface);
+    compositor_view_show(INTERNAL(window)->view);
 }
 
 EXPORT
 void swc_window_hide(struct swc_window * window)
 {
-    swc_compositor_surface_hide(INTERNAL(window)->surface);
+    compositor_view_hide(INTERNAL(window)->view);
 }
 
 EXPORT
@@ -99,17 +99,17 @@ void swc_window_set_geometry(struct swc_window * base,
     if (window->impl->configure)
         window->impl->configure(window, geometry);
 
-    swc_view_move(window->surface->view, geometry->x, geometry->y);
+    swc_view_move(window->view, geometry->x, geometry->y);
 }
 
 EXPORT
 void swc_window_set_border(struct swc_window * window,
                            uint32_t border_color, uint32_t border_width)
 {
-    struct swc_surface * surface = INTERNAL(window)->surface;
+    struct swc_view * view = INTERNAL(window)->view;
 
-    swc_compositor_surface_set_border_color(surface, border_color);
-    swc_compositor_surface_set_border_width(surface, border_width);
+    compositor_view_set_border_color(view, border_color);
+    compositor_view_set_border_width(view, border_width);
 }
 
 bool window_initialize(struct window * window, const struct window_impl * impl,
@@ -122,11 +122,14 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     window->base.state = SWC_WINDOW_STATE_NONE;
     window->base.parent = NULL;
     wl_signal_init(&window->base.event_signal);
+
+    if (!(window->view = swc_compositor_create_view(surface)))
+        return false;
+
     window->surface = surface;
     window->impl = impl;
 
     surface->window = window;
-    swc_compositor_add_surface(surface);
 
     swc.manager->new_window(&window->base);
 
@@ -138,7 +141,7 @@ void window_finalize(struct window * window)
     DEBUG("Finalizing window, %p\n", window);
 
     swc_send_event(&window->base.event_signal, SWC_WINDOW_DESTROYED, NULL);
-    swc_compositor_remove_surface(window->surface);
+    compositor_view_destroy(window->view);
     window->surface->window = NULL;
     free(window->base.title);
     free(window->base.class);

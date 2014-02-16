@@ -35,6 +35,7 @@ struct swc_panel
 
     struct swc_surface * surface;
     struct wl_listener surface_destroy_listener;
+    struct swc_view * view;
     struct wl_listener view_listener;
     struct screen * screen;
     struct screen_modifier modifier;

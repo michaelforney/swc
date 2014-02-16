@@ -349,7 +349,7 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
     }
 
     if (entry->override_redirect)
-        swc_compositor_surface_show(surface);
+        compositor_view_show(xwl_window->window.view);
     else
     {
         uint32_t mask, values[1];

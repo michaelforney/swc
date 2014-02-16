@@ -32,9 +32,10 @@
 struct window
 {
     struct swc_window base;
+    const struct window_impl * impl;
 
     struct swc_surface * surface;
-    const struct window_impl * impl;
+    struct swc_view * view;
 };
 
 struct window_impl

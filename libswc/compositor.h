@@ -36,15 +36,16 @@ struct swc_compositor
 bool swc_compositor_initialize();
 void swc_compositor_finalize();
 
-bool swc_compositor_add_surface(struct swc_surface * surface);
-bool swc_compositor_remove_surface(struct swc_surface * surface);
+struct swc_view * swc_compositor_create_view
+    (struct swc_surface * surface);
 
-void swc_compositor_surface_show(struct swc_surface * surface);
-void swc_compositor_surface_hide(struct swc_surface * surface);
-void swc_compositor_surface_set_border_color(struct swc_surface * surface,
-                                             uint32_t color);
-void swc_compositor_surface_set_border_width(struct swc_surface * surface,
-                                             uint32_t width);
+void compositor_view_destroy(struct swc_view * view);
+
+void compositor_view_show(struct swc_view * view);
+void compositor_view_hide(struct swc_view * view);
+
+void compositor_view_set_border_color(struct swc_view * view, uint32_t color);
+void compositor_view_set_border_width(struct swc_view * view, uint32_t width);
 
 #endif
 

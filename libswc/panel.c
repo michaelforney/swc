@@ -40,7 +40,7 @@ static void update_position(struct swc_panel * panel)
 {
     int32_t x, y;
     struct swc_rectangle * screen = &panel->screen->base.geometry,
-                         * view = &panel->surface->view->geometry;
+                         * view = &panel->view->geometry;
 
     switch (panel->edge)
     {
@@ -103,11 +103,17 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     panel->screen = screen;
     panel->edge = edge;
     panel->docked = true;
+    panel->view = swc_compositor_create_view(panel->surface);
 
-    swc_compositor_add_surface(panel->surface);
+    if (!panel->view)
+    {
+        wl_resource_post_no_memory(resource);
+        return;
+    }
+
     update_position(panel);
-    swc_compositor_surface_show(panel->surface);
-    wl_signal_add(&panel->surface->view->event_signal, &panel->view_listener);
+    compositor_view_show(panel->view);
+    wl_signal_add(&panel->view->event_signal, &panel->view_listener);
     wl_list_insert(&screen->modifiers, &panel->modifier.link);
 
     if (focus)
@@ -193,7 +199,7 @@ static void destroy_panel(struct wl_resource * resource)
         wl_list_remove(&panel->view_listener.link);
         wl_list_remove(&panel->modifier.link);
         screen_update_usable_geometry(panel->screen);
-        swc_compositor_remove_surface(panel->surface);
+        compositor_view_destroy(panel->view);
     }
 
     free(panel);

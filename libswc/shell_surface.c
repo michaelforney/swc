@@ -83,14 +83,6 @@ static void set_transient(struct wl_client * client,
                           struct wl_resource * parent_resource,
                           int32_t x, int32_t y, uint32_t flags)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
-    struct swc_surface * parent = wl_resource_get_user_data(parent_resource);
-
-    swc_view_move(shell_surface->window.surface->view,
-                  parent->view->geometry.x + x, parent->view->geometry.y + y);
-    swc_compositor_surface_show(shell_surface->window.surface);
-
     /* XXX: Handle transient */
 }
 
@@ -107,14 +99,6 @@ static void set_popup(struct wl_client * client, struct wl_resource * resource,
                       struct wl_resource * parent_resource,
                       int32_t x, int32_t y, uint32_t flags)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
-    struct swc_surface * parent = wl_resource_get_user_data(parent_resource);
-
-    swc_view_move(shell_surface->window.surface->view,
-                  parent->view->geometry.x + x, parent->view->geometry.y + y);
-    swc_compositor_surface_show(shell_surface->window.surface);
-
     /* XXX: Handle popup */
 }
 
