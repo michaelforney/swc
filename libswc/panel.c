@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-struct swc_panel
+struct panel
 {
     struct wl_resource * resource;
 
@@ -51,7 +51,7 @@ struct swc_panel
     bool docked;
 };
 
-static void update_position(struct swc_panel * panel)
+static void update_position(struct panel * panel)
 {
     int32_t x, y;
     struct swc_rectangle * screen = &panel->screen->base.geometry,
@@ -85,7 +85,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
                  uint32_t edge, struct wl_resource * output_resource,
                  uint32_t focus)
 {
-    struct swc_panel * panel = wl_resource_get_user_data(resource);
+    struct panel * panel = wl_resource_get_user_data(resource);
     struct swc_output * output = output_resource
         ? wl_resource_get_user_data(output_resource) : NULL;
     struct screen * screen = output
@@ -140,7 +140,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
 static void set_offset(struct wl_client * client, struct wl_resource * resource,
                        uint32_t offset)
 {
-    struct swc_panel * panel = wl_resource_get_user_data(resource);
+    struct panel * panel = wl_resource_get_user_data(resource);
 
     panel->offset = offset;
 
@@ -151,7 +151,7 @@ static void set_offset(struct wl_client * client, struct wl_resource * resource,
 static void set_strut(struct wl_client * client, struct wl_resource * resource,
                       uint32_t size, uint32_t begin, uint32_t end)
 {
-    struct swc_panel * panel = wl_resource_get_user_data(resource);
+    struct panel * panel = wl_resource_get_user_data(resource);
 
     panel->strut_size = size;
 
@@ -169,7 +169,7 @@ static void modify(struct screen_modifier * modifier,
                    const struct swc_rectangle * geometry,
                    pixman_region32_t * usable)
 {
-    struct swc_panel * panel = CONTAINER_OF(modifier, typeof(*panel), modifier);
+    struct panel * panel = CONTAINER_OF(modifier, typeof(*panel), modifier);
     pixman_box32_t box = {
         .x1 = geometry->x, .y1 = geometry->y,
         .x2 = geometry->x + geometry->width,
@@ -207,7 +207,7 @@ static void modify(struct screen_modifier * modifier,
 
 static void destroy_panel(struct wl_resource * resource)
 {
-    struct swc_panel * panel = wl_resource_get_user_data(resource);
+    struct panel * panel = wl_resource_get_user_data(resource);
 
     if (panel->docked)
     {
@@ -222,7 +222,7 @@ static void destroy_panel(struct wl_resource * resource)
 
 static void handle_view_event(struct wl_listener * listener, void * data)
 {
-    struct swc_panel * panel;
+    struct panel * panel;
     struct swc_event * event = data;
 
     panel = CONTAINER_OF(listener, typeof(*panel), view_listener);
@@ -237,16 +237,16 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
-    struct swc_panel * panel;
+    struct panel * panel;
 
     panel = CONTAINER_OF(listener, typeof(*panel), surface_destroy_listener);
     wl_resource_destroy(panel->resource);
 }
 
-struct swc_panel * swc_panel_new(struct wl_client * client, uint32_t id,
-                                 struct swc_surface * surface)
+struct panel * panel_new(struct wl_client * client, uint32_t id,
+                         struct swc_surface * surface)
 {
-    struct swc_panel * panel;
+    struct panel * panel;
 
     panel = malloc(sizeof *panel);
 

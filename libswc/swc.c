@@ -148,7 +148,7 @@ bool swc_initialize(struct wl_display * display,
         goto error8;
     }
 
-    if (!swc_panel_manager_initialize())
+    if (!panel_manager_initialize())
     {
         ERROR("Could not initialize panel manager\n");
         goto error9;
@@ -168,7 +168,7 @@ bool swc_initialize(struct wl_display * display,
 
 #ifdef ENABLE_XWAYLAND
   error10:
-    swc_panel_manager_finalize();
+    panel_manager_finalize();
 #endif
   error9:
     swc_shell_finalize();
@@ -198,7 +198,7 @@ void swc_finalize()
 #ifdef ENABLE_XWAYLAND
     swc_xserver_finalize();
 #endif
-    swc_panel_manager_finalize();
+    panel_manager_finalize();
     swc_shell_finalize();
     swc_seat_finalize();
     swc_data_device_manager_finalize();

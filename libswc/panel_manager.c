@@ -38,11 +38,8 @@ static void create_panel(struct wl_client * client,
                          struct wl_resource * surface_resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
-    struct swc_panel * panel;
 
-    panel = swc_panel_new(client, id, surface);
-
-    if (!panel)
+    if (!panel_new(client, id, surface))
         wl_client_post_no_memory(client);
 }
 
@@ -60,7 +57,7 @@ static void bind_panel_manager(struct wl_client * client, void * data,
                                    NULL, NULL);
 }
 
-bool swc_panel_manager_initialize()
+bool panel_manager_initialize()
 {
     panel_manager.global = wl_global_create(swc.display,
                                             &swc_panel_manager_interface, 1,
@@ -72,7 +69,7 @@ bool swc_panel_manager_initialize()
     return true;
 }
 
-void swc_panel_manager_finalize()
+void panel_manager_finalize()
 {
     wl_global_destroy(panel_manager.global);
 }

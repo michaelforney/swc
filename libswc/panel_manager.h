@@ -26,8 +26,8 @@
 
 #include <stdbool.h>
 
-bool swc_panel_manager_initialize();
-void swc_panel_manager_finalize();
+bool panel_manager_initialize();
+void panel_manager_finalize();
 
 #endif
 
