@@ -23,8 +23,10 @@
 
 #include "shell_surface.h"
 #include "compositor.h"
-#include "swc.h"
+#include "internal.h"
+#include "seat.h"
 #include "surface.h"
+#include "swc.h"
 #include "util.h"
 #include "view.h"
 #include "window.h"
@@ -57,12 +59,28 @@ static void pong(struct wl_client * client, struct wl_resource * resource,
 static void move(struct wl_client * client, struct wl_resource * resource,
                  struct wl_resource * seat_resource, uint32_t serial)
 {
+    struct swc_shell_surface * shell_surface
+        = wl_resource_get_user_data(resource);
+    struct button_press * button;
+
+    if (!(button = pointer_get_button_press(swc.seat->pointer, serial)))
+        return;
+
+    window_begin_interactive_move(&shell_surface->window, button);
 }
 
 static void resize(struct wl_client * client, struct wl_resource * resource,
                    struct wl_resource * seat_resource, uint32_t serial,
                    uint32_t edges)
 {
+    struct swc_shell_surface * shell_surface
+        = wl_resource_get_user_data(resource);
+    struct button_press * button;
+
+    if (!(button = pointer_get_button_press(swc.seat->pointer, serial)))
+        return;
+
+    window_begin_interactive_resize(&shell_surface->window, edges, button);
 }
 
 static void set_toplevel(struct wl_client * client,

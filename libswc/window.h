@@ -25,9 +25,15 @@
 #define SWC_WINDOW_H
 
 #include "swc.h"
+#include "pointer.h"
 
 #include <stdint.h>
 #include <wayland-server.h>
+
+struct window_pointer_interaction
+{
+    struct pointer_handler handler, * original_handler;
+};
 
 struct window
 {
@@ -36,6 +42,17 @@ struct window
 
     struct swc_surface * surface;
     struct swc_view * view;
+
+    struct
+    {
+        struct window_pointer_interaction interaction;
+    } move;
+
+    struct
+    {
+        struct window_pointer_interaction interaction;
+        uint32_t edges;
+    } resize;
 };
 
 struct window_impl
@@ -60,6 +77,12 @@ void window_set_class(struct window * window, const char * class);
 void window_set_state(struct window * window, uint32_t state);
 
 void window_set_parent(struct window * window, struct window * parent);
+
+void window_begin_interactive_move(struct window * window,
+                                   struct button_press * button);
+
+void window_begin_interactive_resize(struct window * window, uint32_t edges,
+                                     struct button_press * button);
 
 #endif
 

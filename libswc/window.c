@@ -112,6 +112,107 @@ void swc_window_set_border(struct swc_window * window,
     compositor_view_set_border_width(view, border_width);
 }
 
+static inline void window_begin_interaction
+    (struct window * window, struct window_pointer_interaction * interaction,
+     struct button_press * button)
+{
+    if (button)
+    {
+        interaction->original_handler = button->handler;
+        button->handler = &interaction->handler;
+    }
+    else
+        interaction->original_handler = NULL;
+
+    wl_list_insert(&swc.seat->pointer->handlers, &interaction->handler.link);
+}
+
+void window_begin_interactive_move(struct window * window,
+                                   struct button_press * button)
+{
+    window_begin_interaction(window, &window->move.interaction, button);
+}
+
+void window_begin_interactive_resize(struct window * window, uint32_t edges,
+                                     struct button_press * button)
+{
+    window_begin_interaction(window, &window->resize.interaction, button);
+
+    if (!edges)
+    {
+        /* TODO: Calculate edges to use */
+    }
+
+    window->resize.edges = edges;
+}
+
+EXPORT
+void swc_window_begin_move(struct swc_window * base)
+{
+    struct window * window = (struct window *) base;
+
+    window_begin_interactive_move(window, NULL);
+}
+
+EXPORT
+void swc_window_end_move(struct swc_window * base)
+{
+    struct window * window = (struct window *) base;
+
+    wl_list_remove(&window->move.interaction.handler.link);
+}
+
+EXPORT
+void swc_window_begin_resize(struct swc_window * base, uint32_t edges)
+{
+    struct window * window = (struct window *) base;
+
+    window_begin_interactive_resize(window, edges, NULL);
+}
+
+EXPORT
+void swc_window_end_resize(struct swc_window * base)
+{
+    struct window * window = (struct window *) base;
+
+    wl_list_remove(&window->resize.interaction.handler.link);
+}
+
+static bool move_motion(struct pointer_handler * handler, uint32_t time,
+                        wl_fixed_t fx, wl_fixed_t fy)
+{
+    /* TODO: Implement interactive moving */
+
+    return true;
+}
+
+static bool resize_motion(struct pointer_handler * handler, uint32_t time,
+                          wl_fixed_t fx, wl_fixed_t fy)
+{
+    /* TODO: Implement interactive resizing */
+
+    return true;
+}
+
+static bool handle_button(struct pointer_handler * handler, uint32_t time,
+                          uint32_t button, uint32_t state)
+{
+    struct window_pointer_interaction * interaction
+        = CONTAINER_OF(handler, typeof(*interaction), handler);
+
+    if (state != WL_POINTER_BUTTON_STATE_RELEASED
+        || !interaction->original_handler)
+    {
+        return false;
+    }
+
+    interaction->original_handler->button
+        (interaction->original_handler, time, button, state);
+    wl_list_remove(&handler->link);
+
+    return true;
+}
+
 bool window_initialize(struct window * window, const struct window_impl * impl,
                        struct swc_surface * surface)
 {
@@ -128,6 +229,14 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
 
     window->surface = surface;
     window->impl = impl;
+    window->move.interaction.handler = (struct pointer_handler) {
+        .motion = &move_motion,
+        .button = &handle_button
+    };
+    window->resize.interaction.handler = (struct pointer_handler) {
+        .motion = &resize_motion,
+        .button = &handle_button
+    };
 
     surface->window = window;
 

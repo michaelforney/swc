@@ -137,6 +137,35 @@ void swc_window_set_geometry(struct swc_window * window,
 void swc_window_set_border(struct swc_window * window,
                            uint32_t color, uint32_t width);
 
+/**
+ * Begin an interactive move of the specified window.
+ */
+void swc_window_begin_move(struct swc_window * window);
+
+/**
+ * End an interactive move of the specified window.
+ */
+void swc_window_end_move(struct swc_window * window);
+
+enum
+{
+    SWC_WINDOW_EDGE_AUTO    = 0,
+    SWC_WINDOW_EDGE_TOP     = (1 << 0),
+    SWC_WINDOW_EDGE_BOTTOM  = (1 << 1),
+    SWC_WINDOW_EDGE_LEFT    = (1 << 2),
+    SWC_WINDOW_EDGE_RIGHT   = (1 << 3)
+};
+
+/**
+ * Begin an interactive resize of the specified window.
+ */
+void swc_window_begin_resize(struct swc_window * window, uint32_t edges);
+
+/**
+ * End an interactive resize of the specified window.
+ */
+void swc_window_end_resize(struct swc_window * window);
+
 /* }}} */
 
 /* Screens {{{ */

@@ -33,12 +33,6 @@
 #include <assert.h>
 #include <wld/wld.h>
 
-struct button_press
-{
-    uint32_t value;
-    struct pointer_handler * handler;
-};
-
 static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
@@ -379,6 +373,20 @@ struct wl_resource * pointer_bind(struct pointer * pointer,
     return client_resource;
 }
 
+struct button_press * pointer_get_button_press(struct pointer * pointer,
+                                               uint32_t serial)
+{
+    struct button_press * button;
+
+    wl_array_for_each(button, &pointer->buttons)
+    {
+        if (button->serial == serial)
+            return button;
+    }
+
+    return NULL;
+}
+
 void pointer_handle_button(struct pointer * pointer, uint32_t time,
                            uint32_t value, uint32_t state)
 {
@@ -414,6 +422,7 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
             {
                 button = wl_array_add(&pointer->buttons, sizeof *button);
                 button->value = value;
+                button->serial = serial;
                 button->handler = handler;
                 break;
             }
