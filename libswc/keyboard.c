@@ -204,8 +204,8 @@ void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
     {
         if (handler->key && handler->key(keyboard, time, key, state))
         {
-            if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-                *((uint32_t *) wl_array_add(&handler->keys, sizeof key)) = key;
+            pressed_key = wl_array_add(&handler->keys, sizeof *pressed_key);
+            *pressed_key = key;
             break;
         }
     }

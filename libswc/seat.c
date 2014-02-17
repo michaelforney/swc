@@ -372,7 +372,7 @@ bool swc_seat_initialize(const char * seat_name)
     }
 
     seat.global = wl_global_create(swc.display, &wl_seat_interface, 2,
-                                       NULL, &bind_seat);
+                                   NULL, &bind_seat);
 
     if (!seat.global)
         goto error1;

@@ -71,7 +71,7 @@ EXPORT
 void swc_window_focus(struct swc_window * base)
 {
     struct window * window = INTERNAL(base);
-    struct swc_surface * new_focus = window ? INTERNAL(window)->surface : NULL,
+    struct swc_surface * new_focus = window ? window->surface : NULL,
                        * old_focus = swc.seat->keyboard->focus.surface;
 
     /* If the keyboard already has a focused window, and we are changing the
@@ -79,9 +79,9 @@ void swc_window_focus(struct swc_window * base)
      * the focus of the previous focus window's implementation to NULL. */
     if (old_focus && old_focus->window
         && !(window && window->impl == INTERNAL(old_focus->window)->impl)
-        && INTERNAL(old_focus->window)->impl->focus)
+        && old_focus->window->impl->focus)
     {
-        INTERNAL(old_focus->window)->impl->focus(NULL);
+        old_focus->window->impl->focus(NULL);
     }
 
     if (window && window->impl->focus)
