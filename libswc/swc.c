@@ -65,7 +65,8 @@ static void setup_compositor()
 
     wl_list_insert(&swc.seat->keyboard->handlers,
                    &swc.bindings->keyboard_handler->link);
-    swc.seat->pointer->handler = swc.compositor->pointer_handler;
+    wl_list_insert(&swc.seat->pointer->handlers,
+                   &swc.compositor->pointer_handler->link);
     wl_signal_add(&swc.seat->pointer->focus.event_signal,
                   &window_enter_listener);
 

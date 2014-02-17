@@ -33,6 +33,12 @@
 #include <assert.h>
 #include <wld/wld.h>
 
+struct button_press
+{
+    uint32_t value;
+    struct swc_pointer_handler * handler;
+};
+
 static void enter(struct swc_input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
@@ -189,6 +195,54 @@ void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id)
     swc_view_attach(&pointer->cursor.view, pointer->cursor.internal_buffer);
 }
 
+static bool client_handle_button(struct swc_pointer_handler * handler,
+                                 uint32_t time, uint32_t button, uint32_t state)
+{
+    struct swc_pointer * pointer
+        = CONTAINER_OF(handler, typeof(*pointer), client_handler);
+    uint32_t serial;
+
+    if (!pointer->focus.resource)
+        return false;
+
+    serial = wl_display_get_serial(swc.display);
+    wl_pointer_send_button(pointer->focus.resource, serial, time,
+                           button, state);
+
+    return true;
+}
+
+static bool client_handle_axis(struct swc_pointer_handler * handler,
+                               uint32_t time, uint32_t axis, wl_fixed_t amount)
+{
+    struct swc_pointer * pointer
+        = CONTAINER_OF(handler, typeof(*pointer), client_handler);
+
+    if (!pointer->focus.resource)
+        return false;
+
+    wl_pointer_send_axis(pointer->focus.resource, time, axis, amount);
+
+    return true;
+}
+
+static bool client_handle_motion(struct swc_pointer_handler * handler,
+                                 uint32_t time, wl_fixed_t x, wl_fixed_t y)
+{
+    struct swc_pointer * pointer
+        = CONTAINER_OF(handler, typeof(*pointer), client_handler);
+
+    if (!pointer->focus.resource)
+        return false;
+
+    wl_pointer_send_motion
+        (pointer->focus.resource, time,
+         x - wl_fixed_from_int(pointer->focus.surface->view->geometry.x),
+         y - wl_fixed_from_int(pointer->focus.surface->view->geometry.y));
+
+    return true;
+}
+
 bool swc_pointer_initialize(struct swc_pointer * pointer)
 {
     struct screen * screen;
@@ -202,6 +256,12 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
 
     pointer->focus_handler.enter = &enter;
     pointer->focus_handler.leave = &leave;
+    pointer->client_handler.button = &client_handle_button;
+    pointer->client_handler.axis = &client_handle_axis;
+    pointer->client_handler.motion = &client_handle_motion;
+    wl_list_init(&pointer->handlers);
+    wl_list_insert(&pointer->handlers, &pointer->client_handler.link);
+    wl_array_init(&pointer->buttons);
 
     swc_view_initialize(&pointer->cursor.view, &view_impl);
     pointer->cursor.view_listener.notify = &handle_view_event;
@@ -322,51 +382,73 @@ struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
 }
 
 void swc_pointer_handle_button(struct swc_pointer * pointer, uint32_t time,
-                               uint32_t button, uint32_t state)
+                               uint32_t value, uint32_t state)
 {
-    if ((!pointer->handler || !pointer->handler->button
-         || !pointer->handler->button(pointer->handler, time, button, state))
-        && pointer->focus.resource)
-    {
-        struct wl_client * client
-            = wl_resource_get_client(pointer->focus.resource);
-        struct wl_display * display = wl_client_get_display(client);
-        uint32_t serial = wl_display_next_serial(display);
+    struct swc_pointer_handler * handler;
+    struct button_press * button;
+    uint32_t serial;
 
-        wl_pointer_send_button(pointer->focus.resource, serial, time,
-                               button, state);
+    serial = wl_display_next_serial(swc.display);
+
+    if (state == WL_POINTER_BUTTON_STATE_RELEASED)
+    {
+        wl_array_for_each(button, &pointer->buttons)
+        {
+            if (button->value == value)
+            {
+                swc_array_remove(&pointer->buttons, button, sizeof *button);
+
+                if (button->handler->button)
+                {
+                    button->handler->button(button->handler, time,
+                                            value, state);
+                }
+
+                break;
+            }
+        }
+    }
+    else
+    {
+        wl_list_for_each(handler, &pointer->handlers, link)
+        {
+            if (handler->button && handler->button(handler, time, value, state))
+            {
+                button = wl_array_add(&pointer->buttons, sizeof *button);
+                button->value = value;
+                button->handler = handler;
+                break;
+            }
+        }
     }
 }
 
 void swc_pointer_handle_axis(struct swc_pointer * pointer, uint32_t time,
                              uint32_t axis, wl_fixed_t amount)
 {
-    if ((!pointer->handler || !pointer->handler->axis
-         || !pointer->handler->axis(pointer->handler, time, axis, amount))
-        && pointer->focus.resource)
+    struct swc_pointer_handler * handler;
+
+    wl_list_for_each(handler, &pointer->handlers, link)
     {
-        wl_pointer_send_axis(pointer->focus.resource, time, axis, amount);
+        if (handler->axis && handler->axis(handler, time, axis, amount))
+            break;
     }
 }
 
 void swc_pointer_handle_relative_motion
     (struct swc_pointer * pointer, uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
+    struct swc_pointer_handler * handler;
+
     clip_position(pointer, pointer->x + dx, pointer->y + dy);
 
-    if ((!pointer->handler || !pointer->handler->motion
-         || !pointer->handler->motion(pointer->handler, time,
-                                      pointer->x, pointer->y))
-        && pointer->focus.resource)
+    wl_list_for_each(handler, &pointer->handlers, link)
     {
-        wl_fixed_t surface_x, surface_y;
-        surface_x = pointer->x
-            - wl_fixed_from_int(pointer->focus.surface->view->geometry.x);
-        surface_y = pointer->y
-            - wl_fixed_from_int(pointer->focus.surface->view->geometry.y);
-
-        wl_pointer_send_motion(pointer->focus.resource, time,
-                               surface_x, surface_y);
+        if (handler->motion && handler->motion(handler, time,
+                                               pointer->x, pointer->y))
+        {
+            break;
+        }
     }
 
     update_cursor(pointer);

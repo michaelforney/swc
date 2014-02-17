@@ -41,6 +41,8 @@ struct swc_pointer_handler
                     uint32_t button, uint32_t state);
     bool (* axis)(struct swc_pointer_handler * handler, uint32_t time,
                   enum wl_pointer_axis axis, wl_fixed_t amount);
+
+    struct wl_list link;
 };
 
 struct swc_pointer
@@ -65,7 +67,9 @@ struct swc_pointer
         } hotspot;
     } cursor;
 
-    struct swc_pointer_handler * handler;
+    struct wl_array buttons;
+    struct wl_list handlers;
+    struct swc_pointer_handler client_handler;
 
     wl_fixed_t x, y;
     pixman_region32_t region;
