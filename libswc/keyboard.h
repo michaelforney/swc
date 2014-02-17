@@ -54,8 +54,8 @@ struct swc_keyboard_handler
 
 struct swc_keyboard
 {
-    struct swc_input_focus focus;
-    struct swc_input_focus_handler focus_handler;
+    struct input_focus focus;
+    struct input_focus_handler focus_handler;
     struct swc_xkb xkb;
 
     struct wl_list handlers;

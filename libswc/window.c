@@ -39,10 +39,10 @@
 static void handle_window_enter(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct swc_input_focus_event_data * event_data = event->data;
+    struct input_focus_event_data * event_data = event->data;
     struct window * window;
 
-    if (event->type != SWC_INPUT_FOCUS_EVENT_CHANGED)
+    if (event->type != INPUT_FOCUS_EVENT_CHANGED)
         return;
 
     if (!event_data->new || !(window = event_data->new->window))

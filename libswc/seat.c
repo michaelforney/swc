@@ -96,11 +96,11 @@ static void handle_keyboard_focus_event(struct wl_listener * listener,
                                         void * data)
 {
     struct swc_event * event = data;
-    struct swc_input_focus_event_data * event_data = event->data;
+    struct input_focus_event_data * event_data = event->data;
 
     switch (event->type)
     {
-        case SWC_INPUT_FOCUS_EVENT_CHANGED:
+        case INPUT_FOCUS_EVENT_CHANGED:
             if (event_data->new)
             {
                 struct wl_client * client

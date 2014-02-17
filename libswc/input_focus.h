@@ -1,6 +1,6 @@
 /* swc: input_focus.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,49 +29,49 @@
 
 enum
 {
-    SWC_INPUT_FOCUS_EVENT_CHANGED
+    INPUT_FOCUS_EVENT_CHANGED
 };
 
-struct swc_input_focus_event_data
+struct input_focus_event_data
 {
     struct swc_surface * old, * new;
 };
 
-struct swc_input_focus_handler
+struct input_focus_handler
 {
-    void (* enter)(struct swc_input_focus_handler * handler,
+    void (* enter)(struct input_focus_handler * handler,
                    struct wl_resource * resource,
                    struct swc_surface * surface);
-    void (* leave)(struct swc_input_focus_handler * handler,
+    void (* leave)(struct input_focus_handler * handler,
                    struct wl_resource * resource,
                    struct swc_surface * surface);
 };
 
-struct swc_input_focus
+struct input_focus
 {
     struct wl_resource * resource;
     struct swc_surface * surface;
     struct wl_listener surface_destroy_listener;
 
-    struct swc_input_focus_handler * handler;
+    struct input_focus_handler * handler;
     struct wl_list resources;
 
     struct wl_signal event_signal;
 };
 
-bool swc_input_focus_initialize(struct swc_input_focus * input_focus,
-                                struct swc_input_focus_handler * input_handler);
+bool input_focus_initialize(struct input_focus * input_focus,
+                            struct input_focus_handler * input_handler);
 
-void swc_input_focus_finalize(struct swc_input_focus * input_focus);
+void input_focus_finalize(struct input_focus * input_focus);
 
-void swc_input_focus_add_resource(struct swc_input_focus * input_focus,
-                                  struct wl_resource * resource);
+void input_focus_add_resource(struct input_focus * input_focus,
+                              struct wl_resource * resource);
 
-void swc_input_focus_remove_resource(struct swc_input_focus * input_focus,
-                                     struct wl_resource * resource);
+void input_focus_remove_resource(struct input_focus * input_focus,
+                                 struct wl_resource * resource);
 
-void swc_input_focus_set(struct swc_input_focus * input_focus,
-                         struct swc_surface * surface);
+void input_focus_set(struct input_focus * input_focus,
+                     struct swc_surface * surface);
 
 #endif
 

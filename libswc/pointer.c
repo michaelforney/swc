@@ -39,7 +39,7 @@ struct button_press
     struct swc_pointer_handler * handler;
 };
 
-static void enter(struct swc_input_focus_handler * handler,
+static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
     struct swc_pointer * pointer;
@@ -60,7 +60,7 @@ static void enter(struct swc_input_focus_handler * handler,
                           surface_x, surface_y);
 }
 
-static void leave(struct swc_input_focus_handler * handler,
+static void leave(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
     struct wl_client * client;
@@ -278,7 +278,7 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
 
     swc_pointer_set_cursor(pointer, cursor_left_ptr);
 
-    swc_input_focus_initialize(&pointer->focus, &pointer->focus_handler);
+    input_focus_initialize(&pointer->focus, &pointer->focus_handler);
     pixman_region32_init(&pointer->region);
 
     return true;
@@ -286,7 +286,7 @@ bool swc_pointer_initialize(struct swc_pointer * pointer)
 
 void swc_pointer_finalize(struct swc_pointer * pointer)
 {
-    swc_input_focus_finalize(&pointer->focus);
+    input_focus_finalize(&pointer->focus);
     pixman_region32_fini(&pointer->region);
 }
 
@@ -296,7 +296,7 @@ void swc_pointer_finalize(struct swc_pointer * pointer)
 void swc_pointer_set_focus(struct swc_pointer * pointer,
                            struct swc_surface * surface)
 {
-    swc_input_focus_set(&pointer->focus, surface);
+    input_focus_set(&pointer->focus, surface);
 }
 
 static void clip_position(struct swc_pointer * pointer,
@@ -365,7 +365,7 @@ static void unbind(struct wl_resource * resource)
 {
     struct swc_pointer * pointer = wl_resource_get_user_data(resource);
 
-    swc_input_focus_remove_resource(&pointer->focus, resource);
+    input_focus_remove_resource(&pointer->focus, resource);
 }
 
 struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
@@ -376,7 +376,7 @@ struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
     client_resource = wl_resource_create(client, &wl_pointer_interface, 1, id);
     wl_resource_set_implementation(client_resource, &pointer_implementation,
                                    pointer, &unbind);
-    swc_input_focus_add_resource(&pointer->focus, client_resource);
+    input_focus_add_resource(&pointer->focus, client_resource);
 
     return client_resource;
 }

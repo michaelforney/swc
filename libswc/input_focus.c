@@ -1,6 +1,6 @@
 /* swc: input_focus.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 #include "surface.h"
 #include "util.h"
 
-static inline void focus(struct swc_input_focus * input_focus,
+static inline void focus(struct input_focus * input_focus,
                          struct swc_surface * surface,
                          struct wl_resource * resource)
 {
@@ -43,7 +43,7 @@ static inline void focus(struct swc_input_focus * input_focus,
     input_focus->resource = resource;
 }
 
-static inline void unfocus(struct swc_input_focus * input_focus)
+static inline void unfocus(struct input_focus * input_focus)
 {
     if (input_focus->surface)
         wl_list_remove(&input_focus->surface_destroy_listener.link);
@@ -58,15 +58,15 @@ static inline void unfocus(struct swc_input_focus * input_focus)
 static void handle_focus_surface_destroy(struct wl_listener * listener,
                                          void * data)
 {
-    struct swc_input_focus * input_focus = CONTAINER_OF
+    struct input_focus * input_focus = CONTAINER_OF
         (listener, typeof(*input_focus), surface_destroy_listener);
 
     input_focus->surface = NULL;
     input_focus->resource = NULL;
 }
 
-bool swc_input_focus_initialize(struct swc_input_focus * input_focus,
-                                struct swc_input_focus_handler * handler)
+bool input_focus_initialize(struct input_focus * input_focus,
+                            struct input_focus_handler * handler)
 {
     input_focus->resource = NULL;
     input_focus->surface = NULL;
@@ -80,13 +80,13 @@ bool swc_input_focus_initialize(struct swc_input_focus * input_focus,
     return true;
 }
 
-void swc_input_focus_finalize(struct swc_input_focus * input_focus)
+void input_focus_finalize(struct input_focus * input_focus)
 {
     /* XXX: Destroy resources? */
 }
 
-void swc_input_focus_add_resource(struct swc_input_focus * input_focus,
-                                  struct wl_resource * resource)
+void input_focus_add_resource(struct input_focus * input_focus,
+                              struct wl_resource * resource)
 {
     /* If this new input resource corresponds to our focus, set it as our
      * focus. */
@@ -107,8 +107,8 @@ void swc_input_focus_add_resource(struct swc_input_focus * input_focus,
     wl_list_insert(&input_focus->resources, wl_resource_get_link(resource));
 }
 
-void swc_input_focus_remove_resource(struct swc_input_focus * input_focus,
-                                     struct wl_resource * resource)
+void input_focus_remove_resource(struct input_focus * input_focus,
+                                 struct wl_resource * resource)
 {
     if (resource == input_focus->resource)
         input_focus->resource = NULL;
@@ -116,12 +116,12 @@ void swc_input_focus_remove_resource(struct swc_input_focus * input_focus,
     swc_remove_resource(resource);
 }
 
-void swc_input_focus_set(struct swc_input_focus * input_focus,
-                         struct swc_surface * surface)
+void input_focus_set(struct input_focus * input_focus,
+                     struct swc_surface * surface)
 {
     struct wl_client * client;
     struct wl_resource * resource;
-    struct swc_input_focus_event_data data;
+    struct input_focus_event_data data;
 
     if (surface == input_focus->surface)
         return;
@@ -147,7 +147,7 @@ void swc_input_focus_set(struct swc_input_focus * input_focus,
 
     data.new = input_focus->surface;
 
-    swc_send_event(&input_focus->event_signal, SWC_INPUT_FOCUS_EVENT_CHANGED,
+    swc_send_event(&input_focus->event_signal, INPUT_FOCUS_EVENT_CHANGED,
                    &data);
 
     return;

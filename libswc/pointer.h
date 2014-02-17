@@ -47,8 +47,8 @@ struct swc_pointer_handler
 
 struct swc_pointer
 {
-    struct swc_input_focus focus;
-    struct swc_input_focus_handler focus_handler;
+    struct input_focus focus;
+    struct input_focus_handler focus_handler;
 
     struct
     {

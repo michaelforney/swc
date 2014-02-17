@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static void enter(struct swc_input_focus_handler * handler,
+static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
     struct swc_keyboard * keyboard;
@@ -49,7 +49,7 @@ static void enter(struct swc_input_focus_handler * handler,
                            &keyboard->client_handler.keys);
 }
 
-static void leave(struct swc_input_focus_handler * handler,
+static void leave(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
     struct wl_client * client;
@@ -110,7 +110,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
         goto error0;
     }
 
-    if (!swc_input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
+    if (!input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
         goto error1;
 
     keyboard->modifier_state = (struct swc_keyboard_modifier_state) { 0 };
@@ -123,8 +123,6 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
     wl_list_init(&keyboard->handlers);
     wl_list_insert(&keyboard->handlers, &keyboard->client_handler.link);
 
-    swc_input_focus_initialize(&keyboard->focus, &keyboard->focus_handler);
-
     return true;
 
   error1:
@@ -136,7 +134,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
 void swc_keyboard_finalize(struct swc_keyboard * keyboard)
 {
     wl_array_release(&keyboard->client_handler.keys);
-    swc_input_focus_finalize(&keyboard->focus);
+    input_focus_finalize(&keyboard->focus);
     swc_xkb_finalize(&keyboard->xkb);
 }
 
@@ -146,14 +144,14 @@ void swc_keyboard_finalize(struct swc_keyboard * keyboard)
 void swc_keyboard_set_focus(struct swc_keyboard * keyboard,
                             struct swc_surface * surface)
 {
-    swc_input_focus_set(&keyboard->focus, surface);
+    input_focus_set(&keyboard->focus, surface);
 }
 
 static void unbind(struct wl_resource * resource)
 {
     struct swc_keyboard * keyboard = wl_resource_get_user_data(resource);
 
-    swc_input_focus_remove_resource(&keyboard->focus, resource);
+    input_focus_remove_resource(&keyboard->focus, resource);
 }
 
 struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
@@ -163,7 +161,7 @@ struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
 
     client_resource = wl_resource_create(client, &wl_keyboard_interface, 1, id);
     wl_resource_set_implementation(client_resource, NULL, keyboard, &unbind);
-    swc_input_focus_add_resource(&keyboard->focus, client_resource);
+    input_focus_add_resource(&keyboard->focus, client_resource);
 
     /* Subtract one to remove terminating NULL character. */
     wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
