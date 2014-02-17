@@ -87,7 +87,7 @@ void swc_window_focus(struct swc_window * base)
     if (window && window->impl->focus)
         window->impl->focus(window);
 
-    swc_keyboard_set_focus(swc.seat->keyboard, new_focus);
+    keyboard_set_focus(swc.seat->keyboard, new_focus);
 }
 
 EXPORT

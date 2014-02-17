@@ -50,7 +50,7 @@ static struct
     struct wl_event_source * monitor_source;
 #endif
 
-    struct swc_keyboard keyboard;
+    struct keyboard keyboard;
     struct pointer pointer;
     struct swc_data_device data_device;
 
@@ -67,7 +67,7 @@ const struct swc_seat swc_seat = {
 
 static void handle_key(uint32_t time, uint32_t key, uint32_t state)
 {
-    swc_keyboard_handle_key(&seat.keyboard, time, key, state);
+    keyboard_handle_key(&seat.keyboard, time, key, state);
 }
 
 static void handle_button(uint32_t time, uint32_t button, uint32_t state)
@@ -174,7 +174,7 @@ static void get_pointer(struct wl_client * client, struct wl_resource * resource
 static void get_keyboard(struct wl_client * client, struct wl_resource * resource,
                          uint32_t id)
 {
-    swc_keyboard_bind(&seat.keyboard, client, id);
+    keyboard_bind(&seat.keyboard, client, id);
 }
 
 static void get_touch(struct wl_client * client, struct wl_resource * resource,
@@ -390,7 +390,7 @@ bool swc_seat_initialize(const char * seat_name)
 
     wl_signal_add(&seat.data_device.event_signal, &data_device_listener);
 
-    if (!swc_keyboard_initialize(&seat.keyboard))
+    if (!keyboard_initialize(&seat.keyboard))
     {
         ERROR("Could not initialize keyboard\n");
         goto error3;
@@ -421,7 +421,7 @@ bool swc_seat_initialize(const char * seat_name)
 #endif
     pointer_finalize(&seat.pointer);
   error4:
-    swc_keyboard_finalize(&seat.keyboard);
+    keyboard_finalize(&seat.keyboard);
   error3:
     swc_data_device_finalize(&seat.data_device);
   error2:
@@ -440,7 +440,7 @@ void swc_seat_finalize()
     finalize_monitor();
 #endif
     pointer_finalize(&seat.pointer);
-    swc_keyboard_finalize(&seat.keyboard);
+    keyboard_finalize(&seat.keyboard);
 
     wl_list_for_each_safe(device, tmp, &seat.devices, link)
         swc_evdev_device_destroy(device);

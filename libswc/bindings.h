@@ -28,7 +28,7 @@
 
 struct swc_bindings
 {
-    struct swc_keyboard_handler * keyboard_handler;
+    struct keyboard_handler * keyboard_handler;
 };
 
 bool swc_bindings_initialize();

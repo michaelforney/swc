@@ -132,7 +132,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     wl_list_insert(&screen->modifiers, &panel->modifier.link);
 
     if (focus)
-        swc_keyboard_set_focus(swc.seat->keyboard, panel->surface);
+        keyboard_set_focus(swc.seat->keyboard, panel->surface);
 
     swc_panel_send_docked(resource, length);
 }

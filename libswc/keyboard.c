@@ -35,7 +35,7 @@
 static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct swc_surface * surface)
 {
-    struct swc_keyboard * keyboard;
+    struct keyboard * keyboard;
     struct wl_client * client;
     struct wl_display * display;
     uint32_t serial;
@@ -63,7 +63,7 @@ static void leave(struct input_focus_handler * handler,
     wl_keyboard_send_leave(resource, serial, surface->resource);
 }
 
-static bool client_handle_key(struct swc_keyboard * keyboard, uint32_t time,
+static bool client_handle_key(struct keyboard * keyboard, uint32_t time,
                               uint32_t key, uint32_t state)
 {
     struct wl_client * client;
@@ -82,8 +82,7 @@ static bool client_handle_key(struct swc_keyboard * keyboard, uint32_t time,
 }
 
 static bool client_handle_modifiers
-    (struct swc_keyboard * keyboard,
-     const struct swc_keyboard_modifier_state * state)
+    (struct keyboard * keyboard, const struct keyboard_modifier_state * state)
 {
     struct wl_client * client;
     struct wl_display * display;
@@ -102,7 +101,7 @@ static bool client_handle_modifiers
     return true;
 }
 
-bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
+bool keyboard_initialize(struct keyboard * keyboard)
 {
     if (!swc_xkb_initialize(&keyboard->xkb))
     {
@@ -113,7 +112,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
     if (!input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
         goto error1;
 
-    keyboard->modifier_state = (struct swc_keyboard_modifier_state) { 0 };
+    keyboard->modifier_state = (struct keyboard_modifier_state) { };
     keyboard->modifiers = 0;
     keyboard->focus_handler.enter = &enter;
     keyboard->focus_handler.leave = &leave;
@@ -131,7 +130,7 @@ bool swc_keyboard_initialize(struct swc_keyboard * keyboard)
     return false;
 }
 
-void swc_keyboard_finalize(struct swc_keyboard * keyboard)
+void keyboard_finalize(struct keyboard * keyboard)
 {
     wl_array_release(&keyboard->client_handler.keys);
     input_focus_finalize(&keyboard->focus);
@@ -141,7 +140,7 @@ void swc_keyboard_finalize(struct swc_keyboard * keyboard)
 /**
  * Sets the focus of the keyboard to the specified surface.
  */
-void swc_keyboard_set_focus(struct swc_keyboard * keyboard,
+void keyboard_set_focus(struct keyboard * keyboard,
                             struct swc_surface * surface)
 {
     input_focus_set(&keyboard->focus, surface);
@@ -149,13 +148,13 @@ void swc_keyboard_set_focus(struct swc_keyboard * keyboard,
 
 static void unbind(struct wl_resource * resource)
 {
-    struct swc_keyboard * keyboard = wl_resource_get_user_data(resource);
+    struct keyboard * keyboard = wl_resource_get_user_data(resource);
 
     input_focus_remove_resource(&keyboard->focus, resource);
 }
 
-struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
-                                       struct wl_client * client, uint32_t id)
+struct wl_resource * keyboard_bind(struct keyboard * keyboard,
+                                   struct wl_client * client, uint32_t id)
 {
     struct wl_resource * client_resource;
 
@@ -171,14 +170,14 @@ struct wl_resource * swc_keyboard_bind(struct swc_keyboard * keyboard,
     return client_resource;
 }
 
-void swc_keyboard_handle_key(struct swc_keyboard * keyboard, uint32_t time,
-                             uint32_t key, uint32_t state)
+void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
+                         uint32_t key, uint32_t state)
 {
     uint32_t * pressed_key;
-    struct swc_keyboard_modifier_state modifier_state;
+    struct keyboard_modifier_state modifier_state;
     enum xkb_key_direction direction;
     struct swc_xkb * xkb = &keyboard->xkb;
-    struct swc_keyboard_handler * handler;
+    struct keyboard_handler * handler;
 
     /* First handle key events associated with a particular handler. */
     wl_list_for_each(handler, &keyboard->handlers, link)

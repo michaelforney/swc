@@ -36,10 +36,10 @@ struct binding
     void * data;
 };
 
-static bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
+static bool handle_key(struct keyboard * keyboard, uint32_t time,
                        uint32_t key, uint32_t state);
 
-static struct swc_keyboard_handler binding_handler = {
+static struct keyboard_handler binding_handler = {
     .key = &handle_key,
 };
 
@@ -68,7 +68,7 @@ static bool handle_binding(struct wl_array * bindings, uint32_t time,
     return false;
 }
 
-bool handle_key(struct swc_keyboard * keyboard, uint32_t time,
+bool handle_key(struct keyboard * keyboard, uint32_t time,
                 uint32_t key, uint32_t state)
 {
     xkb_keysym_t keysym;
