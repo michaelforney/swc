@@ -88,11 +88,11 @@ struct view
     struct wl_list link;
 };
 
-static bool handle_motion(struct swc_pointer_handler * handler, uint32_t time,
+static bool handle_motion(struct pointer_handler * handler, uint32_t time,
                           wl_fixed_t x, wl_fixed_t y);
 static void perform_update(void * data);
 
-static struct swc_pointer_handler pointer_handler = {
+static struct pointer_handler pointer_handler = {
     .motion = &handle_motion
 };
 
@@ -756,7 +756,7 @@ static void perform_update(void * data)
     compositor.updating = false;
 }
 
-bool handle_motion(struct swc_pointer_handler * handler, uint32_t time,
+bool handle_motion(struct pointer_handler * handler, uint32_t time,
                    wl_fixed_t fx, wl_fixed_t fy)
 {
     struct view * view;
@@ -778,7 +778,7 @@ bool handle_motion(struct swc_pointer_handler * handler, uint32_t time,
         }
     }
 
-    swc_pointer_set_focus(swc.seat->pointer, surface);
+    pointer_set_focus(swc.seat->pointer, surface);
 
     return false;
 }

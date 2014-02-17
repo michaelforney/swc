@@ -28,7 +28,7 @@
 
 struct swc_seat
 {
-    struct swc_pointer * pointer;
+    struct pointer * pointer;
     struct swc_keyboard * keyboard;
     struct swc_data_device * data_device;
 };

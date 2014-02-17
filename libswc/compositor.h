@@ -30,7 +30,7 @@ struct swc_surface;
 
 struct swc_compositor
 {
-    struct swc_pointer_handler * pointer_handler;
+    struct pointer_handler * pointer_handler;
 };
 
 bool swc_compositor_initialize();

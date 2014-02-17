@@ -51,7 +51,7 @@ static struct
 #endif
 
     struct swc_keyboard keyboard;
-    struct swc_pointer pointer;
+    struct pointer pointer;
     struct swc_data_device data_device;
 
     struct wl_global * global;
@@ -72,17 +72,17 @@ static void handle_key(uint32_t time, uint32_t key, uint32_t state)
 
 static void handle_button(uint32_t time, uint32_t button, uint32_t state)
 {
-    swc_pointer_handle_button(&seat.pointer, time, button, state);
+    pointer_handle_button(&seat.pointer, time, button, state);
 }
 
 static void handle_axis(uint32_t time, uint32_t axis, wl_fixed_t amount)
 {
-    swc_pointer_handle_axis(&seat.pointer, time, axis, amount);
+    pointer_handle_axis(&seat.pointer, time, axis, amount);
 }
 
 static void handle_relative_motion(uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
-    swc_pointer_handle_relative_motion(&seat.pointer, time, dx, dy);
+    pointer_handle_relative_motion(&seat.pointer, time, dx, dy);
 }
 
 const static struct swc_evdev_device_handler evdev_handler = {
@@ -168,7 +168,7 @@ static struct wl_listener launch_listener = {
 static void get_pointer(struct wl_client * client, struct wl_resource * resource,
                         uint32_t id)
 {
-    swc_pointer_bind(&seat.pointer, client, id);
+    pointer_bind(&seat.pointer, client, id);
 }
 
 static void get_keyboard(struct wl_client * client, struct wl_resource * resource,
@@ -398,7 +398,7 @@ bool swc_seat_initialize(const char * seat_name)
 
     wl_signal_add(&seat.keyboard.focus.event_signal, &keyboard_focus_listener);
 
-    if (!swc_pointer_initialize(&seat.pointer))
+    if (!pointer_initialize(&seat.pointer))
     {
         ERROR("Could not initialize pointer\n");
         goto error4;
@@ -419,7 +419,7 @@ bool swc_seat_initialize(const char * seat_name)
     finalize_monitor();
   error5:
 #endif
-    swc_pointer_finalize(&seat.pointer);
+    pointer_finalize(&seat.pointer);
   error4:
     swc_keyboard_finalize(&seat.keyboard);
   error3:
@@ -439,7 +439,7 @@ void swc_seat_finalize()
 #ifdef ENABLE_HOTPLUGGING
     finalize_monitor();
 #endif
-    swc_pointer_finalize(&seat.pointer);
+    pointer_finalize(&seat.pointer);
     swc_keyboard_finalize(&seat.keyboard);
 
     wl_list_for_each_safe(device, tmp, &seat.devices, link)

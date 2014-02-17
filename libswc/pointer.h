@@ -31,21 +31,19 @@
 #include <wayland-server.h>
 #include <pixman.h>
 
-struct swc_pointer;
-
-struct swc_pointer_handler
+struct pointer_handler
 {
-    bool (* motion)(struct swc_pointer_handler * handler, uint32_t time,
+    bool (* motion)(struct pointer_handler * handler, uint32_t time,
                     wl_fixed_t x, wl_fixed_t y);
-    bool (* button)(struct swc_pointer_handler * handler, uint32_t time,
+    bool (* button)(struct pointer_handler * handler, uint32_t time,
                     uint32_t button, uint32_t state);
-    bool (* axis)(struct swc_pointer_handler * handler, uint32_t time,
+    bool (* axis)(struct pointer_handler * handler, uint32_t time,
                   enum wl_pointer_axis axis, wl_fixed_t amount);
 
     struct wl_list link;
 };
 
-struct swc_pointer
+struct pointer
 {
     struct input_focus focus;
     struct input_focus_handler focus_handler;
@@ -58,7 +56,7 @@ struct swc_pointer
         struct wl_listener destroy_listener;
         struct wld_buffer * buffer;
 
-        /* Used for cursors set with swc_pointer_set_cursor */
+        /* Used for cursors set with pointer_set_cursor */
         struct wld_buffer * internal_buffer;
 
         struct
@@ -69,28 +67,26 @@ struct swc_pointer
 
     struct wl_array buttons;
     struct wl_list handlers;
-    struct swc_pointer_handler client_handler;
+    struct pointer_handler client_handler;
 
     wl_fixed_t x, y;
     pixman_region32_t region;
 };
 
-bool swc_pointer_initialize(struct swc_pointer * pointer);
-void swc_pointer_finalize(struct swc_pointer * pointer);
-void swc_pointer_set_focus(struct swc_pointer * pointer,
-                           struct swc_surface * surface);
-void swc_pointer_set_region(struct swc_pointer * pointer,
-                            pixman_region32_t * region);
-void swc_pointer_set_cursor(struct swc_pointer * pointer, uint32_t id);
+bool pointer_initialize(struct pointer * pointer);
+void pointer_finalize(struct pointer * pointer);
+void pointer_set_focus(struct pointer * pointer, struct swc_surface * surface);
+void pointer_set_region(struct pointer * pointer, pixman_region32_t * region);
+void pointer_set_cursor(struct pointer * pointer, uint32_t id);
 
-struct wl_resource * swc_pointer_bind(struct swc_pointer * pointer,
-                                      struct wl_client * client, uint32_t id);
-void swc_pointer_handle_button(struct swc_pointer * pointer, uint32_t time,
-                               uint32_t button, uint32_t state);
-void swc_pointer_handle_axis(struct swc_pointer * pointer, uint32_t time,
-                             uint32_t axis, wl_fixed_t amount);
-void swc_pointer_handle_relative_motion
-    (struct swc_pointer * pointer, uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
+struct wl_resource * pointer_bind(struct pointer * pointer,
+                                  struct wl_client * client, uint32_t id);
+void pointer_handle_button(struct pointer * pointer, uint32_t time,
+                           uint32_t button, uint32_t state);
+void pointer_handle_axis(struct pointer * pointer, uint32_t time,
+                         uint32_t axis, wl_fixed_t amount);
+void pointer_handle_relative_motion(struct pointer * pointer, uint32_t time,
+                                    wl_fixed_t dx, wl_fixed_t dy);
 
 #endif
 

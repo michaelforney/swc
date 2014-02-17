@@ -81,7 +81,7 @@ static void setup_compositor()
                                    geometry->width, geometry->height);
     }
 
-    swc_pointer_set_region(swc.seat->pointer, &pointer_region);
+    pointer_set_region(swc.seat->pointer, &pointer_region);
     pixman_region32_fini(&pointer_region);
 }
 
