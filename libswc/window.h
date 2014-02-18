@@ -46,6 +46,7 @@ struct window
     struct
     {
         struct window_pointer_interaction interaction;
+        struct { int32_t x, y; } offset;
     } move;
 
     struct

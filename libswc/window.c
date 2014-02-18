@@ -130,7 +130,13 @@ static inline void window_begin_interaction
 void window_begin_interactive_move(struct window * window,
                                    struct button_press * button)
 {
+    struct swc_rectangle * geometry = &window->view->geometry;
+    int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
+            py = wl_fixed_to_int(swc.seat->pointer->y);
+
     window_begin_interaction(window, &window->move.interaction, button);
+    window->move.offset.x = geometry->x - px;
+    window->move.offset.y = geometry->y - py;
 }
 
 void window_begin_interactive_resize(struct window * window, uint32_t edges,
@@ -181,7 +187,11 @@ void swc_window_end_resize(struct swc_window * base)
 static bool move_motion(struct pointer_handler * handler, uint32_t time,
                         wl_fixed_t fx, wl_fixed_t fy)
 {
-    /* TODO: Implement interactive moving */
+    struct window * window
+        = CONTAINER_OF(handler, typeof(*window), move.interaction.handler);
+
+    swc_view_move(window->view, wl_fixed_to_int(fx) + window->move.offset.x,
+                                wl_fixed_to_int(fy) + window->move.offset.y);
 
     return true;
 }
