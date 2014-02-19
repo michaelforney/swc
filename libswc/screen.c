@@ -96,7 +96,7 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
     return screen;
 
   error2:
-    swc_framebuffer_plane_finalize(&screen->planes.framebuffer);
+    framebuffer_plane_finalize(&screen->planes.framebuffer);
   error1:
     free(screen);
   error0:
@@ -109,7 +109,7 @@ void screen_destroy(struct screen * screen)
 
     wl_list_for_each_safe(output, next, &screen->outputs, link)
         swc_output_destroy(output);
-    swc_framebuffer_plane_finalize(&screen->planes.framebuffer);
+    framebuffer_plane_finalize(&screen->planes.framebuffer);
     swc_cursor_plane_finalize(&screen->planes.cursor);
     free(screen);
 }

@@ -78,14 +78,14 @@ static bool update(struct swc_view * view)
 
 static void send_frame(void * data)
 {
-    struct swc_framebuffer_plane * plane = data;
+    struct framebuffer_plane * plane = data;
 
     swc_view_frame(&plane->view, swc_time());
 }
 
 static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 {
-    struct swc_framebuffer_plane * plane
+    struct framebuffer_plane * plane
         = CONTAINER_OF(view, typeof(*plane), view);
     union wld_object object;
 
@@ -161,16 +161,16 @@ const static struct swc_view_impl view_impl = {
 
 static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
 {
-    struct swc_framebuffer_plane * plane
+    struct framebuffer_plane * plane
         = CONTAINER_OF(handler, typeof(*plane), drm_handler);
 
     swc_view_frame(&plane->view, time);
 }
 
-bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
-                                      uint32_t crtc, struct swc_mode * mode,
-                                      uint32_t * connectors,
-                                      uint32_t num_connectors)
+bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
+                                  uint32_t crtc, struct swc_mode * mode,
+                                  uint32_t * connectors,
+                                  uint32_t num_connectors)
 {
     uint32_t * plane_connectors;
 
@@ -218,7 +218,7 @@ bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
     return false;
 }
 
-void swc_framebuffer_plane_finalize(struct swc_framebuffer_plane * plane)
+void framebuffer_plane_finalize(struct framebuffer_plane * plane)
 {
     wl_array_release(&plane->connectors);
     drmModeCrtcPtr crtc = plane->original_crtc_state;

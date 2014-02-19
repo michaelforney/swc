@@ -29,7 +29,7 @@
 #include "surface.h"
 #include "view.h"
 
-struct swc_framebuffer_plane
+struct framebuffer_plane
 {
     uint32_t crtc;
     drmModeCrtcPtr original_crtc_state;
@@ -40,12 +40,12 @@ struct swc_framebuffer_plane
     struct swc_drm_handler drm_handler;
 };
 
-bool swc_framebuffer_plane_initialize(struct swc_framebuffer_plane * plane,
-                                      uint32_t crtc, struct swc_mode * mode,
-                                      uint32_t * connectors,
-                                      uint32_t num_connectors);
+bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
+                                  uint32_t crtc, struct swc_mode * mode,
+                                  uint32_t * connectors,
+                                  uint32_t num_connectors);
 
-void swc_framebuffer_plane_finalize(struct swc_framebuffer_plane * plane);
+void framebuffer_plane_finalize(struct framebuffer_plane * plane);
 
 #endif
 
