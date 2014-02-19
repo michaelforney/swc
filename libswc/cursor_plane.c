@@ -40,7 +40,7 @@ static bool update(struct swc_view * view)
 
 static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 {
-    struct swc_cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
+    struct cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
 
     if (buffer)
     {
@@ -75,7 +75,7 @@ static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 
 static bool move(struct swc_view * view, int32_t x, int32_t y)
 {
-    struct swc_cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
+    struct cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
 
     if (drmModeMoveCursor(swc.drm->fd, plane->crtc,
                           x - plane->origin->x, y - plane->origin->y) != 0)
@@ -98,7 +98,7 @@ static const struct swc_view_impl view_impl = {
 static void handle_launch_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct swc_cursor_plane * plane
+    struct cursor_plane * plane
         = CONTAINER_OF(listener, typeof(*plane), launch_listener);
 
     switch (event->type)
@@ -110,8 +110,8 @@ static void handle_launch_event(struct wl_listener * listener, void * data)
     }
 }
 
-bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane, uint32_t crtc,
-                                 const struct swc_rectangle * origin)
+bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,
+                             const struct swc_rectangle * origin)
 {
     if (drmModeSetCursor(swc.drm->fd, crtc, 0, 0, 0) != 0)
         return false;
@@ -125,7 +125,7 @@ bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane, uint32_t crtc,
     return true;
 }
 
-void swc_cursor_plane_finalize(struct swc_cursor_plane * plane)
+void cursor_plane_finalize(struct cursor_plane * plane)
 {
     drmModeSetCursor(swc.drm->fd, plane->crtc, 0, 0, 0);
 }

@@ -26,7 +26,7 @@
 
 #include "view.h"
 
-struct swc_cursor_plane
+struct cursor_plane
 {
     struct swc_view view;
     const struct swc_rectangle * origin;
@@ -34,10 +34,10 @@ struct swc_cursor_plane
     struct wl_listener launch_listener;
 };
 
-bool swc_cursor_plane_initialize(struct swc_cursor_plane * plane, uint32_t crtc,
-                                 const struct swc_rectangle * origin);
+bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,
+                             const struct swc_rectangle * origin);
 
-void swc_cursor_plane_finalize(struct swc_cursor_plane * plane);
+void cursor_plane_finalize(struct cursor_plane * plane);
 
 #endif
 

@@ -72,16 +72,16 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
     wl_list_insert(&screen->outputs, &output->link);
     wl_list_init(&screen->modifiers);
 
-    if (!swc_framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
-                                          output->preferred_mode,
-                                          &output->connector, 1))
+    if (!framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
+                                      output->preferred_mode,
+                                      &output->connector, 1))
     {
         ERROR("Failed to initialize framebuffer plane\n");
         goto error1;
     }
 
-    if (!swc_cursor_plane_initialize(&screen->planes.cursor, crtc,
-                                     &screen->base.geometry))
+    if (!cursor_plane_initialize(&screen->planes.cursor, crtc,
+                                 &screen->base.geometry))
     {
         ERROR("Failed to initialize cursor plane\n");
         goto error2;
@@ -110,7 +110,7 @@ void screen_destroy(struct screen * screen)
     wl_list_for_each_safe(output, next, &screen->outputs, link)
         swc_output_destroy(output);
     framebuffer_plane_finalize(&screen->planes.framebuffer);
-    swc_cursor_plane_finalize(&screen->planes.cursor);
+    cursor_plane_finalize(&screen->planes.cursor);
     free(screen);
 }
 

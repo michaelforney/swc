@@ -54,8 +54,8 @@ struct screen
 
     struct
     {
-        struct swc_framebuffer_plane framebuffer;
-        struct swc_cursor_plane cursor;
+        struct framebuffer_plane framebuffer;
+        struct cursor_plane cursor;
     } planes;
 
     struct wl_list outputs;
