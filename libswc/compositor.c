@@ -61,33 +61,6 @@ struct target
     struct wl_listener screen_listener;
 };
 
-struct compositor_view
-{
-    struct swc_view base;
-    struct wl_listener event_listener;
-    struct swc_surface * surface;
-    struct wld_buffer * buffer;
-
-    /* Whether or not the view is visible (mapped). */
-    bool visible;
-
-    /* The box that the surface covers (including it's border). */
-    pixman_box32_t extents;
-
-    /* The region that is covered by opaque regions of surfaces above this
-     * surface. */
-    pixman_region32_t clip;
-
-    struct
-    {
-        uint32_t width;
-        uint32_t color;
-        bool damaged;
-    } border;
-
-    struct wl_list link;
-};
-
 static bool handle_motion(struct pointer_handler * handler, uint32_t time,
                           wl_fixed_t x, wl_fixed_t y);
 static void perform_update(void * data);
@@ -515,7 +488,8 @@ static void handle_view_event(struct wl_listener * listener, void * data)
     }
 }
 
-struct swc_view * swc_compositor_create_view(struct swc_surface * surface)
+struct compositor_view * swc_compositor_create_view
+    (struct swc_surface * surface)
 {
     struct compositor_view * view;
 
@@ -540,28 +514,20 @@ struct swc_view * swc_compositor_create_view(struct swc_surface * surface)
     pixman_region32_init(&view->clip);
     swc_surface_set_view(surface, &view->base);
 
-    return &view->base;
+    return view;
 }
 
-void compositor_view_destroy(struct swc_view * base)
+void compositor_view_destroy(struct compositor_view * view)
 {
-    struct compositor_view * view = (void *) base;
-
-    assert(view->base.impl == &view_impl);
-
-    compositor_view_hide(&view->base);
+    compositor_view_hide(view);
     swc_surface_set_view(view->surface, NULL);
     swc_view_finalize(&view->base);
     pixman_region32_fini(&view->clip);
     free(view);
 }
 
-void compositor_view_show(struct swc_view * base)
+void compositor_view_show(struct compositor_view * view)
 {
-    struct compositor_view * view = (void *) base;
-
-    assert(view->base.impl == &view_impl);
-
     if (view->visible)
         return;
 
@@ -577,12 +543,8 @@ void compositor_view_show(struct swc_view * base)
     wl_list_insert(&compositor.views, &view->link);
 }
 
-void compositor_view_hide(struct swc_view * base)
+void compositor_view_hide(struct compositor_view * view)
 {
-    struct compositor_view * view = (void *) base;
-
-    assert(view->base.impl == &view_impl);
-
     if (!view->visible)
         return;
 
@@ -595,12 +557,9 @@ void compositor_view_hide(struct swc_view * base)
     view->visible = false;
 }
 
-void compositor_view_set_border_width(struct swc_view * base, uint32_t width)
+void compositor_view_set_border_width(struct compositor_view * view,
+                                      uint32_t width)
 {
-    struct compositor_view * view = (void *) base;
-
-    assert(view->base.impl == &view_impl);
-
     if (view->border.width == width)
         return;
 
@@ -613,12 +572,9 @@ void compositor_view_set_border_width(struct swc_view * base, uint32_t width)
     update(&view->base);
 }
 
-void compositor_view_set_border_color(struct swc_view * base, uint32_t color)
+void compositor_view_set_border_color(struct compositor_view * view,
+                                      uint32_t color)
 {
-    struct compositor_view * view = (void *) base;
-
-    assert(view->base.impl == &view_impl);
-
     if (view->border.color == color)
         return;
 

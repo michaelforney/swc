@@ -42,7 +42,7 @@ struct panel
 
     struct swc_surface * surface;
     struct wl_listener surface_destroy_listener;
-    struct swc_view * view;
+    struct compositor_view * view;
     struct wl_listener view_listener;
     struct screen * screen;
     struct screen_modifier modifier;
@@ -55,7 +55,7 @@ static void update_position(struct panel * panel)
 {
     int32_t x, y;
     struct swc_rectangle * screen = &panel->screen->base.geometry,
-                         * view = &panel->view->geometry;
+                         * view = &panel->view->base.geometry;
 
     switch (panel->edge)
     {
@@ -78,7 +78,7 @@ static void update_position(struct panel * panel)
         default: return;
     }
 
-    swc_view_move(panel->surface->view, x, y);
+    swc_view_move(&panel->view->base, x, y);
 }
 
 static void dock(struct wl_client * client, struct wl_resource * resource,
@@ -128,7 +128,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
 
     update_position(panel);
     compositor_view_show(panel->view);
-    wl_signal_add(&panel->view->event_signal, &panel->view_listener);
+    wl_signal_add(&panel->view->base.event_signal, &panel->view_listener);
     wl_list_insert(&screen->modifiers, &panel->modifier.link);
 
     if (focus)

@@ -24,9 +24,10 @@
 #ifndef SWC_COMPOSITOR_H
 #define SWC_COMPOSITOR_H
 
-#include <stdbool.h>
+#include "view.h"
 
-struct swc_surface;
+#include <stdbool.h>
+#include <pixman.h>
 
 struct swc_compositor
 {
@@ -36,16 +37,45 @@ struct swc_compositor
 bool swc_compositor_initialize();
 void swc_compositor_finalize();
 
-struct swc_view * swc_compositor_create_view
+struct compositor_view
+{
+    struct swc_view base;
+    struct wl_listener event_listener;
+    struct swc_surface * surface;
+    struct wld_buffer * buffer;
+
+    /* Whether or not the view is visible (mapped). */
+    bool visible;
+
+    /* The box that the surface covers (including it's border). */
+    pixman_box32_t extents;
+
+    /* The region that is covered by opaque regions of surfaces above this
+     * surface. */
+    pixman_region32_t clip;
+
+    struct
+    {
+        uint32_t width;
+        uint32_t color;
+        bool damaged;
+    } border;
+
+    struct wl_list link;
+};
+
+struct compositor_view * swc_compositor_create_view
     (struct swc_surface * surface);
 
-void compositor_view_destroy(struct swc_view * view);
+void compositor_view_destroy(struct compositor_view * view);
 
-void compositor_view_show(struct swc_view * view);
-void compositor_view_hide(struct swc_view * view);
+void compositor_view_show(struct compositor_view * view);
+void compositor_view_hide(struct compositor_view * view);
 
-void compositor_view_set_border_color(struct swc_view * view, uint32_t color);
-void compositor_view_set_border_width(struct swc_view * view, uint32_t width);
+void compositor_view_set_border_color(struct compositor_view * view,
+                                      uint32_t color);
+void compositor_view_set_border_width(struct compositor_view * view,
+                                      uint32_t width);
 
 #endif
 

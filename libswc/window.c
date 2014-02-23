@@ -99,14 +99,14 @@ void swc_window_set_geometry(struct swc_window * base,
     if (window->impl->configure)
         window->impl->configure(window, geometry);
 
-    swc_view_move(window->view, geometry->x, geometry->y);
+    swc_view_move(&window->view->base, geometry->x, geometry->y);
 }
 
 EXPORT
 void swc_window_set_border(struct swc_window * window,
                            uint32_t border_color, uint32_t border_width)
 {
-    struct swc_view * view = INTERNAL(window)->view;
+    struct compositor_view * view = INTERNAL(window)->view;
 
     compositor_view_set_border_color(view, border_color);
     compositor_view_set_border_width(view, border_width);
@@ -130,7 +130,7 @@ static inline void window_begin_interaction
 void window_begin_interactive_move(struct window * window,
                                    struct button_press * button)
 {
-    struct swc_rectangle * geometry = &window->view->geometry;
+    struct swc_rectangle * geometry = &window->view->base.geometry;
     int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
             py = wl_fixed_to_int(swc.seat->pointer->y);
 
@@ -190,8 +190,9 @@ static bool move_motion(struct pointer_handler * handler, uint32_t time,
     struct window * window
         = CONTAINER_OF(handler, typeof(*window), move.interaction.handler);
 
-    swc_view_move(window->view, wl_fixed_to_int(fx) + window->move.offset.x,
-                                wl_fixed_to_int(fy) + window->move.offset.y);
+    swc_view_move(&window->view->base,
+                  wl_fixed_to_int(fx) + window->move.offset.x,
+                  wl_fixed_to_int(fy) + window->move.offset.y);
 
     return true;
 }
