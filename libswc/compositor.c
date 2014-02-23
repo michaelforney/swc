@@ -61,7 +61,7 @@ struct target
     struct wl_listener screen_listener;
 };
 
-struct view
+struct compositor_view
 {
     struct swc_view base;
     struct wl_listener event_listener;
@@ -154,7 +154,7 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
             struct screen * screen = CONTAINER_OF
                 (event_data->view, typeof(*screen), planes.framebuffer.view);
             struct target * target;
-            struct view * view;
+            struct compositor_view * view;
 
             if (!(target = target_get(screen)))
                 return;
@@ -230,7 +230,7 @@ error0:
 
 /* Rendering {{{ */
 
-static void repaint_view(struct target * target, struct view * view,
+static void repaint_view(struct target * target, struct compositor_view * view,
                          pixman_region32_t * damage)
 {
     pixman_region32_t view_region, view_damage, border_damage;
@@ -280,7 +280,7 @@ static void renderer_repaint(struct target * target,
                              pixman_region32_t * base_damage,
                              struct wl_list * views)
 {
-    struct view * view;
+    struct compositor_view * view;
 
     DEBUG("Rendering to target { x: %d, y: %d, w: %u, h: %u }\n",
           target->view->geometry.x, target->view->geometry.y,
@@ -306,7 +306,8 @@ static void renderer_repaint(struct target * target,
     wld_flush(swc.drm->renderer);
 }
 
-static bool renderer_attach(struct view * view, struct wld_buffer * client_buffer)
+static bool renderer_attach(struct compositor_view * view,
+                            struct wld_buffer * client_buffer)
 {
     struct wld_buffer * buffer;
     bool was_proxy = view->buffer != view->base.buffer;
@@ -359,7 +360,7 @@ static bool renderer_attach(struct view * view, struct wld_buffer * client_buffe
     return true;
 }
 
-static void renderer_flush_view(struct view * view)
+static void renderer_flush_view(struct compositor_view * view)
 {
     if (view->buffer == view->base.buffer)
         return;
@@ -378,7 +379,7 @@ static void renderer_flush_view(struct view * view)
  * Adds damage from the region below a view, taking into account it's clip
  * region, to the region specified by `damage'.
  */
-static void damage_below_view(struct view * view)
+static void damage_below_view(struct compositor_view * view)
 {
     pixman_region32_t damage_below;
 
@@ -392,13 +393,13 @@ static void damage_below_view(struct view * view)
 /**
  * Completely damages the surface and its border.
  */
-static void damage_view(struct view * view)
+static void damage_view(struct compositor_view * view)
 {
     damage_below_view(view);
     view->border.damaged = true;
 }
 
-static void update_extents(struct view * view)
+static void update_extents(struct compositor_view * view)
 {
     view->extents.x1 = view->base.geometry.x - view->border.width;
     view->extents.y1 = view->base.geometry.y - view->border.width;
@@ -430,7 +431,7 @@ static void schedule_updates(uint32_t screens)
 
 static bool update(struct swc_view * base)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     if (!compositor.active || !view->visible)
         return false;
@@ -442,7 +443,7 @@ static bool update(struct swc_view * base)
 
 static bool attach(struct swc_view * base, struct wld_buffer * buffer)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     if (!renderer_attach(view, buffer))
         return false;
@@ -460,7 +461,7 @@ static bool attach(struct swc_view * base, struct wld_buffer * buffer)
 
 static bool move(struct swc_view * base, int32_t x, int32_t y)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     if (view->visible)
     {
@@ -481,7 +482,8 @@ const static struct swc_view_impl view_impl = {
 
 static void handle_view_event(struct wl_listener * listener, void * data)
 {
-    struct view * view = CONTAINER_OF(listener, typeof(*view), event_listener);
+    struct compositor_view * view
+        = CONTAINER_OF(listener, typeof(*view), event_listener);
     struct swc_event * event = data;
 
     switch (event->type)
@@ -515,7 +517,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
 struct swc_view * swc_compositor_create_view(struct swc_surface * surface)
 {
-    struct view * view;
+    struct compositor_view * view;
 
     view = malloc(sizeof *view);
 
@@ -543,7 +545,7 @@ struct swc_view * swc_compositor_create_view(struct swc_surface * surface)
 
 void compositor_view_destroy(struct swc_view * base)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     assert(view->base.impl == &view_impl);
 
@@ -556,7 +558,7 @@ void compositor_view_destroy(struct swc_view * base)
 
 void compositor_view_show(struct swc_view * base)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     assert(view->base.impl == &view_impl);
 
@@ -577,7 +579,7 @@ void compositor_view_show(struct swc_view * base)
 
 void compositor_view_hide(struct swc_view * base)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     assert(view->base.impl == &view_impl);
 
@@ -595,7 +597,7 @@ void compositor_view_hide(struct swc_view * base)
 
 void compositor_view_set_border_width(struct swc_view * base, uint32_t width)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     assert(view->base.impl == &view_impl);
 
@@ -613,7 +615,7 @@ void compositor_view_set_border_width(struct swc_view * base, uint32_t width)
 
 void compositor_view_set_border_color(struct swc_view * base, uint32_t color)
 {
-    struct view * view = (void *) base;
+    struct compositor_view * view = (void *) base;
 
     assert(view->base.impl == &view_impl);
 
@@ -632,7 +634,7 @@ void compositor_view_set_border_color(struct swc_view * base, uint32_t color)
 
 static void calculate_damage()
 {
-    struct view * view;
+    struct compositor_view * view;
     pixman_region32_t surface_opaque, * surface_damage;
 
     pixman_region32_clear(&compositor.opaque);
@@ -759,7 +761,7 @@ static void perform_update(void * data)
 bool handle_motion(struct pointer_handler * handler, uint32_t time,
                    wl_fixed_t fx, wl_fixed_t fy)
 {
-    struct view * view;
+    struct compositor_view * view;
     struct swc_surface * surface = NULL;
     int32_t x, y;
 
