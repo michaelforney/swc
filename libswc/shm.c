@@ -58,10 +58,8 @@ struct pool_reference
     struct pool * pool;
 };
 
-static void unref_pool(struct wl_resource * resource)
+static void unref_pool(struct pool * pool)
 {
-    struct pool * pool = wl_resource_get_user_data(resource);
-
     if (--pool->references > 0)
         return;
 
@@ -69,12 +67,19 @@ static void unref_pool(struct wl_resource * resource)
     free(pool);
 }
 
+static void destroy_pool_resource(struct wl_resource * resource)
+{
+    struct pool * pool = wl_resource_get_user_data(resource);
+
+    unref_pool(pool);
+}
+
 static void handle_buffer_destroy(struct wld_destructor * destructor)
 {
     struct pool_reference * reference
         = CONTAINER_OF(destructor, typeof(*reference), destructor);
 
-    unref_pool(reference->pool->resource);
+    unref_pool(reference->pool);
 }
 
 static inline uint32_t format_shm_to_wld(uint32_t format)
@@ -191,7 +196,7 @@ static void create_pool(struct wl_client * client,
     }
 
     wl_resource_set_implementation(pool->resource, &shm_pool_implementation,
-                                   pool, &unref_pool);
+                                   pool, &destroy_pool_resource);
     pool->data = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
 
     if (pool->data == MAP_FAILED)
