@@ -2,6 +2,8 @@
 *.lo
 .*.sw*
 
+protocol/swc-protocol.c
+protocol/swc-server-protocol.h
 protocol/wayland-drm-protocol.c
 protocol/wayland-drm-server-protocol.h
 protocol/xserver-protocol.c
@@ -14,4 +16,5 @@ protocol/xserver-server-protocol.h
 /launch/swc-launch
 /cursor/convert_font
 /cursor/cursor_data.h
+/example/wm
 
