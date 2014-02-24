@@ -71,8 +71,6 @@ struct swc_surface
     struct window * window;
     struct view * view;
     struct wl_listener view_listener;
-
-    struct wl_list link;
 };
 
 struct swc_surface * swc_surface_new(struct wl_client * client,
