@@ -40,7 +40,6 @@ struct window
     struct swc_window base;
     const struct window_impl * impl;
 
-    struct swc_surface * surface;
     struct compositor_view * view;
 
     struct

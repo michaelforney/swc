@@ -237,7 +237,6 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     if (!(window->view = swc_compositor_create_view(surface)))
         return false;
 
-    window->surface = surface;
     window->impl = impl;
     window->view->window = window;
     window->move.interaction.handler = (struct pointer_handler) {
