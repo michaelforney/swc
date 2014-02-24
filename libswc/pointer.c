@@ -102,14 +102,24 @@ static bool attach(struct view * view, struct wld_buffer * buffer)
 
     /* TODO: Send an early release to the buffer */
 
-    view_set_size_from_buffer(view, buffer);
+    if (view_set_size_from_buffer(view, buffer))
+        view_update_screens(view);
 
     return true;
 }
 
 static bool move(struct view * view, int32_t x, int32_t y)
 {
-    view_set_position(view, x, y);
+    struct screen * screen;
+
+    if (view_set_position(view, x, y))
+        view_update_screens(view);
+
+    wl_list_for_each(screen, &swc.screens, link)
+    {
+        view_move(&screen->planes.cursor.view,
+                  view->geometry.x, view->geometry.y);
+    }
 
     return true;
 }
@@ -119,45 +129,6 @@ static const struct view_impl view_impl = {
     .attach = &attach,
     .move = &move,
 };
-
-static void handle_view_event(struct wl_listener * listener, void * data)
-{
-    struct pointer * pointer
-        = CONTAINER_OF(listener, typeof(*pointer), cursor.view_listener);
-    struct swc_event * event = data;
-    struct view_event_data * event_data = event->data;
-    struct view * view = event_data->view;
-    struct screen * screen;
-
-    switch (event->type)
-    {
-        case VIEW_EVENT_MOVED:
-            wl_list_for_each(screen, &swc.screens, link)
-            {
-                view_move(&screen->planes.cursor.view,
-                          view->geometry.x, view->geometry.y);
-            }
-
-            view_update_screens(view);
-            break;
-        case VIEW_EVENT_RESIZED:
-            view_update_screens(view);
-            break;
-        case VIEW_EVENT_SCREENS_CHANGED:
-            wl_list_for_each(screen, &swc.screens, link)
-            {
-                if (event_data->screens_changed.entered & screen_mask(screen))
-                {
-                    view_attach(&screen->planes.cursor.view,
-                                pointer->cursor.buffer);
-                }
-                else if (event_data->screens_changed.left & screen_mask(screen))
-                    view_attach(&screen->planes.cursor.view, NULL);
-            }
-            break;
-    }
-}
-
 static inline void update_cursor(struct pointer * pointer)
 {
     view_move(&pointer->cursor.view,
@@ -258,9 +229,6 @@ bool pointer_initialize(struct pointer * pointer)
     wl_array_init(&pointer->buttons);
 
     view_initialize(&pointer->cursor.view, &view_impl);
-    pointer->cursor.view_listener.notify = &handle_view_event;
-    wl_signal_add(&pointer->cursor.view.event_signal,
-                  &pointer->cursor.view_listener);
     pointer->cursor.surface = NULL;
     pointer->cursor.destroy_listener.notify = &handle_cursor_surface_destroy;
     pointer->cursor.buffer = wld_create_buffer
@@ -271,6 +239,9 @@ bool pointer_initialize(struct pointer * pointer)
         return false;
 
     pointer_set_cursor(pointer, cursor_left_ptr);
+
+    wl_list_for_each(screen, &swc.screens, link)
+        view_attach(&screen->planes.cursor.view, pointer->cursor.buffer);
 
     input_focus_initialize(&pointer->focus, &pointer->focus_handler);
     pixman_region32_init(&pointer->region);

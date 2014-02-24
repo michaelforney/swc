@@ -40,7 +40,6 @@ void swc_compositor_finalize();
 struct compositor_view
 {
     struct view base;
-    struct wl_listener event_listener;
     struct swc_surface * surface;
     struct wld_buffer * buffer;
 

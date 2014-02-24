@@ -74,36 +74,38 @@ bool view_move(struct view * view, int32_t x, int32_t y)
     return view->impl->move(view, x, y);
 }
 
-void view_set_position(struct view * view, int32_t x, int32_t y)
+bool view_set_position(struct view * view, int32_t x, int32_t y)
 {
     struct view_event_data data = { .view = view };
 
     if (x == view->geometry.x && y == view->geometry.y)
-        return;
+        return false;
 
     view->geometry.x = x;
     view->geometry.y = y;
     swc_send_event(&view->event_signal, VIEW_EVENT_MOVED, &data);
+
+    return true;
 }
 
-void view_set_size(struct view * view, uint32_t width, uint32_t height)
+bool view_set_size(struct view * view, uint32_t width, uint32_t height)
 {
     struct view_event_data data = { .view = view };
 
     if (view->geometry.width == width && view->geometry.height == height)
-        return;
+        return false;
 
     view->geometry.width = width;
     view->geometry.height = height;
     swc_send_event(&view->event_signal, VIEW_EVENT_RESIZED, &data);
+
+    return true;
 }
 
-void view_set_size_from_buffer(struct view * view, struct wld_buffer * buffer)
+bool view_set_size_from_buffer(struct view * view, struct wld_buffer * buffer)
 {
-    if (buffer)
-        view_set_size(view, buffer->width, buffer->height);
-    else
-        view_set_size(view, 0, 0);
+    return view_set_size(view, buffer ? buffer->width : 0,
+                               buffer ? buffer->height : 0);
 }
 
 void view_set_screens(struct view * view, uint32_t screens)

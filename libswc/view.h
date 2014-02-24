@@ -134,9 +134,9 @@ void view_initialize(struct view * view, const struct view_impl * impl);
  */
 void view_finalize(struct view * view);
 
-void view_set_position(struct view * view, int32_t x, int32_t y);
-void view_set_size(struct view * view, uint32_t width, uint32_t height);
-void view_set_size_from_buffer(struct view * view, struct wld_buffer * bufer);
+bool view_set_position(struct view * view, int32_t x, int32_t y);
+bool view_set_size(struct view * view, uint32_t width, uint32_t height);
+bool view_set_size_from_buffer(struct view * view, struct wld_buffer * bufer);
 void view_set_screens(struct view * view, uint32_t screens);
 void view_update_screens(struct view * view);
 

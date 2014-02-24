@@ -423,7 +423,17 @@ static bool attach(struct view * base, struct wld_buffer * buffer)
         update(&view->base);
     }
 
-    view_set_size_from_buffer(&view->base, buffer);
+    if (view_set_size_from_buffer(&view->base, buffer))
+    {
+        update_extents(view);
+
+        if (view->visible && buffer)
+        {
+            view_update_screens(&view->base);
+            damage_below_view(view);
+            update(&view->base);
+        }
+    }
 
     return true;
 }
@@ -438,7 +448,21 @@ static bool move(struct view * base, int32_t x, int32_t y)
         update(&view->base);
     }
 
-    view_set_position(&view->base, x, y);
+    if (view_set_position(&view->base, x, y))
+    {
+        update_extents(view);
+
+        if (view->visible)
+        {
+            /* Assume worst-case no clipping until we draw the next frame (in
+             * case the surface gets moved again before that). */
+            pixman_region32_init(&view->clip);
+
+            view_update_screens(&view->base);
+            damage_below_view(view);
+            update(&view->base);
+        }
+    }
 
     return true;
 }
@@ -448,41 +472,6 @@ const static struct view_impl view_impl = {
     .attach = &attach,
     .move = &move
 };
-
-static void handle_view_event(struct wl_listener * listener, void * data)
-{
-    struct compositor_view * view
-        = CONTAINER_OF(listener, typeof(*view), event_listener);
-    struct swc_event * event = data;
-
-    switch (event->type)
-    {
-        case VIEW_EVENT_MOVED:
-            update_extents(view);
-
-            if (view->visible)
-            {
-                /* Assume worst-case no clipping until we draw the next frame (in case
-                 * the surface gets moved again before that). */
-                pixman_region32_init(&view->clip);
-
-                damage_below_view(view);
-                view_update_screens(&view->base);
-                update(&view->base);
-            }
-            break;
-        case VIEW_EVENT_RESIZED:
-            update_extents(view);
-
-            if (view->visible)
-            {
-                damage_below_view(view);
-                view_update_screens(&view->base);
-                update(&view->base);
-            }
-            break;
-    }
-}
 
 struct compositor_view * swc_compositor_create_view
     (struct swc_surface * surface)
@@ -495,8 +484,6 @@ struct compositor_view * swc_compositor_create_view
         return NULL;
 
     view_initialize(&view->base, &view_impl);
-    view->event_listener.notify = &handle_view_event;
-    wl_signal_add(&view->base.event_signal, &view->event_listener);
     view->surface = surface;
     view->buffer = NULL;
     view->visible = false;

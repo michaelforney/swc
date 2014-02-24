@@ -188,6 +188,14 @@ static void set_input_region(struct wl_client * client,
         pixman_region32_reset(&surface->pending.state.input, &infinite_extents);
 }
 
+static inline void trim_region(pixman_region32_t * region,
+                               struct wld_buffer * buffer)
+{
+    pixman_region32_intersect_rect(region, region, 0, 0,
+                                   buffer ? buffer->width : 0,
+                                   buffer ? buffer->height : 0);
+}
+
 static void commit(struct wl_client * client, struct wl_resource * resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
@@ -211,10 +219,6 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     /* Damage */
     if (surface->pending.commit & SWC_SURFACE_COMMIT_DAMAGE)
     {
-        pixman_region32_intersect_rect(&surface->pending.state.damage,
-                                       &surface->pending.state.damage, 0, 0,
-                                       buffer ? buffer->width : 0,
-                                       buffer ? buffer->height : 0);
         pixman_region32_union(&surface->state.damage, &surface->state.damage,
                               &surface->pending.state.damage);
         pixman_region32_clear(&surface->pending.state.damage);
@@ -223,10 +227,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     /* Opaque */
     if (surface->pending.commit & SWC_SURFACE_COMMIT_OPAQUE)
     {
-        pixman_region32_intersect_rect(&surface->state.opaque,
-                                       &surface->pending.state.opaque, 0, 0,
-                                       buffer ? buffer->width : 0,
-                                       buffer ? buffer->height : 0);
+        pixman_region32_copy(&surface->state.opaque,
+                             &surface->pending.state.opaque);
     }
 
     /* Input */
@@ -243,6 +245,9 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
                             &surface->pending.state.frame_callbacks);
         wl_list_init(&surface->pending.state.frame_callbacks);
     }
+
+    trim_region(&surface->state.damage, buffer);
+    trim_region(&surface->state.opaque, buffer);
 
     if (surface->view)
     {
@@ -347,14 +352,6 @@ static void handle_view_event(struct wl_listener * listener, void * data)
             }
             break;
         }
-        case VIEW_EVENT_RESIZED:
-            pixman_region32_intersect_rect
-                (&surface->state.opaque, &surface->state.opaque, 0, 0,
-                 surface->view->geometry.width, surface->view->geometry.height);
-            pixman_region32_intersect_rect
-                (&surface->state.damage, &surface->state.damage, 0, 0,
-                 surface->view->geometry.width, surface->view->geometry.height);
-            break;
     }
 }
 
