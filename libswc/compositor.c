@@ -119,24 +119,20 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
     struct view_event_data * event_data = event->data;
+    struct target * target
+        = CONTAINER_OF(listener, typeof(*target), view_listener);
 
     switch (event->type)
     {
         case VIEW_EVENT_FRAME:
         {
-            struct screen * screen = CONTAINER_OF
-                (event_data->view, typeof(*screen), planes.framebuffer.view);
-            struct target * target;
             struct compositor_view * view;
 
-            if (!(target = target_get(screen)))
-                return;
-
-            compositor.pending_flips &= ~screen_mask(screen);
+            compositor.pending_flips &= ~target->mask;
 
             wl_list_for_each(view, &compositor.views, link)
             {
-                if (view->base.screens & screen_mask(screen))
+                if (view->base.screens & target->mask)
                     view_frame(&view->base, event_data->frame.time);
             }
 
