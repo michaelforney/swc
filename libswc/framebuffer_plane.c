@@ -24,6 +24,7 @@
 #include "framebuffer_plane.h"
 #include "drm.h"
 #include "internal.h"
+#include "launch.h"
 #include "util.h"
 
 #include <errno.h>
@@ -167,6 +168,20 @@ static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
     view_frame(&plane->view, time);
 }
 
+static void handle_launch_event(struct wl_listener * listener, void * data)
+{
+    struct swc_event * event = data;
+    struct framebuffer_plane * plane
+        = CONTAINER_OF(listener, typeof(*plane), launch_listener);
+
+    switch (event->type)
+    {
+        case SWC_LAUNCH_EVENT_ACTIVATED:
+            plane->need_modeset = true;
+            break;
+    }
+}
+
 bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
                                   uint32_t crtc, struct swc_mode * mode,
                                   uint32_t * connectors,
@@ -201,12 +216,14 @@ bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
     }
 
     plane->crtc = crtc;
-    plane->drm_handler.page_flip = &handle_page_flip;
     plane->need_modeset = true;
     view_initialize(&plane->view, &view_impl);
     plane->view.geometry.width = mode->width;
     plane->view.geometry.height = mode->height;
+    plane->drm_handler.page_flip = &handle_page_flip;
+    plane->launch_listener.notify = &handle_launch_event;
     plane->mode = *mode;
+    wl_signal_add(&swc.launch->event_signal, &plane->launch_listener);
 
     return true;
 

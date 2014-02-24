@@ -38,6 +38,7 @@ struct framebuffer_plane
     struct wl_array connectors;
     bool need_modeset;
     struct swc_drm_handler drm_handler;
+    struct wl_listener launch_listener;
 };
 
 bool framebuffer_plane_initialize(struct framebuffer_plane * plane,

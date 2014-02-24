@@ -774,15 +774,12 @@ static void handle_switch_vt(void * data, uint32_t time,
 static void handle_launch_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct screen * screen;
 
     switch (event->type)
     {
         case SWC_LAUNCH_EVENT_ACTIVATED:
             compositor.active = true;
             schedule_updates(-1);
-            wl_list_for_each(screen, &swc.screens, link)
-                screen->planes.framebuffer.need_modeset = true;
             break;
         case SWC_LAUNCH_EVENT_DEACTIVATED:
             compositor.active = false;
