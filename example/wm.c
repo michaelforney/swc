@@ -52,7 +52,6 @@ static const uint32_t border_color_normal = 0xff888888;
 static struct screen * active_screen;
 static struct window * focused_window;
 static struct wl_event_loop * event_loop;
-static struct wl_event_source * focus_idle_source;
 
 /* This is a basic grid arrange function that tries to give each window an
  * equal space. */
@@ -110,41 +109,8 @@ static void screen_remove_window(struct screen * screen, struct window * window)
     arrange(screen);
 }
 
-/*
- * We can't immediately change the focus when the currently focused window is
- * being destroyed. This is because the keyboard registers a destroy listener
- * for the current focus so it can correctly keep track of it's focus
- * internally and set it to NULL. However, now we have two separate destroy
- * listeners which want to change the focus to two different things, and it
- * isn't defined which order they happen (and if they are adjacent, we end up
- * breaking the linked list traversal).
- *
- * To prevent this, instead of changing the focus immediately, we register an
- * idle event so that the focus is changed in the next iteration of the event
- * loop.
- *
- * Another way to solve this issue is internally in swc by requiring that all
- * window managers maintain a valid focus at all times. This way, the keyboard
- * does not need to register a destroy listener for the focus because it knows
- * that the window manager will provide a new focus before the old one becomes
- * invalid.
- */
-static void commit_focus(void * data)
-{
-    swc_window_focus(focused_window ? focused_window->swc : NULL);
-    focus_idle_source = NULL;
-}
-
 static void focus(struct window * window)
 {
-    /* Add an idle source (if one doesn't already exist) to the event loop to
-     * actually change the keyboard focus. */
-    if (!focus_idle_source)
-    {
-        focus_idle_source = wl_event_loop_add_idle(event_loop,
-                                                   &commit_focus, NULL);
-    }
-
     if (focused_window)
     {
         swc_window_set_border(focused_window->swc,
@@ -152,7 +118,12 @@ static void focus(struct window * window)
     }
 
     if (window)
+    {
         swc_window_set_border(window->swc, border_color_active, border_width);
+        swc_window_focus(window->swc);
+    }
+    else
+        swc_window_focus(NULL);
 
     focused_window = window;
 }
