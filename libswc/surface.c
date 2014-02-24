@@ -58,7 +58,7 @@ static void state_initialize(struct swc_surface_state * state)
     wl_list_init(&state->frame_callbacks);
 }
 
-static void state_finish(struct swc_surface_state * state)
+static void state_finalize(struct swc_surface_state * state)
 {
     struct wl_resource * resource, * tmp;
 
@@ -252,7 +252,7 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     if (surface->view)
     {
         if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
-            view_attach(surface->view, surface->state.buffer);
+            view_attach(surface->view, buffer);
         view_update(surface->view);
     }
 
@@ -287,9 +287,8 @@ static void surface_destroy(struct wl_resource * resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(resource);
 
-    /* Finish the surface. */
-    state_finish(&surface->state);
-    state_finish(&surface->pending.state);
+    state_finalize(&surface->state);
+    state_finalize(&surface->pending.state);
 
     if (surface->view)
         wl_list_remove(&surface->view_listener.link);
@@ -404,7 +403,7 @@ void swc_surface_set_view(struct swc_surface * surface, struct view * view)
     {
         wl_signal_add(&view->event_signal, &surface->view_listener);
         view_attach(view, surface->state.buffer);
-        view_update(surface->view);
+        view_update(view);
     }
 }
 

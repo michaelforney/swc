@@ -129,6 +129,7 @@ static const struct view_impl view_impl = {
     .attach = &attach,
     .move = &move,
 };
+
 static inline void update_cursor(struct pointer * pointer)
 {
     view_move(&pointer->cursor.view,
@@ -255,9 +256,6 @@ void pointer_finalize(struct pointer * pointer)
     pixman_region32_fini(&pointer->region);
 }
 
-/**
- * Sets the focus of the pointer to the specified surface.
- */
 void pointer_set_focus(struct pointer * pointer, struct swc_surface * surface)
 {
     input_focus_set(&pointer->focus, surface);
