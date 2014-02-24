@@ -291,6 +291,7 @@ void window_set_parent(struct window * window, struct window * parent)
     if (window->base.parent == &parent->base)
         return;
 
+    compositor_view_set_parent(window->view, parent->view);
     window->base.parent = &parent->base;
     swc_send_event(&window->base.event_signal, SWC_WINDOW_PARENT_CHANGED, NULL);
 }

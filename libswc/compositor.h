@@ -42,6 +42,7 @@ struct compositor_view
     struct view base;
     struct swc_surface * surface;
     struct wld_buffer * buffer;
+    struct compositor_view * parent;
 
     /* Whether or not the view is visible (mapped). */
     bool visible;
@@ -60,13 +61,16 @@ struct compositor_view
         bool damaged;
     } border;
 
-    struct wl_list link;
+    struct wl_list link, children, child_link;
 };
 
 struct compositor_view * swc_compositor_create_view
     (struct swc_surface * surface);
 
 void compositor_view_destroy(struct compositor_view * view);
+
+void compositor_view_set_parent(struct compositor_view * view,
+                                struct compositor_view * parent);
 
 void compositor_view_show(struct compositor_view * view);
 void compositor_view_hide(struct compositor_view * view);
