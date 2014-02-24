@@ -78,7 +78,7 @@ static void update_position(struct panel * panel)
         default: return;
     }
 
-    swc_view_move(&panel->view->base, x, y);
+    view_move(&panel->view->base, x, y);
 }
 
 static void dock(struct wl_client * client, struct wl_resource * resource,
@@ -229,7 +229,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
     switch (event->type)
     {
-        case SWC_VIEW_EVENT_RESIZED:
+        case VIEW_EVENT_RESIZED:
             update_position(panel);
             break;
     }

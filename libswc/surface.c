@@ -247,8 +247,8 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     if (surface->view)
     {
         if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
-            swc_view_attach(surface->view, surface->state.buffer);
-        swc_view_update(surface->view);
+            view_attach(surface->view, surface->state.buffer);
+        view_update(surface->view);
     }
 
     surface->pending.commit = 0;
@@ -297,11 +297,11 @@ static void handle_view_event(struct wl_listener * listener, void * data)
     struct swc_surface * surface
         = CONTAINER_OF(listener, typeof(*surface), view_listener);
     struct swc_event * event = data;
-    struct swc_view_event_data * event_data = event->data;
+    struct view_event_data * event_data = event->data;
 
     switch (event->type)
     {
-        case SWC_VIEW_EVENT_FRAME:
+        case VIEW_EVENT_FRAME:
         {
             struct wl_resource * resource, * tmp;
 
@@ -315,7 +315,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
             wl_list_init(&surface->state.frame_callbacks);
             break;
         }
-        case SWC_VIEW_EVENT_SCREENS_CHANGED:
+        case VIEW_EVENT_SCREENS_CHANGED:
         {
             struct screen * screen;
             struct swc_output * output;
@@ -347,7 +347,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
             }
             break;
         }
-        case SWC_VIEW_EVENT_RESIZED:
+        case VIEW_EVENT_RESIZED:
             pixman_region32_intersect_rect
                 (&surface->state.opaque, &surface->state.opaque, 0, 0,
                  surface->view->geometry.width, surface->view->geometry.height);
@@ -393,7 +393,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     return surface;
 }
 
-void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view)
+void swc_surface_set_view(struct swc_surface * surface, struct view * view)
 {
     if (surface->view == view)
         return;
@@ -406,8 +406,8 @@ void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view)
     if (view)
     {
         wl_signal_add(&view->event_signal, &surface->view_listener);
-        swc_view_attach(view, surface->state.buffer);
-        swc_view_update(surface->view);
+        view_attach(view, surface->state.buffer);
+        view_update(surface->view);
     }
 }
 

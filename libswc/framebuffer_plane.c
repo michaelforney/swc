@@ -71,7 +71,7 @@ static void framebuffer_destroy(struct wld_destructor * destructor)
     free(framebuffer);
 }
 
-static bool update(struct swc_view * view)
+static bool update(struct view * view)
 {
     return true;
 }
@@ -80,10 +80,10 @@ static void send_frame(void * data)
 {
     struct framebuffer_plane * plane = data;
 
-    swc_view_frame(&plane->view, swc_time());
+    view_frame(&plane->view, swc_time());
 }
 
-static bool attach(struct swc_view * view, struct wld_buffer * buffer)
+static bool attach(struct view * view, struct wld_buffer * buffer)
 {
     struct framebuffer_plane * plane
         = CONTAINER_OF(view, typeof(*plane), view);
@@ -146,14 +146,14 @@ static bool attach(struct swc_view * view, struct wld_buffer * buffer)
     return true;
 }
 
-static bool move(struct swc_view * view, int32_t x, int32_t y)
+static bool move(struct view * view, int32_t x, int32_t y)
 {
-    swc_view_set_position(view, x, y);
+    view_set_position(view, x, y);
 
     return true;
 }
 
-const static struct swc_view_impl view_impl = {
+const static struct view_impl view_impl = {
     .update = &update,
     .attach = &attach,
     .move = &move
@@ -164,7 +164,7 @@ static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
     struct framebuffer_plane * plane
         = CONTAINER_OF(handler, typeof(*plane), drm_handler);
 
-    swc_view_frame(&plane->view, time);
+    view_frame(&plane->view, time);
 }
 
 bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
@@ -203,7 +203,7 @@ bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
     plane->crtc = crtc;
     plane->drm_handler.page_flip = &handle_page_flip;
     plane->need_modeset = true;
-    swc_view_initialize(&plane->view, &view_impl);
+    view_initialize(&plane->view, &view_impl);
     plane->view.geometry.width = mode->width;
     plane->view.geometry.height = mode->height;
     plane->mode = *mode;

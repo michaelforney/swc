@@ -99,7 +99,7 @@ void swc_window_set_geometry(struct swc_window * base,
     if (window->impl->configure)
         window->impl->configure(window, geometry);
 
-    swc_view_move(&window->view->base, geometry->x, geometry->y);
+    view_move(&window->view->base, geometry->x, geometry->y);
 }
 
 EXPORT
@@ -190,9 +190,8 @@ static bool move_motion(struct pointer_handler * handler, uint32_t time,
     struct window * window
         = CONTAINER_OF(handler, typeof(*window), move.interaction.handler);
 
-    swc_view_move(&window->view->base,
-                  wl_fixed_to_int(fx) + window->move.offset.x,
-                  wl_fixed_to_int(fy) + window->move.offset.y);
+    view_move(&window->view->base, wl_fixed_to_int(fx) + window->move.offset.x,
+                                   wl_fixed_to_int(fy) + window->move.offset.y);
 
     return true;
 }

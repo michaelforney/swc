@@ -54,7 +54,7 @@ struct target
 {
     struct wld_surface * surface;
     struct wld_buffer * next_buffer, * current_buffer;
-    struct swc_view * view;
+    struct view * view;
     struct wl_listener view_listener;
     uint32_t mask;
 
@@ -118,11 +118,11 @@ static struct target * target_get(struct screen * screen)
 static void handle_screen_view_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct swc_view_event_data * event_data = event->data;
+    struct view_event_data * event_data = event->data;
 
     switch (event->type)
     {
-        case SWC_VIEW_EVENT_FRAME:
+        case VIEW_EVENT_FRAME:
         {
             struct screen * screen = CONTAINER_OF
                 (event_data->view, typeof(*screen), planes.framebuffer.view);
@@ -137,7 +137,7 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
             wl_list_for_each(view, &compositor.views, link)
             {
                 if (view->base.screens & screen_mask(screen))
-                    swc_view_frame(&view->base, event_data->frame.time);
+                    view_frame(&view->base, event_data->frame.time);
             }
 
             if (target->current_buffer)
@@ -158,7 +158,7 @@ static bool target_swap_buffers(struct target * target)
 {
     target->next_buffer = wld_surface_take(target->surface);
 
-    if (!swc_view_attach(target->view, target->next_buffer))
+    if (!view_attach(target->view, target->next_buffer))
     {
         ERROR("Failed to attach next frame to screen\n");
         return false;
@@ -402,7 +402,7 @@ static void schedule_updates(uint32_t screens)
     compositor.scheduled_updates |= screens;
 }
 
-static bool update(struct swc_view * base)
+static bool update(struct view * base)
 {
     struct compositor_view * view = (void *) base;
 
@@ -414,7 +414,7 @@ static bool update(struct swc_view * base)
     return true;
 }
 
-static bool attach(struct swc_view * base, struct wld_buffer * buffer)
+static bool attach(struct view * base, struct wld_buffer * buffer)
 {
     struct compositor_view * view = (void *) base;
 
@@ -427,12 +427,12 @@ static bool attach(struct swc_view * base, struct wld_buffer * buffer)
         update(&view->base);
     }
 
-    swc_view_set_size_from_buffer(&view->base, buffer);
+    view_set_size_from_buffer(&view->base, buffer);
 
     return true;
 }
 
-static bool move(struct swc_view * base, int32_t x, int32_t y)
+static bool move(struct view * base, int32_t x, int32_t y)
 {
     struct compositor_view * view = (void *) base;
 
@@ -442,12 +442,12 @@ static bool move(struct swc_view * base, int32_t x, int32_t y)
         update(&view->base);
     }
 
-    swc_view_set_position(&view->base, x, y);
+    view_set_position(&view->base, x, y);
 
     return true;
 }
 
-const static struct swc_view_impl view_impl = {
+const static struct view_impl view_impl = {
     .update = &update,
     .attach = &attach,
     .move = &move
@@ -461,7 +461,7 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
     switch (event->type)
     {
-        case SWC_VIEW_EVENT_MOVED:
+        case VIEW_EVENT_MOVED:
             update_extents(view);
 
             if (view->visible)
@@ -471,17 +471,17 @@ static void handle_view_event(struct wl_listener * listener, void * data)
                 pixman_region32_init(&view->clip);
 
                 damage_below_view(view);
-                swc_view_update_screens(&view->base);
+                view_update_screens(&view->base);
                 update(&view->base);
             }
             break;
-        case SWC_VIEW_EVENT_RESIZED:
+        case VIEW_EVENT_RESIZED:
             update_extents(view);
 
             if (view->visible)
             {
                 damage_below_view(view);
-                swc_view_update_screens(&view->base);
+                view_update_screens(&view->base);
                 update(&view->base);
             }
             break;
@@ -498,7 +498,7 @@ struct compositor_view * swc_compositor_create_view
     if (!view)
         return NULL;
 
-    swc_view_initialize(&view->base, &view_impl);
+    view_initialize(&view->base, &view_impl);
     view->event_listener.notify = &handle_view_event;
     wl_signal_add(&view->base.event_signal, &view->event_listener);
     view->surface = surface;
@@ -521,7 +521,7 @@ void compositor_view_destroy(struct compositor_view * view)
 {
     compositor_view_hide(view);
     swc_surface_set_view(view->surface, NULL);
-    swc_view_finalize(&view->base);
+    view_finalize(&view->base);
     pixman_region32_fini(&view->clip);
     free(view);
 }
@@ -536,7 +536,7 @@ void compositor_view_show(struct compositor_view * view)
     pixman_region32_clear(&view->clip);
 
     view->visible = true;
-    swc_view_update_screens(&view->base);
+    view_update_screens(&view->base);
 
     damage_view(view);
     update(&view->base);
@@ -553,7 +553,7 @@ void compositor_view_hide(struct compositor_view * view)
     damage_below_view(view);
 
     wl_list_remove(&view->link);
-    swc_view_set_screens(&view->base, 0);
+    view_set_screens(&view->base, 0);
     view->visible = false;
 }
 

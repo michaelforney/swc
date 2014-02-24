@@ -74,15 +74,15 @@ static void handle_cursor_surface_destroy(struct wl_listener * listener,
     struct pointer * pointer
         = CONTAINER_OF(listener, typeof(*pointer), cursor.destroy_listener);
 
-    swc_view_attach(&pointer->cursor.view, NULL);
+    view_attach(&pointer->cursor.view, NULL);
 }
 
-static bool update(struct swc_view * view)
+static bool update(struct view * view)
 {
     return true;
 }
 
-static bool attach(struct swc_view * view, struct wld_buffer * buffer)
+static bool attach(struct view * view, struct wld_buffer * buffer)
 {
     struct pointer * pointer
         = CONTAINER_OF(view, typeof(*pointer), cursor.view);
@@ -102,19 +102,19 @@ static bool attach(struct swc_view * view, struct wld_buffer * buffer)
 
     /* TODO: Send an early release to the buffer */
 
-    swc_view_set_size_from_buffer(view, buffer);
+    view_set_size_from_buffer(view, buffer);
 
     return true;
 }
 
-static bool move(struct swc_view * view, int32_t x, int32_t y)
+static bool move(struct view * view, int32_t x, int32_t y)
 {
-    swc_view_set_position(view, x, y);
+    view_set_position(view, x, y);
 
     return true;
 }
 
-static const struct swc_view_impl view_impl = {
+static const struct view_impl view_impl = {
     .update = &update,
     .attach = &attach,
     .move = &move,
@@ -125,34 +125,34 @@ static void handle_view_event(struct wl_listener * listener, void * data)
     struct pointer * pointer
         = CONTAINER_OF(listener, typeof(*pointer), cursor.view_listener);
     struct swc_event * event = data;
-    struct swc_view_event_data * event_data = event->data;
-    struct swc_view * view = event_data->view;
+    struct view_event_data * event_data = event->data;
+    struct view * view = event_data->view;
     struct screen * screen;
 
     switch (event->type)
     {
-        case SWC_VIEW_EVENT_MOVED:
+        case VIEW_EVENT_MOVED:
             wl_list_for_each(screen, &swc.screens, link)
             {
-                swc_view_move(&screen->planes.cursor.view,
-                              view->geometry.x, view->geometry.y);
+                view_move(&screen->planes.cursor.view,
+                          view->geometry.x, view->geometry.y);
             }
 
-            swc_view_update_screens(view);
+            view_update_screens(view);
             break;
-        case SWC_VIEW_EVENT_RESIZED:
-            swc_view_update_screens(view);
+        case VIEW_EVENT_RESIZED:
+            view_update_screens(view);
             break;
-        case SWC_VIEW_EVENT_SCREENS_CHANGED:
+        case VIEW_EVENT_SCREENS_CHANGED:
             wl_list_for_each(screen, &swc.screens, link)
             {
                 if (event_data->screens_changed.entered & screen_mask(screen))
                 {
-                    swc_view_attach(&screen->planes.cursor.view,
-                                    pointer->cursor.buffer);
+                    view_attach(&screen->planes.cursor.view,
+                                pointer->cursor.buffer);
                 }
                 else if (event_data->screens_changed.left & screen_mask(screen))
-                    swc_view_attach(&screen->planes.cursor.view, NULL);
+                    view_attach(&screen->planes.cursor.view, NULL);
             }
             break;
     }
@@ -160,9 +160,9 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
 static inline void update_cursor(struct pointer * pointer)
 {
-    swc_view_move(&pointer->cursor.view,
-                  wl_fixed_to_int(pointer->x) - pointer->cursor.hotspot.x,
-                  wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot.y);
+    view_move(&pointer->cursor.view,
+              wl_fixed_to_int(pointer->x) - pointer->cursor.hotspot.x,
+              wl_fixed_to_int(pointer->y) - pointer->cursor.hotspot.y);
 }
 
 void pointer_set_cursor(struct pointer * pointer, uint32_t id)
@@ -186,7 +186,7 @@ void pointer_set_cursor(struct pointer * pointer, uint32_t id)
     pointer->cursor.hotspot.x = cursor->hotspot_x;
     pointer->cursor.hotspot.y = cursor->hotspot_y;
     update_cursor(pointer);
-    swc_view_attach(&pointer->cursor.view, pointer->cursor.internal_buffer);
+    view_attach(&pointer->cursor.view, pointer->cursor.internal_buffer);
 }
 
 static bool client_handle_button(struct pointer_handler * handler,
@@ -257,7 +257,7 @@ bool pointer_initialize(struct pointer * pointer)
     wl_list_insert(&pointer->handlers, &pointer->client_handler.link);
     wl_array_init(&pointer->buttons);
 
-    swc_view_initialize(&pointer->cursor.view, &view_impl);
+    view_initialize(&pointer->cursor.view, &view_impl);
     pointer->cursor.view_listener.notify = &handle_view_event;
     wl_signal_add(&pointer->cursor.view.event_signal,
                   &pointer->cursor.view_listener);

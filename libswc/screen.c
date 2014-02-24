@@ -87,7 +87,7 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
         goto error2;
     }
 
-    swc_view_move(&screen->planes.framebuffer.view, x, 0);
+    view_move(&screen->planes.framebuffer.view, x, 0);
     screen->base.geometry = screen->planes.framebuffer.view.geometry;
     screen->base.usable_geometry = screen->base.geometry;
 

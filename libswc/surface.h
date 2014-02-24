@@ -69,7 +69,7 @@ struct swc_surface
     } pending;
 
     struct window * window;
-    struct swc_view * view;
+    struct view * view;
     struct wl_listener view_listener;
 
     struct wl_list link;
@@ -78,7 +78,7 @@ struct swc_surface
 struct swc_surface * swc_surface_new(struct wl_client * client,
                                      uint32_t version, uint32_t id);
 
-void swc_surface_set_view(struct swc_surface * surface, struct swc_view * view);
+void swc_surface_set_view(struct swc_surface * surface, struct view * view);
 
 #endif
 

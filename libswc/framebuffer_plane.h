@@ -34,7 +34,7 @@ struct framebuffer_plane
     uint32_t crtc;
     drmModeCrtcPtr original_crtc_state;
     struct swc_mode mode;
-    struct swc_view view;
+    struct view view;
     struct wl_array connectors;
     bool need_modeset;
     struct swc_drm_handler drm_handler;

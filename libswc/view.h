@@ -29,16 +29,16 @@
 enum
 {
     /* Sent when the view has displayed the next frame. */
-    SWC_VIEW_EVENT_FRAME,
+    VIEW_EVENT_FRAME,
 
     /* Sent when the origin of the view has moved. */
-    SWC_VIEW_EVENT_MOVED,
+    VIEW_EVENT_MOVED,
 
     /* Sent when the view's size changes. */
-    SWC_VIEW_EVENT_RESIZED,
+    VIEW_EVENT_RESIZED,
 
     /* Sent when the set of screens the view is visible on changes. */
-    SWC_VIEW_EVENT_SCREENS_CHANGED
+    VIEW_EVENT_SCREENS_CHANGED
 };
 
 /**
@@ -47,9 +47,9 @@ enum
  * Extra data correspending to the particular event is stored in the
  * corresponding struct inside the union.
  */
-struct swc_view_event_data
+struct view_event_data
 {
-    struct swc_view * view;
+    struct view * view;
     union
     {
         struct
@@ -76,9 +76,9 @@ struct swc_view_event_data
  * way, allowing operations like setting the output view of a surface directly
  * to an output's framebuffer plane, bypassing the compositor.
  */
-struct swc_view
+struct view
 {
-    const struct swc_view_impl * impl;
+    const struct view_impl * impl;
 
     struct wl_signal event_signal;
     struct swc_rectangle geometry;
@@ -90,25 +90,14 @@ struct swc_view
 /**
  * Every view must have an implementation containing these functions.
  *
- * For descriptions, see the corresponding swc_view_* function.
+ * For descriptions, see the corresponding view_* function.
  */
-struct swc_view_impl
+struct view_impl
 {
-    bool (* update)(struct swc_view * view);
-    bool (* attach)(struct swc_view * view, struct wld_buffer * buffer);
-    bool (* move)(struct swc_view * view, int32_t x, int32_t y);
+    bool (* update)(struct view * view);
+    bool (* attach)(struct view * view, struct wld_buffer * buffer);
+    bool (* move)(struct view * view, int32_t x, int32_t y);
 };
-
-/**
- * Initialize a new view with the specified implementation.
- */
-void swc_view_initialize(struct swc_view * view,
-                         const struct swc_view_impl * impl);
-
-/**
- * Release any resources associated with this view.
- */
-void swc_view_finalize(struct swc_view * view);
 
 /**
  * Attach a new buffer to the view.
@@ -117,30 +106,39 @@ void swc_view_finalize(struct swc_view * view);
  *
  * @return Whether or not the buffer was successfully attached to the view.
  */
-bool swc_view_attach(struct swc_view * view, struct wld_buffer * buffer);
+bool view_attach(struct view * view, struct wld_buffer * buffer);
 
 /**
  * Display a new frame consisting of the currently attached buffer.
  *
  * @return Whether or not the update succeeds.
  */
-bool swc_view_update(struct swc_view * view);
+bool view_update(struct view * view);
 
 /**
  * Move the view to the specified coordinates, if supported.
  *
  * @return Whether or not the move succeeds.
  */
-bool swc_view_move(struct swc_view * view, int32_t x, int32_t y);
+bool view_move(struct view * view, int32_t x, int32_t y);
 
 /**** For internal view use only ****/
 
-void swc_view_set_position(struct swc_view * view, int32_t x, int32_t y);
-void swc_view_set_size(struct swc_view * view, uint32_t width, uint32_t height);
-void swc_view_set_size_from_buffer(struct swc_view * view,
-                                   struct wld_buffer * bufer);
-void swc_view_set_screens(struct swc_view * view, uint32_t screens);
-void swc_view_update_screens(struct swc_view * view);
+/**
+ * Initialize a new view with the specified implementation.
+ */
+void view_initialize(struct view * view, const struct view_impl * impl);
+
+/**
+ * Release any resources associated with this view.
+ */
+void view_finalize(struct view * view);
+
+void view_set_position(struct view * view, int32_t x, int32_t y);
+void view_set_size(struct view * view, uint32_t width, uint32_t height);
+void view_set_size_from_buffer(struct view * view, struct wld_buffer * bufer);
+void view_set_screens(struct view * view, uint32_t screens);
+void view_update_screens(struct view * view);
 
 /**
  * Send a new frame event through the view's event signal.
@@ -149,7 +147,7 @@ void swc_view_update_screens(struct swc_view * view);
  * the user. If time information is not available, swc_time() can be passed
  * instead.
  */
-void swc_view_frame(struct swc_view * view, uint32_t time);
+void view_frame(struct view * view, uint32_t time);
 
 #endif
 

@@ -29,8 +29,7 @@
 
 #include <wld/wld.h>
 
-void swc_view_initialize(struct swc_view * view,
-                         const struct swc_view_impl * impl)
+void view_initialize(struct view * view, const struct view_impl * impl)
 {
     view->impl = impl;
     view->geometry.x = 0;
@@ -42,13 +41,13 @@ void swc_view_initialize(struct swc_view * view,
     wl_signal_init(&view->event_signal);
 }
 
-void swc_view_finalize(struct swc_view * view)
+void view_finalize(struct view * view)
 {
     if (view->buffer)
         wld_buffer_unreference(view->buffer);
 }
 
-bool swc_view_attach(struct swc_view * view, struct wld_buffer * buffer)
+bool view_attach(struct view * view, struct wld_buffer * buffer)
 {
     if (view->impl->attach(view, buffer))
     {
@@ -65,55 +64,54 @@ bool swc_view_attach(struct swc_view * view, struct wld_buffer * buffer)
         return false;
 }
 
-bool swc_view_update(struct swc_view * view)
+bool view_update(struct view * view)
 {
     return view->impl->update(view);
 }
 
-bool swc_view_move(struct swc_view * view, int32_t x, int32_t y)
+bool view_move(struct view * view, int32_t x, int32_t y)
 {
     return view->impl->move(view, x, y);
 }
 
-void swc_view_set_position(struct swc_view * view, int32_t x, int32_t y)
+void view_set_position(struct view * view, int32_t x, int32_t y)
 {
-    struct swc_view_event_data data = { .view = view };
+    struct view_event_data data = { .view = view };
 
     if (x == view->geometry.x && y == view->geometry.y)
         return;
 
     view->geometry.x = x;
     view->geometry.y = y;
-    swc_send_event(&view->event_signal, SWC_VIEW_EVENT_MOVED, &data);
+    swc_send_event(&view->event_signal, VIEW_EVENT_MOVED, &data);
 }
 
-void swc_view_set_size(struct swc_view * view, uint32_t width, uint32_t height)
+void view_set_size(struct view * view, uint32_t width, uint32_t height)
 {
-    struct swc_view_event_data data = { .view = view };
+    struct view_event_data data = { .view = view };
 
     if (view->geometry.width == width && view->geometry.height == height)
         return;
 
     view->geometry.width = width;
     view->geometry.height = height;
-    swc_send_event(&view->event_signal, SWC_VIEW_EVENT_RESIZED, &data);
+    swc_send_event(&view->event_signal, VIEW_EVENT_RESIZED, &data);
 }
 
-void swc_view_set_size_from_buffer(struct swc_view * view,
-                                   struct wld_buffer * buffer)
+void view_set_size_from_buffer(struct view * view, struct wld_buffer * buffer)
 {
     if (buffer)
-        swc_view_set_size(view, buffer->width, buffer->height);
+        view_set_size(view, buffer->width, buffer->height);
     else
-        swc_view_set_size(view, 0, 0);
+        view_set_size(view, 0, 0);
 }
 
-void swc_view_set_screens(struct swc_view * view, uint32_t screens)
+void view_set_screens(struct view * view, uint32_t screens)
 {
     if (view->screens == screens)
         return;
 
-    struct swc_view_event_data data = {
+    struct view_event_data data = {
         .view = view,
         .screens_changed = {
             .entered = screens & ~view->screens,
@@ -122,10 +120,10 @@ void swc_view_set_screens(struct swc_view * view, uint32_t screens)
     };
 
     view->screens = screens;
-    swc_send_event(&view->event_signal, SWC_VIEW_EVENT_SCREENS_CHANGED, &data);
+    swc_send_event(&view->event_signal, VIEW_EVENT_SCREENS_CHANGED, &data);
 }
 
-void swc_view_update_screens(struct swc_view * view)
+void view_update_screens(struct view * view)
 {
     uint32_t screens = 0;
     struct screen * screen;
@@ -136,13 +134,13 @@ void swc_view_update_screens(struct swc_view * view)
             screens |= screen_mask(screen);
     }
 
-    swc_view_set_screens(view, screens);
+    view_set_screens(view, screens);
 }
 
-void swc_view_frame(struct swc_view * view, uint32_t time)
+void view_frame(struct view * view, uint32_t time)
 {
-    struct swc_view_event_data data = { .view = view, .frame = { time } };
+    struct view_event_data data = { .view = view, .frame = { time } };
 
-    swc_send_event(&view->event_signal, SWC_VIEW_EVENT_FRAME, &data);
+    swc_send_event(&view->event_signal, VIEW_EVENT_FRAME, &data);
 }
 

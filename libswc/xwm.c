@@ -344,7 +344,7 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
     if ((geometry_reply = xcb_get_geometry_reply(xwm.connection,
                                                  geometry_cookie, NULL)))
     {
-        swc_view_move(surface->view, geometry_reply->x, geometry_reply->y);
+        view_move(surface->view, geometry_reply->x, geometry_reply->y);
         free(geometry_reply);
     }
 

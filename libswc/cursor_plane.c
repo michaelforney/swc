@@ -33,12 +33,12 @@
 #include <wld/drm.h>
 #include <xf86drmMode.h>
 
-static bool update(struct swc_view * view)
+static bool update(struct view * view)
 {
     return true;
 }
 
-static bool attach(struct swc_view * view, struct wld_buffer * buffer)
+static bool attach(struct view * view, struct wld_buffer * buffer)
 {
     struct cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
 
@@ -68,12 +68,12 @@ static bool attach(struct swc_view * view, struct wld_buffer * buffer)
         }
     }
 
-    swc_view_set_size_from_buffer(view, buffer);
+    view_set_size_from_buffer(view, buffer);
 
     return true;
 }
 
-static bool move(struct swc_view * view, int32_t x, int32_t y)
+static bool move(struct view * view, int32_t x, int32_t y)
 {
     struct cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
 
@@ -84,12 +84,12 @@ static bool move(struct swc_view * view, int32_t x, int32_t y)
         return false;
     }
 
-    swc_view_set_position(view, x, y);
+    view_set_position(view, x, y);
 
     return true;
 }
 
-static const struct swc_view_impl view_impl = {
+static const struct view_impl view_impl = {
     .update = &update,
     .attach = &attach,
     .move = &move
@@ -120,7 +120,7 @@ bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,
     plane->crtc = crtc;
     plane->launch_listener.notify = &handle_launch_event;
     wl_signal_add(&swc.launch->event_signal, &plane->launch_listener);
-    swc_view_initialize(&plane->view, &view_impl);
+    view_initialize(&plane->view, &view_impl);
 
     return true;
 }

@@ -28,7 +28,7 @@
 
 struct cursor_plane
 {
-    struct swc_view view;
+    struct view view;
     const struct swc_rectangle * origin;
     uint32_t crtc;
     struct wl_listener launch_listener;
