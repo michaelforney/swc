@@ -1,6 +1,6 @@
 /* swc: libswc/shell_surface.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
 
 #include <stdlib.h>
 
-struct swc_shell_surface
+struct shell_surface
 {
     struct window window;
 
@@ -59,8 +59,7 @@ static void pong(struct wl_client * client, struct wl_resource * resource,
 static void move(struct wl_client * client, struct wl_resource * resource,
                  struct wl_resource * seat_resource, uint32_t serial)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
     struct button_press * button;
 
     if (!(button = pointer_get_button_press(swc.seat->pointer, serial)))
@@ -73,8 +72,7 @@ static void resize(struct wl_client * client, struct wl_resource * resource,
                    struct wl_resource * seat_resource, uint32_t serial,
                    uint32_t edges)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
     struct button_press * button;
 
     if (!(button = pointer_get_button_press(swc.seat->pointer, serial)))
@@ -86,8 +84,7 @@ static void resize(struct wl_client * client, struct wl_resource * resource,
 static void set_toplevel(struct wl_client * client,
                          struct wl_resource * resource)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
 
     if (shell_surface->type == SHELL_SURFACE_TYPE_TOPLEVEL)
         return;
@@ -130,8 +127,7 @@ static void set_maximized(struct wl_client * client,
 static void set_title(struct wl_client * client, struct wl_resource * resource,
                       const char * title)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
 
     window_set_title(&shell_surface->window, title, -1);
 }
@@ -139,8 +135,7 @@ static void set_title(struct wl_client * client, struct wl_resource * resource,
 static void set_class(struct wl_client * client, struct wl_resource * resource,
                       const char * class)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
 
     window_set_class(&shell_surface->window, class);
 }
@@ -161,7 +156,7 @@ static const struct wl_shell_surface_interface shell_surface_implementation = {
 static void configure(struct window * window,
                       const struct swc_rectangle * geometry)
 {
-    struct swc_shell_surface * shell_surface
+    struct shell_surface * shell_surface
         = CONTAINER_OF(window, typeof(*shell_surface), window);
 
     wl_shell_surface_send_configure(shell_surface->resource,
@@ -175,7 +170,7 @@ static const struct window_impl shell_window_impl = {
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
-    struct swc_shell_surface * shell_surface = CONTAINER_OF
+    struct shell_surface * shell_surface = CONTAINER_OF
         (listener, typeof(*shell_surface), surface_destroy_listener);
 
     wl_resource_destroy(shell_surface->resource);
@@ -183,17 +178,16 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
 
 static void destroy_shell_surface(struct wl_resource * resource)
 {
-    struct swc_shell_surface * shell_surface
-        = wl_resource_get_user_data(resource);
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
 
     window_finalize(&shell_surface->window);
     free(shell_surface);
 }
 
-struct swc_shell_surface * swc_shell_surface_new
-    (struct wl_client * client, uint32_t id, struct swc_surface * surface)
+struct shell_surface * shell_surface_new(struct wl_client * client, uint32_t id,
+                                         struct swc_surface * surface)
 {
-    struct swc_shell_surface * shell_surface;
+    struct shell_surface * shell_surface;
 
     shell_surface = malloc(sizeof *shell_surface);
 

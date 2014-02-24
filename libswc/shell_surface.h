@@ -1,6 +1,6 @@
 /* swc: libswc/shell_surface.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@
 struct swc_surface;
 struct wl_client;
 
-struct swc_shell_surface * swc_shell_surface_new
-    (struct wl_client * client, uint32_t id, struct swc_surface * surface);
+struct shell_surface * shell_surface_new(struct wl_client * client, uint32_t id,
+                                         struct swc_surface * surface);
 
 #endif
 

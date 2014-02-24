@@ -37,9 +37,9 @@ static void get_shell_surface(struct wl_client * client,
                               struct wl_resource * surface_resource)
 {
     struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
-    struct swc_shell_surface * shell_surface;
+    struct shell_surface * shell_surface;
 
-    shell_surface = swc_shell_surface_new(client, id, surface);
+    shell_surface = shell_surface_new(client, id, surface);
 
     if (!shell_surface)
         wl_resource_post_no_memory(resource);
