@@ -26,6 +26,7 @@
  */
 
 #include "swc.h"
+#include "compositor.h"
 #include "keyboard.h"
 #include "util.h"
 
@@ -33,7 +34,7 @@
 #include <string.h>
 
 static void enter(struct input_focus_handler * handler,
-                  struct wl_resource * resource, struct swc_surface * surface)
+                  struct wl_resource * resource, struct compositor_view * view)
 {
     struct keyboard * keyboard;
     struct wl_client * client;
@@ -45,12 +46,12 @@ static void enter(struct input_focus_handler * handler,
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
 
-    wl_keyboard_send_enter(resource, serial, surface->resource,
+    wl_keyboard_send_enter(resource, serial, view->surface->resource,
                            &keyboard->client_handler.keys);
 }
 
 static void leave(struct input_focus_handler * handler,
-                  struct wl_resource * resource, struct swc_surface * surface)
+                  struct wl_resource * resource, struct compositor_view * view)
 {
     struct wl_client * client;
     struct wl_display * display;
@@ -60,7 +61,7 @@ static void leave(struct input_focus_handler * handler,
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
 
-    wl_keyboard_send_leave(resource, serial, surface->resource);
+    wl_keyboard_send_leave(resource, serial, view->surface->resource);
 }
 
 static bool client_handle_key(struct keyboard * keyboard, uint32_t time,
@@ -141,9 +142,9 @@ void keyboard_finalize(struct keyboard * keyboard)
  * Sets the focus of the keyboard to the specified surface.
  */
 void keyboard_set_focus(struct keyboard * keyboard,
-                            struct swc_surface * surface)
+                        struct compositor_view * view)
 {
-    input_focus_set(&keyboard->focus, surface);
+    input_focus_set(&keyboard->focus, view);
 }
 
 static void unbind(struct wl_resource * resource)

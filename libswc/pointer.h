@@ -81,7 +81,7 @@ struct pointer
 
 bool pointer_initialize(struct pointer * pointer);
 void pointer_finalize(struct pointer * pointer);
-void pointer_set_focus(struct pointer * pointer, struct swc_surface * surface);
+void pointer_set_focus(struct pointer * pointer, struct compositor_view * view);
 void pointer_set_region(struct pointer * pointer, pixman_region32_t * region);
 void pointer_set_cursor(struct pointer * pointer, uint32_t id);
 

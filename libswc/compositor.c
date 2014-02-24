@@ -486,6 +486,7 @@ struct compositor_view * swc_compositor_create_view
     view_initialize(&view->base, &view_impl);
     view->surface = surface;
     view->buffer = NULL;
+    view->window = NULL;
     view->parent = NULL;
     view->visible = false;
     view->extents.x1 = 0;
@@ -497,6 +498,7 @@ struct compositor_view * swc_compositor_create_view
     view->border.damaged = false;
     pixman_region32_init(&view->clip);
     wl_list_init(&view->children);
+    wl_signal_init(&view->destroy_signal);
     swc_surface_set_view(surface, &view->base);
 
     return view;
@@ -504,6 +506,7 @@ struct compositor_view * swc_compositor_create_view
 
 void compositor_view_destroy(struct compositor_view * view)
 {
+    wl_signal_emit(&view->destroy_signal, NULL);
     compositor_view_hide(view);
     swc_surface_set_view(view->surface, NULL);
     view_finalize(&view->base);
@@ -732,7 +735,7 @@ bool handle_motion(struct pointer_handler * handler, uint32_t time,
                    wl_fixed_t fx, wl_fixed_t fy)
 {
     struct compositor_view * view;
-    struct swc_surface * surface = NULL;
+    bool found = false;
     int32_t x, y;
 
     wl_list_for_each(view, &compositor.views, link)
@@ -745,12 +748,12 @@ bool handle_motion(struct pointer_handler * handler, uint32_t time,
                                               x - view->base.geometry.x,
                                               y - view->base.geometry.y, NULL))
         {
-            surface = view->surface;
+            found = true;
             break;
         }
     }
 
-    pointer_set_focus(swc.seat->pointer, surface);
+    pointer_set_focus(swc.seat->pointer, found ? view : NULL);
 
     return false;
 }

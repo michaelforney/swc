@@ -68,7 +68,7 @@ struct keyboard
 bool keyboard_initialize(struct keyboard * keyboard);
 void keyboard_finalize(struct keyboard * keyboard);
 void keyboard_set_focus(struct keyboard * keyboard,
-                        struct swc_surface * surface);
+                        struct compositor_view * view);
 struct wl_resource * keyboard_bind(struct keyboard * keyboard,
                                    struct wl_client * client, uint32_t id);
 void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,

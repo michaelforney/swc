@@ -373,7 +373,6 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
 
     /* Initialize the surface. */
     surface->pending.commit = 0;
-    surface->window = NULL;
     surface->view = NULL;
     surface->view_listener.notify = &handle_view_event;
 

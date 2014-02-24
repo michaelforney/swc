@@ -22,6 +22,7 @@
  */
 
 #include "pointer.h"
+#include "compositor.h"
 #include "event.h"
 #include "internal.h"
 #include "screen.h"
@@ -34,7 +35,7 @@
 #include <wld/wld.h>
 
 static void enter(struct input_focus_handler * handler,
-                  struct wl_resource * resource, struct swc_surface * surface)
+                  struct wl_resource * resource, struct compositor_view * view)
 {
     struct pointer * pointer;
     struct wl_client * client;
@@ -47,15 +48,15 @@ static void enter(struct input_focus_handler * handler,
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
 
-    surface_x = pointer->x - wl_fixed_from_int(surface->view->geometry.x);
-    surface_y = pointer->y - wl_fixed_from_int(surface->view->geometry.y);
+    surface_x = pointer->x - wl_fixed_from_int(view->base.geometry.x);
+    surface_y = pointer->y - wl_fixed_from_int(view->base.geometry.y);
 
-    wl_pointer_send_enter(resource, serial, surface->resource,
+    wl_pointer_send_enter(resource, serial, view->surface->resource,
                           surface_x, surface_y);
 }
 
 static void leave(struct input_focus_handler * handler,
-                  struct wl_resource * resource, struct swc_surface * surface)
+                  struct wl_resource * resource, struct compositor_view * view)
 {
     struct wl_client * client;
     struct wl_display * display;
@@ -65,7 +66,7 @@ static void leave(struct input_focus_handler * handler,
     display = wl_client_get_display(client);
     serial = wl_display_next_serial(display);
 
-    wl_pointer_send_leave(resource, serial, surface->resource);
+    wl_pointer_send_leave(resource, serial, view->surface->resource);
 }
 
 static void handle_cursor_surface_destroy(struct wl_listener * listener,
@@ -203,8 +204,8 @@ static bool client_handle_motion(struct pointer_handler * handler,
 
     wl_pointer_send_motion
         (pointer->focus.resource, time,
-         x - wl_fixed_from_int(pointer->focus.surface->view->geometry.x),
-         y - wl_fixed_from_int(pointer->focus.surface->view->geometry.y));
+         x - wl_fixed_from_int(pointer->focus.view->base.geometry.x),
+         y - wl_fixed_from_int(pointer->focus.view->base.geometry.y));
 
     return true;
 }
@@ -256,9 +257,9 @@ void pointer_finalize(struct pointer * pointer)
     pixman_region32_fini(&pointer->region);
 }
 
-void pointer_set_focus(struct pointer * pointer, struct swc_surface * surface)
+void pointer_set_focus(struct pointer * pointer, struct compositor_view * view)
 {
-    input_focus_set(&pointer->focus, surface);
+    input_focus_set(&pointer->focus, view);
 }
 
 static void clip_position(struct pointer * pointer,

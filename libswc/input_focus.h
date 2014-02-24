@@ -34,24 +34,24 @@ enum
 
 struct input_focus_event_data
 {
-    struct swc_surface * old, * new;
+    struct compositor_view * old, * new;
 };
 
 struct input_focus_handler
 {
     void (* enter)(struct input_focus_handler * handler,
                    struct wl_resource * resource,
-                   struct swc_surface * surface);
+                   struct compositor_view * view);
     void (* leave)(struct input_focus_handler * handler,
                    struct wl_resource * resource,
-                   struct swc_surface * surface);
+                   struct compositor_view * view);
 };
 
 struct input_focus
 {
     struct wl_resource * resource;
-    struct swc_surface * surface;
-    struct wl_listener surface_destroy_listener;
+    struct compositor_view * view;
+    struct wl_listener view_destroy_listener;
 
     struct input_focus_handler * handler;
     struct wl_list resources;
@@ -71,7 +71,7 @@ void input_focus_remove_resource(struct input_focus * input_focus,
                                  struct wl_resource * resource);
 
 void input_focus_set(struct input_focus * input_focus,
-                     struct swc_surface * surface);
+                     struct compositor_view * view);
 
 #endif
 

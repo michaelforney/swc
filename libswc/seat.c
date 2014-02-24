@@ -22,6 +22,7 @@
  */
 
 #include "seat.h"
+#include "compositor.h"
 #include "data_device.h"
 #include "evdev_device.h"
 #include "event.h"
@@ -103,8 +104,8 @@ static void handle_keyboard_focus_event(struct wl_listener * listener,
         case INPUT_FOCUS_EVENT_CHANGED:
             if (event_data->new)
             {
-                struct wl_client * client
-                    = wl_resource_get_client(event_data->new->resource);
+                struct wl_client * client = wl_resource_get_client
+                    (event_data->new->surface->resource);
 
                 /* Offer the selection to the new focus. */
                 swc_data_device_offer_selection(&seat.data_device, client);

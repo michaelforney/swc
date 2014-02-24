@@ -68,7 +68,6 @@ struct swc_surface
         int32_t x, y;
     } pending;
 
-    struct window * window;
     struct view * view;
     struct wl_listener view_listener;
 };

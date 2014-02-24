@@ -71,8 +71,8 @@ EXPORT
 void swc_window_focus(struct swc_window * base)
 {
     struct window * window = INTERNAL(base);
-    struct swc_surface * new_focus = window ? window->surface : NULL,
-                       * old_focus = swc.seat->keyboard->focus.surface;
+    struct compositor_view * new_focus = window ? window->view : NULL,
+                           * old_focus = swc.seat->keyboard->focus.view;
 
     /* If the keyboard already has a focused window, and we are changing the
      * focus to either NULL, or a window with a different implementation, set
@@ -239,6 +239,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
 
     window->surface = surface;
     window->impl = impl;
+    window->view->window = window;
     window->move.interaction.handler = (struct pointer_handler) {
         .motion = &move_motion,
         .button = &handle_button
@@ -247,8 +248,6 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
         .motion = &resize_motion,
         .button = &handle_button
     };
-
-    surface->window = window;
 
     swc.manager->new_window(&window->base);
 
@@ -261,7 +260,7 @@ void window_finalize(struct window * window)
 
     swc_send_event(&window->base.event_signal, SWC_WINDOW_DESTROYED, NULL);
     compositor_view_destroy(window->view);
-    window->surface->window = NULL;
+    window->view->window = NULL;
     free(window->base.title);
     free(window->base.class);
 }
