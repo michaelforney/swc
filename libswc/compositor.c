@@ -518,6 +518,11 @@ void compositor_view_destroy(struct compositor_view * view)
     free(view);
 }
 
+struct compositor_view * compositor_view(struct view * view)
+{
+    return view->impl == &view_impl ? (struct compositor_view *) view : NULL;
+}
+
 void compositor_view_set_parent(struct compositor_view * view,
                                 struct compositor_view * parent)
 {

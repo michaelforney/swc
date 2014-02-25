@@ -280,6 +280,9 @@ void window_set_class(struct window * window, const char * class)
 
 void window_set_state(struct window * window, uint32_t state)
 {
+    if (window->base.state == state)
+        return;
+
     window->base.state = state;
     swc_send_event(&window->base.event_signal, SWC_WINDOW_STATE_CHANGED, NULL);
 }

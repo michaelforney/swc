@@ -24,6 +24,8 @@
 #include "shell_surface.h"
 #include "compositor.h"
 #include "internal.h"
+#include "output.h"
+#include "screen.h"
 #include "seat.h"
 #include "surface.h"
 #include "swc.h"
@@ -39,16 +41,6 @@ struct shell_surface
 
     struct wl_resource * resource;
     struct wl_listener surface_destroy_listener;
-
-    enum
-    {
-        SHELL_SURFACE_TYPE_UNSPECIFIED,
-        SHELL_SURFACE_TYPE_TOPLEVEL,
-        SHELL_SURFACE_TYPE_TRANSIENT,
-        SHELL_SURFACE_TYPE_FULLSCREEN,
-        SHELL_SURFACE_TYPE_POPUP,
-        SHELL_SURFACE_TYPE_MAXIMIZED
-    } type;
 };
 
 static void pong(struct wl_client * client, struct wl_resource * resource,
@@ -86,11 +78,8 @@ static void set_toplevel(struct wl_client * client,
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
 
-    if (shell_surface->type == SHELL_SURFACE_TYPE_TOPLEVEL)
-        return;
-
-    shell_surface->type = SHELL_SURFACE_TYPE_TOPLEVEL;
     window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_set_parent(&shell_surface->window, NULL);
 }
 
 static void set_transient(struct wl_client * client,
@@ -98,7 +87,20 @@ static void set_transient(struct wl_client * client,
                           struct wl_resource * parent_resource,
                           int32_t x, int32_t y, uint32_t flags)
 {
-    /* XXX: Handle transient */
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
+    struct swc_surface * parent_surface
+        = wl_resource_get_user_data(parent_resource);
+    struct compositor_view * parent_view
+        = compositor_view(parent_surface->view);
+
+    if (!parent_view || !parent_view->window)
+        return;
+
+    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_set_parent(&shell_surface->window, parent_view->window);
+    view_move(&shell_surface->window.view->base,
+              parent_view->base.geometry.x + x,
+              parent_view->base.geometry.y + y);
 }
 
 static void set_fullscreen(struct wl_client * client,
@@ -106,7 +108,18 @@ static void set_fullscreen(struct wl_client * client,
                            uint32_t method, uint32_t framerate,
                            struct wl_resource * output_resource)
 {
-    /* XXX: Handle fullscreen */
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
+    struct swc_output * output = output_resource
+        ? wl_resource_get_user_data(output_resource) : NULL;
+    struct screen * screen;
+
+    screen = output ? output->screen
+                    : CONTAINER_OF(swc.screens.next, typeof(*screen), link);
+
+    /* TODO: Handle fullscreen windows. */
+
+    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_set_parent(&shell_surface->window, NULL);
 }
 
 static void set_popup(struct wl_client * client, struct wl_resource * resource,
@@ -114,14 +127,32 @@ static void set_popup(struct wl_client * client, struct wl_resource * resource,
                       struct wl_resource * parent_resource,
                       int32_t x, int32_t y, uint32_t flags)
 {
-    /* XXX: Handle popup */
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
+    struct swc_surface * parent_surface
+        = wl_resource_get_user_data(parent_resource);
+    struct compositor_view * parent_view
+        = compositor_view(parent_surface->view);
+
+    if (!parent_view || !parent_view->window)
+        return;
+
+    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NONE);
+    window_set_parent(&shell_surface->window, parent_view->window);
+    view_move(&shell_surface->window.view->base,
+              parent_view->base.geometry.x + x,
+              parent_view->base.geometry.y + y);
 }
 
 static void set_maximized(struct wl_client * client,
                           struct wl_resource * resource,
                           struct wl_resource * output_resource)
 {
-    /* XXX: Handle maximized */
+    struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
+
+    /* TODO: Handle maximized windows. */
+
+    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_set_parent(&shell_surface->window, NULL);
 }
 
 static void set_title(struct wl_client * client, struct wl_resource * resource,
@@ -201,7 +232,6 @@ struct shell_surface * shell_surface_new(struct wl_client * client, uint32_t id,
         goto error1;
 
     window_initialize(&shell_surface->window, &shell_window_impl, surface);
-    shell_surface->type = SHELL_SURFACE_TYPE_UNSPECIFIED;
     shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
     wl_resource_add_destroy_listener(surface->resource,
                                      &shell_surface->surface_destroy_listener);

@@ -71,6 +71,11 @@ struct compositor_view * swc_compositor_create_view
 
 void compositor_view_destroy(struct compositor_view * view);
 
+/**
+ * Returns view as a compositor_view, or NULL if view is not a compositor_view.
+ */
+struct compositor_view * compositor_view(struct view * view);
+
 void compositor_view_set_parent(struct compositor_view * view,
                                 struct compositor_view * parent);
 
