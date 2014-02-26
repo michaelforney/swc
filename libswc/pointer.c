@@ -76,6 +76,7 @@ static void handle_cursor_surface_destroy(struct wl_listener * listener,
         = CONTAINER_OF(listener, typeof(*pointer), cursor.destroy_listener);
 
     view_attach(&pointer->cursor.view, NULL);
+    pointer->cursor.surface = NULL;
 }
 
 static bool update(struct view * view)
