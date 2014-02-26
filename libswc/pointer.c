@@ -38,15 +38,11 @@ static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct compositor_view * view)
 {
     struct pointer * pointer;
-    struct wl_client * client;
-    struct wl_display * display;
     uint32_t serial;
     wl_fixed_t surface_x, surface_y;
 
     pointer = CONTAINER_OF(handler, typeof(*pointer), focus_handler);
-    client = wl_resource_get_client(resource);
-    display = wl_client_get_display(client);
-    serial = wl_display_next_serial(display);
+    serial = wl_display_next_serial(swc.display);
 
     surface_x = pointer->x - wl_fixed_from_int(view->base.geometry.x);
     surface_y = pointer->y - wl_fixed_from_int(view->base.geometry.y);
@@ -58,13 +54,9 @@ static void enter(struct input_focus_handler * handler,
 static void leave(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct compositor_view * view)
 {
-    struct wl_client * client;
-    struct wl_display * display;
     uint32_t serial;
 
-    client = wl_resource_get_client(resource);
-    display = wl_client_get_display(client);
-    serial = wl_display_next_serial(display);
+    serial = wl_display_next_serial(swc.display);
 
     wl_pointer_send_leave(resource, serial, view->surface->resource);
 }

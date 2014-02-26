@@ -27,6 +27,7 @@
 
 #include "swc.h"
 #include "compositor.h"
+#include "internal.h"
 #include "keyboard.h"
 #include "util.h"
 
@@ -36,16 +37,11 @@
 static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct compositor_view * view)
 {
-    struct keyboard * keyboard;
-    struct wl_client * client;
-    struct wl_display * display;
+    struct keyboard * keyboard
+        = CONTAINER_OF(handler, typeof(*keyboard), focus_handler);
     uint32_t serial;
 
-    keyboard = CONTAINER_OF(handler, typeof(*keyboard), focus_handler);
-    client = wl_resource_get_client(resource);
-    display = wl_client_get_display(client);
-    serial = wl_display_next_serial(display);
-
+    serial = wl_display_next_serial(swc.display);
     wl_keyboard_send_enter(resource, serial, view->surface->resource,
                            &keyboard->client_handler.keys);
 }
@@ -53,14 +49,9 @@ static void enter(struct input_focus_handler * handler,
 static void leave(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct compositor_view * view)
 {
-    struct wl_client * client;
-    struct wl_display * display;
     uint32_t serial;
 
-    client = wl_resource_get_client(resource);
-    display = wl_client_get_display(client);
-    serial = wl_display_next_serial(display);
-
+    serial = wl_display_next_serial(swc.display);
     wl_keyboard_send_leave(resource, serial, view->surface->resource);
 }
 
