@@ -336,14 +336,13 @@ struct wl_resource * pointer_bind(struct pointer * pointer,
     return client_resource;
 }
 
-struct button_press * pointer_get_button_press(struct pointer * pointer,
-                                               uint32_t serial)
+struct button * pointer_get_button(struct pointer * pointer, uint32_t serial)
 {
-    struct button_press * button;
+    struct button * button;
 
     wl_array_for_each(button, &pointer->buttons)
     {
-        if (button->serial == serial)
+        if (button->press.serial == serial)
             return button;
     }
 
@@ -354,7 +353,7 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
                            uint32_t value, uint32_t state)
 {
     struct pointer_handler * handler;
-    struct button_press * button;
+    struct button * button;
     uint32_t serial;
 
     serial = wl_display_next_serial(swc.display);
@@ -363,7 +362,7 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
     {
         wl_array_for_each(button, &pointer->buttons)
         {
-            if (button->value == value)
+            if (button->press.value == value)
             {
                 swc_array_remove(&pointer->buttons, button, sizeof *button);
 
@@ -384,8 +383,8 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
             if (handler->button && handler->button(handler, time, value, state))
             {
                 button = wl_array_add(&pointer->buttons, sizeof *button);
-                button->value = value;
-                button->serial = serial;
+                button->press.value = value;
+                button->press.serial = serial;
                 button->handler = handler;
                 break;
             }

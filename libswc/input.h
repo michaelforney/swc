@@ -77,5 +77,15 @@ void input_focus_set(struct input_focus * input_focus,
 
 /* }}} */
 
+/* Key/button handling {{{ */
+
+struct press
+{
+    uint32_t value;
+    uint32_t serial;
+};
+
+/* }}} */
+
 #endif
 

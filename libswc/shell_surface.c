@@ -52,9 +52,9 @@ static void move(struct wl_client * client, struct wl_resource * resource,
                  struct wl_resource * seat_resource, uint32_t serial)
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
-    struct button_press * button;
+    struct button * button;
 
-    if (!(button = pointer_get_button_press(swc.seat->pointer, serial)))
+    if (!(button = pointer_get_button(swc.seat->pointer, serial)))
         return;
 
     window_begin_interactive_move(&shell_surface->window, button);
@@ -65,9 +65,9 @@ static void resize(struct wl_client * client, struct wl_resource * resource,
                    uint32_t edges)
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
-    struct button_press * button;
+    struct button * button;
 
-    if (!(button = pointer_get_button_press(swc.seat->pointer, serial)))
+    if (!(button = pointer_get_button(swc.seat->pointer, serial)))
         return;
 
     window_begin_interactive_resize(&shell_surface->window, edges, button);

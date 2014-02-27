@@ -114,7 +114,7 @@ void swc_window_set_border(struct swc_window * window,
 
 static inline void window_begin_interaction
     (struct window * window, struct window_pointer_interaction * interaction,
-     struct button_press * button)
+     struct button * button)
 {
     if (button)
     {
@@ -128,7 +128,7 @@ static inline void window_begin_interaction
 }
 
 void window_begin_interactive_move(struct window * window,
-                                   struct button_press * button)
+                                   struct button * button)
 {
     struct swc_rectangle * geometry = &window->view->base.geometry;
     int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
@@ -140,7 +140,7 @@ void window_begin_interactive_move(struct window * window,
 }
 
 void window_begin_interactive_resize(struct window * window, uint32_t edges,
-                                     struct button_press * button)
+                                     struct button * button)
 {
     window_begin_interaction(window, &window->resize.interaction, button);
 

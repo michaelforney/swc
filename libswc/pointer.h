@@ -31,10 +31,9 @@
 #include <wayland-server.h>
 #include <pixman.h>
 
-struct button_press
+struct button
 {
-    uint32_t value;
-    uint32_t serial;
+    struct press press;
     struct pointer_handler * handler;
 };
 
@@ -85,8 +84,7 @@ void pointer_set_focus(struct pointer * pointer, struct compositor_view * view);
 void pointer_set_region(struct pointer * pointer, pixman_region32_t * region);
 void pointer_set_cursor(struct pointer * pointer, uint32_t id);
 
-struct button_press * pointer_get_button_press(struct pointer * pointer,
-                                               uint32_t serial);
+struct button * pointer_get_button(struct pointer * pointer, uint32_t serial);
 
 struct wl_resource * pointer_bind(struct pointer * pointer,
                                   struct wl_client * client, uint32_t id);
