@@ -24,7 +24,7 @@
 #ifndef SWC_KEYBOARD_H
 #define SWC_KEYBOARD_H
 
-#include "input_focus.h"
+#include "input.h"
 #include "surface.h"
 #include "xkb.h"
 

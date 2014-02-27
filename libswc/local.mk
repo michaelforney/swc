@@ -37,7 +37,7 @@ SWC_SOURCES =                       \
     libswc/drm.c                    \
     libswc/evdev_device.c           \
     libswc/framebuffer_plane.c      \
-    libswc/input_focus.c            \
+    libswc/input.c                  \
     libswc/keyboard.c               \
     libswc/launch.c                 \
     libswc/mode.c                   \

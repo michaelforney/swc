@@ -24,7 +24,7 @@
 #ifndef SWC_POINTER_H
 #define SWC_POINTER_H
 
-#include "input_focus.h"
+#include "input.h"
 #include "surface.h"
 #include "view.h"
 

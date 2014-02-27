@@ -1,4 +1,4 @@
-/* swc: input_focus.h
+/* swc: input.h
  *
  * Copyright (c) 2013, 2014 Michael Forney
  *
@@ -21,11 +21,13 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_INPUT_FOCUS_H
-#define SWC_INPUT_FOCUS_H
+#ifndef SWC_INPUT_H
+#define SWC_INPUT_H
 
 #include <stdbool.h>
 #include <wayland-server.h>
+
+/* Focus {{{ */
 
 enum
 {
@@ -72,6 +74,8 @@ void input_focus_remove_resource(struct input_focus * input_focus,
 
 void input_focus_set(struct input_focus * input_focus,
                      struct compositor_view * view);
+
+/* }}} */
 
 #endif
 

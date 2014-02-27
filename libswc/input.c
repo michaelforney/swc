@@ -1,4 +1,4 @@
-/* swc: input_focus.c
+/* swc: input.c
  *
  * Copyright (c) 2013, 2014 Michael Forney
  *
@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-#include "input_focus.h"
+#include "input.h"
 #include "compositor.h"
 #include "event.h"
 #include "surface.h"
