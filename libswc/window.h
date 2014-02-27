@@ -78,11 +78,10 @@ void window_set_state(struct window * window, uint32_t state);
 
 void window_set_parent(struct window * window, struct window * parent);
 
-void window_begin_interactive_move(struct window * window,
-                                   struct button * button);
+void window_begin_move(struct window * window, struct button * button);
 
-void window_begin_interactive_resize(struct window * window, uint32_t edges,
-                                     struct button * button);
+void window_begin_resize(struct window * window, uint32_t edges,
+                         struct button * button);
 
 #endif
 

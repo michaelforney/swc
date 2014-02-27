@@ -57,7 +57,7 @@ static void move(struct wl_client * client, struct wl_resource * resource,
     if (!(button = pointer_get_button(swc.seat->pointer, serial)))
         return;
 
-    window_begin_interactive_move(&shell_surface->window, button);
+    window_begin_move(&shell_surface->window, button);
 }
 
 static void resize(struct wl_client * client, struct wl_resource * resource,
@@ -70,7 +70,7 @@ static void resize(struct wl_client * client, struct wl_resource * resource,
     if (!(button = pointer_get_button(swc.seat->pointer, serial)))
         return;
 
-    window_begin_interactive_resize(&shell_surface->window, edges, button);
+    window_begin_resize(&shell_surface->window, edges, button);
 }
 
 static void set_toplevel(struct wl_client * client,

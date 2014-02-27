@@ -127,8 +127,7 @@ static inline void window_begin_interaction
     wl_list_insert(&swc.seat->pointer->handlers, &interaction->handler.link);
 }
 
-void window_begin_interactive_move(struct window * window,
-                                   struct button * button)
+void window_begin_move(struct window * window, struct button * button)
 {
     struct swc_rectangle * geometry = &window->view->base.geometry;
     int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
@@ -139,8 +138,8 @@ void window_begin_interactive_move(struct window * window,
     window->move.offset.y = geometry->y - py;
 }
 
-void window_begin_interactive_resize(struct window * window, uint32_t edges,
-                                     struct button * button)
+void window_begin_resize(struct window * window, uint32_t edges,
+                         struct button * button)
 {
     window_begin_interaction(window, &window->resize.interaction, button);
 
@@ -157,7 +156,7 @@ void swc_window_begin_move(struct swc_window * base)
 {
     struct window * window = (struct window *) base;
 
-    window_begin_interactive_move(window, NULL);
+    window_begin_move(window, NULL);
 }
 
 EXPORT
@@ -173,7 +172,7 @@ void swc_window_begin_resize(struct swc_window * base, uint32_t edges)
 {
     struct window * window = (struct window *) base;
 
-    window_begin_interactive_resize(window, edges, NULL);
+    window_begin_resize(window, edges, NULL);
 }
 
 EXPORT
