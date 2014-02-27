@@ -207,14 +207,6 @@ bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
     }
 
     memcpy(plane_connectors, connectors, num_connectors * sizeof connectors[0]);
-
-    if (drmModeSetCrtc(swc.drm->fd, crtc, -1, 0, 0,
-                       connectors, num_connectors, &mode->info) != 0)
-    {
-        ERROR("Failed to set CRTC: %s\n", strerror(errno));
-        goto error2;
-    }
-
     plane->crtc = crtc;
     plane->need_modeset = true;
     view_initialize(&plane->view, &view_impl);
@@ -227,8 +219,6 @@ bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
 
     return true;
 
-  error2:
-    wl_array_release(&plane->connectors);
   error1:
     drmModeFreeCrtc(plane->original_crtc_state);
   error0:
