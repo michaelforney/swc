@@ -1,6 +1,6 @@
 /* swc: data.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -116,7 +116,10 @@ static void data_destroy(struct wl_resource * source)
      *
      * So, we clear the user data on each of the offers to protect us. */
     wl_resource_for_each(offer, &data->offers)
+    {
         wl_resource_set_user_data(offer, NULL);
+        wl_resource_set_destructor(offer, NULL);
+    }
 
     free(data);
 }
