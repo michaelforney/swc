@@ -224,7 +224,8 @@ enum
 
 enum swc_binding_type
 {
-    SWC_BINDING_KEY
+    SWC_BINDING_KEY,
+    SWC_BINDING_BUTTON,
 };
 
 typedef void (* swc_binding_handler_t)(void * data, uint32_t time,

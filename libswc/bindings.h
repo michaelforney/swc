@@ -29,6 +29,7 @@
 struct swc_bindings
 {
     struct keyboard_handler * keyboard_handler;
+    struct pointer_handler * pointer_handler;
 };
 
 bool swc_bindings_initialize();

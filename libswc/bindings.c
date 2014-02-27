@@ -25,6 +25,7 @@
 #include "bindings.h"
 #include "internal.h"
 #include "keyboard.h"
+#include "pointer.h"
 #include "seat.h"
 #include "util.h"
 
@@ -41,14 +42,22 @@ struct binding
 static bool handle_key(struct keyboard * keyboard, uint32_t time,
                        struct press * press, uint32_t state);
 
-static struct keyboard_handler binding_handler = {
-    .key = &handle_key,
+static struct keyboard_handler key_binding_handler = {
+    .key = &handle_key
 };
 
-static struct wl_array key_bindings;
+static bool handle_button(struct pointer_handler * handler, uint32_t time,
+                          struct press * press, uint32_t state);
+
+static struct pointer_handler button_binding_handler = {
+    .button = &handle_button
+};
+
+static struct wl_array key_bindings, button_bindings;
 
 const struct swc_bindings swc_bindings = {
-    .keyboard_handler = &binding_handler
+    .keyboard_handler = &key_binding_handler,
+    .pointer_handler = &button_binding_handler
 };
 
 static struct binding * find_binding(struct wl_array * bindings,
@@ -97,6 +106,11 @@ static struct binding * find_key_binding(uint32_t modifiers, uint32_t key)
     return binding;
 }
 
+static struct binding * find_button_binding(uint32_t modifiers, uint32_t value)
+{
+    return find_binding(&button_bindings, modifiers, value);
+}
+
 static bool handle_binding
     (uint32_t time, struct press * press, uint32_t state,
      struct binding * (* find_binding)(uint32_t, uint32_t))
@@ -126,9 +140,16 @@ bool handle_key(struct keyboard * keyboard, uint32_t time,
     return handle_binding(time, key, state, &find_key_binding);
 }
 
+bool handle_button(struct pointer_handler * handler, uint32_t time,
+                   struct press * button, uint32_t state)
+{
+    return handle_binding(time, button, state, &find_button_binding);
+}
+
 bool swc_bindings_initialize()
 {
     wl_array_init(&key_bindings);
+    wl_array_init(&button_bindings);
 
     return true;
 }
@@ -136,6 +157,7 @@ bool swc_bindings_initialize()
 void swc_bindings_finalize()
 {
     wl_array_release(&key_bindings);
+    wl_array_release(&button_bindings);
 }
 
 EXPORT
@@ -150,6 +172,9 @@ void swc_add_binding(enum swc_binding_type type,
     {
         case SWC_BINDING_KEY:
             bindings = &key_bindings;
+            break;
+        case SWC_BINDING_BUTTON:
+            bindings = &button_bindings;
             break;
     }
 
