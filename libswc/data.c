@@ -43,8 +43,10 @@ static void offer_accept(struct wl_client * client,
     struct data * data = wl_resource_get_user_data(offer);
 
     /* Protect against expired data_offers being used. */
-    if (data)
-        wl_data_source_send_target(data->source, mime_type);
+    if (!data)
+        return;
+
+    wl_data_source_send_target(data->source, mime_type);
 }
 
 static void offer_receive(struct wl_client * client,
@@ -54,11 +56,11 @@ static void offer_receive(struct wl_client * client,
     struct data * data = wl_resource_get_user_data(offer);
 
     /* Protect against expired data_offers being used. */
-    if (data)
-    {
-        wl_data_source_send_send(data->source, mime_type, fd);
-        close(fd);
-    }
+    if (!data)
+        return;
+
+    wl_data_source_send_send(data->source, mime_type, fd);
+    close(fd);
 }
 
 static void offer_destroy(struct wl_client * client,
