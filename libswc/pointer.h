@@ -42,7 +42,7 @@ struct pointer_handler
     bool (* motion)(struct pointer_handler * handler, uint32_t time,
                     wl_fixed_t x, wl_fixed_t y);
     bool (* button)(struct pointer_handler * handler, uint32_t time,
-                    uint32_t button, uint32_t state);
+                    struct press * press, uint32_t state);
     bool (* axis)(struct pointer_handler * handler, uint32_t time,
                   enum wl_pointer_axis axis, wl_fixed_t amount);
 

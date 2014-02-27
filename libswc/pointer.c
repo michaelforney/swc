@@ -155,19 +155,18 @@ void pointer_set_cursor(struct pointer * pointer, uint32_t id)
     view_attach(&pointer->cursor.view, pointer->cursor.internal_buffer);
 }
 
-static bool client_handle_button(struct pointer_handler * handler,
-                                 uint32_t time, uint32_t button, uint32_t state)
+static bool client_handle_button
+    (struct pointer_handler * handler, uint32_t time,
+     struct press * press, uint32_t state)
 {
     struct pointer * pointer
         = CONTAINER_OF(handler, typeof(*pointer), client_handler);
-    uint32_t serial;
 
     if (!pointer->focus.resource)
         return false;
 
-    serial = wl_display_get_serial(swc.display);
-    wl_pointer_send_button(pointer->focus.resource, serial, time,
-                           button, state);
+    wl_pointer_send_button(pointer->focus.resource, press->serial, time,
+                           press->value, state);
 
     return true;
 }
@@ -364,27 +363,34 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
         {
             if (button->press.value == value)
             {
-                swc_array_remove(&pointer->buttons, button, sizeof *button);
-
-                if (button->handler->button)
+                if (button->handler)
                 {
+                    button->press.serial = serial;
                     button->handler->button(button->handler, time,
-                                            value, state);
+                                            &button->press, state);
                 }
 
+                swc_array_remove(&pointer->buttons, button, sizeof *button);
                 break;
             }
         }
     }
     else
     {
+        button = wl_array_add(&pointer->buttons, sizeof *button);
+
+        if (!button)
+            return;
+
+        button->press.value = value;
+        button->press.serial = serial;
+        button->handler = NULL;
+
         wl_list_for_each(handler, &pointer->handlers, link)
         {
-            if (handler->button && handler->button(handler, time, value, state))
+            if (handler->button && handler->button(handler, time,
+                                                   &button->press, state))
             {
-                button = wl_array_add(&pointer->buttons, sizeof *button);
-                button->press.value = value;
-                button->press.serial = serial;
                 button->handler = handler;
                 break;
             }

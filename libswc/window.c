@@ -204,7 +204,7 @@ static bool resize_motion(struct pointer_handler * handler, uint32_t time,
 }
 
 static bool handle_button(struct pointer_handler * handler, uint32_t time,
-                          uint32_t button, uint32_t state)
+                          struct press * press, uint32_t state)
 {
     struct window_pointer_interaction * interaction
         = CONTAINER_OF(handler, typeof(*interaction), handler);
@@ -215,8 +215,8 @@ static bool handle_button(struct pointer_handler * handler, uint32_t time,
         return false;
     }
 
-    interaction->original_handler->button
-        (interaction->original_handler, time, button, state);
+    interaction->original_handler->button(interaction->original_handler, time,
+                                          press, state);
     wl_list_remove(&handler->link);
 
     return true;
