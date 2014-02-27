@@ -23,7 +23,9 @@
 
 #include "swc.h"
 #include "bindings.h"
+#include "internal.h"
 #include "keyboard.h"
+#include "seat.h"
 #include "util.h"
 
 #include <wayland-util.h>
@@ -37,7 +39,7 @@ struct binding
 };
 
 static bool handle_key(struct keyboard * keyboard, uint32_t time,
-                       uint32_t key, uint32_t state);
+                       struct press * press, uint32_t state);
 
 static struct keyboard_handler binding_handler = {
     .key = &handle_key,
@@ -49,51 +51,79 @@ const struct swc_bindings swc_bindings = {
     .keyboard_handler = &binding_handler
 };
 
-static bool handle_binding(struct wl_array * bindings, uint32_t time,
-                           uint32_t modifiers, uint32_t value, uint32_t state)
+static struct binding * find_binding(struct wl_array * bindings,
+                                     uint32_t modifiers, uint32_t value)
 {
     struct binding * binding;
 
     wl_array_for_each(binding, bindings)
     {
-        if (binding->value == value
-            && (binding->modifiers == modifiers
-                || binding->modifiers == SWC_MOD_ANY))
+        if (binding->value == value && (binding->modifiers == modifiers
+                                        || binding->modifiers == SWC_MOD_ANY))
         {
-            binding->handler(binding->data, time, value, state);
-            return true;
+            return binding;
         }
     }
 
-    return false;
+    return NULL;
 }
 
-bool handle_key(struct keyboard * keyboard, uint32_t time,
-                uint32_t key, uint32_t state)
+static struct binding * find_key_binding(uint32_t modifiers, uint32_t key)
 {
+    struct binding * binding;
+    struct swc_xkb * xkb = &swc.seat->keyboard->xkb;
     xkb_keysym_t keysym;
 
     /* First try the keysym the keymap generates in it's current state. */
-    keysym = xkb_state_key_get_one_sym(keyboard->xkb.state, XKB_KEY(key));
+    keysym = xkb_state_key_get_one_sym(xkb->state, XKB_KEY(key));
+    binding = find_binding(&key_bindings, modifiers, keysym);
 
-    if (handle_binding(&key_bindings, time, keyboard->modifiers, keysym, state))
-        return true;
+    if (binding)
+        return binding;
 
     xkb_layout_index_t layout;
     const xkb_keysym_t * keysyms;
 
     /* Then try the keysym associated with shift-level 0 for the key. */
-    layout = xkb_state_key_get_layout(keyboard->xkb.state, XKB_KEY(key));
-    xkb_keymap_key_get_syms_by_level(keyboard->xkb.keymap.map, XKB_KEY(key),
+    layout = xkb_state_key_get_layout(xkb->state, XKB_KEY(key));
+    xkb_keymap_key_get_syms_by_level(xkb->keymap.map, XKB_KEY(key),
                                      layout, 0, &keysyms);
 
-    if (keysyms && handle_binding(&key_bindings, time,
-                                  keyboard->modifiers, keysyms[0], state))
-    {
-        return true;
-    }
+    if (!keysyms)
+        return NULL;
 
-    return false;
+    binding = find_binding(&key_bindings, modifiers, keysyms[0]);
+
+    return binding;
+}
+
+static bool handle_binding
+    (uint32_t time, struct press * press, uint32_t state,
+     struct binding * (* find_binding)(uint32_t, uint32_t))
+{
+    struct binding * binding;
+
+    if (state)
+    {
+        binding = find_binding(swc.seat->keyboard->modifiers, press->value);
+
+        if (!binding)
+            return false;
+
+        press->data = binding;
+    }
+    else
+        binding = press->data;
+
+    binding->handler(binding->data, time, binding->value, state);
+
+    return true;
+}
+
+bool handle_key(struct keyboard * keyboard, uint32_t time,
+                struct press * key, uint32_t state)
+{
+    return handle_binding(time, key, state, &find_key_binding);
 }
 
 bool swc_bindings_initialize()

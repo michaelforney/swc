@@ -33,6 +33,12 @@
 struct keyboard;
 struct wl_client;
 
+struct key
+{
+    struct press press;
+    struct keyboard_handler * handler;
+};
+
 struct keyboard_modifier_state
 {
     uint32_t depressed;
@@ -44,11 +50,10 @@ struct keyboard_modifier_state
 struct keyboard_handler
 {
     bool (* key)(struct keyboard * keyboard, uint32_t time,
-                 uint32_t key, uint32_t state);
+                 struct press * press, uint32_t state);
     bool (* modifiers)(struct keyboard * keyboard,
                        const struct keyboard_modifier_state * state);
 
-    struct wl_array keys;
     struct wl_list link;
 };
 
@@ -58,8 +63,10 @@ struct keyboard
     struct input_focus_handler focus_handler;
     struct swc_xkb xkb;
 
+    struct wl_array keys;
     struct wl_list handlers;
     struct keyboard_handler client_handler;
+    struct wl_array client_keys;
 
     struct keyboard_modifier_state modifier_state;
     uint32_t modifiers;

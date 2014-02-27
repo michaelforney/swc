@@ -83,6 +83,7 @@ struct press
 {
     uint32_t value;
     uint32_t serial;
+    void * data;
 };
 
 /* }}} */
