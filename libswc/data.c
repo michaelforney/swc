@@ -113,7 +113,7 @@ static void data_destroy(struct wl_resource * source)
      * data_offer, which would crash the server.
      *
      * So, we clear the user data on each of the offers to protect us. */
-    wl_list_for_each(offer, &data->offers, link)
+    wl_resource_for_each(offer, &data->offers)
         wl_resource_set_user_data(offer, NULL);
 
     free(data);
