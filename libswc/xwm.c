@@ -1,6 +1,6 @@
 /* swc: libswc/xwm.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2014 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,15 +37,14 @@
 struct xwl_window
 {
     xcb_window_t id;
-    struct window window;
-    struct wl_listener surface_destroy_listener;
-};
-
-struct xwl_window_entry
-{
-    xcb_window_t id;
     bool override_redirect;
-    struct xwl_window * xwl_window;
+    struct wl_list link;
+
+    /* Only used for paired windows. */
+    struct {
+        struct window window;
+        struct wl_listener surface_destroy_listener;
+    };
 };
 
 static struct
@@ -54,7 +53,7 @@ static struct
     xcb_ewmh_connection_t ewmh;
     xcb_screen_t * screen;
     struct wl_event_source * source;
-    struct wl_array windows;
+    struct wl_list windows, unpaired_windows;
 } xwm;
 
 static void update_name(struct xwl_window * xwl_window)
@@ -72,14 +71,14 @@ static void update_name(struct xwl_window * xwl_window)
     xcb_ewmh_get_utf8_strings_reply_wipe(&wm_name_reply);
 }
 
-static struct xwl_window_entry * find_window(xcb_window_t id)
+static struct xwl_window * find_window(struct wl_list * list, xcb_window_t id)
 {
-    struct xwl_window_entry * entry;
+    struct xwl_window * window;
 
-    wl_array_for_each(entry, &xwm.windows)
+    wl_list_for_each(window, list, link)
     {
-        if (entry->id == id)
-            return entry;
+        if (window->id == id)
+            return window;
     }
 
     return NULL;
@@ -88,24 +87,30 @@ static struct xwl_window_entry * find_window(xcb_window_t id)
 /* X event handlers */
 void create_notify(xcb_create_notify_event_t * event)
 {
-    struct xwl_window_entry * entry;
+    struct xwl_window * xwl_window;
 
-    if (!(entry = wl_array_add(&xwm.windows, sizeof *entry)))
+    if (!(xwl_window = malloc(sizeof *xwl_window)))
         return;
 
-    entry->id = event->window;
-    entry->override_redirect = event->override_redirect;
-    entry->xwl_window = NULL;
+    xwl_window->id = event->window;
+    xwl_window->override_redirect = event->override_redirect;
+    wl_list_insert(&xwm.unpaired_windows, &xwl_window->link);
 }
 
 void destroy_notify(xcb_destroy_notify_event_t * event)
 {
-    struct xwl_window_entry * entry;
+    struct xwl_window * xwl_window;
 
-    if (!(entry = find_window(event->window)))
+    if ((xwl_window = find_window(&xwm.windows, event->window)))
+    {
+        wl_list_remove(&xwl_window->surface_destroy_listener.link);
+        window_finalize(&xwl_window->window);
+    }
+    else if (!(xwl_window = find_window(&xwm.unpaired_windows, event->window)))
         return;
 
-    swc_array_remove(&xwm.windows, entry, sizeof *entry);
+    wl_list_remove(&xwl_window->link);
+    free(xwl_window);
 }
 
 void map_request(xcb_map_request_event_t * event)
@@ -119,15 +124,15 @@ void configure_request(xcb_configure_request_event_t * event)
 
 void property_notify(xcb_property_notify_event_t * event)
 {
-    struct xwl_window_entry * entry;
+    struct xwl_window * xwl_window;
 
-    if (!(entry = find_window(event->window)) || !entry->xwl_window)
+    if (!(xwl_window = find_window(&xwm.windows, event->window)))
         return;
 
     if (event->atom == xwm.ewmh._NET_WM_NAME
         && event->state == XCB_PROPERTY_NEW_VALUE)
     {
-        update_name(entry->xwl_window);
+        update_name(xwl_window);
     }
 }
 
@@ -206,7 +211,8 @@ bool swc_xwm_initialize(int fd)
 
     xwm.source = wl_event_loop_add_fd(swc.event_loop, fd, WL_EVENT_READABLE,
                                       &connection_data, NULL);
-    wl_array_init(&xwm.windows);
+    wl_list_init(&xwm.windows);
+    wl_list_init(&xwm.unpaired_windows);
 
     if (!xwm.source)
     {
@@ -259,7 +265,6 @@ bool swc_xwm_initialize(int fd)
 
 void swc_xwm_finalize()
 {
-    wl_array_release(&xwm.windows);
     wl_event_source_remove(xwm.source);
     xcb_ewmh_connection_wipe(&xwm.ewmh);
     xcb_disconnect(xwm.connection);
@@ -301,45 +306,29 @@ static const struct window_impl xwl_window_handler = {
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
-    struct xwl_window_entry * entry;
     struct xwl_window * xwl_window
         = CONTAINER_OF(listener, typeof(*xwl_window), surface_destroy_listener);
 
     window_finalize(&xwl_window->window);
-    free(xwl_window);
-
-    wl_array_for_each(entry, &xwm.windows)
-    {
-        if (entry->xwl_window == xwl_window)
-        {
-            entry->xwl_window = NULL;
-            break;
-        }
-    }
+    wl_list_remove(&xwl_window->link);
+    wl_list_insert(&xwm.unpaired_windows, &xwl_window->link);
 }
 
 void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
 {
-    struct xwl_window_entry * entry;
     struct xwl_window * xwl_window;
     xcb_get_geometry_cookie_t geometry_cookie;
     xcb_get_geometry_reply_t * geometry_reply;
 
-    if (!(entry = find_window(id)))
-        return;
-
-    if (!(xwl_window = malloc(sizeof *xwl_window)))
+    if (!(xwl_window = find_window(&xwm.unpaired_windows, id)))
         return;
 
     geometry_cookie = xcb_get_geometry(xwm.connection, id);
 
     window_initialize(&xwl_window->window, &xwl_window_handler, surface);
-    xwl_window->id = id;
     xwl_window->surface_destroy_listener.notify = &handle_surface_destroy;
     wl_resource_add_destroy_listener(surface->resource,
                                      &xwl_window->surface_destroy_listener);
-
-    entry->xwl_window = xwl_window;
 
     if ((geometry_reply = xcb_get_geometry_reply(xwm.connection,
                                                  geometry_cookie, NULL)))
@@ -348,7 +337,7 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
         free(geometry_reply);
     }
 
-    if (entry->override_redirect)
+    if (xwl_window->override_redirect)
         compositor_view_show(xwl_window->window.view);
     else
     {
@@ -364,5 +353,8 @@ void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
 
         window_set_state(&xwl_window->window, SWC_WINDOW_STATE_NORMAL);
     }
+
+    wl_list_remove(&xwl_window->link);
+    wl_list_insert(&xwm.windows, &xwl_window->link);
 }
 
