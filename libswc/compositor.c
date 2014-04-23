@@ -87,7 +87,7 @@ static struct
     struct wl_global * global;
 } compositor;
 
-const struct swc_compositor swc_compositor = {
+struct swc_compositor swc_compositor = {
     .pointer_handler = &pointer_handler
 };
 
@@ -813,6 +813,8 @@ static void create_surface(struct wl_client * client,
         wl_resource_post_no_memory(resource);
         return;
     }
+
+    wl_signal_emit(&swc_compositor.signal.new_surface, surface);
 }
 
 static void create_region(struct wl_client * client,
@@ -864,6 +866,7 @@ bool swc_compositor_initialize()
     pixman_region32_init(&compositor.damage);
     pixman_region32_init(&compositor.opaque);
     wl_list_init(&compositor.views);
+    wl_signal_init(&swc_compositor.signal.new_surface);
     wl_signal_add(&swc.launch->event_signal, &launch_listener);
 
     wl_list_for_each(screen, &swc.screens, link)

@@ -38,7 +38,7 @@ struct swc
     const struct swc_seat * const seat;
     const struct swc_bindings * const bindings;
     struct wl_list screens;
-    const struct swc_compositor * const compositor;
+    struct swc_compositor * const compositor;
     struct swc_shm * const shm;
     struct swc_drm * const drm;
 };

@@ -44,7 +44,7 @@
 extern struct swc_launch swc_launch;
 extern const struct swc_seat swc_seat;
 extern const struct swc_bindings swc_bindings;
-extern const struct swc_compositor swc_compositor;
+extern struct swc_compositor swc_compositor;
 extern struct swc_drm swc_drm;
 extern struct swc_shm swc_shm;
 
