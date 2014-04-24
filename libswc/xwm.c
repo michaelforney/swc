@@ -101,7 +101,7 @@ static struct xwl_window * find_window(struct wl_list * list, xcb_window_t id)
 }
 
 /* X event handlers */
-void create_notify(xcb_create_notify_event_t * event)
+static void create_notify(xcb_create_notify_event_t * event)
 {
     struct xwl_window * xwl_window;
 
@@ -113,7 +113,7 @@ void create_notify(xcb_create_notify_event_t * event)
     wl_list_insert(&xwm.unpaired_windows, &xwl_window->link);
 }
 
-void destroy_notify(xcb_destroy_notify_event_t * event)
+static void destroy_notify(xcb_destroy_notify_event_t * event)
 {
     struct xwl_window * xwl_window;
 
@@ -129,16 +129,16 @@ void destroy_notify(xcb_destroy_notify_event_t * event)
     free(xwl_window);
 }
 
-void map_request(xcb_map_request_event_t * event)
+static void map_request(xcb_map_request_event_t * event)
 {
     xcb_map_window(xwm.connection, event->window);
 }
 
-void configure_request(xcb_configure_request_event_t * event)
+static void configure_request(xcb_configure_request_event_t * event)
 {
 }
 
-void property_notify(xcb_property_notify_event_t * event)
+static void property_notify(xcb_property_notify_event_t * event)
 {
     struct xwl_window * xwl_window;
 
