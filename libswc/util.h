@@ -69,6 +69,8 @@
     ((type *) ((uintptr_t) __mptr - OFFSET_OF(type, member)));              \
 })
 
+#define ARRAY_LENGTH(array) (sizeof (array) / sizeof (array)[0])
+
 struct wl_resource;
 
 void swc_remove_resource(struct wl_resource * resource);

@@ -47,14 +47,30 @@ struct xwl_window
     };
 };
 
+enum atom
+{
+    ATOM_WM_S0,
+};
+
 static struct
 {
     xcb_connection_t * connection;
     xcb_ewmh_connection_t ewmh;
     xcb_screen_t * screen;
+    xcb_window_t window;
     struct wl_event_source * source;
     struct wl_list windows, unpaired_windows;
-} xwm;
+    union
+    {
+        const char * name;
+        xcb_intern_atom_cookie_t cookie;
+        xcb_atom_t value;
+    } atoms[1];
+} xwm = {
+    .atoms = {
+        [ATOM_WM_S0] = "WM_S0",
+    }
+};
 
 static void update_name(struct xwl_window * xwl_window)
 {
@@ -179,6 +195,9 @@ bool xwm_initialize(int fd)
     xcb_void_cookie_t change_attributes_cookie, redirect_subwindows_cookie;
     xcb_generic_error_t * error;
     xcb_intern_atom_cookie_t * ewmh_cookies;
+    xcb_intern_atom_reply_t * atom_reply;
+    unsigned index;
+    const char * name;
     const xcb_query_extension_reply_t * composite_extension;
 
     xwm.connection = xcb_connect_to_fd(fd, NULL);
@@ -196,6 +215,13 @@ bool xwm_initialize(int fd)
     {
         ERROR("xwm: Failed to initialize EWMH atoms\n");
         goto error1;
+    }
+
+    for (index = 0; index < ARRAY_LENGTH(xwm.atoms); ++index)
+    {
+        name = xwm.atoms[index].name;
+        xwm.atoms[index].cookie = xcb_intern_atom(xwm.connection, 0,
+                                                  strlen(name), name);
     }
 
     setup = xcb_get_setup(xwm.connection);
@@ -245,11 +271,35 @@ bool xwm_initialize(int fd)
         goto error3;
     }
 
+    xwm.window = xcb_generate_id(xwm.connection);
+    xcb_create_window(xwm.connection, 0, xwm.window, xwm.screen->root,
+                      0, 0, 1, 1, 0, XCB_WINDOW_CLASS_INPUT_ONLY,
+                      XCB_COPY_FROM_PARENT, 0, NULL);
+
     if (!xcb_ewmh_init_atoms_replies(&xwm.ewmh, ewmh_cookies, NULL))
     {
         ERROR("xwm: Failed to get EWMH atom replies\n");
         goto error3;
     }
+
+    for (index = 0; index < ARRAY_LENGTH(xwm.atoms); ++index)
+    {
+        atom_reply = xcb_intern_atom_reply(xwm.connection,
+                                           xwm.atoms[index].cookie, &error);
+
+        if (error)
+        {
+            ERROR("xwm: Failed to get atom reply: %u\n", error->error_code);
+            return false;
+        }
+
+        xwm.atoms[index].value = atom_reply->atom;
+        free(atom_reply);
+    }
+
+    xcb_set_selection_owner(xwm.connection, xwm.window,
+                            xwm.atoms[ATOM_WM_S0].value, XCB_CURRENT_TIME);
+    xcb_flush(xwm.connection);
 
     return true;
 
