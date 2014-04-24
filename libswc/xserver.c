@@ -52,7 +52,7 @@ static struct
     struct wl_resource * resource;
     int display;
     char display_name[16];
-    int abstract_socket, unix_socket;
+    int abstract_fd, unix_fd;
 } xserver;
 
 static char * xserver_command[] = {
@@ -110,7 +110,7 @@ static bool open_display()
     goto begin;
 
   retry2:
-    close(xserver.abstract_socket);
+    close(xserver.abstract_fd);
   retry1:
     unlink(lock_name);
   retry0:
@@ -143,14 +143,14 @@ static bool open_display()
     addr.sun_path[0] = '\0';
     path_size = snprintf(addr.sun_path + 1, sizeof addr.sun_path - 1,
                          SOCKET_FMT, xserver.display);
-    if ((xserver.abstract_socket = open_socket(&addr, path_size)) < 0)
+    if ((xserver.abstract_fd = open_socket(&addr, path_size)) < 0)
         goto retry1;
 
     /* Bind to unix socket */
     mkdir(SOCKET_DIR, 0777);
     path_size = snprintf(addr.sun_path, sizeof addr.sun_path,
                          SOCKET_FMT, xserver.display);
-    if ((xserver.unix_socket = open_socket(&addr, path_size)) < 0)
+    if ((xserver.unix_fd = open_socket(&addr, path_size)) < 0)
         goto retry2;
 
     snprintf(xserver.display_name, sizeof xserver.display_name,
@@ -164,8 +164,8 @@ static void close_display()
 {
     char path[64];
 
-    close(xserver.abstract_socket);
-    close(xserver.unix_socket);
+    close(xserver.abstract_fd);
+    close(xserver.unix_fd);
 
     snprintf(path, sizeof path, SOCKET_FMT, xserver.display);
     unlink(path);
@@ -203,8 +203,8 @@ static void bind_xserver(struct wl_client * client, void * data,
     wl_client_flush(xserver.client);
     xwm_initialize(sv[0]);
 
-    xserver_send_listen_socket(xserver.resource, xserver.abstract_socket);
-    xserver_send_listen_socket(xserver.resource, xserver.unix_socket);
+    xserver_send_listen_socket(xserver.resource, xserver.abstract_fd);
+    xserver_send_listen_socket(xserver.resource, xserver.unix_fd);
 }
 
 static bool start_xserver()
