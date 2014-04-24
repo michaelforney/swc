@@ -6,8 +6,6 @@ protocol/swc-protocol.c
 protocol/swc-server-protocol.h
 protocol/wayland-drm-protocol.c
 protocol/wayland-drm-server-protocol.h
-protocol/xserver-protocol.c
-protocol/xserver-server-protocol.h
 
 /.deps/
 /swc.pc

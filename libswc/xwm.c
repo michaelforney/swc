@@ -29,14 +29,17 @@
 #include "util.h"
 #include "view.h"
 #include "window.h"
+#include "xserver.h"
 
 #include <stdio.h>
 #include <xcb/composite.h>
 #include <xcb/xcb_ewmh.h>
+#include <xcb/xcb_icccm.h>
 
 struct xwl_window
 {
     xcb_window_t id;
+    uint32_t surface_id;
     bool override_redirect;
     struct wl_list link;
 
@@ -50,6 +53,7 @@ struct xwl_window
 enum atom
 {
     ATOM_WM_S0,
+    ATOM_WL_SURFACE_ID,
 };
 
 static struct
@@ -65,10 +69,11 @@ static struct
         const char * name;
         xcb_intern_atom_cookie_t cookie;
         xcb_atom_t value;
-    } atoms[1];
+    } atoms[2];
 } xwm = {
     .atoms = {
         [ATOM_WM_S0] = "WM_S0",
+        [ATOM_WL_SURFACE_ID] = "WL_SURFACE_ID",
     }
 };
 
@@ -100,6 +105,135 @@ static struct xwl_window * find_window(struct wl_list * list, xcb_window_t id)
     return NULL;
 }
 
+static struct xwl_window * find_window_by_surface_id(struct wl_list * list,
+                                                     uint32_t id)
+{
+    struct xwl_window * window;
+
+    wl_list_for_each(window, list, link)
+    {
+        if (window->surface_id == id)
+            return window;
+    }
+
+    return NULL;
+}
+
+static void configure(struct window * window,
+                      const struct swc_rectangle * geometry)
+{
+    uint32_t mask, values[4];
+    struct xwl_window * xwl_window
+        = CONTAINER_OF(window, typeof(*xwl_window), window);
+
+    mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
+         | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+    values[0] = geometry->x;
+    values[1] = geometry->y;
+    values[2] = geometry->width;
+    values[3] = geometry->height;
+
+    xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
+    xcb_flush(xwm.connection);
+}
+
+static void focus(struct window * window)
+{
+    xcb_window_t id = window ? CONTAINER_OF(window, struct xwl_window,
+                                            window)->id
+                             : XCB_NONE;
+
+    xcb_set_input_focus(xwm.connection, XCB_INPUT_FOCUS_NONE,
+                        id, XCB_CURRENT_TIME);
+    xcb_flush(xwm.connection);
+}
+
+static const struct window_impl xwl_window_handler = {
+    .configure = &configure,
+    .focus = &focus
+};
+
+static void handle_surface_destroy(struct wl_listener * listener, void * data)
+{
+    struct xwl_window * xwl_window
+        = CONTAINER_OF(listener, typeof(*xwl_window), surface_destroy_listener);
+
+    window_finalize(&xwl_window->window);
+    wl_list_remove(&xwl_window->link);
+    wl_list_insert(&xwm.unpaired_windows, &xwl_window->link);
+    xwl_window->surface_id = 0;
+}
+
+static bool manage_window(struct xwl_window * xwl_window)
+{
+    struct wl_resource * resource;
+    struct swc_surface * surface;
+    xcb_get_geometry_cookie_t geometry_cookie;
+    xcb_get_geometry_reply_t * geometry_reply;
+
+    resource = wl_client_get_object(swc.xserver->client,
+                                    xwl_window->surface_id);
+
+    if (!resource)
+        return false;
+
+    surface = wl_resource_get_user_data(resource);
+    geometry_cookie = xcb_get_geometry(xwm.connection, xwl_window->id);
+
+    window_initialize(&xwl_window->window, &xwl_window_handler, surface);
+    xwl_window->surface_destroy_listener.notify = &handle_surface_destroy;
+    wl_resource_add_destroy_listener(surface->resource,
+                                     &xwl_window->surface_destroy_listener);
+
+    if ((geometry_reply = xcb_get_geometry_reply(xwm.connection,
+                                                 geometry_cookie, NULL)))
+    {
+        view_move(surface->view, geometry_reply->x, geometry_reply->y);
+        free(geometry_reply);
+    }
+
+    if (xwl_window->override_redirect)
+        compositor_view_show(xwl_window->window.view);
+    else
+    {
+        uint32_t mask, values[1];
+
+        mask = XCB_CW_EVENT_MASK;
+        values[0] = XCB_EVENT_MASK_PROPERTY_CHANGE;
+        xcb_change_window_attributes(xwm.connection, xwl_window->id,
+                                     mask, values);
+        mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
+        values[0] = 0;
+        xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
+        update_name(xwl_window);
+
+        window_set_state(&xwl_window->window, SWC_WINDOW_STATE_NORMAL);
+    }
+
+    wl_list_remove(&xwl_window->link);
+    wl_list_insert(&xwm.windows, &xwl_window->link);
+
+    return true;
+}
+
+static void handle_new_surface(struct wl_listener * listener, void * data)
+{
+    struct swc_surface * surface = data;
+    struct xwl_window * window;
+
+    window = find_window_by_surface_id(&xwm.unpaired_windows,
+                                       wl_resource_get_id(surface->resource));
+
+    if (!window)
+        return;
+
+    manage_window(window);
+}
+
+static struct wl_listener new_surface_listener = {
+    .notify = &handle_new_surface
+};
+
 /* X event handlers */
 static void create_notify(xcb_create_notify_event_t * event)
 {
@@ -109,6 +243,7 @@ static void create_notify(xcb_create_notify_event_t * event)
         return;
 
     xwl_window->id = event->window;
+    xwl_window->surface_id = 0;
     xwl_window->override_redirect = event->override_redirect;
     wl_list_insert(&xwm.unpaired_windows, &xwl_window->link);
 }
@@ -152,6 +287,20 @@ static void property_notify(xcb_property_notify_event_t * event)
     }
 }
 
+static void client_message(xcb_client_message_event_t * event)
+{
+    if (event->type == xwm.atoms[ATOM_WL_SURFACE_ID].value)
+    {
+        struct xwl_window * xwl_window;
+
+        if (!(xwl_window = find_window(&xwm.unpaired_windows, event->window)))
+            return;
+
+        xwl_window->surface_id = event->data.data32[0];
+        manage_window(xwl_window);
+    }
+}
+
 static int connection_data(int fd, uint32_t mask, void * data)
 {
     xcb_generic_event_t * event;
@@ -175,6 +324,10 @@ static int connection_data(int fd, uint32_t mask, void * data)
                 break;
             case XCB_PROPERTY_NOTIFY:
                 property_notify((xcb_property_notify_event_t *) event);
+                break;
+            case XCB_CLIENT_MESSAGE:
+                client_message((xcb_client_message_event_t *) event);
+                break;
         }
 
         free(event);
@@ -301,6 +454,8 @@ bool xwm_initialize(int fd)
                             xwm.atoms[ATOM_WM_S0].value, XCB_CURRENT_TIME);
     xcb_flush(xwm.connection);
 
+    wl_signal_add(&swc.compositor->signal.new_surface, &new_surface_listener);
+
     return true;
 
   error3:
@@ -318,93 +473,5 @@ void xwm_finalize()
     wl_event_source_remove(xwm.source);
     xcb_ewmh_connection_wipe(&xwm.ewmh);
     xcb_disconnect(xwm.connection);
-}
-
-static void configure(struct window * window,
-                      const struct swc_rectangle * geometry)
-{
-    uint32_t mask, values[4];
-    struct xwl_window * xwl_window
-        = CONTAINER_OF(window, typeof(*xwl_window), window);
-
-    mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
-         | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-    values[0] = geometry->x;
-    values[1] = geometry->y;
-    values[2] = geometry->width;
-    values[3] = geometry->height;
-
-    xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
-    xcb_flush(xwm.connection);
-}
-
-static void focus(struct window * window)
-{
-    xcb_window_t id = window ? CONTAINER_OF(window, struct xwl_window,
-                                            window)->id
-                             : XCB_NONE;
-
-    xcb_set_input_focus(xwm.connection, XCB_INPUT_FOCUS_NONE,
-                        id, XCB_CURRENT_TIME);
-    xcb_flush(xwm.connection);
-}
-
-static const struct window_impl xwl_window_handler = {
-    .configure = &configure,
-    .focus = &focus
-};
-
-static void handle_surface_destroy(struct wl_listener * listener, void * data)
-{
-    struct xwl_window * xwl_window
-        = CONTAINER_OF(listener, typeof(*xwl_window), surface_destroy_listener);
-
-    window_finalize(&xwl_window->window);
-    wl_list_remove(&xwl_window->link);
-    wl_list_insert(&xwm.unpaired_windows, &xwl_window->link);
-}
-
-void xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
-{
-    struct xwl_window * xwl_window;
-    xcb_get_geometry_cookie_t geometry_cookie;
-    xcb_get_geometry_reply_t * geometry_reply;
-
-    if (!(xwl_window = find_window(&xwm.unpaired_windows, id)))
-        return;
-
-    geometry_cookie = xcb_get_geometry(xwm.connection, id);
-
-    window_initialize(&xwl_window->window, &xwl_window_handler, surface);
-    xwl_window->surface_destroy_listener.notify = &handle_surface_destroy;
-    wl_resource_add_destroy_listener(surface->resource,
-                                     &xwl_window->surface_destroy_listener);
-
-    if ((geometry_reply = xcb_get_geometry_reply(xwm.connection,
-                                                 geometry_cookie, NULL)))
-    {
-        view_move(surface->view, geometry_reply->x, geometry_reply->y);
-        free(geometry_reply);
-    }
-
-    if (xwl_window->override_redirect)
-        compositor_view_show(xwl_window->window.view);
-    else
-    {
-        uint32_t mask, values[1];
-
-        mask = XCB_CW_EVENT_MASK;
-        values[0] = XCB_EVENT_MASK_PROPERTY_CHANGE;
-        xcb_change_window_attributes(xwm.connection, id, mask, values);
-        mask = XCB_CONFIG_WINDOW_BORDER_WIDTH;
-        values[0] = 0;
-        xcb_configure_window(xwm.connection, id, mask, values);
-        update_name(xwl_window);
-
-        window_set_state(&xwl_window->window, SWC_WINDOW_STATE_NORMAL);
-    }
-
-    wl_list_remove(&xwl_window->link);
-    wl_list_insert(&xwm.windows, &xwl_window->link);
 }
 

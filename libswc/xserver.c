@@ -39,7 +39,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <wayland-server.h>
-#include "protocol/xserver-server-protocol.h"
 
 #define LOCK_FMT    "/tmp/.X%d-lock"
 #define SOCKET_DIR  "/tmp/.X11-unix"
@@ -47,30 +46,14 @@
 
 static struct
 {
-    struct wl_global * global;
-    struct wl_client * client;
     struct wl_resource * resource;
+    struct wl_event_source * usr1_source;
     int display;
     char display_name[16];
-    int abstract_fd, unix_fd;
+    int abstract_fd, unix_fd, wm_fd;
 } xserver;
 
-static char * xserver_command[] = {
-    "X", "-wayland", "-rootless", "-nolisten", "all", xserver.display_name, NULL
-};
-
-static void set_window_id(struct wl_client * client,
-                          struct wl_resource * resource,
-                          struct wl_resource * surface_resource, uint32_t id)
-{
-    struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
-
-    xwm_manage_window(id, surface);
-}
-
-const static struct xserver_interface xserver_implementation = {
-    .set_window_id = &set_window_id
-};
+struct swc_xserver swc_xserver;
 
 static int open_socket(struct sockaddr_un * addr, size_t path_size)
 {
@@ -175,41 +158,22 @@ static void close_display()
     unsetenv("DISPLAY");
 }
 
-static void bind_xserver(struct wl_client * client, void * data,
-                         uint32_t version, uint32_t id)
+static int handle_usr1(int signal_number, void * data)
 {
-    int sv[2];
+    if (!xwm_initialize(xserver.wm_fd))
+    {
+        ERROR("Failed to initialize X window manager\n");
+        /* XXX: How do we handle this case? */
+    }
 
-    if (client != xserver.client)
-        return;
+    wl_event_source_remove(xserver.usr1_source);
 
-    if (version >= 1)
-        version = 1;
-
-    DEBUG("Binding X server\n");
-
-    xserver.resource = wl_resource_create(client, &xserver_interface,
-                                          version, id);
-    wl_resource_set_implementation(xserver.resource, &xserver_implementation,
-                                   NULL, NULL);
-
-    /* Start the X window manager */
-    socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
-    xserver_send_client(xserver.resource, sv[1]);
-    close(sv[1]);
-
-    /* Need to flush the xserver client so the X window manager can connect to
-     * it's socket. */
-    wl_client_flush(xserver.client);
-    xwm_initialize(sv[0]);
-
-    xserver_send_listen_socket(xserver.resource, xserver.abstract_fd);
-    xserver_send_listen_socket(xserver.resource, xserver.unix_fd);
+    return 0;
 }
 
-static bool start_xserver()
+bool xserver_initialize()
 {
-    int sv[2];
+    int wl[2], wm[2];
 
     /* Open an X display */
     if (!open_display())
@@ -218,68 +182,108 @@ static bool start_xserver()
         goto error0;
     }
 
-    /* Start the X server */
-    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, sv) == -1)
+    xserver.usr1_source = wl_event_loop_add_signal(swc.event_loop, SIGUSR1,
+                                                   &handle_usr1, NULL);
+
+    if (!xserver.usr1_source)
     {
-        ERROR("Failed to create socketpair: %s\n", strerror(errno));
+        ERROR("Failed to create SIGUSR1 event source\n");
         goto error1;
     }
 
-    if (!(xserver.client = wl_client_create(swc.display, sv[0])))
+    /* Open a socket for the Wayland connection from Xwayland. */
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, wl) != 0)
+    {
+        ERROR("Failed to create socketpair: %s\n", strerror(errno));
         goto error2;
+    }
 
+    /* Open a socket for the X connection to Xwayland. */
+    if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, wm) != 0)
+    {
+        ERROR("Failed to create socketpair: %s\n", strerror(errno));
+        goto error3;
+    }
+
+    if (!(swc_xserver.client = wl_client_create(swc.display, wl[0])))
+        goto error4;
+
+    xserver.wm_fd = wm[0];
+
+    /* Start the X server */
     switch (fork())
     {
         case 0:
         {
-            int socket_fd;
-            char socket_string[32];
+            int fds[] = { wl[1], wm[1], xserver.abstract_fd, xserver.unix_fd };
+            char strings[ARRAY_LENGTH(fds)][16];
+            unsigned index;
+            struct sigaction action = { .sa_handler = SIG_IGN };
 
-            if (!(socket_fd = dup(sv[1])))
-                exit(EXIT_FAILURE);
+            /* Unset the FD_CLOEXEC flag on the FDs that will get passed to
+             * Xwayland. */
+            for (index = 0; index < ARRAY_LENGTH(fds); ++index)
+            {
+                if (fcntl(fds[index], F_SETFD, 0) != 0)
+                {
+                    ERROR("fcntl() failed: %s\n", strerror(errno));
+                    goto fail;
+                }
 
-            snprintf(socket_string, sizeof socket_string, "%d", socket_fd);
-            setenv("WAYLAND_SOCKET", socket_string, true);
+                if (snprintf(strings[index], sizeof strings[index],
+                             "%d", fds[index]) >= sizeof strings[index])
+                {
+                    ERROR("FD is too large\n");
+                    goto fail;
+                }
+            }
 
-            execvp(xserver_command[0], xserver_command);
+            /* Ignore the USR1 signal so that Xwayland will send a USR1 signal
+             * to the parent process (us) after it finishes initializing. See
+             * Xserver(1) for more details. */
+            if (sigaction(SIGUSR1, &action, NULL) != 0)
+            {
+                ERROR("Failed to set SIGUSR1 handler to SIG_IGN: %s\n",
+                      strerror(errno));
+                goto fail;
+            }
+
+            setenv("WAYLAND_SOCKET", strings[0], true);
+            execlp("Xwayland", "Xwayland",
+                   xserver.display_name,
+                   "-rootless",
+                   "-terminate",
+                   "-listen", strings[2],
+                   "-listen", strings[3],
+                   "-wm", strings[1],
+                   NULL);
+
+          fail:
             exit(EXIT_FAILURE);
-
-            break;
         }
         case -1:
             ERROR("fork() failed when trying to start X server: %s\n",
                   strerror(errno));
-            goto error2;
+            goto error5;
     }
 
-    close(sv[1]);
+    close(wl[1]);
+    close(wm[1]);
 
     return true;
 
+  error5:
+    wl_client_destroy(swc_xserver.client);
+  error4:
+    close(wm[1]);
+    close(wm[0]);
+  error3:
+    close(wl[1]);
+    close(wl[0]);
   error2:
-    close(sv[1]);
-    close(sv[0]);
+    wl_event_source_remove(xserver.usr1_source);
   error1:
     close_display();
-  error0:
-    return false;
-}
-
-bool xserver_initialize()
-{
-    xserver.global = wl_global_create(swc.display, &xserver_interface, 1,
-                                      NULL, &bind_xserver);
-
-    if (!xserver.global)
-        goto error0;
-
-    if (!start_xserver())
-        goto error1;
-
-    return true;
-
-  error1:
-    wl_global_destroy(xserver.global);
   error0:
     return false;
 }
@@ -288,6 +292,6 @@ void xserver_finalize()
 {
     xwm_finalize();
     close_display();
-    wl_global_destroy(xserver.global);
+    wl_client_destroy(swc_xserver.client);
 }
 

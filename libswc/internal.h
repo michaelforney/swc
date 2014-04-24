@@ -41,6 +41,10 @@ struct swc
     struct swc_compositor * const compositor;
     struct swc_shm * const shm;
     struct swc_drm * const drm;
+
+#ifdef ENABLE_XWAYLAND
+    const struct swc_xserver * const xserver;
+#endif
 };
 
 extern struct swc swc;

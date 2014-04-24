@@ -4,8 +4,7 @@ dir := protocol
 
 PROTOCOL_EXTENSIONS =           \
     $(dir)/swc.xml              \
-    $(dir)/wayland-drm.xml      \
-    $(dir)/xserver.xml
+    $(dir)/wayland-drm.xml
 
 $(dir)_TARGETS := $(PROTOCOL_EXTENSIONS:%.xml=%-protocol.c) \
                   $(PROTOCOL_EXTENSIONS:%.xml=%-server-protocol.h)

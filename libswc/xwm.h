@@ -25,14 +25,9 @@
 #define SWC_XWM_H
 
 #include <stdbool.h>
-#include <xcb/xcb.h>
-
-struct swc_surface;
 
 bool xwm_initialize(int fd);
 void xwm_finalize();
-
-void xwm_manage_window(xcb_window_t window, struct swc_surface * surface);
 
 #endif
 

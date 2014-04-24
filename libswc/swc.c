@@ -47,6 +47,9 @@ extern const struct swc_bindings swc_bindings;
 extern struct swc_compositor swc_compositor;
 extern struct swc_drm swc_drm;
 extern struct swc_shm swc_shm;
+#ifdef ENABLE_XWAYLAND
+extern struct swc_xserver swc_xserver;
+#endif
 
 struct swc swc = {
     .launch = &swc_launch,
@@ -54,7 +57,10 @@ struct swc swc = {
     .bindings = &swc_bindings,
     .compositor = &swc_compositor,
     .drm = &swc_drm,
-    .shm = &swc_shm
+    .shm = &swc_shm,
+#ifdef ENABLE_XWAYLAND
+    .xserver = &swc_xserver,
+#endif
 };
 
 static void setup_compositor()
