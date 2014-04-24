@@ -65,7 +65,7 @@ static void set_window_id(struct wl_client * client,
 {
     struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
 
-    swc_xwm_manage_window(id, surface);
+    xwm_manage_window(id, surface);
 }
 
 const static struct xserver_interface xserver_implementation = {
@@ -201,7 +201,7 @@ static void bind_xserver(struct wl_client * client, void * data,
     /* Need to flush the xserver client so the X window manager can connect to
      * it's socket. */
     wl_client_flush(xserver.client);
-    swc_xwm_initialize(sv[0]);
+    xwm_initialize(sv[0]);
 
     xserver_send_listen_socket(xserver.resource, xserver.abstract_socket);
     xserver_send_listen_socket(xserver.resource, xserver.unix_socket);
@@ -265,7 +265,7 @@ static bool start_xserver()
     return false;
 }
 
-bool swc_xserver_initialize()
+bool xserver_initialize()
 {
     xserver.global = wl_global_create(swc.display, &xserver_interface, 1,
                                       NULL, &bind_xserver);
@@ -284,9 +284,9 @@ bool swc_xserver_initialize()
     return false;
 }
 
-void swc_xserver_finalize()
+void xserver_finalize()
 {
-    swc_xwm_finalize();
+    xwm_finalize();
     close_display();
     wl_global_destroy(xserver.global);
 }

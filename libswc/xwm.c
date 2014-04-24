@@ -170,7 +170,7 @@ static int connection_data(int fd, uint32_t mask, void * data)
     return count;
 }
 
-bool swc_xwm_initialize(int fd)
+bool xwm_initialize(int fd)
 {
     const xcb_setup_t * setup;
     xcb_screen_iterator_t screen_iterator;
@@ -263,7 +263,7 @@ bool swc_xwm_initialize(int fd)
     return false;
 }
 
-void swc_xwm_finalize()
+void xwm_finalize()
 {
     wl_event_source_remove(xwm.source);
     xcb_ewmh_connection_wipe(&xwm.ewmh);
@@ -314,7 +314,7 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
     wl_list_insert(&xwm.unpaired_windows, &xwl_window->link);
 }
 
-void swc_xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
+void xwm_manage_window(xcb_window_t id, struct swc_surface * surface)
 {
     struct xwl_window * xwl_window;
     xcb_get_geometry_cookie_t geometry_cookie;

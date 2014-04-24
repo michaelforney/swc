@@ -156,7 +156,7 @@ bool swc_initialize(struct wl_display * display,
     }
 
 #ifdef ENABLE_XWAYLAND
-    if (!swc_xserver_initialize())
+    if (!xserver_initialize())
     {
         ERROR("Could not initialize xwayland\n");
         goto error10;
@@ -197,7 +197,7 @@ EXPORT
 void swc_finalize()
 {
 #ifdef ENABLE_XWAYLAND
-    swc_xserver_finalize();
+    xserver_finalize();
 #endif
     panel_manager_finalize();
     swc_shell_finalize();

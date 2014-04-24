@@ -29,10 +29,10 @@
 
 struct swc_surface;
 
-bool swc_xwm_initialize(int fd);
-void swc_xwm_finalize();
+bool xwm_initialize(int fd);
+void xwm_finalize();
 
-void swc_xwm_manage_window(xcb_window_t window, struct swc_surface * surface);
+void xwm_manage_window(xcb_window_t window, struct swc_surface * surface);
 
 #endif
 
