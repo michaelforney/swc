@@ -83,13 +83,17 @@ static void update_name(struct xwl_window * xwl_window)
     xcb_ewmh_get_utf8_strings_reply_t wm_name_reply;
 
     wm_name_cookie = xcb_ewmh_get_wm_name(&xwm.ewmh, xwl_window->id);
-    xcb_ewmh_get_wm_name_reply(&xwm.ewmh, wm_name_cookie,
-                               &wm_name_reply, NULL);
 
-    window_set_title(&xwl_window->window,
-                     wm_name_reply.strings, wm_name_reply.strings_len);
+    if (xcb_ewmh_get_wm_name_reply(&xwm.ewmh, wm_name_cookie,
+                                   &wm_name_reply, NULL))
+    {
+        window_set_title(&xwl_window->window,
+                         wm_name_reply.strings, wm_name_reply.strings_len);
 
-    xcb_ewmh_get_utf8_strings_reply_wipe(&wm_name_reply);
+        xcb_ewmh_get_utf8_strings_reply_wipe(&wm_name_reply);
+    }
+    else
+        window_set_title(&xwl_window->window, NULL, 0);
 }
 
 static struct xwl_window * find_window(struct wl_list * list, xcb_window_t id)
