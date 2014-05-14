@@ -311,8 +311,14 @@ static void set_cursor(struct wl_client * client,
     }
 }
 
+static void release(struct wl_client * client, struct wl_resource * resource)
+{
+    wl_resource_destroy(resource);
+}
+
 static struct wl_pointer_interface pointer_implementation = {
-    .set_cursor = &set_cursor
+    .set_cursor = &set_cursor,
+    .release = &release,
 };
 
 static void unbind(struct wl_resource * resource)
@@ -327,7 +333,7 @@ struct wl_resource * pointer_bind(struct pointer * pointer,
 {
     struct wl_resource * client_resource;
 
-    client_resource = wl_resource_create(client, &wl_pointer_interface, 1, id);
+    client_resource = wl_resource_create(client, &wl_pointer_interface, 3, id);
     wl_resource_set_implementation(client_resource, &pointer_implementation,
                                    pointer, &unbind);
     input_focus_add_resource(&pointer->focus, client_resource);

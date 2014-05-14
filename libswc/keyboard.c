@@ -158,6 +158,15 @@ void keyboard_set_focus(struct keyboard * keyboard,
     input_focus_set(&keyboard->focus, view);
 }
 
+static void release(struct wl_client * client, struct wl_resource * resource)
+{
+    wl_resource_destroy(resource);
+}
+
+static struct wl_keyboard_interface keyboard_implementation = {
+    .release = &release,
+};
+
 static void unbind(struct wl_resource * resource)
 {
     struct keyboard * keyboard = wl_resource_get_user_data(resource);
@@ -170,8 +179,9 @@ struct wl_resource * keyboard_bind(struct keyboard * keyboard,
 {
     struct wl_resource * client_resource;
 
-    client_resource = wl_resource_create(client, &wl_keyboard_interface, 1, id);
-    wl_resource_set_implementation(client_resource, NULL, keyboard, &unbind);
+    client_resource = wl_resource_create(client, &wl_keyboard_interface, 3, id);
+    wl_resource_set_implementation(client_resource, &keyboard_implementation,
+                                   keyboard, &unbind);
     input_focus_add_resource(&keyboard->focus, client_resource);
 
     /* Subtract one to remove terminating NULL character. */
