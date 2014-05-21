@@ -9,11 +9,13 @@ install-$(dir):
 .deps/$(dir):
 	@mkdir -p "$@"
 
+$(dir)/%: dir := $(dir)
+
 $(dir)/%.o: $(dir)/%.c | .deps/$(dir)
-	$(compile) $($(@D)_CFLAGS) $($(@D)_PACKAGE_CFLAGS)
+	$(compile) $($(dir)_CFLAGS) $($(dir)_PACKAGE_CFLAGS)
 
 $(dir)/%.lo: $(dir)/%.c | .deps/$(dir)
-	$(compile) -fPIC $($(@D)_CFLAGS) $($(@D)_PACKAGE_CFLAGS)
+	$(compile) -fPIC $($(dir)_CFLAGS) $($(dir)_PACKAGE_CFLAGS)
 
 ifdef $(dir)_PACKAGES
     ifndef $(dir)_PACKAGE_CFLAGS
