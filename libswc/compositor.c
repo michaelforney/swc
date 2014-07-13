@@ -741,13 +741,10 @@ bool handle_motion(struct pointer_handler * handler, uint32_t time,
 {
     struct compositor_view * view;
     bool found = false;
-    int32_t x, y;
+    int32_t x = wl_fixed_to_int(fx), y = wl_fixed_to_int(fy);
 
     wl_list_for_each(view, &compositor.views, link)
     {
-        x = wl_fixed_to_int(fx);
-        y = wl_fixed_to_int(fy);
-
         if (swc_rectangle_contains_point(&view->base.geometry, x, y)
             && pixman_region32_contains_point(&view->surface->state.input,
                                               x - view->base.geometry.x,
