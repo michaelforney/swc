@@ -32,8 +32,6 @@ struct swc
     struct wl_event_loop * event_loop;
     const struct swc_manager * manager;
 
-    struct udev * udev;
-
     struct swc_launch * const launch;
     const struct swc_seat * const seat;
     const struct swc_bindings * const bindings;
