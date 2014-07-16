@@ -100,9 +100,6 @@ $(dir)/$(LIBSWC_SO): $(dir)/$(LIBSWC_LIB)
 $(dir)/$(LIBSWC_LINK): $(dir)/$(LIBSWC_SO)
 	$(call quiet,SYM,ln -sf) $(notdir $<) $@
 
-.PHONY: libswc-shared
-libswc-shared: $($(dir)_SHARED_TARGETS)
-
 .PHONY: install-libswc.a
 install-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)
 	install -m0644 $< "$(DESTDIR)$(LIBDIR)"
