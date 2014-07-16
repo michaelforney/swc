@@ -32,12 +32,15 @@
 #include "pointer.h"
 #include "util.h"
 
+#include <errno.h>
 #include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef ENABLE_HOTPLUGGING
+#include <unistd.h>
+#ifdef ENABLE_LIBINPUT
 # include <libudev.h>
+# include <libinput.h>
 #endif
 
 static struct
@@ -45,10 +48,12 @@ static struct
     char * name;
     uint32_t capabilities;
 
-#ifdef ENABLE_HOTPLUGGING
+#ifdef ENABLE_LIBINPUT
     struct udev * udev;
-    struct udev_monitor * monitor;
-    struct wl_event_source * monitor_source;
+    struct libinput * libinput;
+    struct wl_event_source * libinput_source;
+#else
+    struct wl_list devices;
 #endif
 
     struct keyboard keyboard;
@@ -57,7 +62,6 @@ static struct
 
     struct wl_global * global;
     struct wl_list resources;
-    struct wl_list devices;
 } seat;
 
 const struct swc_seat swc_seat = {
@@ -85,13 +89,6 @@ static void handle_relative_motion(uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
     pointer_handle_relative_motion(&seat.pointer, time, dx, dy);
 }
-
-const static struct swc_evdev_device_handler evdev_handler = {
-    .key = &handle_key,
-    .button = &handle_button,
-    .axis = &handle_axis,
-    .relative_motion = &handle_relative_motion
-};
 
 static void handle_keyboard_focus_event(struct wl_listener * listener,
                                         void * data)
@@ -142,11 +139,22 @@ static struct wl_listener data_device_listener = {
 static void handle_launch_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
-    struct swc_evdev_device * device, * next;
 
     switch (event->type)
     {
+        case SWC_LAUNCH_EVENT_DEACTIVATED:
+#ifdef ENABLE_LIBINPUT
+            libinput_suspend(seat.libinput);
+#endif
+            break;
         case SWC_LAUNCH_EVENT_ACTIVATED:
+        {
+#ifdef ENABLE_LIBINPUT
+            if (libinput_resume(seat.libinput) != 0)
+                WARNING("Failed to resume libinput context\n");
+#else
+            struct swc_evdev_device * device, * next;
+
             /* Re-open all input devices */
             wl_list_for_each_safe(device, next, &seat.devices, link)
             {
@@ -156,8 +164,9 @@ static void handle_launch_event(struct wl_listener * listener, void * data)
                     swc_evdev_device_destroy(device);
                 }
             }
-
+#endif
             break;
+        }
     }
 }
 
@@ -209,6 +218,147 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
     wl_seat_send_capabilities(resource, seat.capabilities);
 }
 
+#ifdef ENABLE_LIBINPUT
+static int open_restricted(const char * path, int flags, void * user_data)
+{
+    return swc_launch_open_device(path, flags);
+}
+
+static void close_restricted(int fd, void * user_data)
+{
+    close(fd);
+}
+
+const struct libinput_interface libinput_interface = {
+    .open_restricted = &open_restricted,
+    .close_restricted = &close_restricted,
+};
+
+static int handle_libinput_data(int fd, uint32_t mask, void * data)
+{
+    struct libinput_event * generic_event;
+
+    if (libinput_dispatch(seat.libinput) != 0)
+    {
+        WARNING("libinput_dispatch failed: %s\n", strerror(errno));
+        return 0;
+    }
+
+    while ((generic_event = libinput_get_event(seat.libinput)))
+    {
+        switch (libinput_event_get_type(generic_event))
+        {
+            case LIBINPUT_EVENT_KEYBOARD_KEY:
+            {
+                struct libinput_event_keyboard * event;
+
+                event = libinput_event_get_keyboard_event(generic_event);
+                handle_key(libinput_event_keyboard_get_time(event),
+                           libinput_event_keyboard_get_key(event),
+                           libinput_event_keyboard_get_key_state(event));
+                break;
+            }
+            case LIBINPUT_EVENT_POINTER_MOTION:
+            {
+                struct libinput_event_pointer * event;
+                wl_fixed_t dx, dy;
+
+                event = libinput_event_get_pointer_event(generic_event);
+                dx = wl_fixed_from_double(libinput_event_pointer_get_dx(event));
+                dy = wl_fixed_from_double(libinput_event_pointer_get_dy(event));
+                handle_relative_motion(libinput_event_pointer_get_time(event),
+                                       dx, dy);
+                break;
+            }
+            case LIBINPUT_EVENT_POINTER_BUTTON:
+            {
+                struct libinput_event_pointer * event;
+
+                event = libinput_event_get_pointer_event(generic_event);
+                handle_button(libinput_event_pointer_get_time(event),
+                              libinput_event_pointer_get_button(event),
+                              libinput_event_pointer_get_button_state(event));
+                break;
+            }
+            case LIBINPUT_EVENT_POINTER_AXIS:
+            {
+                struct libinput_event_pointer * event;
+                wl_fixed_t amount;
+
+                event = libinput_event_get_pointer_event(generic_event);
+                amount = wl_fixed_from_double
+                    (libinput_event_pointer_get_axis_value(event));
+                handle_axis(libinput_event_pointer_get_time(event),
+                            libinput_event_pointer_get_axis(event), amount);
+                break;
+            }
+            default:
+                break;
+        }
+
+        libinput_event_destroy(generic_event);
+    }
+
+    return 0;
+}
+
+bool initialize_libinput(const char * seat_name)
+{
+    if (!(seat.udev = udev_new()))
+    {
+        ERROR("Could not create udev context\n");
+        goto error0;
+    }
+
+    seat.libinput = libinput_udev_create_context(&libinput_interface, NULL,
+                                                 seat.udev);
+
+    if (!seat.libinput)
+    {
+        ERROR("Could not create libinput context\n");
+        goto error1;
+    }
+
+    if (libinput_udev_assign_seat(seat.libinput, seat_name) != 0)
+    {
+        ERROR("Failed to assign seat to libinput context\n");
+        goto error2;
+    }
+
+    seat.libinput_source = wl_event_loop_add_fd
+        (swc.event_loop, libinput_get_fd(seat.libinput), WL_EVENT_READABLE,
+         &handle_libinput_data, NULL);
+
+    if (!seat.libinput_source)
+    {
+        ERROR("Could not create event source for libinput\n");
+        goto error2;
+    }
+
+    return true;
+
+  error2:
+    libinput_unref(seat.libinput);
+  error1:
+    udev_unref(seat.udev);
+  error0:
+    return false;
+}
+
+void finalize_libinput()
+{
+    wl_event_source_remove(seat.libinput_source);
+    libinput_unref(seat.libinput);
+    udev_unref(seat.udev);
+}
+#else
+const static struct swc_evdev_device_handler evdev_handler = {
+    .key = &handle_key,
+    .button = &handle_button,
+    .axis = &handle_axis,
+    .relative_motion = &handle_relative_motion,
+};
+
 static void add_device(const char * path)
 {
     struct swc_evdev_device * device;
@@ -219,15 +369,7 @@ static void add_device(const char * path)
         return;
     }
 
-    if (~seat.capabilities & device->capabilities)
-    {
-        struct wl_resource * resource;
-
-        seat.capabilities |= device->capabilities;
-        wl_list_for_each(resource, &seat.resources, link)
-            wl_seat_send_capabilities(resource, seat.capabilities);
-    }
-
+    update_capabilities(device->capabilities);
     wl_list_insert(&seat.devices, &device->link);
 }
 
@@ -264,104 +406,6 @@ static bool add_devices()
 
     return true;
 }
-
-#ifdef ENABLE_HOTPLUGGING
-static int handle_monitor_data(int fd, uint32_t mask, void * data)
-{
-    struct udev_device * udev_device;
-    const char * path, * action, * sysname;
-    unsigned num;
-
-    if (!(udev_device = udev_monitor_receive_device(seat.monitor)))
-        return 0;
-
-    if (!(action = udev_device_get_action(udev_device)))
-        goto done;
-
-    sysname = udev_device_get_sysname(udev_device);
-
-    if (sscanf(sysname, "event%u", &num) != 1)
-        goto done;
-
-    path = udev_device_get_devnode(udev_device);
-
-    if (strcmp(action, "add") == 0)
-        add_device(path);
-    else if (strcmp(action, "remove") == 0)
-    {
-        struct swc_evdev_device * device, * next;
-
-        wl_list_for_each_safe(device, next, &seat.devices, link)
-        {
-            if (strcmp(device->path, path) == 0)
-            {
-                wl_list_remove(&device->link);
-                swc_evdev_device_destroy(device);
-                break;
-            }
-        }
-    }
-
-  done:
-    udev_device_unref(udev_device);
-    return 0;
-}
-
-bool initialize_monitor()
-{
-    int fd;
-
-    if (!(seat.udev = udev_new()))
-    {
-        ERROR("Could not create udev context\n");
-        goto error0;
-    }
-
-    if (!(seat.monitor = udev_monitor_new_from_netlink(seat.udev, "udev")))
-    {
-        ERROR("Could not create udev monitor\n");
-        goto error1;
-    }
-
-    if (udev_monitor_filter_add_match_subsystem_devtype(seat.monitor,
-                                                        "input", NULL) != 0)
-    {
-        ERROR("Could not set up udev monitor filter\n");
-        goto error2;
-    }
-
-    if (udev_monitor_enable_receiving(seat.monitor) != 0)
-    {
-        ERROR("Could not enable receiving for udev monitor\n");
-        goto error2;
-    }
-
-    fd = udev_monitor_get_fd(seat.monitor);
-    seat.monitor_source = wl_event_loop_add_fd
-        (swc.event_loop, fd, WL_EVENT_READABLE, &handle_monitor_data, NULL);
-
-    if (!seat.monitor_source)
-    {
-        ERROR("Could not create event source for udev monitor\n");
-        goto error2;
-    }
-
-    return true;
-
-  error2:
-    udev_monitor_unref(seat.monitor);
-  error1:
-    udev_unref(seat.udev);
-  error0:
-    return false;
-}
-
-void finalize_monitor()
-{
-    wl_event_source_remove(seat.monitor_source);
-    udev_monitor_unref(seat.monitor);
-    udev_unref(seat.udev);
-}
 #endif
 
 bool swc_seat_initialize(const char * seat_name)
@@ -380,7 +424,6 @@ bool swc_seat_initialize(const char * seat_name)
 
     seat.capabilities = 0;
     wl_list_init(&seat.resources);
-    wl_list_init(&seat.devices);
     wl_signal_add(&swc.launch->event_signal, &launch_listener);
 
     if (!swc_data_device_initialize(&seat.data_device))
@@ -405,21 +448,19 @@ bool swc_seat_initialize(const char * seat_name)
         goto error4;
     }
 
-#ifdef ENABLE_HOTPLUGGING
-    if (!initialize_monitor())
+#ifdef ENABLE_LIBINPUT
+    if (!initialize_libinput(seat.name))
+        goto error5;
+#else
+    wl_list_init(&seat.devices);
+
+    if (!add_devices())
         goto error5;
 #endif
 
-    if (!add_devices())
-        goto error6;
-
     return true;
 
-  error6:
-#ifdef ENABLE_HOTPLUGGING
-    finalize_monitor();
   error5:
-#endif
     pointer_finalize(&seat.pointer);
   error4:
     keyboard_finalize(&seat.keyboard);
@@ -435,16 +476,16 @@ bool swc_seat_initialize(const char * seat_name)
 
 void swc_seat_finalize()
 {
+#ifdef ENABLE_LIBINPUT
+    finalize_libinput();
+#else
     struct swc_evdev_device * device, * tmp;
-
-#ifdef ENABLE_HOTPLUGGING
-    finalize_monitor();
-#endif
-    pointer_finalize(&seat.pointer);
-    keyboard_finalize(&seat.keyboard);
-
     wl_list_for_each_safe(device, tmp, &seat.devices, link)
         swc_evdev_device_destroy(device);
+#endif
+
+    pointer_finalize(&seat.pointer);
+    keyboard_finalize(&seat.keyboard);
 
     wl_global_destroy(seat.global);
     free(seat.name);

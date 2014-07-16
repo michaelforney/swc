@@ -35,7 +35,6 @@ SWC_SOURCES =                       \
     libswc/data_device.c            \
     libswc/data_device_manager.c    \
     libswc/drm.c                    \
-    libswc/evdev_device.c           \
     libswc/framebuffer_plane.c      \
     libswc/input.c                  \
     libswc/keyboard.c               \
@@ -61,9 +60,11 @@ SWC_SOURCES =                       \
     protocol/swc-protocol.c         \
     protocol/wayland-drm-protocol.c
 
-ifeq ($(ENABLE_HOTPLUGGING),1)
-$(dir)_CFLAGS += -DENABLE_HOTPLUGGING
-$(dir)_PACKAGES += libudev
+ifeq ($(ENABLE_LIBINPUT),1)
+$(dir)_CFLAGS += -DENABLE_LIBINPUT
+$(dir)_PACKAGES += libinput libudev
+else
+SWC_SOURCES += libswc/evdev_device.c
 endif
 
 ifeq ($(ENABLE_XWAYLAND),1)
