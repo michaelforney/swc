@@ -31,10 +31,10 @@
 
 enum
 {
-    SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED
+    DATA_DEVICE_EVENT_SELECTION_CHANGED
 };
 
-struct swc_data_device
+struct data_device
 {
     /* The data source corresponding to the current selection. */
     struct wl_resource * selection;
@@ -44,14 +44,14 @@ struct swc_data_device
     struct wl_list resources;
 };
 
-bool swc_data_device_initialize(struct swc_data_device * data_device);
-void swc_data_device_finalize(struct swc_data_device * data_device);
+bool data_device_initialize(struct data_device * data_device);
+void data_device_finalize(struct data_device * data_device);
 
-void swc_data_device_bind(struct swc_data_device * data_device,
-                          struct wl_client * client, uint32_t id);
+void data_device_bind(struct data_device * data_device,
+                      struct wl_client * client, uint32_t id);
 
-void swc_data_device_offer_selection(struct swc_data_device * data_device,
-                                     struct wl_client * client);
+void data_device_offer_selection(struct data_device * data_device,
+                                 struct wl_client * client);
 
 #endif
 

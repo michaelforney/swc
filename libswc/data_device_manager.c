@@ -37,7 +37,7 @@ static void create_data_source(struct wl_client * client,
 {
     struct wl_resource * data_source;
 
-    data_source = swc_data_source_new(client, id);
+    data_source = data_source_new(client, id);
 
     if (!data_source)
         wl_resource_post_no_memory(resource);
@@ -47,7 +47,7 @@ static void get_data_device(struct wl_client * client,
                             struct wl_resource * resource, uint32_t id,
                             struct wl_resource * seat_resource)
 {
-    swc_data_device_bind(swc.seat->data_device, client, id);
+    data_device_bind(swc.seat->data_device, client, id);
 }
 
 static struct wl_data_device_manager_interface
@@ -67,7 +67,7 @@ static void bind_data_device_manager(struct wl_client * client, void * data,
         (resource, &data_device_manager_implementation, NULL, NULL);
 }
 
-bool swc_data_device_manager_initialize()
+bool data_device_manager_initialize()
 {
     data_device_manager.global
         = wl_global_create(swc.display, &wl_data_device_manager_interface, 1,
@@ -76,7 +76,7 @@ bool swc_data_device_manager_initialize()
     return data_device_manager.global != NULL;
 }
 
-void swc_data_device_manager_finalize()
+void data_device_manager_finalize()
 {
     wl_global_destroy(data_device_manager.global);
 }

@@ -30,7 +30,7 @@ struct swc_seat
 {
     struct pointer * pointer;
     struct keyboard * keyboard;
-    struct swc_data_device * data_device;
+    struct data_device * data_device;
 };
 
 bool swc_seat_initialize(const char * seat_name);

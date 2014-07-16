@@ -37,7 +37,7 @@ static void set_selection(struct wl_client * client,
                           struct wl_resource * resource,
                           struct wl_resource * data_source, uint32_t serial)
 {
-    struct swc_data_device * data_device = wl_resource_get_user_data(resource);
+    struct data_device * data_device = wl_resource_get_user_data(resource);
 
     /* Check if this data source is already the current selection. */
     if (data_source == data_device->selection)
@@ -58,7 +58,7 @@ static void set_selection(struct wl_client * client,
     }
 
     swc_send_event(&data_device->event_signal,
-                   SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
+                   DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
 static struct wl_data_device_interface data_device_implementation = {
@@ -68,15 +68,15 @@ static struct wl_data_device_interface data_device_implementation = {
 
 static void handle_selection_destroy(struct wl_listener * listener, void * data)
 {
-    struct swc_data_device * data_device = CONTAINER_OF
+    struct data_device * data_device = CONTAINER_OF
         (listener, typeof(*data_device), selection_destroy_listener);
 
     data_device->selection = NULL;
     swc_send_event(&data_device->event_signal,
-                   SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
+                   DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
-bool swc_data_device_initialize(struct swc_data_device * data_device)
+bool data_device_initialize(struct data_device * data_device)
 {
     data_device->selection_destroy_listener.notify = &handle_selection_destroy;
     wl_signal_init(&data_device->event_signal);
@@ -85,7 +85,7 @@ bool swc_data_device_initialize(struct swc_data_device * data_device)
     return true;
 }
 
-void swc_data_device_finalize(struct swc_data_device * data_device)
+void data_device_finalize(struct data_device * data_device)
 {
     struct wl_resource * resource, * tmp;
 
@@ -93,7 +93,7 @@ void swc_data_device_finalize(struct swc_data_device * data_device)
         wl_resource_destroy(resource);
 }
 
-void swc_data_device_bind(struct swc_data_device * data_device,
+void data_device_bind(struct data_device * data_device,
                           struct wl_client * client, uint32_t id)
 {
     struct wl_resource * resource;
@@ -110,15 +110,15 @@ static struct wl_resource * new_offer(struct wl_resource * resource,
 {
     struct wl_resource * offer;
 
-    offer = swc_data_offer_new(client, source);
+    offer = data_offer_new(client, source);
     wl_data_device_send_data_offer(resource, offer);
-    swc_data_send_mime_types(source, offer);
+    data_send_mime_types(source, offer);
 
     return offer;
 }
 
-void swc_data_device_offer_selection(struct swc_data_device * data_device,
-                                     struct wl_client * client)
+void data_device_offer_selection(struct data_device * data_device,
+                                 struct wl_client * client)
 {
     struct wl_resource * resource;
     struct wl_resource * offer;

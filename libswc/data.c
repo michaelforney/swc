@@ -139,7 +139,7 @@ static struct data * data_new()
     return data;
 }
 
-struct wl_resource * swc_data_source_new(struct wl_client * client, uint32_t id)
+struct wl_resource * data_source_new(struct wl_client * client, uint32_t id)
 {
     struct data * data;
 
@@ -158,8 +158,8 @@ struct wl_resource * swc_data_source_new(struct wl_client * client, uint32_t id)
     return data->source;
 }
 
-struct wl_resource * swc_data_offer_new(struct wl_client * client,
-                                        struct wl_resource * source)
+struct wl_resource * data_offer_new(struct wl_client * client,
+                                    struct wl_resource * source)
 {
     struct data * data = wl_resource_get_user_data(source);
     struct wl_resource * offer;
@@ -172,8 +172,8 @@ struct wl_resource * swc_data_offer_new(struct wl_client * client,
     return offer;
 }
 
-void swc_data_send_mime_types(struct wl_resource * source,
-                              struct wl_resource * offer)
+void data_send_mime_types(struct wl_resource * source,
+                          struct wl_resource * offer)
 {
     struct data * data = wl_resource_get_user_data(source);
     char ** mime_type;

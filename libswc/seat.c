@@ -58,7 +58,7 @@ static struct
 
     struct keyboard keyboard;
     struct pointer pointer;
-    struct swc_data_device data_device;
+    struct data_device data_device;
 
     struct wl_global * global;
     struct wl_list resources;
@@ -105,7 +105,7 @@ static void handle_keyboard_focus_event(struct wl_listener * listener,
                     (event_data->new->surface->resource);
 
                 /* Offer the selection to the new focus. */
-                swc_data_device_offer_selection(&seat.data_device, client);
+                data_device_offer_selection(&seat.data_device, client);
             }
             break;
     }
@@ -121,12 +121,12 @@ static void handle_data_device_event(struct wl_listener * listener, void * data)
 
     switch (event->type)
     {
-        case SWC_DATA_DEVICE_EVENT_SELECTION_CHANGED:
+        case DATA_DEVICE_EVENT_SELECTION_CHANGED:
             if (seat.keyboard.focus.resource)
             {
                 struct wl_client * client
                     = wl_resource_get_client(seat.keyboard.focus.resource);
-                swc_data_device_offer_selection(&seat.data_device, client);
+                data_device_offer_selection(&seat.data_device, client);
             }
             break;
     }
@@ -426,7 +426,7 @@ bool swc_seat_initialize(const char * seat_name)
     wl_list_init(&seat.resources);
     wl_signal_add(&swc.launch->event_signal, &launch_listener);
 
-    if (!swc_data_device_initialize(&seat.data_device))
+    if (!data_device_initialize(&seat.data_device))
     {
         ERROR("Could not initialize data device\n");
         goto error2;
@@ -465,7 +465,7 @@ bool swc_seat_initialize(const char * seat_name)
   error4:
     keyboard_finalize(&seat.keyboard);
   error3:
-    swc_data_device_finalize(&seat.data_device);
+    data_device_finalize(&seat.data_device);
   error2:
     wl_global_destroy(seat.global);
   error1:

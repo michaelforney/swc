@@ -137,7 +137,7 @@ bool swc_initialize(struct wl_display * display,
         goto error5;
     }
 
-    if (!swc_data_device_manager_initialize())
+    if (!data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
         goto error6;
@@ -182,7 +182,7 @@ bool swc_initialize(struct wl_display * display,
   error8:
     swc_seat_finalize();
   error7:
-    swc_data_device_manager_finalize();
+    data_device_manager_finalize();
   error6:
     swc_compositor_finalize();
   error5:
@@ -208,7 +208,7 @@ void swc_finalize()
     panel_manager_finalize();
     swc_shell_finalize();
     swc_seat_finalize();
-    swc_data_device_manager_finalize();
+    data_device_manager_finalize();
     swc_compositor_finalize();
     screens_finalize();
     swc_bindings_finalize();
