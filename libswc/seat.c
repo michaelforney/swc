@@ -486,6 +486,7 @@ void swc_seat_finalize()
 
     pointer_finalize(&seat.pointer);
     keyboard_finalize(&seat.keyboard);
+    data_device_finalize(&seat.data_device);
 
     wl_global_destroy(seat.global);
     free(seat.name);
