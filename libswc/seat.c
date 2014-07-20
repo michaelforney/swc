@@ -218,6 +218,18 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
     wl_seat_send_capabilities(resource, seat.capabilities);
 }
 
+static void update_capabilities(uint32_t capabilities)
+{
+    if (~seat.capabilities & capabilities)
+    {
+        struct wl_resource * resource;
+
+        seat.capabilities |= capabilities;
+        wl_list_for_each(resource, &seat.resources, link)
+            wl_seat_send_capabilities(resource, seat.capabilities);
+    }
+}
+
 #ifdef ENABLE_LIBINPUT
 static int open_restricted(const char * path, int flags, void * user_data)
 {
@@ -234,6 +246,22 @@ const struct libinput_interface libinput_interface = {
     .close_restricted = &close_restricted,
 };
 
+static uint32_t device_capabilities(struct libinput_device * device)
+{
+    uint32_t capabilities = 0;
+
+    if (libinput_device_has_capability(device, LIBINPUT_DEVICE_CAP_KEYBOARD))
+        capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
+    if (libinput_device_has_capability(device, LIBINPUT_DEVICE_CAP_POINTER))
+        capabilities |= WL_SEAT_CAPABILITY_POINTER;
+    /* TODO: Add touch device support
+    if (libinput_device_has_capability(device, LIBINPUT_DEVICE_CAP_TOUCH))
+        capabilities |= WL_SEAT_CAPABILITY_TOUCH;
+    */
+
+    return capabilities;
+}
+
 static int handle_libinput_data(int fd, uint32_t mask, void * data)
 {
     struct libinput_event * generic_event;
@@ -248,6 +276,14 @@ static int handle_libinput_data(int fd, uint32_t mask, void * data)
     {
         switch (libinput_event_get_type(generic_event))
         {
+            case LIBINPUT_EVENT_DEVICE_ADDED:
+            {
+                struct libinput_device * device;
+
+                device = libinput_event_get_device(generic_event);
+                update_capabilities(device_capabilities(device));
+                break;
+            }
             case LIBINPUT_EVENT_KEYBOARD_KEY:
             {
                 struct libinput_event_keyboard * event;
