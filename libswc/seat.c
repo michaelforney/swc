@@ -346,19 +346,13 @@ bool initialize_libinput(const char * seat_name)
         goto error0;
     }
 
-    seat.libinput = libinput_udev_create_context(&libinput_interface, NULL,
-                                                 seat.udev);
+    seat.libinput = libinput_udev_create_for_seat(&libinput_interface, NULL,
+                                                 seat.udev, seat_name);
 
     if (!seat.libinput)
     {
         ERROR("Could not create libinput context\n");
         goto error1;
-    }
-
-    if (libinput_udev_assign_seat(seat.libinput, seat_name) != 0)
-    {
-        ERROR("Failed to assign seat to libinput context\n");
-        goto error2;
     }
 
     seat.libinput_source = wl_event_loop_add_fd
@@ -374,7 +368,7 @@ bool initialize_libinput(const char * seat_name)
     return true;
 
   error2:
-    libinput_unref(seat.libinput);
+    libinput_destroy(seat.libinput);
   error1:
     udev_unref(seat.udev);
   error0:
@@ -384,7 +378,7 @@ bool initialize_libinput(const char * seat_name)
 void finalize_libinput()
 {
     wl_event_source_remove(seat.libinput_source);
-    libinput_unref(seat.libinput);
+    libinput_destroy(seat.libinput);
     udev_unref(seat.udev);
 }
 #else
