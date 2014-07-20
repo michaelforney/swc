@@ -22,6 +22,8 @@ TARGETS         := swc.pc
 SUBDIRS         := launch libswc protocol cursor example
 CLEAN_FILES     := $(TARGETS)
 
+libinput_CONSTRAINTS := >= 0.4
+
 include config.mk
 
 ifeq ($(if $(V),$(V),0), 0)
@@ -50,7 +52,7 @@ compile     = $(call quiet,CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $
               -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
 link        = $(call quiet,CCLD,$(CC)) $(LDFLAGS) -o $@ $^
 pkgconfig   = $(sort $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
-                                           $(shell $(PKG_CONFIG) --$(2) $(pkg)))))
+                $(shell $(PKG_CONFIG) --$(2) $(pkg) "$($(pkg)_CONSTRAINTS)"))))
 
 include $(SUBDIRS:%=%/local.mk)
 
