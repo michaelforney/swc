@@ -51,6 +51,7 @@ static const uint32_t border_color_normal = 0xff888888;
 
 static struct screen * active_screen;
 static struct window * focused_window;
+static struct wl_display * display;
 static struct wl_event_loop * event_loop;
 
 /* This is a basic grid arrange function that tries to give each window an
@@ -245,10 +246,16 @@ static void spawn(void * data, uint32_t time, uint32_t value, uint32_t state)
     }
 }
 
+static void quit(void * data, uint32_t time, uint32_t value, uint32_t state)
+{
+    if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+        return;
+
+    wl_display_terminate(display);
+}
+
 int main(int argc, char * argv[])
 {
-    struct wl_display * display;
-
     display = wl_display_create();
 
     if (!display)
@@ -264,9 +271,12 @@ int main(int argc, char * argv[])
                     &spawn, terminal_command);
     swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_r,
                     &spawn, dmenu_command);
+    swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_q,
+                    &quit, NULL);
 
     event_loop = wl_display_get_event_loop(display);
     wl_display_run(display);
+    wl_display_destroy(display);
 
     return EXIT_SUCCESS;
 }
