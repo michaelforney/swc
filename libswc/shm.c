@@ -77,7 +77,7 @@ static void destroy_pool_resource(struct wl_resource * resource)
 static void handle_buffer_destroy(struct wld_destructor * destructor)
 {
     struct pool_reference * reference
-        = CONTAINER_OF(destructor, typeof(*reference), destructor);
+        = wl_container_of(destructor, reference, destructor);
 
     unref_pool(reference->pool);
 }

@@ -37,16 +37,13 @@
 static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct compositor_view * view)
 {
-    struct pointer * pointer;
+    struct pointer * pointer = wl_container_of(handler, pointer, focus_handler);
     uint32_t serial;
     wl_fixed_t surface_x, surface_y;
 
-    pointer = CONTAINER_OF(handler, typeof(*pointer), focus_handler);
     serial = wl_display_next_serial(swc.display);
-
     surface_x = pointer->x - wl_fixed_from_int(view->base.geometry.x);
     surface_y = pointer->y - wl_fixed_from_int(view->base.geometry.y);
-
     wl_pointer_send_enter(resource, serial, view->surface->resource,
                           surface_x, surface_y);
 }
@@ -65,7 +62,7 @@ static void handle_cursor_surface_destroy(struct wl_listener * listener,
                                           void * data)
 {
     struct pointer * pointer
-        = CONTAINER_OF(listener, typeof(*pointer), cursor.destroy_listener);
+        = wl_container_of(listener, pointer, cursor.destroy_listener);
 
     view_attach(&pointer->cursor.view, NULL);
     pointer->cursor.surface = NULL;
@@ -78,8 +75,7 @@ static bool update(struct view * view)
 
 static bool attach(struct view * view, struct wld_buffer * buffer)
 {
-    struct pointer * pointer
-        = CONTAINER_OF(view, typeof(*pointer), cursor.view);
+    struct pointer * pointer = wl_container_of(view, pointer, cursor.view);
     struct swc_surface * surface = pointer->cursor.surface;
 
     if (surface && !pixman_region32_not_empty(&surface->state.damage))
@@ -160,7 +156,7 @@ static bool client_handle_button
      struct press * press, uint32_t state)
 {
     struct pointer * pointer
-        = CONTAINER_OF(handler, typeof(*pointer), client_handler);
+        = wl_container_of(handler, pointer, client_handler);
 
     if (!pointer->focus.resource)
         return false;
@@ -175,7 +171,7 @@ static bool client_handle_axis(struct pointer_handler * handler,
                                uint32_t time, uint32_t axis, wl_fixed_t amount)
 {
     struct pointer * pointer
-        = CONTAINER_OF(handler, typeof(*pointer), client_handler);
+        = wl_container_of(handler, pointer, client_handler);
 
     if (!pointer->focus.resource)
         return false;
@@ -189,7 +185,7 @@ static bool client_handle_motion(struct pointer_handler * handler,
                                  uint32_t time, wl_fixed_t x, wl_fixed_t y)
 {
     struct pointer * pointer
-        = CONTAINER_OF(handler, typeof(*pointer), client_handler);
+        = wl_container_of(handler, pointer, client_handler);
 
     if (!pointer->focus.resource)
         return false;
@@ -207,7 +203,7 @@ bool pointer_initialize(struct pointer * pointer)
     struct screen * screen;
 
     /* Center cursor in the geometry of the first screen. */
-    screen = CONTAINER_OF(swc.screens.next, typeof(*screen), link);
+    screen = wl_container_of(swc.screens.next, screen, link);
     pointer->x = wl_fixed_from_int
         (screen->base.geometry.x + screen->base.geometry.width / 2);
     pointer->y = wl_fixed_from_int

@@ -114,7 +114,7 @@ static void set_fullscreen(struct wl_client * client,
     struct screen * screen;
 
     screen = output ? output->screen
-                    : CONTAINER_OF(swc.screens.next, typeof(*screen), link);
+                    : wl_container_of(swc.screens.next, screen, link);
 
     /* TODO: Handle fullscreen windows. */
 
@@ -188,7 +188,7 @@ static void configure(struct window * window,
                       const struct swc_rectangle * geometry)
 {
     struct shell_surface * shell_surface
-        = CONTAINER_OF(window, typeof(*shell_surface), window);
+        = wl_container_of(window, shell_surface, window);
 
     wl_shell_surface_send_configure(shell_surface->resource,
                                     WL_SHELL_SURFACE_RESIZE_NONE,
@@ -201,8 +201,8 @@ static const struct window_impl shell_window_impl = {
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
-    struct shell_surface * shell_surface = CONTAINER_OF
-        (listener, typeof(*shell_surface), surface_destroy_listener);
+    struct shell_surface * shell_surface
+        = wl_container_of(listener, shell_surface, surface_destroy_listener);
 
     wl_resource_destroy(shell_surface->resource);
 }

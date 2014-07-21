@@ -98,7 +98,7 @@ static void handle_screen_event(struct wl_listener * listener, void * data)
     if (event->type == SWC_SCREEN_DESTROYED)
     {
         struct target * target
-            = CONTAINER_OF(listener, typeof(*target), screen_listener);
+            = wl_container_of(listener, target, screen_listener);
 
         wld_destroy_surface(target->surface);
         free(target);
@@ -111,16 +111,14 @@ static struct target * target_get(struct screen * screen)
         = wl_signal_get(&screen->base.event_signal, &handle_screen_event);
     struct target * target;
 
-    return listener ? CONTAINER_OF(listener, typeof(*target), screen_listener)
-                    : NULL;
+    return listener ? wl_container_of(listener, target, screen_listener) : NULL;
 }
 
 static void handle_screen_view_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
     struct view_event_data * event_data = event->data;
-    struct target * target
-        = CONTAINER_OF(listener, typeof(*target), view_listener);
+    struct target * target = wl_container_of(listener, target, view_listener);
 
     switch (event->type)
     {

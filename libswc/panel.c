@@ -89,7 +89,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     struct swc_output * output = output_resource
         ? wl_resource_get_user_data(output_resource) : NULL;
     struct screen * screen = output
-        ? output->screen : CONTAINER_OF(swc.screens.next, struct screen, link);
+        ? output->screen : wl_container_of(swc.screens.next, screen, link);
     bool screen_changed = screen != panel->screen;
     uint32_t length;
 
@@ -169,7 +169,7 @@ static void modify(struct screen_modifier * modifier,
                    const struct swc_rectangle * geometry,
                    pixman_region32_t * usable)
 {
-    struct panel * panel = CONTAINER_OF(modifier, typeof(*panel), modifier);
+    struct panel * panel = wl_container_of(modifier, panel, modifier);
     pixman_box32_t box = {
         .x1 = geometry->x, .y1 = geometry->y,
         .x2 = geometry->x + geometry->width,
@@ -222,10 +222,8 @@ static void destroy_panel(struct wl_resource * resource)
 
 static void handle_view_event(struct wl_listener * listener, void * data)
 {
-    struct panel * panel;
+    struct panel * panel = wl_container_of(listener, panel, view_listener);
     struct swc_event * event = data;
-
-    panel = CONTAINER_OF(listener, typeof(*panel), view_listener);
 
     switch (event->type)
     {
@@ -237,9 +235,9 @@ static void handle_view_event(struct wl_listener * listener, void * data)
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
-    struct panel * panel;
+    struct panel * panel
+        = wl_container_of(listener, panel, surface_destroy_listener);
 
-    panel = CONTAINER_OF(listener, typeof(*panel), surface_destroy_listener);
     wl_resource_destroy(panel->resource);
 }
 

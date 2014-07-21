@@ -187,7 +187,7 @@ static bool move_motion(struct pointer_handler * handler, uint32_t time,
                         wl_fixed_t fx, wl_fixed_t fy)
 {
     struct window * window
-        = CONTAINER_OF(handler, typeof(*window), move.interaction.handler);
+        = wl_container_of(handler, window, move.interaction.handler);
 
     view_move(&window->view->base, wl_fixed_to_int(fx) + window->move.offset.x,
                                    wl_fixed_to_int(fy) + window->move.offset.y);
@@ -207,7 +207,7 @@ static bool handle_button(struct pointer_handler * handler, uint32_t time,
                           struct press * press, uint32_t state)
 {
     struct window_pointer_interaction * interaction
-        = CONTAINER_OF(handler, typeof(*interaction), handler);
+        = wl_container_of(handler, interaction, handler);
 
     if (state != WL_POINTER_BUTTON_STATE_RELEASED
         || !interaction->original_handler)

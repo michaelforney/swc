@@ -66,7 +66,7 @@ static void handle_focus_view_destroy(struct wl_listener * listener,
                                       void * data)
 {
     struct input_focus * input_focus
-        = CONTAINER_OF(listener, typeof(*input_focus), view_destroy_listener);
+        = wl_container_of(listener, input_focus, view_destroy_listener);
 
     input_focus->resource = NULL;
     input_focus->view = NULL;

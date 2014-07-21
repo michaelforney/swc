@@ -58,17 +58,6 @@
 # define DEBUG(format, ...)
 #endif
 
-#ifdef offsetof
-# define OFFSET_OF offsetof
-#else
-# define OFFSET_OF __builtin_offsetof
-#endif
-
-#define CONTAINER_OF(ptr, type, member) ({                                  \
-    const typeof(((type *) 0)->member) *__mptr = (ptr);                     \
-    ((type *) ((uintptr_t) __mptr - OFFSET_OF(type, member)));              \
-})
-
 #define ARRAY_LENGTH(array) (sizeof (array) / sizeof (array)[0])
 
 struct wl_resource;

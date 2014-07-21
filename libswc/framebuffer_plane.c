@@ -50,7 +50,7 @@ static bool framebuffer_export(struct wld_exporter * exporter,
                                uint32_t type, union wld_object * object)
 {
     struct framebuffer * framebuffer
-        = CONTAINER_OF(exporter, typeof(*framebuffer), exporter);
+        = wl_container_of(exporter, framebuffer, exporter);
 
     switch (type)
     {
@@ -66,7 +66,7 @@ static bool framebuffer_export(struct wld_exporter * exporter,
 static void framebuffer_destroy(struct wld_destructor * destructor)
 {
     struct framebuffer * framebuffer
-        = CONTAINER_OF(destructor, typeof(*framebuffer), destructor);
+        = wl_container_of(destructor, framebuffer, destructor);
 
     drmModeRmFB(swc.drm->fd, framebuffer->id);
     free(framebuffer);
@@ -86,8 +86,7 @@ static void send_frame(void * data)
 
 static bool attach(struct view * view, struct wld_buffer * buffer)
 {
-    struct framebuffer_plane * plane
-        = CONTAINER_OF(view, typeof(*plane), view);
+    struct framebuffer_plane * plane = wl_container_of(view, plane, view);
     union wld_object object;
 
     if (!wld_export(buffer, WLD_USER_OBJECT_FRAMEBUFFER, &object))
@@ -163,7 +162,7 @@ const static struct view_impl view_impl = {
 static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
 {
     struct framebuffer_plane * plane
-        = CONTAINER_OF(handler, typeof(*plane), drm_handler);
+        = wl_container_of(handler, plane, drm_handler);
 
     view_frame(&plane->view, time);
 }
@@ -172,7 +171,7 @@ static void handle_launch_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
     struct framebuffer_plane * plane
-        = CONTAINER_OF(listener, typeof(*plane), launch_listener);
+        = wl_container_of(listener, plane, launch_listener);
 
     switch (event->type)
     {

@@ -38,7 +38,7 @@ static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct compositor_view * view)
 {
     struct keyboard * keyboard
-        = CONTAINER_OF(handler, typeof(*keyboard), focus_handler);
+        = wl_container_of(handler, keyboard, focus_handler);
     uint32_t serial;
 
     serial = wl_display_next_serial(swc.display);

@@ -42,7 +42,7 @@ static void handle_buffer_destroy(struct wl_listener * listener, void * data)
 {
     struct swc_surface_state * state;
 
-    state = CONTAINER_OF(listener, typeof(*state), buffer_destroy_listener);
+    state = wl_container_of(listener, state, buffer_destroy_listener);
     state->buffer = NULL;
 }
 
@@ -299,7 +299,7 @@ static void surface_destroy(struct wl_resource * resource)
 static void handle_view_event(struct wl_listener * listener, void * data)
 {
     struct swc_surface * surface
-        = CONTAINER_OF(listener, typeof(*surface), view_listener);
+        = wl_container_of(listener, surface, view_listener);
     struct swc_event * event = data;
     struct view_event_data * event_data = event->data;
 

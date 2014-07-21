@@ -58,7 +58,7 @@ struct swc_xserver swc_xserver;
 static int open_socket(struct sockaddr_un * addr, size_t path_size)
 {
     int fd;
-    socklen_t size = OFFSET_OF(typeof(*addr), sun_path) + path_size + 1;
+    socklen_t size = offsetof(typeof(*addr), sun_path) + path_size + 1;
 
     if ((fd = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0)) < 0)
         goto error0;

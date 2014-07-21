@@ -128,7 +128,7 @@ static void configure(struct window * window,
 {
     uint32_t mask, values[4];
     struct xwl_window * xwl_window
-        = CONTAINER_OF(window, typeof(*xwl_window), window);
+        = wl_container_of(window, xwl_window, window);
 
     mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
          | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
@@ -143,9 +143,9 @@ static void configure(struct window * window,
 
 static void focus(struct window * window)
 {
-    xcb_window_t id = window ? CONTAINER_OF(window, struct xwl_window,
-                                            window)->id
-                             : XCB_NONE;
+    struct xwl_window * xwl_window
+        = wl_container_of(window, xwl_window, window);
+    xcb_window_t id = window ? xwl_window->id : XCB_NONE;
 
     xcb_set_input_focus(xwm.connection, XCB_INPUT_FOCUS_NONE,
                         id, XCB_CURRENT_TIME);
@@ -160,7 +160,7 @@ static const struct window_impl xwl_window_handler = {
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
     struct xwl_window * xwl_window
-        = CONTAINER_OF(listener, typeof(*xwl_window), surface_destroy_listener);
+        = wl_container_of(listener, xwl_window, surface_destroy_listener);
 
     window_finalize(&xwl_window->window);
     wl_list_remove(&xwl_window->link);

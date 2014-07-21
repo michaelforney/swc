@@ -40,7 +40,7 @@ static bool update(struct view * view)
 
 static bool attach(struct view * view, struct wld_buffer * buffer)
 {
-    struct cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
+    struct cursor_plane * plane = wl_container_of(view, plane, view);
 
     if (buffer)
     {
@@ -75,7 +75,7 @@ static bool attach(struct view * view, struct wld_buffer * buffer)
 
 static bool move(struct view * view, int32_t x, int32_t y)
 {
-    struct cursor_plane * plane = CONTAINER_OF(view, typeof(*plane), view);
+    struct cursor_plane * plane = wl_container_of(view, plane, view);
 
     if (drmModeMoveCursor(swc.drm->fd, plane->crtc,
                           x - plane->origin->x, y - plane->origin->y) != 0)
@@ -99,7 +99,7 @@ static void handle_launch_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
     struct cursor_plane * plane
-        = CONTAINER_OF(listener, typeof(*plane), launch_listener);
+        = wl_container_of(listener, plane, launch_listener);
 
     switch (event->type)
     {
