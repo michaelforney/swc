@@ -58,6 +58,9 @@ struct screen
         struct cursor_plane cursor;
     } planes;
 
+    struct wl_global * global;
+    struct wl_list resources;
+
     struct wl_list outputs;
     struct wl_list modifiers;
     struct wl_list link;

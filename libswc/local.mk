@@ -84,8 +84,8 @@ SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 
 # Explicitly state dependencies on generated files
 objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
+$(call objects,compositor panel_manager panel screen): protocol/swc-server-protocol.h
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
-$(call objects,panel_manager panel): protocol/swc-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)

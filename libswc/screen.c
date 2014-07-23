@@ -28,6 +28,7 @@
 #include "mode.h"
 #include "output.h"
 #include "util.h"
+#include "protocol/swc-server-protocol.h"
 
 #include <stdlib.h>
 #include <sys/param.h>
@@ -55,6 +56,28 @@ void screens_finalize()
         screen_destroy(screen);
 }
 
+static void bind_screen(struct wl_client * client, void * data,
+                        uint32_t version, uint32_t id)
+{
+    struct screen * screen = data;
+    struct wl_resource * resource;
+
+    if (version >= 1)
+        version = 1;
+
+    resource = wl_resource_create(client, &swc_screen_interface, version, id);
+
+    if (!resource)
+    {
+        wl_client_post_no_memory(client);
+        return;
+    }
+
+    wl_resource_set_implementation(resource, NULL,
+                                   screen, &swc_remove_resource);
+    wl_list_insert(&screen->resources, wl_resource_get_link(resource));
+}
+
 struct screen * screen_new(uint32_t crtc, struct swc_output * output)
 {
     struct screen * screen;
@@ -67,25 +90,35 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
     if (!(screen = malloc(sizeof *screen)))
         goto error0;
 
-    wl_signal_init(&screen->base.event_signal);
-    wl_list_init(&screen->outputs);
-    wl_list_insert(&screen->outputs, &output->link);
-    wl_list_init(&screen->modifiers);
+    screen->global = wl_global_create(swc.display, &swc_screen_interface, 1,
+                                      screen, &bind_screen);
+
+    if (!screen->global)
+    {
+        ERROR("Failed to create screen global\n");
+        goto error1;
+    }
 
     if (!framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
                                       output->preferred_mode,
                                       &output->connector, 1))
     {
         ERROR("Failed to initialize framebuffer plane\n");
-        goto error1;
+        goto error2;
     }
 
     if (!cursor_plane_initialize(&screen->planes.cursor, crtc,
                                  &screen->base.geometry))
     {
         ERROR("Failed to initialize cursor plane\n");
-        goto error2;
+        goto error3;
     }
+
+    wl_signal_init(&screen->base.event_signal);
+    wl_list_init(&screen->resources);
+    wl_list_init(&screen->outputs);
+    wl_list_insert(&screen->outputs, &output->link);
+    wl_list_init(&screen->modifiers);
 
     view_move(&screen->planes.framebuffer.view, x, 0);
     screen->base.geometry = screen->planes.framebuffer.view.geometry;
@@ -95,8 +128,10 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
 
     return screen;
 
-  error2:
+  error3:
     framebuffer_plane_finalize(&screen->planes.framebuffer);
+  error2:
+    wl_global_destroy(screen->global);
   error1:
     free(screen);
   error0:

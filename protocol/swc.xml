@@ -22,6 +22,14 @@
         SOFTWARE.
     </copyright>
 
+    <interface name="swc_screen" version="1">
+        <description summary="an area in which windows may be placed">
+            A screen represents an area in which windows may be placed. It
+            corresponds to one or monitors displaying the same content (in
+            mirror mode).
+        </description>
+    </interface>
+
     <interface name="swc_panel_manager" version="1">
         <request name="create_panel">
             <arg name="id" type="new_id" interface="swc_panel" />
