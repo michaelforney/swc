@@ -433,9 +433,11 @@ bool xwm_initialize(int fd)
                       0, 0, 1, 1, 0, XCB_WINDOW_CLASS_INPUT_ONLY,
                       XCB_COPY_FROM_PARENT, 0, NULL);
 
-    if (!xcb_ewmh_init_atoms_replies(&xwm.ewmh, ewmh_cookies, NULL))
+    xcb_ewmh_init_atoms_replies(&xwm.ewmh, ewmh_cookies, &error);
+
+    if (error)
     {
-        ERROR("xwm: Failed to get EWMH atom replies\n");
+        ERROR("xwm: Failed to get EWMH atom replies: %u\n", error->error_code);
         goto error3;
     }
 
