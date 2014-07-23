@@ -47,7 +47,7 @@
 
         <request name="dock">
             <arg name="edge" type="uint" />
-            <arg name="output" type="object" interface="wl_output"
+            <arg name="screen" type="object" interface="swc_screen"
                  allow-null="true" />
             <arg name="focus" type="uint" />
         </request>

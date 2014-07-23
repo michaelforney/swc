@@ -82,14 +82,13 @@ static void update_position(struct panel * panel)
 }
 
 static void dock(struct wl_client * client, struct wl_resource * resource,
-                 uint32_t edge, struct wl_resource * output_resource,
+                 uint32_t edge, struct wl_resource * screen_resource,
                  uint32_t focus)
 {
     struct panel * panel = wl_resource_get_user_data(resource);
-    struct swc_output * output = output_resource
-        ? wl_resource_get_user_data(output_resource) : NULL;
-    struct screen * screen = output
-        ? output->screen : wl_container_of(swc.screens.next, screen, link);
+    struct screen * screen = screen_resource
+        ? wl_resource_get_user_data(screen_resource)
+        : wl_container_of(swc.screens.next, screen, link);
     bool screen_changed = screen != panel->screen;
     uint32_t length;
 
