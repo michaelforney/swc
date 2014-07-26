@@ -8,6 +8,7 @@ PROTOCOL_EXTENSIONS =           \
 
 $(dir)_TARGETS := $(PROTOCOL_EXTENSIONS:%.xml=%-protocol.c) \
                   $(PROTOCOL_EXTENSIONS:%.xml=%-server-protocol.h)
+$(dir)_PACKAGES := wayland-server
 
 $(dir)/%-protocol.c: $(dir)/%.xml
 	$(call quiet,GEN,$(WAYLAND_SCANNER)) code < $< > $@
