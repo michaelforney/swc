@@ -253,6 +253,10 @@ void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
         }
     }
 
+    /* If we get a unpaired release event, just ignore it. */
+    if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
+        return;
+
     key = wl_array_add(&keyboard->keys, sizeof *key);
 
     if (!key)
