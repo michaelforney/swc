@@ -63,6 +63,10 @@ static int open_socket(struct sockaddr_un * addr, size_t path_size)
     if ((fd = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0)) < 0)
         goto error0;
 
+    /* Unlink the socket location in case it was being used by a process which
+     * left around a stale lockfile. */
+    unlink(addr->sun_path);
+
     if (bind(fd, (struct sockaddr *) addr, size) < 0)
         goto error1;
 
@@ -107,12 +111,34 @@ static bool open_display()
     snprintf(lock_name, sizeof lock_name, LOCK_FMT, xserver.display);
     lock_fd = open(lock_name, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0444);
 
-    /* XXX: Stale lockfile handling? */
-    if (lock_fd < 0)
-        goto retry0;
+    if (lock_fd == -1)
+    {
+        char * end;
+        pid_t owner;
+
+        /* Check if the owning process is still alive. */
+        if ((lock_fd = open(lock_name, O_RDONLY)) == -1)
+            goto retry0;
+
+        if (read(lock_fd, pid, sizeof pid - 1) != sizeof pid - 1)
+            goto retry0;
+
+        owner = strtol(pid, &end, 10);
+
+        if (end != pid + 10)
+            goto retry0;
+
+        if (kill(owner, 0) == 0 || errno != ESRCH)
+            goto retry0;
+
+        if (unlink(lock_name) != 0)
+            goto retry0;
+
+        goto begin;
+    }
 
     snprintf(pid, sizeof pid, "%10d\n", getpid());
-    if (write(lock_fd, pid, sizeof pid) != sizeof pid)
+    if (write(lock_fd, pid, sizeof pid - 1) != sizeof pid - 1)
     {
         ERROR("Failed to write PID file\n");
         unlink(lock_name);
