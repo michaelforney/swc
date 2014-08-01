@@ -30,7 +30,7 @@
 /* Keycodes are offset by 8 in XKB. */
 #define XKB_KEY(key) ((key) + 8)
 
-struct swc_xkb
+struct xkb
 {
     struct xkb_context * context;
     struct xkb_state * state;
@@ -49,10 +49,10 @@ struct swc_xkb
     } indices;
 };
 
-bool swc_xkb_initialize(struct swc_xkb * xkb);
-void swc_xkb_finalize(struct swc_xkb * xkb);
+bool xkb_initialize(struct xkb * xkb);
+void xkb_finalize(struct xkb * xkb);
 
-bool swc_xkb_update_keymap(struct swc_xkb * xkb);
+bool xkb_update_keymap(struct xkb * xkb);
 
 #endif
 

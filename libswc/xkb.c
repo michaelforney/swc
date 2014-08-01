@@ -36,7 +36,7 @@ const struct xkb_rule_names rule_names = {
 
 static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
 
-bool swc_xkb_initialize(struct swc_xkb * xkb)
+bool xkb_initialize(struct xkb * xkb)
 {
     xkb->context = xkb_context_new(0);
 
@@ -62,7 +62,7 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
         goto error2;
     }
 
-    if (!swc_xkb_update_keymap(xkb))
+    if (!xkb_update_keymap(xkb))
     {
         ERROR("Could not update XKB keymap\n");
         goto error3;
@@ -80,7 +80,7 @@ bool swc_xkb_initialize(struct swc_xkb * xkb)
     return false;
 }
 
-void swc_xkb_finalize(struct swc_xkb * xkb)
+void xkb_finalize(struct xkb * xkb)
 {
     munmap(xkb->keymap.area, xkb->keymap.size);
     close(xkb->keymap.fd);
@@ -89,7 +89,7 @@ void swc_xkb_finalize(struct swc_xkb * xkb)
     xkb_context_unref(xkb->context);
 }
 
-bool swc_xkb_update_keymap(struct swc_xkb * xkb)
+bool xkb_update_keymap(struct xkb * xkb)
 {
     const char * keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
     char * keymap_string;
@@ -158,7 +158,7 @@ bool swc_xkb_update_keymap(struct swc_xkb * xkb)
     return false;
 }
 
-void swc_xkb_update_key_indices(struct swc_xkb * xkb)
+void xkb_update_key_indices(struct xkb * xkb)
 {
 }
 

@@ -113,7 +113,7 @@ static bool client_handle_modifiers
 
 bool keyboard_initialize(struct keyboard * keyboard)
 {
-    if (!swc_xkb_initialize(&keyboard->xkb))
+    if (!xkb_initialize(&keyboard->xkb))
     {
         ERROR("Could not initialize XKB\n");
         goto error0;
@@ -136,7 +136,7 @@ bool keyboard_initialize(struct keyboard * keyboard)
     return true;
 
   error1:
-    swc_xkb_finalize(&keyboard->xkb);
+    xkb_finalize(&keyboard->xkb);
   error0:
     return false;
 }
@@ -146,7 +146,7 @@ void keyboard_finalize(struct keyboard * keyboard)
     wl_array_release(&keyboard->client_keys);
     wl_array_release(&keyboard->keys);
     input_focus_finalize(&keyboard->focus);
-    swc_xkb_finalize(&keyboard->xkb);
+    xkb_finalize(&keyboard->xkb);
 }
 
 /**
@@ -198,7 +198,7 @@ void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
     struct key * key;
     struct keyboard_modifier_state modifier_state;
     enum xkb_key_direction direction;
-    struct swc_xkb * xkb = &keyboard->xkb;
+    struct xkb * xkb = &keyboard->xkb;
     struct keyboard_handler * handler;
     uint32_t serial;
 

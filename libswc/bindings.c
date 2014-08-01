@@ -80,7 +80,7 @@ static struct binding * find_binding(struct wl_array * bindings,
 static struct binding * find_key_binding(uint32_t modifiers, uint32_t key)
 {
     struct binding * binding;
-    struct swc_xkb * xkb = &swc.seat->keyboard->xkb;
+    struct xkb * xkb = &swc.seat->keyboard->xkb;
     xkb_keysym_t keysym;
 
     /* First try the keysym the keymap generates in it's current state. */

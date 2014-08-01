@@ -61,7 +61,7 @@ struct keyboard
 {
     struct input_focus focus;
     struct input_focus_handler focus_handler;
-    struct swc_xkb xkb;
+    struct xkb xkb;
 
     struct wl_array keys;
     struct wl_list handlers;
