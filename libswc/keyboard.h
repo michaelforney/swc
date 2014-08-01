@@ -74,6 +74,7 @@ struct keyboard
 
 bool keyboard_initialize(struct keyboard * keyboard);
 void keyboard_finalize(struct keyboard * keyboard);
+void keyboard_reset(struct keyboard * keyboard);
 void keyboard_set_focus(struct keyboard * keyboard,
                         struct compositor_view * view);
 struct wl_resource * keyboard_bind(struct keyboard * keyboard,

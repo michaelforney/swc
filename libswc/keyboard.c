@@ -31,6 +31,7 @@
 #include "keyboard.h"
 #include "util.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -147,6 +148,34 @@ void keyboard_finalize(struct keyboard * keyboard)
     wl_array_release(&keyboard->keys);
     input_focus_finalize(&keyboard->focus);
     xkb_finalize(&keyboard->xkb);
+}
+
+void keyboard_reset(struct keyboard * keyboard)
+{
+    struct key * key;
+    uint32_t time = swc_time();
+
+    /* Send simulated key release events for all current key handlers. */
+    wl_array_for_each(key, &keyboard->keys)
+    {
+        if (key->handler)
+        {
+            key->press.serial = wl_display_next_serial(swc.display);
+            key->handler->key(keyboard, time, &key->press,
+                              WL_KEYBOARD_KEY_STATE_RELEASED);
+            /* Don't bother updating the XKB state because we will be resetting
+             * it later on and it is unlikely that a key handler cares about the
+             * keyboard state for release events. */
+        }
+    }
+
+    /* We should have removed all the client keys by calling the client key
+     * handler. */
+    assert(keyboard->client_keys.size == 0);
+    keyboard->keys.size = 0;
+    keyboard->modifier_state = (struct keyboard_modifier_state) { };
+    keyboard->modifiers = 0;
+    xkb_reset_state(&keyboard->xkb);
 }
 
 /**

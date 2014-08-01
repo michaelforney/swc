@@ -146,6 +146,7 @@ static void handle_launch_event(struct wl_listener * listener, void * data)
 #ifdef ENABLE_LIBINPUT
             libinput_suspend(seat.libinput);
 #endif
+            keyboard_reset(&seat.keyboard);
             break;
         case SWC_LAUNCH_EVENT_ACTIVATED:
         {

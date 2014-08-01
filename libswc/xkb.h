@@ -51,6 +51,7 @@ struct xkb
 
 bool xkb_initialize(struct xkb * xkb);
 void xkb_finalize(struct xkb * xkb);
+bool xkb_reset_state(struct xkb * xkb);
 
 bool xkb_update_keymap(struct xkb * xkb);
 

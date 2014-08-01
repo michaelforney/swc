@@ -89,6 +89,21 @@ void xkb_finalize(struct xkb * xkb)
     xkb_context_unref(xkb->context);
 }
 
+bool xkb_reset_state(struct xkb * xkb)
+{
+    struct xkb_state * state;
+
+    if (!(state = xkb_state_new(xkb->keymap.map)))
+    {
+        ERROR("Failed to allocate new XKB state\n");
+        return false;
+    }
+
+    xkb_state_unref(xkb->state);
+    xkb->state = state;
+    return true;
+}
+
 bool xkb_update_keymap(struct xkb * xkb)
 {
     const char * keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
