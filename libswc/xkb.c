@@ -158,7 +158,3 @@ bool xkb_update_keymap(struct xkb * xkb)
     return false;
 }
 
-void xkb_update_key_indices(struct xkb * xkb)
-{
-}
-
