@@ -59,25 +59,22 @@ static void leave(struct input_focus_handler * handler,
 static bool client_handle_key(struct keyboard * keyboard, uint32_t time,
                               struct press * press, uint32_t state)
 {
-    uint32_t * client_key;
+    uint32_t * key;
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
-        client_key = wl_array_add(&keyboard->client_keys, sizeof *client_key);
-
-        if (!client_key)
+        if (!(key = wl_array_add(&keyboard->client_keys, sizeof *key)))
             return false;
 
-        *client_key = press->value;
+        *key = press->value;
     }
     else
     {
-        wl_array_for_each(client_key, &keyboard->client_keys)
+        wl_array_for_each(key, &keyboard->client_keys)
         {
-            if (*client_key == press->value)
+            if (*key == press->value)
             {
-                swc_array_remove(&keyboard->client_keys,
-                                 client_key, sizeof *client_key);
+                swc_array_remove(&keyboard->client_keys, key, sizeof *key);
                 break;
             }
         }
@@ -257,9 +254,7 @@ void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
     if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
         return;
 
-    key = wl_array_add(&keyboard->keys, sizeof *key);
-
-    if (!key)
+    if (!(key = wl_array_add(&keyboard->keys, sizeof *key)))
         goto update_xkb_state;
 
     key->press.value = value;
