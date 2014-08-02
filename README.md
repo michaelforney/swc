@@ -19,7 +19,8 @@ Dependencies
 * [wld](http://github.com/michaelforney/wld)
 * linux\[>=3.12\] (for EVIOCREVOKE)
 
-For input hotplugging support, the following is also required:
+For input hotplugging and touchpad support, the following is also required:
+* libinput
 * libudev
 
 For XWayland support, the following are also required:
@@ -90,5 +91,5 @@ TODO
 * Better multi-screen support, including mirroring and screen arrangement
 * Mouse button bindings
 * Resizing/moving windows by dragging
-* Touchpad support
+* Implement xdg_shell
 
