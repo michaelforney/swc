@@ -508,8 +508,8 @@ int main(int argc, char * argv[])
         sprintf(string, "%d", launcher.tty_fd);
         setenv(SWC_LAUNCH_TTY_FD_ENV, string, 1);
 
-        setuid(getuid());
-        setgid(getgid());
+        if (setuid(getuid()) != 0 || setgid(getgid()) != 0)
+            die("Failed to drop permission before executing display server");
 
         execvp(argv[optind], argv + optind);
         die("Could not exec %s", argv[optind]);
