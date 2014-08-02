@@ -169,9 +169,9 @@ static void handle_usr1(int signal)
 {
     struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_DEACTIVATE };
 
+    send(launcher.socket, &event, sizeof event, 0);
     stop_devices(true);
     ioctl(launcher.tty_fd, VT_RELDISP, 1);
-    send(launcher.socket, &event, sizeof event, 0);
 }
 
 static void handle_usr2(int signal)
