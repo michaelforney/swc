@@ -176,6 +176,8 @@ void swc_add_binding(enum swc_binding_type type,
         case SWC_BINDING_BUTTON:
             bindings = &button_bindings;
             break;
+        default:
+            return;
     }
 
     binding = wl_array_add(bindings, sizeof *binding);
