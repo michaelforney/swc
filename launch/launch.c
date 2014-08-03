@@ -78,7 +78,8 @@ static void __attribute__((noreturn,format(printf,1,2)))
 
 static void __attribute__((noreturn)) usage(const char * name)
 {
-    fprintf(stderr, "Usage: %s [-h] [--] <server> [server arguments...]\n", name);
+    fprintf(stderr, "Usage: %s [-s <server-socket>] [--] "
+                    "<server> [server arguments...]\n", name);
     exit(EXIT_FAILURE);
 }
 
@@ -427,10 +428,13 @@ int main(int argc, char * argv[])
     struct sigaction action = { 0 };
     sigset_t set;
 
-    while ((option = getopt(argc, argv, "h")) != -1)
+    while ((option = getopt(argc, argv, "hs:")) != -1)
     {
         switch (option)
         {
+            case 's':
+                setenv("WAYLAND_DISPLAY", optarg, true);
+                break;
             case 'h':
             default:
                 usage(argv[0]);
