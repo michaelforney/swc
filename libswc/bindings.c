@@ -29,6 +29,7 @@
 #include "seat.h"
 #include "util.h"
 
+#include <errno.h>
 #include <wayland-util.h>
 
 struct binding
@@ -161,9 +162,9 @@ void swc_bindings_finalize()
 }
 
 EXPORT
-void swc_add_binding(enum swc_binding_type type,
-                     uint32_t modifiers, uint32_t value,
-                     swc_binding_handler_t handler, void * data)
+int swc_add_binding(enum swc_binding_type type,
+                    uint32_t modifiers, uint32_t value,
+                    swc_binding_handler_t handler, void * data)
 {
     struct binding * binding;
     struct wl_array * bindings;
@@ -177,13 +178,17 @@ void swc_add_binding(enum swc_binding_type type,
             bindings = &button_bindings;
             break;
         default:
-            return;
+            return -EINVAL;
     }
 
-    binding = wl_array_add(bindings, sizeof *binding);
+    if (!(binding = wl_array_add(bindings, sizeof *binding)))
+        return -ENOMEM;
+
     binding->value = value;
     binding->modifiers = modifiers;
     binding->handler = handler;
     binding->data = data;
+
+    return 0;
 }
 

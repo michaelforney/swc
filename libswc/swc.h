@@ -231,9 +231,14 @@ enum swc_binding_type
 typedef void (* swc_binding_handler_t)(void * data, uint32_t time,
                                        uint32_t value, uint32_t state);
 
-void swc_add_binding(enum swc_binding_type type,
-                     uint32_t modifiers, uint32_t value,
-                     swc_binding_handler_t handler, void * data);
+/**
+ * Register a new input binding.
+ *
+ * Returns 0 on success, negative error code otherwise.
+ */
+int swc_add_binding(enum swc_binding_type type,
+                    uint32_t modifiers, uint32_t value,
+                    swc_binding_handler_t handler, void * data);
 
 /* }}} */
 
