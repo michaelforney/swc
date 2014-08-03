@@ -95,7 +95,7 @@ struct view
 struct view_impl
 {
     bool (* update)(struct view * view);
-    bool (* attach)(struct view * view, struct wld_buffer * buffer);
+    int (* attach)(struct view * view, struct wld_buffer * buffer);
     bool (* move)(struct view * view, int32_t x, int32_t y);
 };
 
@@ -104,9 +104,9 @@ struct view_impl
  *
  * If buffer is NULL, the previous buffer is removed from the view.
  *
- * @return Whether or not the buffer was successfully attached to the view.
+ * @return 0 on success, negative error code otherwise.
  */
-bool view_attach(struct view * view, struct wld_buffer * buffer);
+int view_attach(struct view * view, struct wld_buffer * buffer);
 
 /**
  * Display a new frame consisting of the currently attached buffer.

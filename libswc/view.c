@@ -47,9 +47,11 @@ void view_finalize(struct view * view)
         wld_buffer_unreference(view->buffer);
 }
 
-bool view_attach(struct view * view, struct wld_buffer * buffer)
+int view_attach(struct view * view, struct wld_buffer * buffer)
 {
-    if (view->impl->attach(view, buffer))
+    int ret;
+
+    if ((ret = view->impl->attach(view, buffer)) == 0)
     {
         if (view->buffer)
             wld_buffer_unreference(view->buffer);
@@ -58,10 +60,9 @@ bool view_attach(struct view * view, struct wld_buffer * buffer)
             wld_buffer_reference(buffer);
 
         view->buffer = buffer;
-        return true;
     }
-    else
-        return false;
+
+    return ret;
 }
 
 bool view_update(struct view * view)

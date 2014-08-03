@@ -38,9 +38,10 @@ static bool update(struct view * view)
     return true;
 }
 
-static bool attach(struct view * view, struct wld_buffer * buffer)
+static int attach(struct view * view, struct wld_buffer * buffer)
 {
     struct cursor_plane * plane = wl_container_of(view, plane, view);
+    int ret;
 
     if (buffer)
     {
@@ -49,28 +50,31 @@ static bool attach(struct view * view, struct wld_buffer * buffer)
         if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object))
         {
             ERROR("Could not get export buffer to DRM handle\n");
-            return false;
+            /* XXX: Not the best error code, but we don't know better until wld
+             * returns an actual error code. */
+            return -EINVAL;
         }
 
-        if (drmModeSetCursor(swc.drm->fd, plane->crtc, object.u32,
-                             buffer->width, buffer->height) != 0)
+        ret = drmModeSetCursor(swc.drm->fd, plane->crtc, object.u32,
+                               buffer->width, buffer->height);
+
+        if (ret < 0)
         {
-            ERROR("Could not set cursor: %s\n", strerror(errno));
-            return false;
+            ERROR("Could not set cursor: %s\n", strerror(-ret));
+            return ret;
         }
     }
     else
     {
-        if (drmModeSetCursor(swc.drm->fd, plane->crtc, 0, 0, 0) != 0)
+        if ((ret = drmModeSetCursor(swc.drm->fd, plane->crtc, 0, 0, 0)) < 0)
         {
-            ERROR("Could not unset cursor: %s\n", strerror(errno));
-            return false;
+            ERROR("Could not unset cursor: %s\n", strerror(-ret));
+            return ret;
         }
     }
 
     view_set_size_from_buffer(view, buffer);
-
-    return true;
+    return 0;
 }
 
 static bool move(struct view * view, int32_t x, int32_t y)

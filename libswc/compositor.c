@@ -43,6 +43,7 @@
 #include "util.h"
 #include "view.h"
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -273,8 +274,8 @@ static void renderer_repaint(struct target * target,
     wld_flush(swc.drm->renderer);
 }
 
-static bool renderer_attach(struct compositor_view * view,
-                            struct wld_buffer * client_buffer)
+static int renderer_attach(struct compositor_view * view,
+                           struct wld_buffer * client_buffer)
 {
     struct wld_buffer * buffer;
     bool was_proxy = view->buffer != view->base.buffer;
@@ -300,7 +301,7 @@ static bool renderer_attach(struct compositor_view * view,
                                            client_buffer->format, WLD_FLAG_MAP);
 
                 if (!buffer)
-                    return false;
+                    return -ENOMEM;
             }
             else
             {
@@ -324,7 +325,7 @@ static bool renderer_attach(struct compositor_view * view,
 
     view->buffer = buffer;
 
-    return true;
+    return 0;
 }
 
 static void renderer_flush_view(struct compositor_view * view)
@@ -408,12 +409,13 @@ static bool update(struct view * base)
     return true;
 }
 
-static bool attach(struct view * base, struct wld_buffer * buffer)
+static int attach(struct view * base, struct wld_buffer * buffer)
 {
     struct compositor_view * view = (void *) base;
+    int ret;
 
-    if (!renderer_attach(view, buffer))
-        return false;
+    if ((ret = renderer_attach(view, buffer)) < 0)
+        return ret;
 
     if (view->visible && view->base.buffer)
     {
@@ -433,7 +435,7 @@ static bool attach(struct view * base, struct wld_buffer * buffer)
         }
     }
 
-    return true;
+    return 0;
 }
 
 static bool move(struct view * base, int32_t x, int32_t y)

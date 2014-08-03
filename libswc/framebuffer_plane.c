@@ -84,10 +84,11 @@ static void send_frame(void * data)
     view_frame(&plane->view, swc_time());
 }
 
-static bool attach(struct view * view, struct wld_buffer * buffer)
+static int attach(struct view * view, struct wld_buffer * buffer)
 {
     struct framebuffer_plane * plane = wl_container_of(view, plane, view);
     union wld_object object;
+    int ret;
 
     if (!wld_export(buffer, WLD_USER_OBJECT_FRAMEBUFFER, &object))
     {
@@ -96,17 +97,19 @@ static bool attach(struct view * view, struct wld_buffer * buffer)
         if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object))
         {
             ERROR("Could not get buffer handle\n");
-            return false;
+            return -EINVAL;
         }
 
         if (!(framebuffer = malloc(sizeof *framebuffer)))
-            return false;
+            return -ENOMEM;
 
-        if (drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32,
-                         buffer->pitch, object.u32, &framebuffer->id) != 0)
+        ret = drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32,
+                           buffer->pitch, object.u32, &framebuffer->id);
+
+        if (ret < 0)
         {
             free(framebuffer);
-            return false;
+            return ret;
         }
 
         framebuffer->exporter.export = &framebuffer_export;
@@ -119,9 +122,11 @@ static bool attach(struct view * view, struct wld_buffer * buffer)
 
     if (plane->need_modeset)
     {
-        if (drmModeSetCrtc(swc.drm->fd, plane->crtc, object.u32, 0, 0,
-                           plane->connectors.data, plane->connectors.size / 4,
-                           &plane->mode.info) == 0)
+        ret = drmModeSetCrtc(swc.drm->fd, plane->crtc, object.u32, 0, 0,
+                             plane->connectors.data, plane->connectors.size / 4,
+                             &plane->mode.info);
+
+        if (ret == 0)
         {
             wl_event_loop_add_idle(swc.event_loop, &send_frame, plane);
             plane->need_modeset = false;
@@ -129,21 +134,23 @@ static bool attach(struct view * view, struct wld_buffer * buffer)
         else
         {
             ERROR("Could not set CRTC to next framebuffer: %s\n",
-                  strerror(errno));
-            return false;
+                  strerror(-ret));
+            return ret;
         }
     }
     else
     {
-        if (drmModePageFlip(swc.drm->fd, plane->crtc, object.u32,
-                            DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler) != 0)
+        ret = drmModePageFlip(swc.drm->fd, plane->crtc, object.u32,
+                              DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler);
+
+        if (ret < 0)
         {
             ERROR("Page flip failed: %s\n", strerror(errno));
-            return false;
+            return ret;
         }
     }
 
-    return true;
+    return 0;
 }
 
 static bool move(struct view * view, int32_t x, int32_t y)

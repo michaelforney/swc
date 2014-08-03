@@ -73,13 +73,13 @@ static bool update(struct view * view)
     return true;
 }
 
-static bool attach(struct view * view, struct wld_buffer * buffer)
+static int attach(struct view * view, struct wld_buffer * buffer)
 {
     struct pointer * pointer = wl_container_of(view, pointer, cursor.view);
     struct swc_surface * surface = pointer->cursor.surface;
 
     if (surface && !pixman_region32_not_empty(&surface->state.damage))
-        return true;
+        return 0;
 
     wld_set_target_buffer(swc.shm->renderer, pointer->cursor.buffer);
     wld_fill_rectangle(swc.shm->renderer, 0x00000000, 0, 0, 64, 64);
@@ -95,7 +95,7 @@ static bool attach(struct view * view, struct wld_buffer * buffer)
     if (view_set_size_from_buffer(view, buffer))
         view_update_screens(view);
 
-    return true;
+    return 0;
 }
 
 static bool move(struct view * view, int32_t x, int32_t y)
