@@ -149,17 +149,10 @@ static void handle_screen_view_event(struct wl_listener * listener, void * data)
     }
 }
 
-static bool target_swap_buffers(struct target * target)
+static int target_swap_buffers(struct target * target)
 {
     target->next_buffer = wld_surface_take(target->surface);
-
-    if (!view_attach(target->view, target->next_buffer))
-    {
-        ERROR("Failed to attach next frame to screen\n");
-        return false;
-    }
-
-    return true;
+    return view_attach(target->view, target->next_buffer);
 }
 
 static struct target * target_new(struct screen * screen)
@@ -709,7 +702,20 @@ static void update_screen(struct screen * screen)
     pixman_region32_subtract(&base_damage, total_damage, &compositor.opaque);
     renderer_repaint(target, total_damage, &base_damage, &compositor.views);
     pixman_region32_fini(&base_damage);
-    target_swap_buffers(target);
+
+    switch (target_swap_buffers(target))
+    {
+        case -EACCES:
+            /* If we get an EACCES, it is because this session is being
+             * deactivated, but we haven't yet received the deactivate signal
+             * from swc-launch. */
+            compositor.active = false;
+            compositor.scheduled_updates = 0;
+            break;
+        case 0:
+            compositor.pending_flips |= screen_mask(screen);
+            break;
+    }
 }
 
 static void perform_update(void * data)
@@ -731,7 +737,6 @@ static void perform_update(void * data)
 
     /* XXX: Should assert that all damage was covered by some output */
     pixman_region32_clear(&compositor.damage);
-    compositor.pending_flips |= updates;
     compositor.scheduled_updates &= ~updates;
     compositor.updating = false;
 }
