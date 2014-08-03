@@ -40,9 +40,12 @@ static void enter(struct input_focus_handler * handler,
 {
     struct keyboard * keyboard
         = wl_container_of(handler, keyboard, focus_handler);
+    struct keyboard_modifier_state * state = &keyboard->modifier_state;
     uint32_t serial;
 
     serial = wl_display_next_serial(swc.display);
+    wl_keyboard_send_modifiers(resource, serial, state->depressed,
+                               state->locked, state->latched, state->group);
     wl_keyboard_send_enter(resource, serial, view->surface->resource,
                            &keyboard->client_keys);
 }
