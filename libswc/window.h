@@ -61,6 +61,7 @@ struct window_impl
                        const struct swc_rectangle * geometry);
     void (* focus)(struct window * window);
     void (* unfocus)(struct window * window);
+    void (* close)(struct window * window);
 };
 
 extern struct wl_listener window_enter_listener;

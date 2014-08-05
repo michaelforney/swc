@@ -56,6 +56,15 @@ struct wl_listener window_enter_listener = {
 };
 
 EXPORT
+void swc_window_close(struct swc_window * base)
+{
+    struct window * window = INTERNAL(base);
+
+    if (window->impl->close)
+        window->impl->close(window);
+}
+
+EXPORT
 void swc_window_show(struct swc_window * window)
 {
     compositor_view_show(INTERNAL(window)->view);

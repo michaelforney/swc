@@ -103,6 +103,11 @@ struct swc_window
 };
 
 /**
+ * Request that the specified window close.
+ */
+void swc_window_close(struct swc_window * window);
+
+/**
  * Make the specified window visible.
  */
 void swc_window_show(struct swc_window * window);
