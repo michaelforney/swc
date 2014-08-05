@@ -62,6 +62,7 @@ static struct
     xcb_ewmh_connection_t ewmh;
     xcb_screen_t * screen;
     xcb_window_t window;
+    struct xwl_window * focus;
     struct wl_event_source * source;
     struct wl_list windows, unpaired_windows;
     union
@@ -145,22 +146,43 @@ static void focus(struct window * window)
 {
     struct xwl_window * xwl_window
         = wl_container_of(window, xwl_window, window);
-    xcb_window_t id = window ? xwl_window->id : XCB_NONE;
 
     xcb_set_input_focus(xwm.connection, XCB_INPUT_FOCUS_NONE,
-                        id, XCB_CURRENT_TIME);
+                        xwl_window->id, XCB_CURRENT_TIME);
     xcb_flush(xwm.connection);
+    xwm.focus = xwl_window;
+}
+
+static void unfocus(struct window * window)
+{
+    struct xwl_window * xwl_window
+        = wl_container_of(window, xwl_window, window);
+
+    /* If the window we are unfocusing is the latest xwl_window to be focused,
+     * we know we have transitioned to some other window type, so the X11 focus
+     * can be set to XCB_NONE. Otherwise, we have transitioned to another X11
+     * window, and the X11 focus has already been updated. */
+    if (xwl_window == xwm.focus)
+    {
+        xcb_set_input_focus(xwm.connection, XCB_INPUT_FOCUS_NONE, XCB_NONE,
+                            XCB_CURRENT_TIME);
+        xcb_flush(xwm.connection);
+    }
 }
 
 static const struct window_impl xwl_window_handler = {
     .configure = &configure,
-    .focus = &focus
+    .focus = &focus,
+    .unfocus = &unfocus,
 };
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
     struct xwl_window * xwl_window
         = wl_container_of(listener, xwl_window, surface_destroy_listener);
+
+    if (xwm.focus == xwl_window)
+        xwm.focus = NULL;
 
     window_finalize(&xwl_window->window);
     wl_list_remove(&xwl_window->link);

@@ -74,18 +74,16 @@ void swc_window_focus(struct swc_window * base)
     struct compositor_view * new_focus = window ? window->view : NULL,
                            * old_focus = swc.seat->keyboard->focus.view;
 
-    /* If the keyboard already has a focused window, and we are changing the
-     * focus to either NULL, or a window with a different implementation, set
-     * the focus of the previous focus window's implementation to NULL. */
-    if (old_focus && old_focus->window
-        && !(window && window->impl == INTERNAL(old_focus->window)->impl)
-        && old_focus->window->impl->focus)
-    {
-        old_focus->window->impl->focus(NULL);
-    }
+    if (new_focus == old_focus)
+        return;
 
+    /* Focus the new window before unfocusing the old one in case both are X11
+     * windows so the xwl_window implementation can handle this transition
+     * correctly. */
     if (window && window->impl->focus)
         window->impl->focus(window);
+    if (old_focus && old_focus->window && old_focus->window->impl->unfocus)
+        old_focus->window->impl->unfocus(old_focus->window);
 
     keyboard_set_focus(swc.seat->keyboard, new_focus);
 }
