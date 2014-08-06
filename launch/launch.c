@@ -88,7 +88,10 @@ static void start_devices()
     unsigned index;
 
     for (index = 0; index < launcher.num_drm_fds; ++index)
-        drmSetMaster(launcher.drm_fds[index]);
+    {
+        if (drmSetMaster(launcher.drm_fds[index]) < 0)
+            die("Failed to set DRM master");
+    }
 }
 
 static void stop_devices(bool fatal)
@@ -97,10 +100,8 @@ static void stop_devices(bool fatal)
 
     for (index = 0; index < launcher.num_drm_fds; ++index)
     {
-        fprintf(stderr, "Dropping DRM master\n");
-
-        if (drmDropMaster(launcher.drm_fds[index]) < 0)
-            perror("Failed to drop DRM master");
+        if (drmDropMaster(launcher.drm_fds[index]) < 0 && fatal)
+            die("Failed to drop DRM master");
     }
 
     for (index = 0; index < launcher.num_input_fds; ++index)
