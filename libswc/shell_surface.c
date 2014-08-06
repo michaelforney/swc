@@ -195,8 +195,21 @@ static void configure(struct window * window,
                                     geometry->width, geometry->height);
 }
 
+static void close(struct window * window)
+{
+    struct shell_surface * shell_surface
+        = wl_container_of(window, shell_surface, window);
+    struct wl_client * client;
+    pid_t pid;
+
+    client = wl_resource_get_client(shell_surface->resource);
+    wl_client_get_credentials(client, &pid, NULL, NULL);
+    kill(pid, SIGTERM);
+}
+
 static const struct window_impl shell_window_impl = {
-    .configure = &configure
+    .configure = &configure,
+    .close = &close,
 };
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
