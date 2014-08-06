@@ -121,19 +121,21 @@ static void stop_devices(bool fatal)
 
 static void cleanup()
 {
+    struct vt_mode mode = { .mode = VT_AUTO };
+
+    if (!original_vt_state.altered)
+        return;
+
     /* Cleanup VT */
-    if (original_vt_state.altered)
-    {
-        struct vt_mode mode = { .mode = VT_AUTO };
+    fprintf(stderr, "Restoring VT to original state\n");
+    ioctl(launcher.tty_fd, VT_SETMODE, &mode);
+    ioctl(launcher.tty_fd, KDSETMODE, original_vt_state.console_mode);
+    ioctl(launcher.tty_fd, KDSKBMODE, original_vt_state.kb_mode);
 
-        fprintf(stderr, "Restoring VT to original state\n");
-        ioctl(launcher.tty_fd, VT_SETMODE, &mode);
-        ioctl(launcher.tty_fd, KDSETMODE, original_vt_state.console_mode);
-        ioctl(launcher.tty_fd, KDSKBMODE, original_vt_state.kb_mode);
-        ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
-    }
-
+    /* Stop devices before switching the VT to make sure we have released the
+     * DRM device before the next session tries to claim it. */
     stop_devices(false);
+    ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
 }
 
 void __attribute__((noreturn,format(printf,1,2)))
@@ -317,7 +319,6 @@ static int find_vt()
         die("Could not find unused VT");
 
     close(tty0_fd);
-
     fprintf(stderr, "Running on VT %d\n", vt);
 
   done:
