@@ -72,7 +72,8 @@ $(dir)_CFLAGS += -DENABLE_XWAYLAND
 $(dir)_PACKAGES +=                  \
     xcb                             \
     xcb-composite                   \
-    xcb-ewmh
+    xcb-ewmh                        \
+    xcb-icccm
 
 SWC_SOURCES +=                      \
     libswc/xserver.c                \

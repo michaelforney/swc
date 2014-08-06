@@ -40,7 +40,7 @@ struct xwl_window
 {
     xcb_window_t id;
     uint32_t surface_id;
-    bool override_redirect;
+    bool override_redirect, supports_delete;
     struct wl_list link;
 
     /* Only used for paired windows. */
@@ -52,8 +52,10 @@ struct xwl_window
 
 enum atom
 {
-    ATOM_WM_S0,
     ATOM_WL_SURFACE_ID,
+    ATOM_WM_DELETE_WINDOW,
+    ATOM_WM_PROTOCOLS,
+    ATOM_WM_S0,
 };
 
 static struct
@@ -70,11 +72,13 @@ static struct
         const char * name;
         xcb_intern_atom_cookie_t cookie;
         xcb_atom_t value;
-    } atoms[2];
+    } atoms[4];
 } xwm = {
     .atoms = {
-        [ATOM_WM_S0] = "WM_S0",
-        [ATOM_WL_SURFACE_ID] = "WL_SURFACE_ID",
+        [ATOM_WL_SURFACE_ID]    = "WL_SURFACE_ID",
+        [ATOM_WM_DELETE_WINDOW] = "WM_DELETE_WINDOW",
+        [ATOM_WM_PROTOCOLS]     = "WM_PROTOCOLS",
+        [ATOM_WM_S0]            = "WM_S0",
     }
 };
 
@@ -95,6 +99,29 @@ static void update_name(struct xwl_window * xwl_window)
     }
     else
         window_set_title(&xwl_window->window, NULL, 0);
+}
+
+static void update_protocols(struct xwl_window * xwl_window)
+{
+    xcb_get_property_cookie_t cookie;
+    xcb_icccm_get_wm_protocols_reply_t reply;
+    unsigned index;
+
+    cookie = xcb_icccm_get_wm_protocols(xwm.connection, xwl_window->id,
+                                        xwm.atoms[ATOM_WM_PROTOCOLS].value);
+
+    xwl_window->supports_delete = true;
+
+    if (!xcb_icccm_get_wm_protocols_reply(xwm.connection, cookie, &reply, NULL))
+        return;
+
+    for (index = 0; index < reply.atoms_len; ++index)
+    {
+        if (reply.atoms[index] == xwm.atoms[ATOM_WM_DELETE_WINDOW].value)
+            xwl_window->supports_delete = true;
+    }
+
+    xcb_icccm_get_wm_protocols_reply_wipe(&reply);
 }
 
 static struct xwl_window * find_window(struct wl_list * list, xcb_window_t id)
@@ -170,10 +197,38 @@ static void unfocus(struct window * window)
     }
 }
 
+static void close(struct window * window)
+{
+    struct xwl_window * xwl_window
+        = wl_container_of(window, xwl_window, window);
+
+    if (xwl_window->supports_delete)
+    {
+        xcb_client_message_event_t event = {
+            .response_type = XCB_CLIENT_MESSAGE,
+            .format = 32,
+            .window = xwl_window->id,
+            .type = xwm.atoms[ATOM_WM_PROTOCOLS].value,
+            .data.data32 = {
+                xwm.atoms[ATOM_WM_DELETE_WINDOW].value,
+                XCB_CURRENT_TIME,
+            },
+        };
+
+        xcb_send_event(xwm.connection, false, xwl_window->id,
+                       XCB_EVENT_MASK_NO_EVENT, (const char *) &event);
+    }
+    else
+        xcb_kill_client(xwm.connection, xwl_window->id);
+
+    xcb_flush(xwm.connection);
+}
+
 static const struct window_impl xwl_window_handler = {
     .configure = &configure,
     .focus = &focus,
     .unfocus = &unfocus,
+    .close = &close,
 };
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
@@ -232,6 +287,7 @@ static bool manage_window(struct xwl_window * xwl_window)
         values[0] = 0;
         xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
         update_name(xwl_window);
+        update_protocols(xwl_window);
 
         window_set_state(&xwl_window->window, SWC_WINDOW_STATE_NORMAL);
     }
@@ -311,6 +367,8 @@ static void property_notify(xcb_property_notify_event_t * event)
     {
         update_name(xwl_window);
     }
+    else if (event->atom == xwm.atoms[ATOM_WM_PROTOCOLS].value)
+        update_protocols(xwl_window);
 }
 
 static void client_message(xcb_client_message_event_t * event)
