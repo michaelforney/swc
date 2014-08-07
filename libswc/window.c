@@ -98,15 +98,34 @@ void swc_window_focus(struct swc_window * base)
 }
 
 EXPORT
-void swc_window_set_geometry(struct swc_window * base,
-                             const struct swc_rectangle * geometry)
+void swc_window_set_position(struct swc_window * base, int32_t x, int32_t y)
+{
+    struct window * window = INTERNAL(base);
+    struct swc_rectangle * geometry = &window->view->base.geometry;
+
+    if (x == geometry->x && y == geometry->y)
+        return;
+
+    if (window->impl->move)
+        window->impl->move(window, x, y);
+    view_move(&window->view->base, x, y);
+}
+
+EXPORT
+void swc_window_set_size(struct swc_window * base,
+                         uint32_t width, uint32_t height)
 {
     struct window * window = INTERNAL(base);
 
-    if (window->impl->configure)
-        window->impl->configure(window, geometry);
+    window->impl->configure(window, width, height);
+}
 
-    view_move(&window->view->base, geometry->x, geometry->y);
+EXPORT
+void swc_window_set_geometry(struct swc_window * window,
+                             const struct swc_rectangle * geometry)
+{
+    swc_window_set_size(window, geometry->width, geometry->height);
+    swc_window_set_position(window, geometry->x, geometry->y);
 }
 
 EXPORT

@@ -151,19 +151,29 @@ static struct xwl_window * find_window_by_surface_id(struct wl_list * list,
     return NULL;
 }
 
-static void configure(struct window * window,
-                      const struct swc_rectangle * geometry)
+static void move(struct window * window, int32_t x, int32_t y)
 {
-    uint32_t mask, values[4];
+    uint32_t mask, values[2];
     struct xwl_window * xwl_window
         = wl_container_of(window, xwl_window, window);
 
-    mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y
-         | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-    values[0] = geometry->x;
-    values[1] = geometry->y;
-    values[2] = geometry->width;
-    values[3] = geometry->height;
+    mask = XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y;
+    values[0] = x;
+    values[1] = y;
+
+    xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
+    xcb_flush(xwm.connection);
+}
+
+static void configure(struct window * window, uint32_t width, uint32_t height)
+{
+    uint32_t mask, values[2];
+    struct xwl_window * xwl_window
+        = wl_container_of(window, xwl_window, window);
+
+    mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+    values[0] = width;
+    values[1] = height;
 
     xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
     xcb_flush(xwm.connection);
@@ -225,6 +235,7 @@ static void close(struct window * window)
 }
 
 static const struct window_impl xwl_window_handler = {
+    .move = &move,
     .configure = &configure,
     .focus = &focus,
     .unfocus = &unfocus,

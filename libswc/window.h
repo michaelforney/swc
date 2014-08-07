@@ -57,8 +57,8 @@ struct window
 
 struct window_impl
 {
-    void (* configure)(struct window * window,
-                       const struct swc_rectangle * geometry);
+    void (* move)(struct window * window, int32_t x, int32_t y);
+    void (* configure)(struct window * window, uint32_t width, uint32_t height);
     void (* focus)(struct window * window);
     void (* unfocus)(struct window * window);
     void (* close)(struct window * window);

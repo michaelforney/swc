@@ -43,6 +43,33 @@ struct shell_surface
     struct wl_listener surface_destroy_listener;
 };
 
+static void configure(struct window * window, uint32_t width, uint32_t height)
+{
+    struct shell_surface * shell_surface
+        = wl_container_of(window, shell_surface, window);
+
+    wl_shell_surface_send_configure(shell_surface->resource,
+                                    WL_SHELL_SURFACE_RESIZE_NONE,
+                                    width, height);
+}
+
+static void close(struct window * window)
+{
+    struct shell_surface * shell_surface
+        = wl_container_of(window, shell_surface, window);
+    struct wl_client * client;
+    pid_t pid;
+
+    client = wl_resource_get_client(shell_surface->resource);
+    wl_client_get_credentials(client, &pid, NULL, NULL);
+    kill(pid, SIGTERM);
+}
+
+static const struct window_impl window_impl = {
+    .configure = &configure,
+    .close = &close,
+};
+
 static void pong(struct wl_client * client, struct wl_resource * resource,
                  uint32_t serial)
 {
@@ -184,34 +211,6 @@ static const struct wl_shell_surface_interface shell_surface_implementation = {
     .set_class = &set_class
 };
 
-static void configure(struct window * window,
-                      const struct swc_rectangle * geometry)
-{
-    struct shell_surface * shell_surface
-        = wl_container_of(window, shell_surface, window);
-
-    wl_shell_surface_send_configure(shell_surface->resource,
-                                    WL_SHELL_SURFACE_RESIZE_NONE,
-                                    geometry->width, geometry->height);
-}
-
-static void close(struct window * window)
-{
-    struct shell_surface * shell_surface
-        = wl_container_of(window, shell_surface, window);
-    struct wl_client * client;
-    pid_t pid;
-
-    client = wl_resource_get_client(shell_surface->resource);
-    wl_client_get_credentials(client, &pid, NULL, NULL);
-    kill(pid, SIGTERM);
-}
-
-static const struct window_impl shell_window_impl = {
-    .configure = &configure,
-    .close = &close,
-};
-
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
 {
     struct shell_surface * shell_surface
@@ -244,14 +243,14 @@ struct shell_surface * shell_surface_new(struct wl_client * client, uint32_t id,
     if (!shell_surface->resource)
         goto error1;
 
-    window_initialize(&shell_surface->window, &shell_window_impl, surface);
-    shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
-    wl_resource_add_destroy_listener(surface->resource,
-                                     &shell_surface->surface_destroy_listener);
-
     wl_resource_set_implementation(shell_surface->resource,
                                    &shell_surface_implementation,
                                    shell_surface, &destroy_shell_surface);
+
+    window_initialize(&shell_surface->window, &window_impl, surface);
+    shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
+    wl_resource_add_destroy_listener(surface->resource,
+                                     &shell_surface->surface_destroy_listener);
 
     return shell_surface;
 

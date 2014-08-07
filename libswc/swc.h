@@ -125,10 +125,27 @@ void swc_window_hide(struct swc_window * window);
 void swc_window_focus(struct swc_window * window);
 
 /**
- * Set the window's geometry.
+ * Set the window's position.
  *
- * The geometry's coordinates refer to the actual contents of the window, and
- * should be adjusted for the border size.
+ * The x and y coordinates refer to the top-left corner of the actual contents
+ * of the window and should be adjusted for the border size.
+ */
+void swc_window_set_position(struct swc_window * window, int32_t x, int32_t y);
+
+/**
+ * Set the window's size.
+ *
+ * The width and height refer to the dimension of the actual contents of the
+ * window and should be adjusted for the border size.
+ */
+void swc_window_set_size(struct swc_window * window,
+                         uint32_t width, uint32_t height);
+
+/**
+ * Set the window's size and position.
+ *
+ * This is a convenience function that is equivalent to calling
+ * swc_window_set_size and then swc_window_set_position.
  */
 void swc_window_set_geometry(struct swc_window * window,
                              const struct swc_rectangle * geometry);
