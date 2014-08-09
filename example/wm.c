@@ -175,23 +175,6 @@ static void window_event(struct wl_listener * listener, void * data)
     }
 }
 
-static void new_window(struct swc_window * swc)
-{
-    struct window * window;
-
-    window = malloc(sizeof *window);
-
-    if (!window)
-        return;
-
-    window->swc = swc;
-    window->event_listener.notify = &window_event;
-    window->screen = NULL;
-
-    /* Register a listener for the window's event signal. */
-    wl_signal_add(&swc->event_signal, &window->event_listener);
-}
-
 static void screen_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
@@ -230,7 +213,24 @@ static void new_screen(struct swc_screen * swc)
     active_screen = screen;
 }
 
-const struct swc_manager manager = { &new_window, &new_screen };
+static void new_window(struct swc_window * swc)
+{
+    struct window * window;
+
+    window = malloc(sizeof *window);
+
+    if (!window)
+        return;
+
+    window->swc = swc;
+    window->event_listener.notify = &window_event;
+    window->screen = NULL;
+
+    /* Register a listener for the window's event signal. */
+    wl_signal_add(&swc->event_signal, &window->event_listener);
+}
+
+const struct swc_manager manager = { &new_screen, &new_window };
 
 static void spawn(void * data, uint32_t time, uint32_t value, uint32_t state)
 {

@@ -38,6 +38,49 @@ struct swc_rectangle
 
 /* }}} */
 
+/* Screens {{{ */
+
+enum
+{
+    /**
+     * Sent when the screen is about to be destroyed.
+     *
+     * After this event is sent, the screen is not longer valid.
+     */
+    SWC_SCREEN_DESTROYED,
+
+    /**
+     * Sent when the total area of the screen is changed.
+     */
+    SWC_SCREEN_GEOMETRY_CHANGED,
+
+    /**
+     * Sent when the geometry of the screen available for laying out windows is
+     * changed.
+     *
+     * Display servers should respond to this event by making sure all visible
+     * windows are within this area.
+     */
+    SWC_SCREEN_USABLE_GEOMETRY_CHANGED
+};
+
+struct swc_screen
+{
+    struct wl_signal event_signal;
+
+    /**
+     * The total area of the screen.
+     */
+    struct swc_rectangle geometry;
+
+    /**
+     * The area of the screen available for placing windows.
+     */
+    struct swc_rectangle usable_geometry;
+};
+
+/* }}} */
+
 /* Windows {{{ */
 
 enum
@@ -190,49 +233,6 @@ void swc_window_end_resize(struct swc_window * window);
 
 /* }}} */
 
-/* Screens {{{ */
-
-enum
-{
-    /**
-     * Sent when the screen is about to be destroyed.
-     *
-     * After this event is sent, the screen is not longer valid.
-     */
-    SWC_SCREEN_DESTROYED,
-
-    /**
-     * Sent when the total area of the screen is changed.
-     */
-    SWC_SCREEN_GEOMETRY_CHANGED,
-
-    /**
-     * Sent when the geometry of the screen available for laying out windows is
-     * changed.
-     *
-     * Display servers should respond to this event by making sure all visible
-     * windows are within this area.
-     */
-    SWC_SCREEN_USABLE_GEOMETRY_CHANGED
-};
-
-struct swc_screen
-{
-    struct wl_signal event_signal;
-
-    /**
-     * The total area of the screen.
-     */
-    struct swc_rectangle geometry;
-
-    /**
-     * The area of the screen available for placing windows.
-     */
-    struct swc_rectangle usable_geometry;
-};
-
-/* }}} */
-
 /* Bindings {{{ */
 
 enum
@@ -298,17 +298,17 @@ struct swc_event
 struct swc_manager
 {
     /**
+     * Called when a new screen is created.
+     */
+    void (* new_screen)(struct swc_screen * screen);
+
+    /**
      * Called when a new window is created.
      *
      * The window begins in the WITHDRAWN state and should not be managed until
      * it changes to the TOPLEVEL state.
      */
     void (* new_window)(struct swc_window * window);
-
-    /**
-     * Called when a new screen is created.
-     */
-    void (* new_screen)(struct swc_screen * screen);
 };
 
 /**
