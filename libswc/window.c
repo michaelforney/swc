@@ -255,7 +255,6 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
 
     window->base.title = NULL;
     window->base.class = NULL;
-    window->base.state = SWC_WINDOW_STATE_NONE;
     window->base.parent = NULL;
     wl_signal_init(&window->base.event_signal);
 
@@ -264,6 +263,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
 
     window->impl = impl;
     window->view->window = window;
+    window->managed = false;
     window->move.interaction.handler = (struct pointer_handler) {
         .motion = &move_motion,
         .button = &handle_button
@@ -273,8 +273,6 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
         .button = &handle_button
     };
 
-    swc.manager->new_window(&window->base);
-
     return true;
 }
 
@@ -282,11 +280,29 @@ void window_finalize(struct window * window)
 {
     DEBUG("Finalizing window, %p\n", window);
 
-    swc_send_event(&window->base.event_signal, SWC_WINDOW_DESTROYED, NULL);
+    window_unmanage(window);
     compositor_view_destroy(window->view);
     window->view->window = NULL;
     free(window->base.title);
     free(window->base.class);
+}
+
+void window_manage(struct window * window)
+{
+    if (window->managed)
+        return;
+
+    swc.manager->new_window(&window->base);
+    window->managed = true;
+}
+
+void window_unmanage(struct window * window)
+{
+    if (!window->managed)
+        return;
+
+    swc_send_event(&window->base.event_signal, SWC_WINDOW_DESTROYED, NULL);
+    window->managed = false;
 }
 
 void window_set_title(struct window * window, const char * title, size_t length)
@@ -301,15 +317,6 @@ void window_set_class(struct window * window, const char * class)
     free(window->base.class);
     window->base.class = strdup(class);
     swc_send_event(&window->base.event_signal, SWC_WINDOW_CLASS_CHANGED, NULL);
-}
-
-void window_set_state(struct window * window, uint32_t state)
-{
-    if (window->base.state == state)
-        return;
-
-    window->base.state = state;
-    swc_send_event(&window->base.event_signal, SWC_WINDOW_STATE_CHANGED, NULL);
 }
 
 void window_set_parent(struct window * window, struct window * parent)

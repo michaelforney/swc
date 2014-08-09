@@ -41,6 +41,7 @@ struct window
     const struct window_impl * impl;
 
     struct compositor_view * view;
+    bool managed;
 
     struct
     {
@@ -71,12 +72,14 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
 
 void window_finalize(struct window * window);
 
+void window_manage(struct window * window);
+
+void window_unmanage(struct window * window);
+
 void window_set_title(struct window * window,
                       const char * title, size_t length);
 
 void window_set_class(struct window * window, const char * class);
-
-void window_set_state(struct window * window, uint32_t state);
 
 void window_set_parent(struct window * window, struct window * parent);
 

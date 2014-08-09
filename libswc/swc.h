@@ -103,14 +103,6 @@ enum
     SWC_WINDOW_CLASS_CHANGED,
 
     /**
-     * Sent when the window's state changes.
-     *
-     * The display server should adjust the window's placement and visibility
-     * accordingly.
-     */
-    SWC_WINDOW_STATE_CHANGED,
-
-    /**
      * Sent when the pointer enters the window.
      */
     SWC_WINDOW_ENTERED,
@@ -135,12 +127,6 @@ struct swc_window
 
     char * title;
     char * class;
-
-    enum
-    {
-        SWC_WINDOW_STATE_NONE,
-        SWC_WINDOW_STATE_NORMAL
-    } state;
 
     struct swc_window * parent;
 };
@@ -304,9 +290,6 @@ struct swc_manager
 
     /**
      * Called when a new window is created.
-     *
-     * The window begins in the WITHDRAWN state and should not be managed until
-     * it changes to the TOPLEVEL state.
      */
     void (* new_window)(struct swc_window * window);
 };

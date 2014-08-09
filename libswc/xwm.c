@@ -299,8 +299,7 @@ static bool manage_window(struct xwl_window * xwl_window)
         xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
         update_name(xwl_window);
         update_protocols(xwl_window);
-
-        window_set_state(&xwl_window->window, SWC_WINDOW_STATE_NORMAL);
+        window_manage(&xwl_window->window);
     }
 
     wl_list_remove(&xwl_window->link);

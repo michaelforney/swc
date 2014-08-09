@@ -105,7 +105,7 @@ static void set_toplevel(struct wl_client * client,
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
 
-    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_manage(&shell_surface->window);
     window_set_parent(&shell_surface->window, NULL);
 }
 
@@ -123,11 +123,8 @@ static void set_transient(struct wl_client * client,
     if (!parent_view || !parent_view->window)
         return;
 
-    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_manage(&shell_surface->window);
     window_set_parent(&shell_surface->window, parent_view->window);
-    view_move(&shell_surface->window.view->base,
-              parent_view->base.geometry.x + x,
-              parent_view->base.geometry.y + y);
 }
 
 static void set_fullscreen(struct wl_client * client,
@@ -145,7 +142,7 @@ static void set_fullscreen(struct wl_client * client,
 
     /* TODO: Handle fullscreen windows. */
 
-    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_manage(&shell_surface->window);
     window_set_parent(&shell_surface->window, NULL);
 }
 
@@ -163,7 +160,7 @@ static void set_popup(struct wl_client * client, struct wl_resource * resource,
     if (!parent_view || !parent_view->window)
         return;
 
-    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NONE);
+    window_unmanage(&shell_surface->window);
     window_set_parent(&shell_surface->window, parent_view->window);
     view_move(&shell_surface->window.view->base,
               parent_view->base.geometry.x + x,
@@ -178,7 +175,7 @@ static void set_maximized(struct wl_client * client,
 
     /* TODO: Handle maximized windows. */
 
-    window_set_state(&shell_surface->window, SWC_WINDOW_STATE_NORMAL);
+    window_manage(&shell_surface->window);
     window_set_parent(&shell_surface->window, NULL);
 }
 

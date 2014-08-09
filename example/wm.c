@@ -134,7 +134,6 @@ static void window_event(struct wl_listener * listener, void * data)
     struct swc_event * event = data;
     struct window * window = NULL, * next_focus;
 
-
     window = wl_container_of(listener, window, event_listener);
 
     switch (event->type)
@@ -159,15 +158,6 @@ static void window_event(struct wl_listener * listener, void * data)
 
             screen_remove_window(window->screen, window);
             free(window);
-            break;
-        case SWC_WINDOW_STATE_CHANGED:
-            /* When the window changes state to NORMAL, we can add it to the
-             * current screen and then rearrange the windows on that screen. */
-            if (window->swc->state == SWC_WINDOW_STATE_NORMAL)
-            {
-                screen_add_window(active_screen, window);
-                focus(window);
-            }
             break;
         case SWC_WINDOW_ENTERED:
             focus(window);
@@ -228,6 +218,9 @@ static void new_window(struct swc_window * swc)
 
     /* Register a listener for the window's event signal. */
     wl_signal_add(&swc->event_signal, &window->event_listener);
+
+    screen_add_window(active_screen, window);
+    focus(window);
 }
 
 const struct swc_manager manager = { &new_screen, &new_window };
