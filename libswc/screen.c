@@ -142,6 +142,7 @@ void screen_destroy(struct screen * screen)
 {
     struct swc_output * output, * next;
 
+    swc_send_event(&screen->base.event_signal, SWC_SCREEN_DESTROYED, NULL);
     wl_list_for_each_safe(output, next, &screen->outputs, link)
         swc_output_destroy(output);
     framebuffer_plane_finalize(&screen->planes.framebuffer);
