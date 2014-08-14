@@ -23,6 +23,7 @@
 
 #include "cursor_plane.h"
 #include "drm.h"
+#include "event.h"
 #include "internal.h"
 #include "launch.h"
 #include "screen.h"

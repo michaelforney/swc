@@ -30,7 +30,6 @@
 struct screen
 {
     struct swc_screen * swc;
-    struct wl_listener event_listener;
     struct wl_list windows;
     unsigned num_windows;
 };
@@ -38,7 +37,6 @@ struct screen
 struct window
 {
     struct swc_window * swc;
-    struct wl_listener event_listener;
     struct screen * screen;
     struct wl_list link;
 };
@@ -129,60 +127,56 @@ static void focus(struct window * window)
     focused_window = window;
 }
 
-static void window_event(struct wl_listener * listener, void * data)
+static void screen_usable_geometry_changed(void * data)
 {
-    struct swc_event * event = data;
-    struct window * window = NULL, * next_focus;
+    struct screen * screen = data;
 
-    window = wl_container_of(listener, window, event_listener);
-
-    switch (event->type)
-    {
-        case SWC_WINDOW_DESTROYED:
-            if (focused_window == window)
-            {
-                /* Try to find a new focus nearby the old one. */
-                next_focus = wl_container_of(window->link.next, window, link);
-
-                if (&next_focus->link == &window->screen->windows)
-                {
-                    next_focus = wl_container_of(window->link.prev,
-                                                 window, link);
-
-                    if (&next_focus->link == &window->screen->windows)
-                        next_focus = NULL;
-                }
-
-                focus(next_focus);
-            }
-
-            screen_remove_window(window->screen, window);
-            free(window);
-            break;
-        case SWC_WINDOW_ENTERED:
-            focus(window);
-            break;
-    }
+    /* If the usable geometry of the screen changes, for example when a panel is
+     * docked to the edge of the screen, we need to rearrange the windows to
+     * ensure they are all within the new usable geometry. */
+    arrange(screen);
 }
 
-static void screen_event(struct wl_listener * listener, void * data)
+static const struct swc_screen_handler screen_handler = {
+    .usable_geometry_changed = &screen_usable_geometry_changed,
+};
+
+static void window_destroy(void * data)
 {
-    struct swc_event * event = data;
-    struct screen * screen = NULL;
+    struct window * window = data, * next_focus;
 
-    screen = wl_container_of(listener, screen, event_listener);
-
-    switch (event->type)
+    if (focused_window == window)
     {
-        case SWC_SCREEN_USABLE_GEOMETRY_CHANGED:
-            /* If the usable geometry of the screen changes, for example when a
-             * panel is docked to the edge of the screen, we need to rearrange
-             * the windows to ensure they are all within the new usable
-             * geometry. */
-            arrange(screen);
-            break;
+        /* Try to find a new focus nearby the old one. */
+        next_focus = wl_container_of(window->link.next, window, link);
+
+        if (&next_focus->link == &window->screen->windows)
+        {
+            next_focus = wl_container_of(window->link.prev,
+                                         window, link);
+
+            if (&next_focus->link == &window->screen->windows)
+                next_focus = NULL;
+        }
+
+        focus(next_focus);
     }
+
+    screen_remove_window(window->screen, window);
+    free(window);
 }
+
+static void window_entered(void * data)
+{
+    struct window * window = data;
+
+    focus(window);
+}
+
+static const struct swc_window_handler window_handler = {
+    .destroy = &window_destroy,
+    .entered = &window_entered,
+};
 
 static void new_screen(struct swc_screen * swc)
 {
@@ -194,12 +188,9 @@ static void new_screen(struct swc_screen * swc)
         return;
 
     screen->swc = swc;
-    screen->event_listener.notify = &screen_event;
     screen->num_windows = 0;
     wl_list_init(&screen->windows);
-
-    /* Register a listener for the screen's event signal. */
-    wl_signal_add(&swc->event_signal, &screen->event_listener);
+    swc_screen_set_handler(swc, &screen_handler, screen);
     active_screen = screen;
 }
 
@@ -213,12 +204,8 @@ static void new_window(struct swc_window * swc)
         return;
 
     window->swc = swc;
-    window->event_listener.notify = &window_event;
     window->screen = NULL;
-
-    /* Register a listener for the window's event signal. */
-    wl_signal_add(&swc->event_signal, &window->event_listener);
-
+    swc_window_set_handler(swc, &window_handler, window);
     screen_add_window(active_screen, window);
     focus(window);
 }

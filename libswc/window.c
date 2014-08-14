@@ -36,6 +36,8 @@
 
 #define INTERNAL(w) ((struct window *) (w))
 
+static const struct swc_window_handler null_handler;
+
 static void handle_window_enter(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
@@ -48,12 +50,24 @@ static void handle_window_enter(struct wl_listener * listener, void * data)
     if (!event_data->new || !(window = event_data->new->window))
         return;
 
-    swc_send_event(&window->base.event_signal, SWC_WINDOW_ENTERED, NULL);
+    if (window->handler->entered)
+        window->handler->entered(window->handler_data);
 }
 
 struct wl_listener window_enter_listener = {
     .notify = &handle_window_enter
 };
+
+EXPORT
+void swc_window_set_handler(struct swc_window * base,
+                            const struct swc_window_handler * handler,
+                            void * data)
+{
+    struct window * window = INTERNAL(base);
+
+    window->handler = handler;
+    window->handler_data = data;
+}
 
 EXPORT
 void swc_window_close(struct swc_window * base)
@@ -256,12 +270,12 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     window->base.title = NULL;
     window->base.class = NULL;
     window->base.parent = NULL;
-    wl_signal_init(&window->base.event_signal);
 
     if (!(window->view = swc_compositor_create_view(surface)))
         return false;
 
     window->impl = impl;
+    window->handler = &null_handler;
     window->view->window = window;
     window->managed = false;
     window->move.interaction.handler = (struct pointer_handler) {
@@ -301,7 +315,9 @@ void window_unmanage(struct window * window)
     if (!window->managed)
         return;
 
-    swc_send_event(&window->base.event_signal, SWC_WINDOW_DESTROYED, NULL);
+    if (window->handler->destroy)
+        window->handler->destroy(window->handler_data);
+    window->handler = &null_handler;
     window->managed = false;
 }
 
@@ -309,14 +325,18 @@ void window_set_title(struct window * window, const char * title, size_t length)
 {
     free(window->base.title);
     window->base.title = strndup(title, length);
-    swc_send_event(&window->base.event_signal, SWC_WINDOW_TITLE_CHANGED, NULL);
+
+    if (window->handler->title_changed)
+        window->handler->title_changed(window->handler_data);
 }
 
 void window_set_class(struct window * window, const char * class)
 {
     free(window->base.class);
     window->base.class = strdup(class);
-    swc_send_event(&window->base.event_signal, SWC_WINDOW_CLASS_CHANGED, NULL);
+
+    if (window->handler->class_changed)
+        window->handler->class_changed(window->handler_data);
 }
 
 void window_set_parent(struct window * window, struct window * parent)
@@ -326,6 +346,8 @@ void window_set_parent(struct window * window, struct window * parent)
 
     compositor_view_set_parent(window->view, parent->view);
     window->base.parent = &parent->base;
-    swc_send_event(&window->base.event_signal, SWC_WINDOW_PARENT_CHANGED, NULL);
+
+    if (window->handler->parent_changed)
+        window->handler->parent_changed(window->handler_data);
 }
 

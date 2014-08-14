@@ -39,6 +39,8 @@ struct window
 {
     struct swc_window base;
     const struct window_impl * impl;
+    const struct swc_window_handler * handler;
+    void * handler_data;
 
     struct compositor_view * view;
     bool managed;

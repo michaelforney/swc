@@ -40,34 +40,32 @@ struct swc_rectangle
 
 /* Screens {{{ */
 
-enum
+struct swc_screen_handler
 {
     /**
-     * Sent when the screen is about to be destroyed.
+     * Called when the screen is about to be destroyed.
      *
-     * After this event is sent, the screen is not longer valid.
+     * After this is called, the screen is no longer valid.
      */
-    SWC_SCREEN_DESTROYED,
+    void (* destroy)(void * data);
 
     /**
-     * Sent when the total area of the screen is changed.
+     * Called when the total area of the screen has changed.
      */
-    SWC_SCREEN_GEOMETRY_CHANGED,
+    void (* geometry_changed)(void * data);
 
     /**
-     * Sent when the geometry of the screen available for laying out windows is
-     * changed.
+     * Called when the geometry of the screen available for laying out windows
+     * has changed.
      *
-     * Display servers should respond to this event by making sure all visible
-     * windows are within this area.
+     * A window manager should respond by making sure all visible windows are
+     * within this area.
      */
-    SWC_SCREEN_USABLE_GEOMETRY_CHANGED
+    void (* usable_geometry_changed)(void * data);
 };
 
 struct swc_screen
 {
-    struct wl_signal event_signal;
-
     /**
      * The total area of the screen.
      */
@@ -79,57 +77,64 @@ struct swc_screen
     struct swc_rectangle usable_geometry;
 };
 
+/**
+ * Set the handler associated with this screen.
+ */
+void swc_screen_set_handler(struct swc_screen * screen,
+                            const struct swc_screen_handler * handler,
+                            void * data);
+
 /* }}} */
 
 /* Windows {{{ */
 
-enum
+struct swc_window_handler
 {
     /**
-     * Sent when the window is about to be destroyed.
+     * Called when the window is about to be destroyed.
      *
-     * After this event is sent, the window is not longer valid.
+     * After this is called, the window is no longer valid.
      */
-    SWC_WINDOW_DESTROYED,
+    void (* destroy)(void * data);
 
     /**
-     * Sent when the window's title changes.
+     * Called when the window's title changes.
      */
-    SWC_WINDOW_TITLE_CHANGED,
+    void (* title_changed)(void * data);
 
     /**
-     * Sent when the window's class changes.
+     * Called when the window's class changes.
      */
-    SWC_WINDOW_CLASS_CHANGED,
+    void (* class_changed)(void * data);
 
     /**
-     * Sent when the pointer enters the window.
-     */
-    SWC_WINDOW_ENTERED,
-
-    /**
-     * Sent when the window's size has changed.
-     */
-    SWC_WINDOW_RESIZED,
-
-    /**
-     * Sent when the window's parent changes.
+     * Called when the window's parent changes.
      *
-     * This can occur when the window becomes a transient for another window,
-     * or becomes a toplevel window.
+     * This can occur when the window becomes a transient for another window, or
+     * becomes a toplevel window.
      */
-    SWC_WINDOW_PARENT_CHANGED
+    void (* parent_changed)(void * data);
+
+    /**
+     * Called when the pointer enters the window.
+     */
+    void (* entered)(void * data);
 };
 
 struct swc_window
 {
-    struct wl_signal event_signal;
-
     char * title;
     char * class;
 
     struct swc_window * parent;
 };
+
+/**
+ * Set the handler associated with this window.
+ */
+void swc_window_set_handler(struct swc_window * window,
+                            const struct swc_window_handler * handler,
+                            void * data);
 
 /**
  * Request that the specified window close.
@@ -247,33 +252,6 @@ typedef void (* swc_binding_handler_t)(void * data, uint32_t time,
 int swc_add_binding(enum swc_binding_type type,
                     uint32_t modifiers, uint32_t value,
                     swc_binding_handler_t handler, void * data);
-
-/* }}} */
-
-/* Events {{{ */
-
-/**
- * An event is the data passed to the listeners of the event_signals of various
- * objects.
- */
-struct swc_event
-{
-    /**
-     * The type of event that was sent.
-     *
-     * The meaning of this field depends on the type of object containing the
-     * event_signal that passed this event.
-     */
-    uint32_t type;
-
-    /**
-     * Data specific to the event type.
-     *
-     * Unless explicitly stated in the description of the event type, this
-     * value is undefined.
-     */
-    void * data;
-};
 
 /* }}} */
 

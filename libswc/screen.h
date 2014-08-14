@@ -49,7 +49,10 @@ struct screen_modifier
 struct screen
 {
     struct swc_screen base;
+    const struct swc_screen_handler * handler;
+    void * handler_data;
 
+    struct wl_signal destroy_signal;
     uint8_t id;
 
     struct

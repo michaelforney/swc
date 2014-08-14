@@ -23,6 +23,7 @@
 
 #include "panel.h"
 #include "compositor.h"
+#include "event.h"
 #include "internal.h"
 #include "keyboard.h"
 #include "output.h"

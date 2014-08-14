@@ -35,6 +35,19 @@
 
 #define INTERNAL(s) ((struct screen *) (s))
 
+static const struct swc_screen_handler null_handler;
+
+EXPORT
+void swc_screen_set_handler(struct swc_screen * base,
+                            const struct swc_screen_handler * handler,
+                            void * data)
+{
+    struct screen * screen = INTERNAL(base);
+
+    screen->handler = handler;
+    screen->handler_data = data;
+}
+
 bool screens_initialize()
 {
     wl_list_init(&swc.screens);
@@ -114,7 +127,8 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
         goto error3;
     }
 
-    wl_signal_init(&screen->base.event_signal);
+    screen->handler = &null_handler;
+    wl_signal_init(&screen->destroy_signal);
     wl_list_init(&screen->resources);
     wl_list_init(&screen->outputs);
     wl_list_insert(&screen->outputs, &output->link);
@@ -142,7 +156,9 @@ void screen_destroy(struct screen * screen)
 {
     struct swc_output * output, * next;
 
-    swc_send_event(&screen->base.event_signal, SWC_SCREEN_DESTROYED, NULL);
+    if (screen->handler->destroy)
+        screen->handler->destroy(screen->handler_data);
+    wl_signal_emit(&screen->destroy_signal, NULL);
     wl_list_for_each_safe(output, next, &screen->outputs, link)
         swc_output_destroy(output);
     framebuffer_plane_finalize(&screen->planes.framebuffer);
@@ -182,8 +198,8 @@ void screen_update_usable_geometry(struct screen * screen)
         screen->base.usable_geometry.width = extents->x2 - extents->x1;
         screen->base.usable_geometry.height = extents->y2 - extents->y1;
 
-        swc_send_event(&screen->base.event_signal,
-                       SWC_SCREEN_USABLE_GEOMETRY_CHANGED, NULL);
+        if (screen->handler->usable_geometry_changed)
+            screen->handler->usable_geometry_changed(screen->handler_data);
     }
 }
 

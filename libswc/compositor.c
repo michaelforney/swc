@@ -31,6 +31,7 @@
 #include "compositor.h"
 #include "data_device_manager.h"
 #include "drm.h"
+#include "event.h"
 #include "internal.h"
 #include "launch.h"
 #include "output.h"
@@ -59,7 +60,7 @@ struct target
     struct wl_listener view_listener;
     uint32_t mask;
 
-    struct wl_listener screen_listener;
+    struct wl_listener screen_destroy_listener;
 };
 
 static bool handle_motion(struct pointer_handler * handler, uint32_t time,
@@ -92,27 +93,23 @@ struct swc_compositor swc_compositor = {
     .pointer_handler = &pointer_handler
 };
 
-static void handle_screen_event(struct wl_listener * listener, void * data)
+static void handle_screen_destroy(struct wl_listener * listener, void * data)
 {
-    struct swc_event * event = data;
+    struct target * target
+        = wl_container_of(listener, target, screen_destroy_listener);
 
-    if (event->type == SWC_SCREEN_DESTROYED)
-    {
-        struct target * target
-            = wl_container_of(listener, target, screen_listener);
-
-        wld_destroy_surface(target->surface);
-        free(target);
-    }
+    wld_destroy_surface(target->surface);
+    free(target);
 }
 
 static struct target * target_get(struct screen * screen)
 {
     struct wl_listener * listener
-        = wl_signal_get(&screen->base.event_signal, &handle_screen_event);
+        = wl_signal_get(&screen->destroy_signal, &handle_screen_destroy);
     struct target * target;
 
-    return listener ? wl_container_of(listener, target, screen_listener) : NULL;
+    return listener ? wl_container_of(listener, target, screen_destroy_listener)
+                    : NULL;
 }
 
 static void handle_screen_view_event(struct wl_listener * listener, void * data)
@@ -178,8 +175,8 @@ static struct target * target_new(struct screen * screen)
     target->mask = screen_mask(screen);
     target_swap_buffers(target);
 
-    target->screen_listener.notify = &handle_screen_event;
-    wl_signal_add(&screen->base.event_signal, &target->screen_listener);
+    target->screen_destroy_listener.notify = &handle_screen_destroy;
+    wl_signal_add(&screen->destroy_signal, &target->screen_destroy_listener);
 
     return target;
 
