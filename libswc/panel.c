@@ -40,7 +40,6 @@ struct panel
 {
     struct wl_resource * resource;
 
-    struct swc_surface * surface;
     struct wl_listener surface_destroy_listener;
     struct compositor_view * view;
     struct view_handler view_handler;
@@ -105,9 +104,6 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
         default: return;
     }
 
-    if (panel->docked)
-        wl_list_remove(&panel->view_handler.link);
-
     if (panel->screen && screen_changed)
     {
         wl_list_remove(&panel->modifier.link);
@@ -117,17 +113,9 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     panel->screen = screen;
     panel->edge = edge;
     panel->docked = true;
-    panel->view = swc_compositor_create_view(panel->surface);
-
-    if (!panel->view)
-    {
-        wl_resource_post_no_memory(resource);
-        return;
-    }
 
     update_position(panel);
     compositor_view_show(panel->view);
-    wl_list_insert(&panel->view->base.handlers, &panel->view_handler.link);
     wl_list_insert(&screen->modifiers, &panel->modifier.link);
 
     if (focus)
@@ -223,9 +211,9 @@ static void destroy_panel(struct wl_resource * resource)
     {
         wl_list_remove(&panel->modifier.link);
         screen_update_usable_geometry(panel->screen);
-        compositor_view_destroy(panel->view);
     }
 
+    compositor_view_destroy(panel->view);
     free(panel);
 }
 
@@ -252,10 +240,12 @@ struct panel * panel_new(struct wl_client * client, uint32_t id,
     if (!panel->resource)
         goto error1;
 
+    if (!(panel->view = swc_compositor_create_view(surface)))
+        goto error2;
+
     wl_resource_set_implementation(panel->resource, &panel_implementation,
                                    panel, &destroy_panel);
 
-    panel->surface = surface;
     panel->surface_destroy_listener.notify = &handle_surface_destroy;
     panel->view_handler.impl = &view_handler_impl;
     panel->modifier.modify = &modify;
@@ -264,11 +254,14 @@ struct panel * panel_new(struct wl_client * client, uint32_t id,
     panel->strut_size = 0;
     panel->docked = false;
 
+    wl_list_insert(&panel->view->base.handlers, &panel->view_handler.link);
     wl_resource_add_destroy_listener(surface->resource,
                                      &panel->surface_destroy_listener);
 
     return panel;
 
+  error2:
+    wl_resource_destroy(panel->resource);
   error1:
     free(panel);
   error0:
