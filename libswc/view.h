@@ -26,44 +26,6 @@
 
 #include "swc.h"
 
-enum
-{
-    /* Sent when the view has displayed the next frame. */
-    VIEW_EVENT_FRAME,
-
-    /* Sent when the origin of the view has moved. */
-    VIEW_EVENT_MOVED,
-
-    /* Sent when the view's size changes. */
-    VIEW_EVENT_RESIZED,
-
-    /* Sent when the set of screens the view is visible on changes. */
-    VIEW_EVENT_SCREENS_CHANGED
-};
-
-/**
- * This structure contains data sent along with a view's events.
- *
- * Extra data correspending to the particular event is stored in the
- * corresponding struct inside the union.
- */
-struct view_event_data
-{
-    struct view * view;
-    union
-    {
-        struct
-        {
-            uint32_t time;
-        } frame;
-
-        struct
-        {
-            uint32_t left, entered;
-        } screens_changed;
-    };
-};
-
 /**
  * A view represents a component that can display buffers to the user.
  *
@@ -79,12 +41,18 @@ struct view_event_data
 struct view
 {
     const struct view_impl * impl;
+    struct wl_list handlers;
 
-    struct wl_signal event_signal;
     struct swc_rectangle geometry;
     uint32_t screens;
 
     struct wld_buffer * buffer;
+};
+
+struct view_handler
+{
+    const struct view_handler_impl * impl;
+    struct wl_list link;
 };
 
 /**
@@ -97,6 +65,19 @@ struct view_impl
     bool (* update)(struct view * view);
     int (* attach)(struct view * view, struct wld_buffer * buffer);
     bool (* move)(struct view * view, int32_t x, int32_t y);
+};
+
+struct view_handler_impl
+{
+    /* Called when the view has displayed the next frame. */
+    void (* frame)(struct view_handler * handler, uint32_t time);
+    /* Called after the view's position changes. */
+    void (* move)(struct view_handler * handler);
+    /* Called after the view's size changes. */
+    void (* resize)(struct view_handler * handler);
+    /* Called when the set of screens the view is visible on changes. */
+    void (* screens)(struct view_handler * handler,
+                     uint32_t left, uint32_t entered);
 };
 
 /**

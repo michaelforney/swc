@@ -57,7 +57,7 @@ struct target
     struct wld_surface * surface;
     struct wld_buffer * next_buffer, * current_buffer;
     struct view * view;
-    struct wl_listener view_listener;
+    struct view_handler view_handler;
     uint32_t mask;
 
     struct wl_listener screen_destroy_listener;
@@ -112,39 +112,33 @@ static struct target * target_get(struct screen * screen)
                     : NULL;
 }
 
-static void handle_screen_view_event(struct wl_listener * listener, void * data)
+static void handle_screen_frame(struct view_handler * handler, uint32_t time)
 {
-    struct swc_event * event = data;
-    struct view_event_data * event_data = event->data;
-    struct target * target = wl_container_of(listener, target, view_listener);
+    struct target * target = wl_container_of(handler, target, view_handler);
+    struct compositor_view * view;
 
-    switch (event->type)
+    compositor.pending_flips &= ~target->mask;
+
+    wl_list_for_each(view, &compositor.views, link)
     {
-        case VIEW_EVENT_FRAME:
-        {
-            struct compositor_view * view;
-
-            compositor.pending_flips &= ~target->mask;
-
-            wl_list_for_each(view, &compositor.views, link)
-            {
-                if (view->base.screens & target->mask)
-                    view_frame(&view->base, event_data->frame.time);
-            }
-
-            if (target->current_buffer)
-                wld_surface_release(target->surface, target->current_buffer);
-
-            target->current_buffer = target->next_buffer;
-
-            /* If we had scheduled updates that couldn't run because we were
-             * waiting on a page flip, run them now. */
-            if (compositor.scheduled_updates && !compositor.updating)
-                perform_update(NULL);
-            break;
-        }
+        if (view->base.screens & target->mask)
+            view_frame(&view->base, time);
     }
+
+    if (target->current_buffer)
+        wld_surface_release(target->surface, target->current_buffer);
+
+    target->current_buffer = target->next_buffer;
+
+    /* If we had scheduled updates that couldn't run because we were
+     * waiting on a page flip, run them now. */
+    if (compositor.scheduled_updates && !compositor.updating)
+        perform_update(NULL);
 }
+
+static const struct view_handler_impl screen_view_handler = {
+    .frame = &handle_screen_frame,
+};
 
 static int target_swap_buffers(struct target * target)
 {
@@ -169,8 +163,8 @@ static struct target * target_new(struct screen * screen)
         goto error1;
 
     target->view = &screen->planes.framebuffer.view;
-    target->view_listener.notify = &handle_screen_view_event;
-    wl_signal_add(&target->view->event_signal, &target->view_listener);
+    target->view_handler.impl = &screen_view_handler;
+    wl_list_insert(&target->view->handlers, &target->view_handler.link);
     target->current_buffer = NULL;
     target->mask = screen_mask(screen);
     target_swap_buffers(target);

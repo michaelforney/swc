@@ -29,6 +29,16 @@
 
 #include <wld/wld.h>
 
+#define HANDLE(view, handler, method, ...)                                  \
+    do                                                                      \
+    {                                                                       \
+        wl_list_for_each(handler, &view->handlers, link)                    \
+        {                                                                   \
+            if (handler->impl->method)                                      \
+                handler->impl->method(handler, ## __VA_ARGS__);             \
+        }                                                                   \
+    } while (0)
+
 void view_initialize(struct view * view, const struct view_impl * impl)
 {
     view->impl = impl;
@@ -38,7 +48,7 @@ void view_initialize(struct view * view, const struct view_impl * impl)
     view->geometry.height = 0;
     view->buffer = NULL;
     view->screens = 0;
-    wl_signal_init(&view->event_signal);
+    wl_list_init(&view->handlers);
 }
 
 void view_finalize(struct view * view)
@@ -77,28 +87,28 @@ bool view_move(struct view * view, int32_t x, int32_t y)
 
 bool view_set_position(struct view * view, int32_t x, int32_t y)
 {
-    struct view_event_data data = { .view = view };
+    struct view_handler * handler;
 
     if (x == view->geometry.x && y == view->geometry.y)
         return false;
 
     view->geometry.x = x;
     view->geometry.y = y;
-    swc_send_event(&view->event_signal, VIEW_EVENT_MOVED, &data);
+    HANDLE(view, handler, move);
 
     return true;
 }
 
 bool view_set_size(struct view * view, uint32_t width, uint32_t height)
 {
-    struct view_event_data data = { .view = view };
+    struct view_handler * handler;
 
     if (view->geometry.width == width && view->geometry.height == height)
         return false;
 
     view->geometry.width = width;
     view->geometry.height = height;
-    swc_send_event(&view->event_signal, VIEW_EVENT_RESIZED, &data);
+    HANDLE(view, handler, resize);
 
     return true;
 }
@@ -114,16 +124,12 @@ void view_set_screens(struct view * view, uint32_t screens)
     if (view->screens == screens)
         return;
 
-    struct view_event_data data = {
-        .view = view,
-        .screens_changed = {
-            .entered = screens & ~view->screens,
-            .left = view->screens & ~screens
-        }
-    };
+    uint32_t entered = screens & ~view->screens,
+             left = view->screens & ~screens;
+    struct view_handler * handler;
 
     view->screens = screens;
-    swc_send_event(&view->event_signal, VIEW_EVENT_SCREENS_CHANGED, &data);
+    HANDLE(view, handler, screens, entered, left);
 }
 
 void view_update_screens(struct view * view)
@@ -142,8 +148,8 @@ void view_update_screens(struct view * view)
 
 void view_frame(struct view * view, uint32_t time)
 {
-    struct view_event_data data = { .view = view, .frame = { time } };
+    struct view_handler * handler;
 
-    swc_send_event(&view->event_signal, VIEW_EVENT_FRAME, &data);
+    HANDLE(view, handler, frame, time);
 }
 

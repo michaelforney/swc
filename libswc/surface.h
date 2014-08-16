@@ -24,6 +24,8 @@
 #ifndef SWC_SURFACE_H
 #define SWC_SURFACE_H
 
+#include "view.h"
+
 #include <stdbool.h>
 #include <wayland-server.h>
 #include <pixman.h>
@@ -69,7 +71,7 @@ struct swc_surface
     } pending;
 
     struct view * view;
-    struct wl_listener view_listener;
+    struct view_handler view_handler;
 };
 
 struct swc_surface * swc_surface_new(struct wl_client * client,

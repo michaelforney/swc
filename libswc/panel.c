@@ -23,7 +23,6 @@
 
 #include "panel.h"
 #include "compositor.h"
-#include "event.h"
 #include "internal.h"
 #include "keyboard.h"
 #include "output.h"
@@ -44,7 +43,7 @@ struct panel
     struct swc_surface * surface;
     struct wl_listener surface_destroy_listener;
     struct compositor_view * view;
-    struct wl_listener view_listener;
+    struct view_handler view_handler;
     struct screen * screen;
     struct screen_modifier modifier;
     uint32_t edge;
@@ -107,7 +106,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
     }
 
     if (panel->docked)
-        wl_list_remove(&panel->view_listener.link);
+        wl_list_remove(&panel->view_handler.link);
 
     if (panel->screen && screen_changed)
     {
@@ -128,7 +127,7 @@ static void dock(struct wl_client * client, struct wl_resource * resource,
 
     update_position(panel);
     compositor_view_show(panel->view);
-    wl_signal_add(&panel->view->base.event_signal, &panel->view_listener);
+    wl_list_insert(&panel->view->base.handlers, &panel->view_handler.link);
     wl_list_insert(&screen->modifiers, &panel->modifier.link);
 
     if (focus)
@@ -163,6 +162,17 @@ static const struct swc_panel_interface panel_implementation = {
     .dock = &dock,
     .set_offset = &set_offset,
     .set_strut = &set_strut
+};
+
+static void handle_resize(struct view_handler * handler)
+{
+    struct panel * panel = wl_container_of(handler, panel, view_handler);
+
+    update_position(panel);
+}
+
+static const struct view_handler_impl view_handler_impl = {
+    .resize = &handle_resize,
 };
 
 static void modify(struct screen_modifier * modifier,
@@ -211,26 +221,12 @@ static void destroy_panel(struct wl_resource * resource)
 
     if (panel->docked)
     {
-        wl_list_remove(&panel->view_listener.link);
         wl_list_remove(&panel->modifier.link);
         screen_update_usable_geometry(panel->screen);
         compositor_view_destroy(panel->view);
     }
 
     free(panel);
-}
-
-static void handle_view_event(struct wl_listener * listener, void * data)
-{
-    struct panel * panel = wl_container_of(listener, panel, view_listener);
-    struct swc_event * event = data;
-
-    switch (event->type)
-    {
-        case VIEW_EVENT_RESIZED:
-            update_position(panel);
-            break;
-    }
 }
 
 static void handle_surface_destroy(struct wl_listener * listener, void * data)
@@ -261,7 +257,7 @@ struct panel * panel_new(struct wl_client * client, uint32_t id,
 
     panel->surface = surface;
     panel->surface_destroy_listener.notify = &handle_surface_destroy;
-    panel->view_listener.notify = &handle_view_event;
+    panel->view_handler.impl = &view_handler_impl;
     panel->modifier.modify = &modify;
     panel->screen = NULL;
     panel->offset = 0;

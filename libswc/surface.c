@@ -107,6 +107,60 @@ static void state_set_buffer(struct swc_surface_state * state,
     state->buffer_resource = resource;
 }
 
+static void handle_frame(struct view_handler * handler, uint32_t time)
+{
+    struct swc_surface * surface
+        = wl_container_of(handler, surface, view_handler);
+    struct wl_resource * resource, * tmp;
+
+    wl_list_for_each_safe(resource, tmp,
+                          &surface->state.frame_callbacks, link)
+    {
+        wl_callback_send_done(resource, time);
+        wl_resource_destroy(resource);
+    }
+
+    wl_list_init(&surface->state.frame_callbacks);
+}
+
+static void handle_screens(struct view_handler * handler,
+                           uint32_t entered, uint32_t left)
+{
+    struct swc_surface * surface
+        = wl_container_of(handler, surface, view_handler);
+    struct screen * screen;
+    struct swc_output * output;
+    struct wl_client * client;
+    struct wl_resource * resource;
+
+    client = wl_resource_get_client(surface->resource);
+
+    wl_list_for_each(screen, &swc.screens, link)
+    {
+        if (!((entered | left) & screen_mask(screen)))
+            continue;
+
+        wl_list_for_each(output, &screen->outputs, link)
+        {
+            resource = wl_resource_find_for_client
+                (&output->resources, client);
+
+            if (resource)
+            {
+                if (entered & screen_mask(screen))
+                    wl_surface_send_enter(surface->resource, resource);
+                else if (left & screen_mask(screen))
+                    wl_surface_send_leave(surface->resource, resource);
+            }
+        }
+    }
+}
+
+static const struct view_handler_impl view_handler_impl = {
+    .frame = &handle_frame,
+    .screens = &handle_screens,
+};
+
 static void destroy(struct wl_client * client, struct wl_resource * resource)
 {
     wl_resource_destroy(resource);
@@ -291,67 +345,9 @@ static void surface_destroy(struct wl_resource * resource)
     state_finalize(&surface->pending.state);
 
     if (surface->view)
-        wl_list_remove(&surface->view_listener.link);
+        wl_list_remove(&surface->view_handler.link);
 
     free(surface);
-}
-
-static void handle_view_event(struct wl_listener * listener, void * data)
-{
-    struct swc_surface * surface
-        = wl_container_of(listener, surface, view_listener);
-    struct swc_event * event = data;
-    struct view_event_data * event_data = event->data;
-
-    switch (event->type)
-    {
-        case VIEW_EVENT_FRAME:
-        {
-            struct wl_resource * resource, * tmp;
-
-            wl_list_for_each_safe(resource, tmp,
-                                  &surface->state.frame_callbacks, link)
-            {
-                wl_callback_send_done(resource, event_data->frame.time);
-                wl_resource_destroy(resource);
-            }
-
-            wl_list_init(&surface->state.frame_callbacks);
-            break;
-        }
-        case VIEW_EVENT_SCREENS_CHANGED:
-        {
-            struct screen * screen;
-            struct swc_output * output;
-            struct wl_client * client;
-            struct wl_resource * resource;
-            uint32_t entered = event_data->screens_changed.entered,
-                     left = event_data->screens_changed.left;
-
-            client = wl_resource_get_client(surface->resource);
-
-            wl_list_for_each(screen, &swc.screens, link)
-            {
-                if (!((entered | left) & screen_mask(screen)))
-                    continue;
-
-                wl_list_for_each(output, &screen->outputs, link)
-                {
-                    resource = wl_resource_find_for_client
-                        (&output->resources, client);
-
-                    if (resource)
-                    {
-                        if (entered & screen_mask(screen))
-                            wl_surface_send_enter(surface->resource, resource);
-                        else if (left & screen_mask(screen))
-                            wl_surface_send_leave(surface->resource, resource);
-                    }
-                }
-            }
-            break;
-        }
-    }
 }
 
 /**
@@ -374,7 +370,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     /* Initialize the surface. */
     surface->pending.commit = 0;
     surface->view = NULL;
-    surface->view_listener.notify = &handle_view_event;
+    surface->view_handler.impl = &view_handler_impl;
 
     state_initialize(&surface->state);
     state_initialize(&surface->pending.state);
@@ -394,13 +390,13 @@ void swc_surface_set_view(struct swc_surface * surface, struct view * view)
         return;
 
     if (surface->view)
-        wl_list_remove(&surface->view_listener.link);
+        wl_list_remove(&surface->view_handler.link);
 
     surface->view = view;
 
     if (view)
     {
-        wl_signal_add(&view->event_signal, &surface->view_listener);
+        wl_list_insert(&view->handlers, &surface->view_handler.link);
         view_attach(view, surface->state.buffer);
         view_update(view);
     }
