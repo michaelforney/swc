@@ -58,6 +58,20 @@ struct wl_listener window_enter_listener = {
     .notify = &handle_window_enter
 };
 
+static void begin_interaction(struct window_pointer_interaction * interaction,
+                              struct button * button)
+{
+    if (button)
+    {
+        interaction->original_handler = button->handler;
+        button->handler = &interaction->handler;
+    }
+    else
+        interaction->original_handler = NULL;
+
+    wl_list_insert(&swc.seat->pointer->handlers, &interaction->handler.link);
+}
+
 EXPORT
 void swc_window_set_handler(struct swc_window * base,
                             const struct swc_window_handler * handler,
@@ -183,45 +197,6 @@ void swc_window_set_border(struct swc_window * window,
 
     compositor_view_set_border_color(view, border_color);
     compositor_view_set_border_width(view, border_width);
-}
-
-static inline void window_begin_interaction
-    (struct window * window, struct window_pointer_interaction * interaction,
-     struct button * button)
-{
-    if (button)
-    {
-        interaction->original_handler = button->handler;
-        button->handler = &interaction->handler;
-    }
-    else
-        interaction->original_handler = NULL;
-
-    wl_list_insert(&swc.seat->pointer->handlers, &interaction->handler.link);
-}
-
-void window_begin_move(struct window * window, struct button * button)
-{
-    struct swc_rectangle * geometry = &window->view->base.geometry;
-    int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
-            py = wl_fixed_to_int(swc.seat->pointer->y);
-
-    window_begin_interaction(window, &window->move.interaction, button);
-    window->move.offset.x = geometry->x - px;
-    window->move.offset.y = geometry->y - py;
-}
-
-void window_begin_resize(struct window * window, uint32_t edges,
-                         struct button * button)
-{
-    window_begin_interaction(window, &window->resize.interaction, button);
-
-    if (!edges)
-    {
-        /* TODO: Calculate edges to use */
-    }
-
-    window->resize.edges = edges;
 }
 
 EXPORT
@@ -383,5 +358,29 @@ void window_set_parent(struct window * window, struct window * parent)
 
     if (window->handler->parent_changed)
         window->handler->parent_changed(window->handler_data);
+}
+
+void window_begin_move(struct window * window, struct button * button)
+{
+    struct swc_rectangle * geometry = &window->view->base.geometry;
+    int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
+            py = wl_fixed_to_int(swc.seat->pointer->y);
+
+    begin_interaction(&window->move.interaction, button);
+    window->move.offset.x = geometry->x - px;
+    window->move.offset.y = geometry->y - py;
+}
+
+void window_begin_resize(struct window * window, uint32_t edges,
+                         struct button * button)
+{
+    begin_interaction(&window->resize.interaction, button);
+
+    if (!edges)
+    {
+        /* TODO: Calculate edges to use */
+    }
+
+    window->resize.edges = edges;
 }
 
