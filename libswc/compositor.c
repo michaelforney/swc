@@ -174,9 +174,9 @@ static struct target * target_new(struct screen * screen)
 
     return target;
 
-error1:
+  error1:
     free(target);
-error0:
+  error0:
     return NULL;
 }
 
@@ -216,8 +216,6 @@ static void repaint_view(struct target * target, struct compositor_view * view,
     /* Draw border */
     if (pixman_region32_not_empty(&border_damage))
     {
-        DEBUG("\t\tRedrawing border\n");
-
         pixman_region32_translate(&border_damage,
                                   -target->view->geometry.x,
                                   -target->view->geometry.y);
