@@ -74,7 +74,8 @@ struct view_handler_impl
     /* Called after the view's position changes. */
     void (* move)(struct view_handler * handler);
     /* Called after the view's size changes. */
-    void (* resize)(struct view_handler * handler);
+    void (* resize)(struct view_handler * handler,
+                    uint32_t old_width, uint32_t old_height);
     /* Called when the set of screens the view is visible on changes. */
     void (* screens)(struct view_handler * handler,
                      uint32_t left, uint32_t entered);

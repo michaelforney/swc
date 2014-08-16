@@ -263,7 +263,22 @@ static bool move_motion(struct pointer_handler * handler, uint32_t time,
 static bool resize_motion(struct pointer_handler * handler, uint32_t time,
                           wl_fixed_t fx, wl_fixed_t fy)
 {
-    /* TODO: Implement interactive resizing */
+    struct window * window
+        = wl_container_of(handler, window, resize.interaction.handler);
+    const struct swc_rectangle * geometry = &window->view->base.geometry;
+    uint32_t width = geometry->width, height = geometry->height;
+
+    if (window->resize.edges & SWC_WINDOW_EDGE_LEFT)
+        width -= wl_fixed_to_int(fx) + window->resize.offset.x - geometry->x;
+    else if (window->resize.edges & SWC_WINDOW_EDGE_RIGHT)
+        width = wl_fixed_to_int(fx) + window->resize.offset.x - geometry->x;
+
+    if (window->resize.edges & SWC_WINDOW_EDGE_TOP)
+        height -= wl_fixed_to_int(fy) + window->resize.offset.y - geometry->y;
+    else if (window->resize.edges & SWC_WINDOW_EDGE_BOTTOM)
+        height = wl_fixed_to_int(fy) + window->resize.offset.y - geometry->y;
+
+    window->impl->configure(window, width, height);
 
     return true;
 }
@@ -286,6 +301,30 @@ static bool handle_button(struct pointer_handler * handler, uint32_t time,
     return true;
 }
 
+static void handle_resize(struct view_handler * handler,
+                          uint32_t old_width, uint32_t old_height)
+{
+    struct window * window = wl_container_of(handler, window, view_handler);
+
+    if (window->resize.interaction.active
+        && window->resize.edges & (SWC_WINDOW_EDGE_TOP | SWC_WINDOW_EDGE_LEFT))
+    {
+        const struct swc_rectangle * geometry = &window->view->base.geometry;
+        int32_t x = geometry->x, y = geometry->y;
+
+        if (window->resize.edges & SWC_WINDOW_EDGE_LEFT)
+            x += old_width - geometry->width;
+        if (window->resize.edges & SWC_WINDOW_EDGE_TOP)
+            y += old_height - geometry->height;
+
+        view_move(&window->view->base, x, y);
+    }
+}
+
+static const struct view_handler_impl view_handler_impl = {
+    .resize = &handle_resize,
+};
+
 bool window_initialize(struct window * window, const struct window_impl * impl,
                        struct swc_surface * surface)
 {
@@ -300,6 +339,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
 
     window->impl = impl;
     window->handler = &null_handler;
+    window->view_handler.impl = &view_handler_impl;
     window->view->window = window;
     window->managed = false;
     window->mode = WINDOW_MODE_STACKED;
@@ -313,6 +353,8 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
         .motion = &resize_motion,
         .button = &handle_button
     };
+
+    wl_list_insert(&window->view->base.handlers, &window->view_handler.link);
 
     return true;
 }
@@ -401,13 +443,24 @@ void window_begin_resize(struct window * window, uint32_t edges,
         return;
     }
 
+    struct swc_rectangle * geometry = &window->view->base.geometry;
+    int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
+            py = wl_fixed_to_int(swc.seat->pointer->y);
+
     begin_interaction(&window->resize.interaction, button);
 
     if (!edges)
     {
-        /* TODO: Calculate edges to use */
+        edges |= (px < geometry->x + geometry->width / 2)
+            ? SWC_WINDOW_EDGE_LEFT : SWC_WINDOW_EDGE_RIGHT;
+        edges |= (py < geometry->y + geometry->height / 2)
+            ? SWC_WINDOW_EDGE_TOP : SWC_WINDOW_EDGE_BOTTOM;
     }
 
+    window->resize.offset.x = geometry->x - px
+        + ((edges & SWC_WINDOW_EDGE_RIGHT) ? geometry->width : 0);
+    window->resize.offset.y = geometry->y - py
+        + ((edges & SWC_WINDOW_EDGE_BOTTOM) ? geometry->height : 0);
     window->resize.edges = edges;
 }
 

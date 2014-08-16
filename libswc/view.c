@@ -106,9 +106,12 @@ bool view_set_size(struct view * view, uint32_t width, uint32_t height)
     if (view->geometry.width == width && view->geometry.height == height)
         return false;
 
+    uint32_t old_width = view->geometry.width,
+             old_height = view->geometry.height;
+
     view->geometry.width = width;
     view->geometry.height = height;
-    HANDLE(view, handler, resize);
+    HANDLE(view, handler, resize, old_width, old_height);
 
     return true;
 }

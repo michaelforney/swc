@@ -152,7 +152,8 @@ static const struct swc_panel_interface panel_implementation = {
     .set_strut = &set_strut
 };
 
-static void handle_resize(struct view_handler * handler)
+static void handle_resize(struct view_handler * handler,
+                          uint32_t old_width, uint32_t old_height)
 {
     struct panel * panel = wl_container_of(handler, panel, view_handler);
 

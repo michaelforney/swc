@@ -52,6 +52,7 @@ struct window
     void * handler_data;
 
     struct compositor_view * view;
+    struct view_handler view_handler;
     bool managed;
     enum window_mode mode;
 
@@ -64,6 +65,7 @@ struct window
     struct
     {
         struct window_pointer_interaction interaction;
+        struct { int32_t x, y; } offset;
         uint32_t edges;
     } resize;
 };
