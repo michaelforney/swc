@@ -32,6 +32,8 @@
 
 struct window_pointer_interaction
 {
+    bool active;
+    uint32_t serial;
     struct pointer_handler handler, * original_handler;
 };
 

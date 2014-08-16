@@ -63,13 +63,36 @@ static void begin_interaction(struct window_pointer_interaction * interaction,
 {
     if (button)
     {
+        /* Store the serial of the button press so we are able to cancel the
+         * interaction if the window changes from stacked mode. */
+        interaction->serial = button->press.serial;
         interaction->original_handler = button->handler;
         button->handler = &interaction->handler;
     }
     else
         interaction->original_handler = NULL;
 
+    interaction->active = true;
     wl_list_insert(&swc.seat->pointer->handlers, &interaction->handler.link);
+}
+
+static void end_interaction(struct window_pointer_interaction * interaction)
+{
+    if (!interaction->active)
+        return;
+
+    if (interaction->original_handler)
+    {
+        struct button * button;
+
+        button = pointer_get_button(swc.seat->pointer, interaction->serial);
+        interaction->original_handler->button(interaction->original_handler,
+                                              swc_time(), &button->press,
+                                              WL_POINTER_BUTTON_STATE_RELEASED);
+    }
+
+    interaction->active = false;
+    wl_list_remove(&interaction->handler.link);
 }
 
 EXPORT
@@ -140,6 +163,8 @@ void swc_window_set_tiled(struct swc_window * base)
 {
     struct window * window = INTERNAL(base);
 
+    end_interaction(&window->move.interaction);
+    end_interaction(&window->resize.interaction);
     if (window->impl->set_mode)
         window->impl->set_mode(window, WINDOW_MODE_TILED);
     window->mode = WINDOW_MODE_TILED;
@@ -200,35 +225,27 @@ void swc_window_set_border(struct swc_window * window,
 }
 
 EXPORT
-void swc_window_begin_move(struct swc_window * base)
+void swc_window_begin_move(struct swc_window * window)
 {
-    struct window * window = (struct window *) base;
-
-    window_begin_move(window, NULL);
+    window_begin_move(INTERNAL(window), NULL);
 }
 
 EXPORT
-void swc_window_end_move(struct swc_window * base)
+void swc_window_end_move(struct swc_window * window)
 {
-    struct window * window = (struct window *) base;
-
-    wl_list_remove(&window->move.interaction.handler.link);
+    end_interaction(&INTERNAL(window)->move.interaction);
 }
 
 EXPORT
-void swc_window_begin_resize(struct swc_window * base, uint32_t edges)
+void swc_window_begin_resize(struct swc_window * window, uint32_t edges)
 {
-    struct window * window = (struct window *) base;
-
-    window_begin_resize(window, edges, NULL);
+    window_begin_resize(INTERNAL(window), edges, NULL);
 }
 
 EXPORT
-void swc_window_end_resize(struct swc_window * base)
+void swc_window_end_resize(struct swc_window * window)
 {
-    struct window * window = (struct window *) base;
-
-    wl_list_remove(&window->resize.interaction.handler.link);
+    end_interaction(&INTERNAL(window)->resize.interaction);
 }
 
 static bool move_motion(struct pointer_handler * handler, uint32_t time,
@@ -263,10 +280,9 @@ static bool handle_button(struct pointer_handler * handler, uint32_t time,
         return false;
     }
 
+    end_interaction(interaction);
     interaction->original_handler->button(interaction->original_handler, time,
                                           press, state);
-    wl_list_remove(&handler->link);
-
     return true;
 }
 
@@ -287,10 +303,12 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     window->view->window = window;
     window->managed = false;
     window->mode = WINDOW_MODE_STACKED;
+    window->move.interaction.active = false;
     window->move.interaction.handler = (struct pointer_handler) {
         .motion = &move_motion,
         .button = &handle_button
     };
+    window->resize.interaction.active = false;
     window->resize.interaction.handler = (struct pointer_handler) {
         .motion = &resize_motion,
         .button = &handle_button
@@ -362,6 +380,9 @@ void window_set_parent(struct window * window, struct window * parent)
 
 void window_begin_move(struct window * window, struct button * button)
 {
+    if (window->mode != WINDOW_MODE_STACKED || window->move.interaction.active)
+        return;
+
     struct swc_rectangle * geometry = &window->view->base.geometry;
     int32_t px = wl_fixed_to_int(swc.seat->pointer->x),
             py = wl_fixed_to_int(swc.seat->pointer->y);
@@ -374,6 +395,12 @@ void window_begin_move(struct window * window, struct button * button)
 void window_begin_resize(struct window * window, uint32_t edges,
                          struct button * button)
 {
+    if (window->mode != WINDOW_MODE_STACKED
+        || window->resize.interaction.active)
+    {
+        return;
+    }
+
     begin_interaction(&window->resize.interaction, button);
 
     if (!edges)
