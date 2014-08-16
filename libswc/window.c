@@ -112,6 +112,39 @@ void swc_window_focus(struct swc_window * base)
 }
 
 EXPORT
+void swc_window_set_stacked(struct swc_window * base)
+{
+    struct window * window = INTERNAL(base);
+
+    if (window->impl->set_mode)
+        window->impl->set_mode(window, WINDOW_MODE_STACKED);
+    window->mode = WINDOW_MODE_STACKED;
+}
+
+EXPORT
+void swc_window_set_tiled(struct swc_window * base)
+{
+    struct window * window = INTERNAL(base);
+
+    if (window->impl->set_mode)
+        window->impl->set_mode(window, WINDOW_MODE_TILED);
+    window->mode = WINDOW_MODE_TILED;
+}
+
+EXPORT
+void swc_window_set_fullscreen(struct swc_window * base,
+                               struct swc_screen * screen)
+{
+    struct window * window = INTERNAL(base);
+
+    /* TODO: Implement fullscreen windows. */
+
+    if (window->impl->set_mode)
+        window->impl->set_mode(window, WINDOW_MODE_FULLSCREEN);
+    window->mode = WINDOW_MODE_FULLSCREEN;
+}
+
+EXPORT
 void swc_window_set_position(struct swc_window * base, int32_t x, int32_t y)
 {
     struct window * window = INTERNAL(base);
@@ -278,6 +311,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     window->handler = &null_handler;
     window->view->window = window;
     window->managed = false;
+    window->mode = WINDOW_MODE_STACKED;
     window->move.interaction.handler = (struct pointer_handler) {
         .motion = &move_motion,
         .button = &handle_button

@@ -159,6 +159,34 @@ void swc_window_hide(struct swc_window * window);
 void swc_window_focus(struct swc_window * window);
 
 /**
+ * Sets the window to stacked mode.
+ *
+ * A window in this mode has its size specified by the client. The window's
+ * viewport will be adjusted to the size of the buffer attached by the
+ * client.
+ *
+ * Use of this mode is required to allow interactive moving and resizing.
+ */
+void swc_window_set_stacked(struct swc_window * window);
+
+/**
+ * Sets the window to tiled mode.
+ *
+ * A window in this mode has its size specified by the window manager.
+ * Additionally, swc will configure the window to operate in a tiled or
+ * maximized state in order to prevent the window from drawing shadows.
+ *
+ * It is invalid to interactively move or resize a window in tiled mode.
+ */
+void swc_window_set_tiled(struct swc_window * window);
+
+/**
+ * Sets the window to fullscreen mode.
+ */
+void swc_window_set_fullscreen(struct swc_window * window,
+                               struct swc_screen * screen);
+
+/**
  * Set the window's position.
  *
  * The x and y coordinates refer to the top-left corner of the actual contents

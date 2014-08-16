@@ -35,6 +35,13 @@ struct window_pointer_interaction
     struct pointer_handler handler, * original_handler;
 };
 
+enum window_mode
+{
+    WINDOW_MODE_STACKED,
+    WINDOW_MODE_TILED,
+    WINDOW_MODE_FULLSCREEN,
+};
+
 struct window
 {
     struct swc_window base;
@@ -44,6 +51,7 @@ struct window
 
     struct compositor_view * view;
     bool managed;
+    enum window_mode mode;
 
     struct
     {
@@ -65,6 +73,7 @@ struct window_impl
     void (* focus)(struct window * window);
     void (* unfocus)(struct window * window);
     void (* close)(struct window * window);
+    void (* set_mode)(struct window * window, enum window_mode mode);
 };
 
 extern struct wl_listener window_enter_listener;

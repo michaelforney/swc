@@ -206,6 +206,7 @@ static void new_window(struct swc_window * swc)
     window->swc = swc;
     window->screen = NULL;
     swc_window_set_handler(swc, &window_handler, window);
+    swc_window_set_tiled(swc);
     screen_add_window(active_screen, window);
     focus(window);
 }
