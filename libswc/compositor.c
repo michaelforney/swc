@@ -131,7 +131,9 @@ static void handle_screen_frame(struct view_handler * handler, uint32_t time)
     target->current_buffer = target->next_buffer;
 
     /* If we had scheduled updates that couldn't run because we were
-     * waiting on a page flip, run them now. */
+     * waiting on a page flip, run them now. If the compositor is
+     * currently updating, then the frame finished immediately, and we
+     * can be sure that there are no pending updates. */
     if (compositor.scheduled_updates && !compositor.updating)
         perform_update(NULL);
 }
