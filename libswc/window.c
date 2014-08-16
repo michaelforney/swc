@@ -365,7 +365,6 @@ void window_finalize(struct window * window)
 
     window_unmanage(window);
     compositor_view_destroy(window->view);
-    window->view->window = NULL;
     free(window->base.title);
     free(window->base.class);
 }
