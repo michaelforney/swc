@@ -74,6 +74,8 @@ static void setup_compositor()
     wl_list_insert(&swc.seat->keyboard->handlers,
                    &swc.bindings->keyboard_handler->link);
     wl_list_insert(&swc.seat->pointer->handlers,
+                   &swc.bindings->pointer_handler->link);
+    wl_list_insert(&swc.seat->pointer->handlers,
                    &swc.compositor->pointer_handler->link);
     wl_list_insert(&swc.seat->pointer->handlers,
                    &screens_pointer_handler.link);
