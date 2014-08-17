@@ -51,6 +51,8 @@ extern struct swc_shm swc_shm;
 extern struct swc_xserver swc_xserver;
 #endif
 
+extern struct pointer_handler screens_pointer_handler;
+
 struct swc swc = {
     .launch = &swc_launch,
     .seat = &swc_seat,
@@ -73,6 +75,8 @@ static void setup_compositor()
                    &swc.bindings->keyboard_handler->link);
     wl_list_insert(&swc.seat->pointer->handlers,
                    &swc.compositor->pointer_handler->link);
+    wl_list_insert(&swc.seat->pointer->handlers,
+                   &screens_pointer_handler.link);
     wl_signal_add(&swc.seat->pointer->focus.event_signal,
                   &window_enter_listener);
 

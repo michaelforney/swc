@@ -62,6 +62,11 @@ struct swc_screen_handler
      * within this area.
      */
     void (* usable_geometry_changed)(void * data);
+
+    /**
+     * Called when the pointer enters the screen.
+     */
+    void (* entered)(void * data);
 };
 
 struct swc_screen

@@ -27,6 +27,7 @@
 #include "internal.h"
 #include "mode.h"
 #include "output.h"
+#include "pointer.h"
 #include "util.h"
 #include "protocol/swc-server-protocol.h"
 
@@ -35,7 +36,15 @@
 
 #define INTERNAL(s) ((struct screen *) (s))
 
+static struct screen * active_screen;
 static const struct swc_screen_handler null_handler;
+
+static bool handle_motion(struct pointer_handler * handler, uint32_t time,
+                          wl_fixed_t x, wl_fixed_t y);
+
+struct pointer_handler screens_pointer_handler = {
+    .motion = &handle_motion
+};
 
 EXPORT
 void swc_screen_set_handler(struct swc_screen * base,
@@ -156,6 +165,8 @@ void screen_destroy(struct screen * screen)
 {
     struct swc_output * output, * next;
 
+    if (active_screen == screen)
+        active_screen = NULL;
     if (screen->handler->destroy)
         screen->handler->destroy(screen->handler_data);
     wl_signal_emit(&screen->destroy_signal, NULL);
@@ -201,5 +212,29 @@ void screen_update_usable_geometry(struct screen * screen)
         if (screen->handler->usable_geometry_changed)
             screen->handler->usable_geometry_changed(screen->handler_data);
     }
+}
+
+bool handle_motion(struct pointer_handler * handler, uint32_t time,
+                   wl_fixed_t fx, wl_fixed_t fy)
+{
+    struct screen * screen;
+    int32_t x = wl_fixed_to_int(fx), y = wl_fixed_to_int(fy);
+
+    wl_list_for_each(screen, &swc.screens, link)
+    {
+        if (swc_rectangle_contains_point(&screen->base.geometry, x, y))
+        {
+            if (screen != active_screen)
+            {
+                active_screen = screen;
+
+                if (screen->handler->entered)
+                    screen->handler->entered(screen->handler_data);
+            }
+            break;
+        }
+    }
+
+    return false;
 }
 

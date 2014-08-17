@@ -137,8 +137,16 @@ static void screen_usable_geometry_changed(void * data)
     arrange(screen);
 }
 
+static void screen_entered(void * data)
+{
+    struct screen * screen = data;
+
+    active_screen = screen;
+}
+
 static const struct swc_screen_handler screen_handler = {
     .usable_geometry_changed = &screen_usable_geometry_changed,
+    .entered = &screen_entered,
 };
 
 static void window_destroy(void * data)
