@@ -89,7 +89,5 @@ TODO
 ----
 * XWayland copy-paste integration
 * Better multi-screen support, including mirroring and screen arrangement
-* Mouse button bindings
-* Resizing/moving windows by dragging
 * Implement xdg_shell
 
