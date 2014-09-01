@@ -30,10 +30,6 @@
 #include <string.h>
 #include <sys/mman.h>
 
-const struct xkb_rule_names rule_names = {
-    .layout = "us"
-};
-
 static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
 
 bool xkb_initialize(struct xkb * xkb)
@@ -46,7 +42,7 @@ bool xkb_initialize(struct xkb * xkb)
         goto error0;
     }
 
-    xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, &rule_names, 0);
+    xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, NULL, 0);
 
     if (!xkb->keymap.map)
     {
