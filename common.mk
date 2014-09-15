@@ -6,6 +6,9 @@ build-$(dir): $($(dir)_TARGETS)
 .PHONY: install-$(dir)
 install-$(dir):
 
+.PHONY: uninstall-$(dir)
+uninstall-$(dir):
+
 .deps/$(dir):
 	@mkdir -p "$@"
 
