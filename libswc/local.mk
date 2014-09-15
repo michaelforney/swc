@@ -100,7 +100,6 @@ $(dir)/$(LIBSWC_SO): $(dir)/$(LIBSWC_LIB)
 
 $(dir)/$(LIBSWC_LINK): $(dir)/$(LIBSWC_SO)
 	$(call quiet,SYM,ln -sf) $(notdir $<) $@
-
 .PHONY: install-libswc.a
 install-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)
 	install -m0644 $< "$(DESTDIR)$(LIBDIR)"
@@ -114,7 +113,21 @@ install-$(LIBSWC_SO) install-$(LIBSWC_LINK): install-$(LIBSWC_LIB)
 	ln -sf $(LIBSWC_LIB) "$(DESTDIR)$(LIBDIR)"/${@:install-%=%}
 
 install-libswc: $($(dir)_TARGETS:$(dir)/%=install-%) | $(DESTDIR)$(INCLUDEDIR)
-	install -m0644 libswc/swc.h "$(DESTDIR)$(INCLUDEDIR)"
+	install -m0644 libswc/swc.h "$(DESTDIR)$(INCLUDEDIR)/swc.h"
+
+uninstall-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)
+	rm -f "$(DESTDIR)$(LIBDIR)/libswc.a"
+
+uninstall-$(LIBSWC_LIB): $(dir)/$(LIBSWC_LIB) | $(DESTDIR)$(LIBDIR)
+	rm -f "$(DESTDIR)$(LIBDIR)$(LIBSWC_LIB)"
+
+uninstall-$(LIBSWC_SO) uninstall-$(LIBSWC_LINK): uninstall-$(LIBSWC_LIB)
+	rm -f "$(DESTDIR)$(LIBDIR)/${@:uninstall-%=%}"
+
+uninstall-libswc: $($(dir)_TARGETS:$(dir)/%=uninstall-%) | $(DESTDIR)$(INCLUDEDIR)
+	rm -f "$(DESTDIR)$(INCLUDEDIR)/libswc.h"
+
+
 
 CLEAN_FILES += $(SWC_SHARED_OBJECTS) $(SWC_STATIC_OBJECTS)
 

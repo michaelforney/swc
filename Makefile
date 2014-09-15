@@ -79,6 +79,13 @@ install-swc.pc: swc.pc | $(DESTDIR)$(PKGCONFIGDIR)
 .PHONY: install
 install: $(SUBDIRS:%=install-%) $(TARGETS:%=install-%)
 
+.PHONY: uninstall-swc-pc
+uninstall-swc.pc:
+	rm -f "$(DESTDIR)$(PKGCONFIGDIR)/swc.pc"
+
+.PHONY: uninstall
+uninstall: ${SUBDIRS:%=uninstall-%} ${TARGETS:%=uninstall-%}
+
 .PHONY: clean
 clean:
 	rm -f $(CLEAN_FILES)
