@@ -121,7 +121,8 @@ static void create_buffer(struct wl_client * client,
     if (!buffer)
         goto error0;
 
-    buffer_resource = swc_wayland_buffer_create_resource(client, id, buffer);
+    buffer_resource = swc_wayland_buffer_create_resource
+        (client, wl_resource_get_version(resource), id, buffer);
 
     if (!buffer_resource)
         goto error1;

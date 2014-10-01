@@ -204,11 +204,13 @@ static void unbind(struct wl_resource * resource)
 }
 
 struct wl_resource * keyboard_bind(struct keyboard * keyboard,
-                                   struct wl_client * client, uint32_t id)
+                                   struct wl_client * client,
+                                   uint32_t version, uint32_t id)
 {
     struct wl_resource * client_resource;
 
-    client_resource = wl_resource_create(client, &wl_keyboard_interface, 3, id);
+    client_resource = wl_resource_create(client, &wl_keyboard_interface,
+                                         version, id);
     wl_resource_set_implementation(client_resource, &keyboard_implementation,
                                    keyboard, &unbind);
     input_focus_add_resource(&keyboard->focus, client_resource);

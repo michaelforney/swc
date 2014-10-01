@@ -226,8 +226,8 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
     wl_resource_destroy(panel->resource);
 }
 
-struct panel * panel_new(struct wl_client * client, uint32_t id,
-                         struct swc_surface * surface)
+struct panel * panel_new(struct wl_client * client, uint32_t version,
+                         uint32_t id, struct swc_surface * surface)
 {
     struct panel * panel;
 
@@ -236,7 +236,8 @@ struct panel * panel_new(struct wl_client * client, uint32_t id,
     if (!panel)
         goto error0;
 
-    panel->resource = wl_resource_create(client, &swc_panel_interface, 1, id);
+    panel->resource = wl_resource_create(client, &swc_panel_interface,
+                                         version, id);
 
     if (!panel->resource)
         goto error1;

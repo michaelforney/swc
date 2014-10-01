@@ -39,7 +39,7 @@ static void create_panel(struct wl_client * client,
 {
     struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
 
-    if (!panel_new(client, id, surface))
+    if (!panel_new(client, wl_resource_get_version(resource), id, surface))
         wl_client_post_no_memory(client);
 }
 
@@ -52,7 +52,11 @@ static void bind_panel_manager(struct wl_client * client, void * data,
 {
     struct wl_resource * resource;
 
-    resource = wl_resource_create(client, &swc_panel_manager_interface, 1, id);
+    if (version >= 1)
+        version = 1;
+
+    resource = wl_resource_create(client, &swc_panel_manager_interface,
+                                  version, id);
     wl_resource_set_implementation(resource, &panel_manager_implementation,
                                    NULL, NULL);
 }

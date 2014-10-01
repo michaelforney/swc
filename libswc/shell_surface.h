@@ -29,7 +29,8 @@
 struct swc_surface;
 struct wl_client;
 
-struct shell_surface * shell_surface_new(struct wl_client * client, uint32_t id,
+struct shell_surface * shell_surface_new(struct wl_client * client,
+                                         uint32_t version, uint32_t id,
                                          struct swc_surface * surface);
 
 #endif

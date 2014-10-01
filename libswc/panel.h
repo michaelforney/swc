@@ -29,8 +29,8 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-struct panel * panel_new(struct wl_client * client, uint32_t id,
-                         struct swc_surface * surface);
+struct panel * panel_new(struct wl_client * client, uint32_t version,
+                         uint32_t id, struct swc_surface * surface);
 
 #endif
 

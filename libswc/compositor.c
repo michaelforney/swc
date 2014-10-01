@@ -815,7 +815,7 @@ static void create_region(struct wl_client * client,
 {
     struct swc_region * region;
 
-    region = swc_region_new(client, id);
+    region = swc_region_new(client, wl_resource_get_version(resource), id);
 
     if (!region)
         wl_resource_post_no_memory(resource);

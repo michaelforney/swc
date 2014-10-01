@@ -139,7 +139,8 @@ static struct data * data_new()
     return data;
 }
 
-struct wl_resource * data_source_new(struct wl_client * client, uint32_t id)
+struct wl_resource * data_source_new(struct wl_client * client,
+                                     uint32_t version, uint32_t id)
 {
     struct data * data;
 
@@ -149,7 +150,8 @@ struct wl_resource * data_source_new(struct wl_client * client, uint32_t id)
         return NULL;
 
     /* Add the data source to the client. */
-    data->source = wl_resource_create(client, &wl_data_source_interface, 1, id);
+    data->source = wl_resource_create(client, &wl_data_source_interface,
+                                      version, id);
 
     /* Destroy the data object when the source disappears. */
     wl_resource_set_implementation(data->source, &data_source_implementation,
@@ -159,12 +161,13 @@ struct wl_resource * data_source_new(struct wl_client * client, uint32_t id)
 }
 
 struct wl_resource * data_offer_new(struct wl_client * client,
-                                    struct wl_resource * source)
+                                    struct wl_resource * source,
+                                    uint32_t version)
 {
     struct data * data = wl_resource_get_user_data(source);
     struct wl_resource * offer;
 
-    offer = wl_resource_create(client, &wl_data_offer_interface, 1, 0);
+    offer = wl_resource_create(client, &wl_data_offer_interface, version, 0);
     wl_resource_set_implementation(offer, &data_offer_implementation,
                                    data, &swc_remove_resource);
     wl_list_insert(&data->offers, wl_resource_get_link(offer));

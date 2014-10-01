@@ -78,7 +78,8 @@ void keyboard_reset(struct keyboard * keyboard);
 void keyboard_set_focus(struct keyboard * keyboard,
                         struct compositor_view * view);
 struct wl_resource * keyboard_bind(struct keyboard * keyboard,
-                                   struct wl_client * client, uint32_t id);
+                                   struct wl_client * client,
+                                   uint32_t version, uint32_t id);
 void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
                          uint32_t key, uint32_t state);
 

@@ -176,16 +176,17 @@ static struct wl_listener launch_listener = {
 };
 
 /* Wayland Seat Interface */
-static void get_pointer(struct wl_client * client, struct wl_resource * resource,
-                        uint32_t id)
+static void get_pointer(struct wl_client * client,
+                        struct wl_resource * resource, uint32_t id)
 {
-    pointer_bind(&seat.pointer, client, id);
+    pointer_bind(&seat.pointer, client, wl_resource_get_version(resource), id);
 }
 
-static void get_keyboard(struct wl_client * client, struct wl_resource * resource,
-                         uint32_t id)
+static void get_keyboard(struct wl_client * client,
+                         struct wl_resource * resource, uint32_t id)
 {
-    keyboard_bind(&seat.keyboard, client, id);
+    keyboard_bind(&seat.keyboard, client,
+                  wl_resource_get_version(resource), id);
 }
 
 static void get_touch(struct wl_client * client, struct wl_resource * resource,

@@ -325,11 +325,13 @@ static void unbind(struct wl_resource * resource)
 }
 
 struct wl_resource * pointer_bind(struct pointer * pointer,
-                                  struct wl_client * client, uint32_t id)
+                                  struct wl_client * client,
+                                  uint32_t version, uint32_t id)
 {
     struct wl_resource * client_resource;
 
-    client_resource = wl_resource_create(client, &wl_pointer_interface, 3, id);
+    client_resource = wl_resource_create(client, &wl_pointer_interface,
+                                         version, id);
     wl_resource_set_implementation(client_resource, &pointer_implementation,
                                    pointer, &unbind);
     input_focus_add_resource(&pointer->focus, client_resource);

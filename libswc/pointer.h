@@ -87,7 +87,8 @@ void pointer_set_cursor(struct pointer * pointer, uint32_t id);
 struct button * pointer_get_button(struct pointer * pointer, uint32_t serial);
 
 struct wl_resource * pointer_bind(struct pointer * pointer,
-                                  struct wl_client * client, uint32_t id);
+                                  struct wl_client * client,
+                                  uint32_t version, uint32_t id);
 void pointer_handle_button(struct pointer * pointer, uint32_t time,
                            uint32_t button, uint32_t state);
 void pointer_handle_axis(struct pointer * pointer, uint32_t time,

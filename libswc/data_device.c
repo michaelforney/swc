@@ -94,11 +94,12 @@ void data_device_finalize(struct data_device * data_device)
 }
 
 void data_device_bind(struct data_device * data_device,
-                          struct wl_client * client, uint32_t id)
+                      struct wl_client * client, uint32_t version, uint32_t id)
 {
     struct wl_resource * resource;
 
-    resource = wl_resource_create(client, &wl_data_device_interface, 1, id);
+    resource = wl_resource_create(client, &wl_data_device_interface,
+                                  version, id);
     wl_resource_set_implementation(resource, &data_device_implementation,
                                    data_device, &swc_remove_resource);
     wl_list_insert(&data_device->resources, &resource->link);
@@ -110,7 +111,7 @@ static struct wl_resource * new_offer(struct wl_resource * resource,
 {
     struct wl_resource * offer;
 
-    offer = data_offer_new(client, source);
+    offer = data_offer_new(client, source, wl_resource_get_version(resource));
     wl_data_device_send_data_offer(resource, offer);
     data_send_mime_types(source, offer);
 

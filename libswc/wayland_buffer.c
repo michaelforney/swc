@@ -57,11 +57,12 @@ static void destroy_buffer(struct wl_resource * resource)
 }
 
 struct wl_resource * swc_wayland_buffer_create_resource
-    (struct wl_client * client, uint32_t id, struct wld_buffer * buffer)
+    (struct wl_client * client, uint32_t version, uint32_t id,
+     struct wld_buffer * buffer)
 {
     struct wl_resource * resource;
 
-    resource = wl_resource_create(client, &wl_buffer_interface, 1, id);
+    resource = wl_resource_create(client, &wl_buffer_interface, version, id);
 
     if (!resource)
     {

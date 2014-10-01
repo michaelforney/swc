@@ -226,7 +226,8 @@ static void destroy_shell_surface(struct wl_resource * resource)
     free(shell_surface);
 }
 
-struct shell_surface * shell_surface_new(struct wl_client * client, uint32_t id,
+struct shell_surface * shell_surface_new(struct wl_client * client,
+                                         uint32_t version, uint32_t id,
                                          struct swc_surface * surface)
 {
     struct shell_surface * shell_surface;
@@ -237,7 +238,7 @@ struct shell_surface * shell_surface_new(struct wl_client * client, uint32_t id,
         goto error0;
 
     shell_surface->resource = wl_resource_create
-        (client, &wl_shell_surface_interface, 1, id);
+        (client, &wl_shell_surface_interface, version, id);
 
     if (!shell_surface->resource)
         goto error1;
