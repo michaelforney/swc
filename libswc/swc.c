@@ -37,6 +37,7 @@
 #include "shm.h"
 #include "util.h"
 #include "window.h"
+#include "xdg_shell.h"
 #ifdef ENABLE_XWAYLAND
 # include "xserver.h"
 #endif
@@ -161,17 +162,23 @@ bool swc_initialize(struct wl_display * display,
         goto error8;
     }
 
+    if (!xdg_shell_initialize())
+    {
+        ERROR("Could not initialize XDG shell\n");
+        goto error9;
+    }
+
     if (!panel_manager_initialize())
     {
         ERROR("Could not initialize panel manager\n");
-        goto error9;
+        goto error10;
     }
 
 #ifdef ENABLE_XWAYLAND
     if (!xserver_initialize())
     {
         ERROR("Could not initialize xwayland\n");
-        goto error10;
+        goto error11;
     }
 #endif
 
@@ -180,9 +187,11 @@ bool swc_initialize(struct wl_display * display,
     return true;
 
 #ifdef ENABLE_XWAYLAND
-  error10:
+  error11:
     panel_manager_finalize();
 #endif
+  error10:
+    xdg_shell_finalize();
   error9:
     swc_shell_finalize();
   error8:

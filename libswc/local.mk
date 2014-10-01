@@ -56,9 +56,13 @@ SWC_SOURCES =                       \
     libswc/view.c                   \
     libswc/wayland_buffer.c         \
     libswc/window.c                 \
+    libswc/xdg_popup.c              \
+    libswc/xdg_shell.c              \
+    libswc/xdg_surface.c            \
     libswc/xkb.c                    \
     protocol/swc-protocol.c         \
-    protocol/wayland-drm-protocol.c
+    protocol/wayland-drm-protocol.c \
+    protocol/xdg-shell-protocol.c
 
 ifeq ($(ENABLE_LIBINPUT),1)
 $(dir)_CFLAGS += -DENABLE_LIBINPUT
@@ -87,6 +91,7 @@ SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
 $(call objects,compositor panel_manager panel screen): protocol/swc-server-protocol.h
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
+$(call objects,xdg_shell xdg_surface xdg_popup): protocol/xdg-shell-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)

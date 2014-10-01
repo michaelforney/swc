@@ -54,7 +54,7 @@ struct window
     struct compositor_view * view;
     struct view_handler view_handler;
     bool managed;
-    enum window_mode mode;
+    unsigned mode;
 
     struct
     {
