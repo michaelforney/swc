@@ -23,7 +23,7 @@ SUBDIRS         := launch libswc protocol cursor example
 CLEAN_FILES     := $(TARGETS)
 
 libinput_CONSTRAINTS        := >= 0.4
-wayland-server_CONSTRAINTS  := >= 1.5.0
+wayland-server_CONSTRAINTS  := >= 1.6.0
 
 include config.mk
 

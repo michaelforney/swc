@@ -35,6 +35,8 @@
 #include <stdio.h>
 #include <string.h>
 
+static const int repeat_delay = 500, repeat_rate = 40;
+
 static void enter(struct input_focus_handler * handler,
                   struct wl_resource * resource, struct compositor_view * view)
 {
@@ -219,6 +221,12 @@ struct wl_resource * keyboard_bind(struct keyboard * keyboard,
     wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                             keyboard->xkb.keymap.fd,
                             keyboard->xkb.keymap.size - 1);
+
+    if (version >= 4)
+    {
+        wl_keyboard_send_repeat_info(client_resource,
+                                     repeat_rate, repeat_delay);
+    }
 
     return client_resource;
 }

@@ -206,8 +206,8 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
 {
     struct wl_resource * resource;
 
-    if (version >= 2)
-        version = 2;
+    if (version >= 4)
+        version = 4;
 
     resource = wl_resource_create(client, &wl_seat_interface, version, id);
     wl_resource_set_implementation(resource, &seat_implementation, NULL,
@@ -454,7 +454,7 @@ bool swc_seat_initialize(const char * seat_name)
         goto error0;
     }
 
-    seat.global = wl_global_create(swc.display, &wl_seat_interface, 3,
+    seat.global = wl_global_create(swc.display, &wl_seat_interface, 4,
                                    NULL, &bind_seat);
 
     if (!seat.global)
