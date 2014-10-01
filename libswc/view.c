@@ -60,6 +60,7 @@ void view_finalize(struct view * view)
 int view_attach(struct view * view, struct wld_buffer * buffer)
 {
     int ret;
+    struct view_handler * handler;
 
     if ((ret = view->impl->attach(view, buffer)) < 0)
         return ret;
@@ -71,6 +72,7 @@ int view_attach(struct view * view, struct wld_buffer * buffer)
         wld_buffer_reference(buffer);
 
     view->buffer = buffer;
+    HANDLE(view, handler, attach);
 
     return 0;
 }

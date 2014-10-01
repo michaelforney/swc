@@ -71,6 +71,8 @@ struct view_handler_impl
 {
     /* Called when the view has displayed the next frame. */
     void (* frame)(struct view_handler * handler, uint32_t time);
+    /* Called when a new buffer is attached to the view. */
+    void (* attach)(struct view_handler * handler);
     /* Called after the view's position changes. */
     void (* move)(struct view_handler * handler);
     /* Called after the view's size changes. */

@@ -175,6 +175,7 @@ static void configure(struct window * window, uint32_t width, uint32_t height)
     values[0] = width;
     values[1] = height;
 
+    window->configure.acknowledged = true;
     xcb_configure_window(xwm.connection, xwl_window->id, mask, values);
     xcb_flush(xwm.connection);
 }

@@ -60,6 +60,9 @@ struct window
     {
         struct window_pointer_interaction interaction;
         struct { int32_t x, y; } offset;
+
+        bool pending;
+        int32_t x, y;
     } move;
 
     struct
@@ -68,6 +71,12 @@ struct window
         struct { int32_t x, y; } offset;
         uint32_t edges;
     } resize;
+
+    struct
+    {
+        bool pending, acknowledged;
+        uint32_t width, height;
+    } configure;
 };
 
 struct window_impl

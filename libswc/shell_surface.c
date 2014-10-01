@@ -51,6 +51,8 @@ static void configure(struct window * window, uint32_t width, uint32_t height)
     wl_shell_surface_send_configure(shell_surface->resource,
                                     WL_SHELL_SURFACE_RESIZE_NONE,
                                     width, height);
+    /* wl_shell does not support acknowledging configures. */
+    window->configure.acknowledged = true;
 }
 
 static void close(struct window * window)

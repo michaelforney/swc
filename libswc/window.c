@@ -95,6 +95,18 @@ static void end_interaction(struct window_pointer_interaction * interaction)
     wl_list_remove(&interaction->handler.link);
 }
 
+static void flush(struct window * window)
+{
+    if (window->move.pending)
+    {
+        if (window->impl->move)
+            window->impl->move(window, window->move.x, window->move.y);
+
+        view_move(&window->view->base, window->move.x, window->move.y);
+        window->move.pending = false;
+    }
+}
+
 EXPORT
 void swc_window_set_handler(struct swc_window * base,
                             const struct swc_window_handler * handler,
@@ -153,6 +165,10 @@ void swc_window_set_stacked(struct swc_window * base)
 {
     struct window * window = INTERNAL(base);
 
+    flush(window);
+    window->configure.pending = false;
+    window->configure.width = 0;
+    window->configure.height = 0;
     if (window->impl->set_mode)
         window->impl->set_mode(window, WINDOW_MODE_STACKED);
     window->mode = WINDOW_MODE_STACKED;
@@ -190,11 +206,18 @@ void swc_window_set_position(struct swc_window * base, int32_t x, int32_t y)
     struct swc_rectangle * geometry = &window->view->base.geometry;
 
     if (x == geometry->x && y == geometry->y)
+    {
+        window->move.pending = false;
         return;
+    }
 
-    if (window->impl->move)
-        window->impl->move(window, x, y);
-    view_move(&window->view->base, x, y);
+    window->move.x = x;
+    window->move.y = y;
+    window->move.pending = true;
+
+    /* If we don't have a configure pending, perform the move now. */
+    if (!window->configure.pending)
+        flush(window);
 }
 
 EXPORT
@@ -202,8 +225,25 @@ void swc_window_set_size(struct swc_window * base,
                          uint32_t width, uint32_t height)
 {
     struct window * window = INTERNAL(base);
+    struct swc_rectangle * geometry = &window->view->base.geometry;
+
+    if ((window->configure.pending
+         && width == window->configure.width
+         && height == window->configure.height)
+        || (!window->configure.pending
+            && width == geometry->width && height == geometry->height))
+    {
+        return;
+    }
 
     window->impl->configure(window, width, height);
+
+    if (window->mode == WINDOW_MODE_TILED)
+    {
+        window->configure.width = width;
+        window->configure.height = height;
+        window->configure.pending = true;
+    }
 }
 
 EXPORT
@@ -301,6 +341,15 @@ static bool handle_button(struct pointer_handler * handler, uint32_t time,
     return true;
 }
 
+static void handle_attach(struct view_handler * handler)
+{
+    struct window * window = wl_container_of(handler, window, view_handler);
+
+    if (window->configure.acknowledged)
+        flush(window);
+    window->configure.pending = false;
+}
+
 static void handle_resize(struct view_handler * handler,
                           uint32_t old_width, uint32_t old_height)
 {
@@ -322,6 +371,7 @@ static void handle_resize(struct view_handler * handler,
 }
 
 static const struct view_handler_impl view_handler_impl = {
+    .attach = &handle_attach,
     .resize = &handle_resize,
 };
 
@@ -343,11 +393,15 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     window->view->window = window;
     window->managed = false;
     window->mode = WINDOW_MODE_STACKED;
+    window->move.pending = false;
     window->move.interaction.active = false;
     window->move.interaction.handler = (struct pointer_handler) {
         .motion = &move_motion,
         .button = &handle_button
     };
+    window->configure.pending = false;
+    window->configure.width = 0;
+    window->configure.height = 0;
     window->resize.interaction.active = false;
     window->resize.interaction.handler = (struct pointer_handler) {
         .motion = &resize_motion,
