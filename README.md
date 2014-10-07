@@ -91,3 +91,9 @@ TODO
 * Better multi-screen support, including mirroring and screen arrangement
 * Implement xdg_shell
 
+Contact
+-------
+
+If you have questions or want to discuss swc feel free to join #swc on
+freenode.
+
