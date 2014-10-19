@@ -74,28 +74,9 @@ static void create_buffer(struct wl_client * client,
                           uint32_t name, int32_t width, int32_t height,
                           uint32_t stride, uint32_t format)
 {
-    struct wld_buffer * buffer;
-    struct wl_resource * buffer_resource;
-    union wld_object object = { .u32 = name };
-
-    buffer = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_GEM_NAME,
-                               object, width, height, format, stride);
-
-    if (!buffer)
-        goto error0;
-
-    buffer_resource = swc_wayland_buffer_create_resource
-        (client, wl_resource_get_version(resource), id, buffer);
-
-    if (!buffer_resource)
-        goto error1;
-
-    return;
-
-  error1:
-    wld_buffer_unreference(buffer);
-  error0:
-    wl_resource_post_no_memory(resource);
+    wl_resource_post_error(resource, WL_DRM_ERROR_INVALID_NAME,
+                           "GEM names are not supported, "
+                           "use a PRIME fd instead");
 }
 
 static void create_planar_buffer(struct wl_client * client,
