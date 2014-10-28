@@ -34,6 +34,7 @@
 #include "window.h"
 
 #include <stdlib.h>
+#include <signal.h>
 
 struct shell_surface
 {
