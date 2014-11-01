@@ -103,14 +103,12 @@ $(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)) $(DESTDIR)$(DATA
 .PHONY: build
 build: $(SUBDIRS:%=build-%) $(TARGETS)
 
+REQUIRES          := wayland-server
+REQUIRES_PRIVATE  := $(filter-out $(REQUIRES),$(libswc_PACKAGES))
+SWC_PC_VARS       := VERSION PREFIX LIBDIR INCLUDEDIR DATADIR REQUIRES REQUIRES_PRIVATE
+
 swc.pc: swc.pc.in
-	$(Q_GEN)sed                             \
-	    -e "s:@VERSION@:$(VERSION):"        \
-	    -e "s:@PREFIX@:$(PREFIX):"          \
-	    -e "s:@LIBDIR@:$(LIBDIR):"          \
-	    -e "s:@INCLUDEDIR@:$(INCLUDEDIR):"  \
-	    -e "s:@DATADIR@:$(DATADIR):"        \
-	    $< > $@
+	$(Q_GEN)sed $(foreach var,$(SWC_PC_VARS),-e 's:@$(var)@:$($(var)):') $< >$@
 
 .PHONY: install-swc.pc
 install-swc.pc: swc.pc | $(DESTDIR)$(PKGCONFIGDIR)

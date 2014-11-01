@@ -10,6 +10,5 @@ Version: @VERSION@
 Cflags: -I${includedir}
 Libs: -L${libdir} -lswc
 
-Requires: wayland-server
-Requires.private: libudev libevdev xkbcommon libdrm pixman-1 wld
-
+Requires: @REQUIRES@
+Requires.private: @REQUIRES_PRIVATE@
