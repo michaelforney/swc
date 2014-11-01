@@ -88,6 +88,7 @@ Q_AR      = $(call quiet,AR     )
 Q_CC      = $(call quiet,CC     )
 Q_CCLD    = $(call quiet,CCLD   )
 Q_GEN     = $(call quiet,GEN    )
+Q_OBJCOPY = $(call quiet,OBJCOPY)
 Q_SYM     = $(call quiet,SYM    )
 
 compile   = $(Q_CC)$(CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \

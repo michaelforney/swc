@@ -83,7 +83,13 @@ $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,xdg_shell xdg_surface xdg_popup): protocol/xdg-shell-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 
-$(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
+$(dir)/libswc-internal.o: $(SWC_STATIC_OBJECTS)
+	$(link) -nostdlib -r
+
+$(dir)/libswc.o: $(dir)/libswc-internal.o
+	$(Q_OBJCOPY)$(OBJCOPY) --localize-hidden $< $@
+
+$(dir)/libswc.a: $(dir)/libswc.o
 	$(Q_AR)$(AR) cru $@ $^
 
 $(dir)/$(LIBSWC_LIB): $(SWC_SHARED_OBJECTS)
