@@ -84,16 +84,16 @@ $(call objects,xdg_shell xdg_surface xdg_popup): protocol/xdg-shell-server-proto
 $(call objects,pointer): cursor/cursor_data.h
 
 $(dir)/libswc.a: $(SWC_STATIC_OBJECTS)
-	$(call quiet,AR) cru $@ $^
+	$(Q_AR)$(AR) cru $@ $^
 
 $(dir)/$(LIBSWC_LIB): $(SWC_SHARED_OBJECTS)
 	$(link) -shared -Wl,-soname,$(LIBSWC_SO) -Wl,-no-undefined $(libswc_PACKAGE_LIBS)
 
 $(dir)/$(LIBSWC_SO): $(dir)/$(LIBSWC_LIB)
-	$(call quiet,SYM,ln -sf) $(notdir $<) $@
+	$(Q_SYM)ln -sf $(notdir $<) $@
 
 $(dir)/$(LIBSWC_LINK): $(dir)/$(LIBSWC_SO)
-	$(call quiet,SYM,ln -sf) $(notdir $<) $@
+	$(Q_SYM)ln -sf $(notdir $<) $@
 
 .PHONY: install-libswc.a
 install-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)

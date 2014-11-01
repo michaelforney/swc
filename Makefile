@@ -67,15 +67,6 @@ endef
 
 $(foreach pkg,$(PACKAGES),$(eval $(call check,$(pkg))))
 
-ifeq ($(if $(V),$(V),0), 0)
-    define quiet
-        @echo "  $1	$@"
-        @$(if $2,$2,$($1))
-    endef
-else
-    quiet = $(if $2,$2,$($1))
-endif
-
 FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden -std=gnu99
 FINAL_CPPFLAGS = $(CPPFLAGS) -D_GNU_SOURCE # Required for mkostemp
 
@@ -89,9 +80,19 @@ ifeq ($(ENABLE_DEBUG),1)
     FINAL_CFLAGS += -g
 endif
 
-compile     = $(call quiet,CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \
-              -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
-link        = $(call quiet,CCLD,$(CC)) $(LDFLAGS) -o $@ $^
+ifeq ($(if $(V),$(V),0),0)
+    quiet = @echo '  $1 $@';
+endif
+
+Q_AR      = $(call quiet,AR     )
+Q_CC      = $(call quiet,CC     )
+Q_CCLD    = $(call quiet,CCLD   )
+Q_GEN     = $(call quiet,GEN    )
+Q_SYM     = $(call quiet,SYM    )
+
+compile   = $(Q_CC)$(CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \
+            -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
+link      = $(Q_CCLD)$(CC) $(LDFLAGS) -o $@ $^
 
 include $(SUBDIRS:%=%/local.mk)
 
@@ -102,7 +103,7 @@ $(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)) $(DESTDIR)$(DATA
 build: $(SUBDIRS:%=build-%) $(TARGETS)
 
 swc.pc: swc.pc.in
-	$(call quiet,GEN,sed)                   \
+	$(Q_GEN)sed                             \
 	    -e "s:@VERSION@:$(VERSION):"        \
 	    -e "s:@PREFIX@:$(PREFIX):"          \
 	    -e "s:@LIBDIR@:$(LIBDIR):"          \

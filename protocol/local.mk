@@ -12,10 +12,10 @@ $(dir)_TARGETS := $(PROTOCOL_EXTENSIONS:%.xml=%-protocol.c) \
 $(dir)_PACKAGES := wayland-server
 
 $(dir)/%-protocol.c: $(dir)/%.xml
-	$(call quiet,GEN,$(WAYLAND_SCANNER)) code < $< > $@
+	$(Q_GEN)$(WAYLAND_SCANNER) code <$< >$@
 
 $(dir)/%-server-protocol.h: $(dir)/%.xml
-	$(call quiet,GEN,$(WAYLAND_SCANNER)) server-header < $< > $@
+	$(Q_GEN)$(WAYLAND_SCANNER) server-header <$< >$@
 
 install-protocol: | $(DESTDIR)$(DATADIR)/swc
 	install -m0644 protocol/swc.xml "$(DESTDIR)$(DATADIR)/swc"
