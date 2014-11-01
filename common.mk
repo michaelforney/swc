@@ -17,13 +17,11 @@ $(dir)/%.o: $(dir)/%.c | .deps/$(dir)
 $(dir)/%.lo: $(dir)/%.c | .deps/$(dir)
 	$(compile) -fPIC $($(dir)_CFLAGS) $($(dir)_PACKAGE_CFLAGS)
 
-ifdef $(dir)_PACKAGES
-    ifndef $(dir)_PACKAGE_CFLAGS
-        $(dir)_PACKAGE_CFLAGS := $(call pkgconfig,$($(dir)_PACKAGES),cflags,CFLAGS)
-    endif
-    ifndef $(dir)_PACKAGE_LIBS
-        $(dir)_PACKAGE_LIBS := $(call pkgconfig,$($(dir)_PACKAGES),libs,LIBS)
-    endif
+ifeq ($(origin $(dir)_PACKAGE_CFLAGS),undefined)
+    $(dir)_PACKAGE_CFLAGS := $(foreach pkg,$($(dir)_PACKAGES),$($(pkg)_CFLAGS))
+endif
+ifeq ($(origin $(dir)_PACKAGE_LIBS),undefined)
+    $(dir)_PACKAGE_LIBS := $(foreach pkg,$($(dir)_PACKAGES),$($(pkg)_LIBS))
 endif
 
 CLEAN_FILES += $($(dir)_TARGETS)

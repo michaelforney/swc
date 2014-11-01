@@ -17,14 +17,7 @@ $(dir)_TARGETS +=                   \
     $(dir)/$(LIBSWC_LINK)
 endif
 
-# Dependencies
-$(dir)_PACKAGES =   \
-    libdrm          \
-    libevdev        \
-    pixman-1        \
-    wayland-server  \
-    wld             \
-    xkbcommon
+$(dir)_PACKAGES := libdrm libevdev pixman-1 wayland-server wld xkbcommon
 
 SWC_SOURCES =                       \
     launch/protocol.c               \
@@ -73,11 +66,7 @@ endif
 
 ifeq ($(ENABLE_XWAYLAND),1)
 $(dir)_CFLAGS += -DENABLE_XWAYLAND
-$(dir)_PACKAGES +=                  \
-    xcb                             \
-    xcb-composite                   \
-    xcb-ewmh                        \
-    xcb-icccm
+$(dir)_PACKAGES += xcb xcb-composite xcb-ewmh xcb-icccm
 
 SWC_SOURCES +=                      \
     libswc/xserver.c                \

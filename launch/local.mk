@@ -2,11 +2,8 @@
 
 dir := launch
 
-$(dir)_TARGETS := $(dir)/swc-launch
-
-# Dependencies
-$(dir)_PACKAGES =   \
-    libdrm
+$(dir)_TARGETS  := $(dir)/swc-launch
+$(dir)_PACKAGES := libdrm
 
 $(dir)/swc-launch: $(dir)/launch.o $(dir)/protocol.o
 	$(link) $(launch_PACKAGE_LIBS)

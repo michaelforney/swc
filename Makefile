@@ -22,10 +22,50 @@ TARGETS         := swc.pc
 SUBDIRS         := launch libswc protocol cursor example
 CLEAN_FILES     := $(TARGETS)
 
-libinput_CONSTRAINTS        := >= 0.4
-wayland-server_CONSTRAINTS  := >= 1.6.0
-
 include config.mk
+
+# Dependencies
+PACKAGES :=         \
+    libdrm          \
+    libevdev        \
+    pixman-1        \
+    wayland-server  \
+    wld             \
+    xkbcommon
+
+ifeq ($(ENABLE_XWAYLAND),1)
+PACKAGES +=         \
+    xcb             \
+    xcb-composite   \
+    xcb-ewmh        \
+    xcb-icccm
+endif
+
+ifeq ($(ENABLE_LIBINPUT),1)
+PACKAGES += libinput libudev
+endif
+
+libinput_CONSTRAINTS        := --atleast-version=0.4
+wayland-server_CONSTRAINTS  := --atleast-version=1.6.0
+
+define check
+    $(1)_EXISTS = $$(shell $$(PKG_CONFIG) --exists $$($(1)_CONSTRAINTS) $(1) && echo yes)
+
+    ifeq ($$(origin $(1)_CFLAGS),undefined)
+        ifneq ($$($(1)_EXISTS),yes)
+            $$(error Could not find package $(1))
+        endif
+        $(1)_CFLAGS = $$(shell $$(PKG_CONFIG) --cflags $(1))
+    endif
+    ifeq ($$(origin $(1)_LIBS),undefined)
+        ifneq ($$($(1)_EXISTS),yes)
+            $$(error Could not find package $(1))
+        endif
+        $(1)_LIBS = $$(shell $$(PKG_CONFIG) --libs $(1))
+    endif
+endef
+
+$(foreach pkg,$(PACKAGES),$(eval $(call check,$(pkg))))
 
 ifeq ($(if $(V),$(V),0), 0)
     define quiet
@@ -52,8 +92,6 @@ endif
 compile     = $(call quiet,CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \
               -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
 link        = $(call quiet,CCLD,$(CC)) $(LDFLAGS) -o $@ $^
-pkgconfig   = $(sort $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
-                $(shell $(PKG_CONFIG) --$(2) $(pkg) "$($(pkg)_CONSTRAINTS)"))))
 
 include $(SUBDIRS:%=%/local.mk)
 
