@@ -169,7 +169,6 @@ static struct target * target_new(struct screen * screen)
     wl_list_insert(&target->view->handlers, &target->view_handler.link);
     target->current_buffer = NULL;
     target->mask = screen_mask(screen);
-    target_swap_buffers(target);
 
     target->screen_destroy_listener.notify = &handle_screen_destroy;
     wl_signal_add(&screen->destroy_signal, &target->screen_destroy_listener);
@@ -663,7 +662,7 @@ static void update_screen(struct screen * screen)
 {
     struct target * target;
     const struct swc_rectangle * geometry = &screen->base.geometry;
-    pixman_region32_t damage;
+    pixman_region32_t damage, * total_damage;
 
     if (!(compositor.scheduled_updates & screen_mask(screen)))
         return;
@@ -676,22 +675,22 @@ static void update_screen(struct screen * screen)
                                    geometry->x, geometry->y,
                                    geometry->width, geometry->height);
     pixman_region32_translate(&damage, -geometry->x, -geometry->y);
-    pixman_region32_union(&target->next_buffer->damage,
-                          &target->next_buffer->damage, &damage);
-    pixman_region32_fini(&damage);
+    total_damage = wld_surface_damage(target->surface, &damage);
 
     /* Don't repaint the screen if it is waiting for a page flip. */
     if (compositor.pending_flips & screen_mask(screen))
+    {
+        pixman_region32_fini(&damage);
         return;
+    }
 
-    pixman_region32_t * total_damage, base_damage;
-
-    total_damage = wld_surface_damage(target->surface,
-                                      &target->next_buffer->damage);
-    pixman_region32_translate(total_damage, geometry->x, geometry->y);
+    pixman_region32_t base_damage;
+    pixman_region32_copy(&damage, total_damage);
+    pixman_region32_translate(&damage, geometry->x, geometry->y);
     pixman_region32_init(&base_damage);
-    pixman_region32_subtract(&base_damage, total_damage, &compositor.opaque);
-    renderer_repaint(target, total_damage, &base_damage, &compositor.views);
+    pixman_region32_subtract(&base_damage, &damage, &compositor.opaque);
+    renderer_repaint(target, &damage, &base_damage, &compositor.views);
+    pixman_region32_fini(&damage);
     pixman_region32_fini(&base_damage);
 
     switch (target_swap_buffers(target))
@@ -864,6 +863,7 @@ bool swc_compositor_initialize()
 
     wl_list_for_each(screen, &swc.screens, link)
         target_new(screen);
+    schedule_updates(-1);
 
     swc_add_binding(SWC_BINDING_KEY, SWC_MOD_CTRL | SWC_MOD_ALT,
                     XKB_KEY_BackSpace, &handle_terminate, NULL);
@@ -875,7 +875,6 @@ bool swc_compositor_initialize()
         swc_add_binding(SWC_BINDING_KEY, SWC_MOD_ANY, keysym,
                         &handle_switch_vt, NULL);
     }
-
 
     return true;
 }
