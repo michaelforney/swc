@@ -103,18 +103,18 @@ $(dir)/$(LIBSWC_LINK): $(dir)/$(LIBSWC_SO)
 
 .PHONY: install-libswc.a
 install-libswc.a: $(dir)/libswc.a | $(DESTDIR)$(LIBDIR)
-	install -m0644 $< "$(DESTDIR)$(LIBDIR)"
+	install -m 644 $< $(DESTDIR)$(LIBDIR)
 
 .PHONY: install-$(LIBSWC_LIB)
 install-$(LIBSWC_LIB): $(dir)/$(LIBSWC_LIB) | $(DESTDIR)$(LIBDIR)
-	install -m0755 $< "$(DESTDIR)$(LIBDIR)"
+	install -m 755 $< $(DESTDIR)$(LIBDIR)
 
 .PHONY: install-$(LIBSWC_SO) install-$(LIBSWC_LINK)
 install-$(LIBSWC_SO) install-$(LIBSWC_LINK): install-$(LIBSWC_LIB)
-	ln -sf $(LIBSWC_LIB) "$(DESTDIR)$(LIBDIR)"/${@:install-%=%}
+	ln -sf $(LIBSWC_LIB) $(DESTDIR)$(LIBDIR)/${@:install-%=%}
 
-install-libswc: $($(dir)_TARGETS:$(dir)/%=install-%) | $(DESTDIR)$(INCLUDEDIR)
-	install -m0644 libswc/swc.h "$(DESTDIR)$(INCLUDEDIR)"
+install-$(dir): $($(dir)_TARGETS:$(dir)/%=install-%) | $(DESTDIR)$(INCLUDEDIR)
+	install -m 644 libswc/swc.h $(DESTDIR)$(INCLUDEDIR)
 
 CLEAN_FILES += $(SWC_SHARED_OBJECTS) $(SWC_STATIC_OBJECTS)
 

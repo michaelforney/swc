@@ -98,7 +98,7 @@ link      = $(Q_CCLD)$(CC) $(LDFLAGS) -o $@ $^
 include $(SUBDIRS:%=%/local.mk)
 
 $(foreach dir,BIN LIB INCLUDE PKGCONFIG,$(DESTDIR)$($(dir)DIR)) $(DESTDIR)$(DATADIR)/swc:
-	mkdir -p "$@"
+	mkdir -p $@
 
 .PHONY: build
 build: $(SUBDIRS:%=build-%) $(TARGETS)
@@ -112,7 +112,7 @@ swc.pc: swc.pc.in
 
 .PHONY: install-swc.pc
 install-swc.pc: swc.pc | $(DESTDIR)$(PKGCONFIGDIR)
-	install -m0644 $< "$(DESTDIR)$(PKGCONFIGDIR)"
+	install -m 644 $< $(DESTDIR)$(PKGCONFIGDIR)
 
 .PHONY: install
 install: $(SUBDIRS:%=install-%) $(TARGETS:%=install-%)

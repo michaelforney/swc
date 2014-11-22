@@ -17,8 +17,8 @@ $(dir)/%-protocol.c: $(dir)/%.xml
 $(dir)/%-server-protocol.h: $(dir)/%.xml
 	$(Q_GEN)$(WAYLAND_SCANNER) server-header <$< >$@
 
-install-protocol: | $(DESTDIR)$(DATADIR)/swc
-	install -m0644 protocol/swc.xml "$(DESTDIR)$(DATADIR)/swc"
+install-$(dir): | $(DESTDIR)$(DATADIR)/swc
+	install -m 644 protocol/swc.xml $(DESTDIR)$(DATADIR)/swc
 
 include common.mk
 
