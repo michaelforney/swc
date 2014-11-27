@@ -87,9 +87,11 @@ implement a window manager using swc.
 
 TODO
 ----
-* XWayland copy-paste integration
-* Better multi-screen support, including mirroring and screen arrangement
-* Implement xdg_shell
+* XWayland copy-paste integration.
+* Better multi-screen support, including mirroring and screen arrangement.
+* DPMS support.
+* Floating window Z-ordering.
+* Full-screen composite bypass.
 
 Contact
 -------
