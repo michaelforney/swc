@@ -76,21 +76,31 @@ static void begin_interaction(struct window_pointer_interaction * interaction,
     wl_list_insert(&swc.seat->pointer->handlers, &interaction->handler.link);
 }
 
-static void end_interaction(struct window_pointer_interaction * interaction)
+static void end_interaction(struct window_pointer_interaction * interaction,
+                            struct button * button)
 {
     if (!interaction->active)
         return;
 
     if (interaction->original_handler)
     {
-        struct button * button;
+        if (!button)
+        {
+            button = pointer_get_button(swc.seat->pointer, interaction->serial);
 
-        button = pointer_get_button(swc.seat->pointer, interaction->serial);
+            if (!button)
+            {
+                WARNING("No button with serial %u\n", interaction->serial);
+                goto remove;
+            }
+        }
+
         interaction->original_handler->button(interaction->original_handler,
                                               swc_time(), button,
                                               WL_POINTER_BUTTON_STATE_RELEASED);
     }
 
+  remove:
     interaction->active = false;
     wl_list_remove(&interaction->handler.link);
 }
@@ -179,8 +189,8 @@ void swc_window_set_tiled(struct swc_window * base)
 {
     struct window * window = INTERNAL(base);
 
-    end_interaction(&window->move.interaction);
-    end_interaction(&window->resize.interaction);
+    end_interaction(&window->move.interaction, NULL);
+    end_interaction(&window->resize.interaction, NULL);
     if (window->impl->set_mode)
         window->impl->set_mode(window, WINDOW_MODE_TILED);
     window->mode = WINDOW_MODE_TILED;
@@ -273,7 +283,7 @@ void swc_window_begin_move(struct swc_window * window)
 EXPORT
 void swc_window_end_move(struct swc_window * window)
 {
-    end_interaction(&INTERNAL(window)->move.interaction);
+    end_interaction(&INTERNAL(window)->move.interaction, NULL);
 }
 
 EXPORT
@@ -285,7 +295,7 @@ void swc_window_begin_resize(struct swc_window * window, uint32_t edges)
 EXPORT
 void swc_window_end_resize(struct swc_window * window)
 {
-    end_interaction(&INTERNAL(window)->resize.interaction);
+    end_interaction(&INTERNAL(window)->resize.interaction, NULL);
 }
 
 static bool move_motion(struct pointer_handler * handler, uint32_t time,
@@ -335,9 +345,7 @@ static bool handle_button(struct pointer_handler * handler, uint32_t time,
         return false;
     }
 
-    end_interaction(interaction);
-    interaction->original_handler->button(interaction->original_handler, time,
-                                          button, state);
+    end_interaction(interaction, button);
     return true;
 }
 
