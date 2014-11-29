@@ -83,8 +83,13 @@ static int attach(struct view * view, struct wld_buffer * buffer)
 
     wld_set_target_buffer(swc.shm->renderer, pointer->cursor.buffer);
     wld_fill_rectangle(swc.shm->renderer, 0x00000000, 0, 0, 64, 64);
-    wld_copy_rectangle(swc.shm->renderer, buffer, 0, 0, 0, 0,
-                       buffer->width, buffer->height);
+
+    if (buffer)
+    {
+        wld_copy_rectangle(swc.shm->renderer, buffer, 0, 0, 0, 0,
+                           buffer->width, buffer->height);
+    }
+
     wld_flush(swc.shm->renderer);
 
     if (surface)
