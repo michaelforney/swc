@@ -121,7 +121,7 @@ static void handle_screen_frame(struct view_handler * handler, uint32_t time)
 
     wl_list_for_each(view, &compositor.views, link)
     {
-        if (view->base.screens & target->mask)
+        if (view->visible && view->base.screens & target->mask)
             view_frame(&view->base, time);
     }
 
@@ -250,7 +250,7 @@ static void renderer_repaint(struct target * target,
 
     wl_list_for_each_reverse(view, views, link)
     {
-        if (view->base.screens & target->mask)
+        if (view->visible && view->base.screens & target->mask)
             repaint_view(target, view, damage);
     }
 
@@ -483,6 +483,7 @@ struct compositor_view * swc_compositor_create_view
     wl_list_init(&view->children);
     wl_signal_init(&view->destroy_signal);
     swc_surface_set_view(surface, &view->base);
+    wl_list_insert(&compositor.views, &view->link);
 
     return view;
 }
@@ -494,6 +495,7 @@ void compositor_view_destroy(struct compositor_view * view)
     swc_surface_set_view(view->surface, NULL);
     view_finalize(&view->base);
     pixman_region32_fini(&view->clip);
+    wl_list_remove(&view->link);
 
     if (view->parent)
         wl_list_remove(&view->child_link);
@@ -537,7 +539,6 @@ void compositor_view_show(struct compositor_view * view)
 
     damage_view(view);
     update(&view->base);
-    wl_list_insert(&compositor.views, &view->link);
 
     wl_list_for_each(child, &view->children, child_link)
         compositor_view_show(child);
@@ -554,7 +555,6 @@ void compositor_view_hide(struct compositor_view * view)
     update(&view->base);
     damage_below_view(view);
 
-    wl_list_remove(&view->link);
     view_set_screens(&view->base, 0);
     view->visible = false;
 
@@ -604,6 +604,9 @@ static void calculate_damage()
     /* Go through views top-down to calculate clipping regions. */
     wl_list_for_each(view, &compositor.views, link)
     {
+        if (!view->visible)
+            continue;
+
         /* Clip the surface by the opaque region covering it. */
         pixman_region32_copy(&view->clip, &compositor.opaque);
 
@@ -740,6 +743,9 @@ bool handle_motion(struct pointer_handler * handler, uint32_t time,
 
     wl_list_for_each(view, &compositor.views, link)
     {
+        if (!view->visible)
+            continue;
+
         if (swc_rectangle_contains_point(&view->base.geometry, x, y)
             && pixman_region32_contains_point(&view->surface->state.input,
                                               x - view->base.geometry.x,
