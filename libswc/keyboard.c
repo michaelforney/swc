@@ -62,24 +62,24 @@ static void leave(struct input_focus_handler * handler,
 }
 
 static bool client_handle_key(struct keyboard * keyboard, uint32_t time,
-                              struct press * press, uint32_t state)
+                              struct key * key, uint32_t state)
 {
-    uint32_t * key;
+    uint32_t * value;
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
     {
-        if (!(key = wl_array_add(&keyboard->client_keys, sizeof *key)))
+        if (!(value = wl_array_add(&keyboard->client_keys, sizeof *value)))
             return false;
 
-        *key = press->value;
+        *value = key->press.value;
     }
     else
     {
-        wl_array_for_each(key, &keyboard->client_keys)
+        wl_array_for_each(value, &keyboard->client_keys)
         {
-            if (*key == press->value)
+            if (*value == key->press.value)
             {
-                swc_array_remove(&keyboard->client_keys, key, sizeof *key);
+                swc_array_remove(&keyboard->client_keys, value, sizeof *value);
                 break;
             }
         }
@@ -87,8 +87,8 @@ static bool client_handle_key(struct keyboard * keyboard, uint32_t time,
 
     if (keyboard->focus.resource)
     {
-        wl_keyboard_send_key(keyboard->focus.resource, press->serial, time,
-                             press->value, state);
+        wl_keyboard_send_key(keyboard->focus.resource, key->press.serial, time,
+                             key->press.value, state);
     }
 
     return true;
@@ -163,7 +163,7 @@ void keyboard_reset(struct keyboard * keyboard)
         if (key->handler)
         {
             key->press.serial = wl_display_next_serial(swc.display);
-            key->handler->key(keyboard, time, &key->press,
+            key->handler->key(keyboard, time, key,
                               WL_KEYBOARD_KEY_STATE_RELEASED);
             /* Don't bother updating the XKB state because we will be resetting
              * it later on and it is unlikely that a key handler cares about the
@@ -255,7 +255,7 @@ void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
             if (key->handler)
             {
                 key->press.serial = serial;
-                key->handler->key(keyboard, time, &key->press, state);
+                key->handler->key(keyboard, time, key, state);
             }
 
             swc_array_remove(&keyboard->keys, key, sizeof *key);
@@ -277,7 +277,7 @@ void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
     /* Go through handlers to see if any will accept this key event. */
     wl_list_for_each(handler, &keyboard->handlers, link)
     {
-        if (handler->key && handler->key(keyboard, time, &key->press, state))
+        if (handler->key && handler->key(keyboard, time, key, state))
         {
             key->handler = handler;
             break;

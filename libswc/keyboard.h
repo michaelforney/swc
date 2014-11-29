@@ -50,7 +50,7 @@ struct keyboard_modifier_state
 struct keyboard_handler
 {
     bool (* key)(struct keyboard * keyboard, uint32_t time,
-                 struct press * press, uint32_t state);
+                 struct key * key, uint32_t state);
     bool (* modifiers)(struct keyboard * keyboard,
                        const struct keyboard_modifier_state * state);
 

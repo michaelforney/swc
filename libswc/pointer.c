@@ -153,7 +153,7 @@ void pointer_set_cursor(struct pointer * pointer, uint32_t id)
 
 static bool client_handle_button
     (struct pointer_handler * handler, uint32_t time,
-     struct press * press, uint32_t state)
+     struct button * button, uint32_t state)
 {
     struct pointer * pointer
         = wl_container_of(handler, pointer, client_handler);
@@ -161,8 +161,8 @@ static bool client_handle_button
     if (!pointer->focus.resource)
         return false;
 
-    wl_pointer_send_button(pointer->focus.resource, press->serial, time,
-                           press->value, state);
+    wl_pointer_send_button(pointer->focus.resource, button->press.serial, time,
+                           button->press.value, state);
 
     return true;
 }
@@ -371,7 +371,7 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
                 {
                     button->press.serial = serial;
                     button->handler->button(button->handler, time,
-                                            &button->press, state);
+                                            button, state);
                 }
 
                 swc_array_remove(&pointer->buttons, button, sizeof *button);
@@ -393,7 +393,7 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
         wl_list_for_each(handler, &pointer->handlers, link)
         {
             if (handler->button && handler->button(handler, time,
-                                                   &button->press, state))
+                                                   button, state))
             {
                 button->handler = handler;
                 break;

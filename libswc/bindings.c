@@ -41,14 +41,14 @@ struct binding
 };
 
 static bool handle_key(struct keyboard * keyboard, uint32_t time,
-                       struct press * press, uint32_t state);
+                       struct key * key, uint32_t state);
 
 static struct keyboard_handler key_binding_handler = {
     .key = &handle_key
 };
 
 static bool handle_button(struct pointer_handler * handler, uint32_t time,
-                          struct press * press, uint32_t state);
+                          struct button * button, uint32_t state);
 
 static struct pointer_handler button_binding_handler = {
     .button = &handle_button
@@ -136,15 +136,15 @@ static bool handle_binding
 }
 
 bool handle_key(struct keyboard * keyboard, uint32_t time,
-                struct press * key, uint32_t state)
+                struct key * key, uint32_t state)
 {
-    return handle_binding(time, key, state, &find_key_binding);
+    return handle_binding(time, &key->press, state, &find_key_binding);
 }
 
 bool handle_button(struct pointer_handler * handler, uint32_t time,
-                   struct press * button, uint32_t state)
+                   struct button * button, uint32_t state)
 {
-    return handle_binding(time, button, state, &find_button_binding);
+    return handle_binding(time, &button->press, state, &find_button_binding);
 }
 
 bool swc_bindings_initialize()

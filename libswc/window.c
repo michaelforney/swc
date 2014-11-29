@@ -87,7 +87,7 @@ static void end_interaction(struct window_pointer_interaction * interaction)
 
         button = pointer_get_button(swc.seat->pointer, interaction->serial);
         interaction->original_handler->button(interaction->original_handler,
-                                              swc_time(), &button->press,
+                                              swc_time(), button,
                                               WL_POINTER_BUTTON_STATE_RELEASED);
     }
 
@@ -324,7 +324,7 @@ static bool resize_motion(struct pointer_handler * handler, uint32_t time,
 }
 
 static bool handle_button(struct pointer_handler * handler, uint32_t time,
-                          struct press * press, uint32_t state)
+                          struct button * button, uint32_t state)
 {
     struct window_pointer_interaction * interaction
         = wl_container_of(handler, interaction, handler);
@@ -337,7 +337,7 @@ static bool handle_button(struct pointer_handler * handler, uint32_t time,
 
     end_interaction(interaction);
     interaction->original_handler->button(interaction->original_handler, time,
-                                          press, state);
+                                          button, state);
     return true;
 }
 
