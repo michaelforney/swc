@@ -124,6 +124,24 @@ struct swc_window_handler
      * Called when the pointer enters the window.
      */
     void (* entered)(void * data);
+
+    /**
+     * Called when the window wants to initiate an interactive move, but the
+     * window is not in stacked mode.
+     *
+     * The window manager may respond by changing the window's mode, after which
+     * the interactive move will be honored.
+     */
+    void (* move)(void * data);
+
+    /**
+     * Called when the window wants to initiate an interactive resize, but the
+     * window is not in stacked mode.
+     *
+     * The window manager may respond by changing the window's mode, after which
+     * the interactive resize will be honored.
+     */
+    void (* resize)(void * data);
 };
 
 struct swc_window

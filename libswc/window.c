@@ -483,6 +483,9 @@ void window_set_parent(struct window * window, struct window * parent)
 
 void window_begin_move(struct window * window, struct button * button)
 {
+    if (window->mode != WINDOW_MODE_STACKED && window->handler->move)
+        window->handler->move(window->handler_data);
+
     if (window->mode != WINDOW_MODE_STACKED || window->move.interaction.active)
         return;
 
@@ -498,6 +501,9 @@ void window_begin_move(struct window * window, struct button * button)
 void window_begin_resize(struct window * window, uint32_t edges,
                          struct button * button)
 {
+    if (window->mode != WINDOW_MODE_STACKED && window->handler->resize)
+        window->handler->resize(window->handler_data);
+
     if (window->mode != WINDOW_MODE_STACKED
         || window->resize.interaction.active)
     {
