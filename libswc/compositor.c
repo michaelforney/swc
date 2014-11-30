@@ -480,7 +480,6 @@ struct compositor_view * swc_compositor_create_view
     view->border.color = 0x000000;
     view->border.damaged = false;
     pixman_region32_init(&view->clip);
-    wl_list_init(&view->children);
     wl_signal_init(&view->destroy_signal);
     swc_surface_set_view(surface, &view->base);
     wl_list_insert(&compositor.views, &view->link);
@@ -496,10 +495,6 @@ void compositor_view_destroy(struct compositor_view * view)
     view_finalize(&view->base);
     pixman_region32_fini(&view->clip);
     wl_list_remove(&view->link);
-
-    if (view->parent)
-        wl_list_remove(&view->child_link);
-
     free(view);
 }
 
@@ -511,11 +506,7 @@ struct compositor_view * compositor_view(struct view * view)
 void compositor_view_set_parent(struct compositor_view * view,
                                 struct compositor_view * parent)
 {
-    if (view->parent)
-        wl_list_remove(&view->child_link);
-
     view->parent = view;
-    wl_list_insert(&parent->children, &view->child_link);
 
     if (parent->visible)
         compositor_view_show(view);
@@ -525,7 +516,7 @@ void compositor_view_set_parent(struct compositor_view * view,
 
 void compositor_view_show(struct compositor_view * view)
 {
-    struct compositor_view * child;
+    struct compositor_view * other;
 
     if (view->visible)
         return;
@@ -540,13 +531,16 @@ void compositor_view_show(struct compositor_view * view)
     damage_view(view);
     update(&view->base);
 
-    wl_list_for_each(child, &view->children, child_link)
-        compositor_view_show(child);
+    wl_list_for_each(other, &compositor.views, link)
+    {
+        if (other->parent == view)
+            compositor_view_show(other);
+    }
 }
 
 void compositor_view_hide(struct compositor_view * view)
 {
-    struct compositor_view * child;
+    struct compositor_view * other;
 
     if (!view->visible)
         return;
@@ -558,8 +552,11 @@ void compositor_view_hide(struct compositor_view * view)
     view_set_screens(&view->base, 0);
     view->visible = false;
 
-    wl_list_for_each(child, &view->children, child_link)
-        compositor_view_hide(child);
+    wl_list_for_each(other, &compositor.views, link)
+    {
+        if (other->parent == view)
+            compositor_view_hide(other);
+    }
 }
 
 void compositor_view_set_border_width(struct compositor_view * view,

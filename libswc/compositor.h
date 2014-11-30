@@ -72,7 +72,7 @@ struct compositor_view
         bool damaged;
     } border;
 
-    struct wl_list link, children, child_link;
+    struct wl_list link;
     struct wl_signal destroy_signal;
 };
 
