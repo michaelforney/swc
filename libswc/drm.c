@@ -266,7 +266,7 @@ static void bind_drm(struct wl_client * client, void * data, uint32_t version,
 {
     struct wl_resource * resource;
 
-    if (version >= 2)
+    if (version > 2)
         version = 2;
 
     resource = wl_resource_create(client, &wl_drm_interface, version, id);

@@ -121,7 +121,7 @@ static void bind_shell(struct wl_client * client, void * data,
 {
     struct wl_resource * resource;
 
-    if (version >= 1)
+    if (version > 1)
         version = 1;
 
     resource = wl_resource_create(client, &xdg_shell_interface, version, id);

@@ -227,7 +227,7 @@ static void bind_shm(struct wl_client * client, void * data, uint32_t version,
 {
     struct wl_resource * resource;
 
-    if (version >= 1)
+    if (version > 1)
         version = 1;
 
     resource = wl_resource_create(client, &wl_shm_interface, version, id);

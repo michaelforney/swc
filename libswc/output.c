@@ -20,7 +20,7 @@ static void bind_output(struct wl_client * client, void * data,
     struct wl_resource * resource;
     uint32_t flags;
 
-    if (version >= 2)
+    if (version > 2)
         version = 2;
 
     resource = wl_resource_create(client, &wl_output_interface, version, id);

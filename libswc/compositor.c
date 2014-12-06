@@ -521,13 +521,12 @@ void compositor_view_show(struct compositor_view * view)
     if (view->visible)
         return;
 
-    /* Assume worst-case no clipping until we draw the next frame (in case the
-     * surface gets moved before that. */
-    pixman_region32_clear(&view->clip);
-
     view->visible = true;
     view_update_screens(&view->base);
 
+    /* Assume worst-case no clipping until we draw the next frame (in case the
+     * surface gets moved before that. */
+    pixman_region32_clear(&view->clip);
     damage_view(view);
     update(&view->base);
 
@@ -831,16 +830,15 @@ static struct wl_compositor_interface compositor_implementation = {
 static void bind_compositor(struct wl_client * client, void * data,
                             uint32_t version, uint32_t id)
 {
-    struct swc_compositor * compositor = data;
     struct wl_resource * resource;
 
-    if (version >= 3)
+    if (version > 3)
         version = 3;
 
     resource = wl_resource_create(client, &wl_compositor_interface,
                                   version, id);
     wl_resource_set_implementation(resource, &compositor_implementation,
-                                   compositor, NULL);
+                                   NULL, NULL);
 }
 
 bool swc_compositor_initialize()

@@ -29,6 +29,7 @@
 #include "compositor.h"
 #include "internal.h"
 #include "keyboard.h"
+#include "surface.h"
 #include "util.h"
 
 #include <assert.h>

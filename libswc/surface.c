@@ -80,8 +80,6 @@ static void state_finalize(struct swc_surface_state * state)
 /**
  * In order to set the buffer of a surface state (current or pending), we need
  * to manage the destroy listeners we have for the new and old buffer.
- *
- * @return: Whether or not the buffer was changed.
  */
 static void state_set_buffer(struct swc_surface_state * state,
                              struct wl_resource * resource)

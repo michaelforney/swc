@@ -63,7 +63,7 @@ static void bind_data_device_manager(struct wl_client * client, void * data,
 {
     struct wl_resource * resource;
 
-    if (version >= 1)
+    if (version > 1)
         version = 1;
 
     resource = wl_resource_create(client, &wl_data_device_manager_interface,
