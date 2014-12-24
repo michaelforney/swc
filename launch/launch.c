@@ -136,6 +136,8 @@ static void cleanup()
      * DRM device before the next session tries to claim it. */
     stop_devices(false);
     ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
+
+    kill(child_pid, SIGTERM);
 }
 
 void __attribute__((noreturn,format(printf,1,2)))
