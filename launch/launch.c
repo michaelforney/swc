@@ -78,7 +78,7 @@ static void __attribute__((noreturn,format(printf,1,2)))
 
 static void __attribute__((noreturn)) usage(const char * name)
 {
-    fprintf(stderr, "Usage: %s [-s <server-socket>] [--] "
+    fprintf(stderr, "Usage: %s [-s <server-socket>] [-t <tty-device>] [--] "
                     "<server> [server arguments...]\n", name);
     exit(EXIT_FAILURE);
 }
@@ -294,48 +294,34 @@ static void handle_socket_data(int socket)
     send_fd(socket, fd, &response, sizeof response);
 }
 
-static int find_vt()
+static void find_vt(char * vt, size_t size)
 {
-    char * vt_string;
-    int vt;
-    int tty0_fd;
+    char * vt_num_string;
 
-    vt_string = getenv("XDG_VTNR");
-
-    if (vt_string)
+    if ((vt_num_string = getenv("XDG_VTNR")))
     {
-        char * end;
-        vt = strtoul(vt_string, &end, 10);
-        if (*end == '\0')
-            goto done;
+        if (snprintf(vt, size, "/dev/tty%s", vt_num_string) >= size)
+            die("XDG_VTNR is too long");
     }
+    else
+    {
+        int tty0_fd, vt_num;
 
-    tty0_fd = open("/dev/tty0", O_RDWR);
-
-    if (tty0_fd == -1)
-        die("Could not open /dev/tty0 to find unused VT");
-
-    if (ioctl(tty0_fd, VT_OPENQRY, &vt) != 0)
-        die("Could not find unused VT");
-
-    close(tty0_fd);
-    fprintf(stderr, "Running on VT %d\n", vt);
-
-  done:
-    return vt;
+        tty0_fd = open("/dev/tty0", O_RDWR);
+        if (tty0_fd == -1)
+            die("Could not open /dev/tty0 to find unused VT");
+        if (ioctl(tty0_fd, VT_OPENQRY, &vt_num) != 0)
+            die("Could not find unused VT");
+        close(tty0_fd);
+        if (snprintf(vt, size, "/dev/tty%d", vt_num) >= size)
+            die("VT number is too large");
+    }
 }
 
-static int open_tty(int vt)
+static int open_tty(const char * tty_name)
 {
-    char * current_tty_name;
-    char tty_name[64];
-
-    snprintf(tty_name, sizeof tty_name, "/dev/tty%d", vt);
-
     /* Check if we are running on the desired VT */
-    current_tty_name = ttyname(STDIN_FILENO);
-
-    if (strcmp(tty_name, current_tty_name) == 0)
+    if (strcmp(tty_name, ttyname(STDIN_FILENO)) == 0)
         return STDIN_FILENO;
     else
     {
@@ -426,16 +412,19 @@ int main(int argc, char * argv[])
 {
     int option;
     int sockets[2];
-    int vt;
+    char * vt = NULL, vt_buf[64];
     struct sigaction action = { 0 };
     sigset_t set;
 
-    while ((option = getopt(argc, argv, "s:")) != -1)
+    while ((option = getopt(argc, argv, "s:t:")) != -1)
     {
         switch (option)
         {
             case 's':
                 setenv("WAYLAND_DISPLAY", optarg, true);
+                break;
+            case 't':
+                vt = optarg;
                 break;
             default:
                 usage(argv[0]);
@@ -479,7 +468,13 @@ int main(int argc, char * argv[])
     sigdelset(&set, SIGTERM);
     sigprocmask(SIG_SETMASK, &set, NULL);
 
-    vt = find_vt();
+    if (!vt)
+    {
+        find_vt(vt_buf, sizeof vt_buf);
+        vt = vt_buf;
+    }
+
+    fprintf(stderr, "Running on %s\n", vt);
     launcher.tty_fd = open_tty(vt);
     setup_tty(launcher.tty_fd);
 
