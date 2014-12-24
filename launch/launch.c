@@ -430,14 +430,13 @@ int main(int argc, char * argv[])
     struct sigaction action = { 0 };
     sigset_t set;
 
-    while ((option = getopt(argc, argv, "hs:")) != -1)
+    while ((option = getopt(argc, argv, "s:")) != -1)
     {
         switch (option)
         {
             case 's':
                 setenv("WAYLAND_DISPLAY", optarg, true);
                 break;
-            case 'h':
             default:
                 usage(argv[0]);
         }
