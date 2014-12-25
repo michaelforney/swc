@@ -63,6 +63,7 @@ static struct
     int drm_fds[16];
     unsigned num_drm_fds;
     int tty_fd;
+    bool active;
 } launcher;
 
 static struct
@@ -178,6 +179,7 @@ static void handle_usr1(int signal)
     send(launcher.socket, &event, sizeof event, 0);
     stop_devices(true);
     ioctl(launcher.tty_fd, VT_RELDISP, 1);
+    launcher.active = false;
 }
 
 static void handle_usr2(int signal)
@@ -187,6 +189,7 @@ static void handle_usr2(int signal)
     ioctl(launcher.tty_fd, VT_RELDISP, VT_ACKACQ);
     start_devices();
     send(launcher.socket, &event, sizeof event, 0);
+    launcher.active = true;
 }
 
 static void forward_signal(int signal)
@@ -230,6 +233,9 @@ static void handle_socket_data(int socket)
             switch (major(st.st_rdev))
             {
                 case INPUT_MAJOR:
+                    if (!launcher.active)
+                        goto fail;
+
                     if (launcher.num_input_fds
                         == ARRAY_LENGTH(launcher.input_fds))
                     {
@@ -270,6 +276,9 @@ static void handle_socket_data(int socket)
 
             break;
         case SWC_LAUNCH_REQUEST_ACTIVATE_VT:
+            if (!launcher.active)
+                goto fail;
+
             if (ioctl(launcher.tty_fd, VT_ACTIVATE, request->vt) == -1)
             {
                 fprintf(stderr, "Could not activate VT %d: %s\n",
