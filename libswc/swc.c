@@ -26,6 +26,7 @@
 #include "compositor.h"
 #include "data_device_manager.h"
 #include "drm.h"
+#include "event.h"
 #include "internal.h"
 #include "launch.h"
 #include "keyboard.h"
@@ -55,7 +56,6 @@ extern struct swc_xserver swc_xserver;
 extern struct pointer_handler screens_pointer_handler;
 
 struct swc swc = {
-    .launch = &swc_launch,
     .seat = &swc_seat,
     .bindings = &swc_bindings,
     .compositor = &swc_compositor,
@@ -98,6 +98,18 @@ static void setup_compositor()
     pixman_region32_fini(&pointer_region);
 }
 
+void swc_activate()
+{
+    swc.active = true;
+    swc_send_event(&swc.event_signal, SWC_EVENT_ACTIVATED, NULL);
+}
+
+void swc_deactivate()
+{
+    swc.active = false;
+    swc_send_event(&swc.event_signal, SWC_EVENT_DEACTIVATED, NULL);
+}
+
 EXPORT
 bool swc_initialize(struct wl_display * display,
                     struct wl_event_loop * event_loop,
@@ -107,6 +119,7 @@ bool swc_initialize(struct wl_display * display,
     swc.event_loop = event_loop ?: wl_display_get_event_loop(display);
     swc.manager = manager;
     const char * default_seat = "seat0";
+    wl_signal_init(&swc.event_signal);
 
     if (!(swc_launch_initialize()))
     {

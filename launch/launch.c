@@ -264,11 +264,6 @@ static void handle_socket_data(int socket)
                     launcher.input_fds[launcher.num_input_fds++] = fd;
                     break;
                 case DRM_MAJOR:
-                    if (drmSetMaster(fd) == -1)
-                    {
-                        perror("Could not become DRM master");
-                        goto fail;
-                    }
                     launcher.drm_fds[launcher.num_drm_fds++] = fd;
                     break;
             }

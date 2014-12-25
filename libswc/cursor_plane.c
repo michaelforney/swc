@@ -100,15 +100,15 @@ static const struct view_impl view_impl = {
     .move = &move
 };
 
-static void handle_launch_event(struct wl_listener * listener, void * data)
+static void handle_swc_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
     struct cursor_plane * plane
-        = wl_container_of(listener, plane, launch_listener);
+        = wl_container_of(listener, plane, swc_listener);
 
     switch (event->type)
     {
-        case SWC_LAUNCH_EVENT_ACTIVATED:
+        case SWC_EVENT_ACTIVATED:
             move(&plane->view, plane->view.geometry.x, plane->view.geometry.y);
             attach(&plane->view, plane->view.buffer);
             break;
@@ -123,8 +123,8 @@ bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,
 
     plane->origin = origin;
     plane->crtc = crtc;
-    plane->launch_listener.notify = &handle_launch_event;
-    wl_signal_add(&swc.launch->event_signal, &plane->launch_listener);
+    plane->swc_listener.notify = &handle_swc_event;
+    wl_signal_add(&swc.event_signal, &plane->swc_listener);
     view_initialize(&plane->view, &view_impl);
 
     return true;

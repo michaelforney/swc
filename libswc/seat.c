@@ -56,6 +56,8 @@ static struct
     struct wl_list devices;
 #endif
 
+    struct wl_listener swc_listener;
+
     struct keyboard keyboard;
     struct pointer pointer;
     struct data_device data_device;
@@ -136,19 +138,19 @@ static struct wl_listener data_device_listener = {
     .notify = &handle_data_device_event
 };
 
-static void handle_launch_event(struct wl_listener * listener, void * data)
+static void handle_swc_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
 
     switch (event->type)
     {
-        case SWC_LAUNCH_EVENT_DEACTIVATED:
+        case SWC_EVENT_DEACTIVATED:
 #ifdef ENABLE_LIBINPUT
             libinput_suspend(seat.libinput);
 #endif
             keyboard_reset(&seat.keyboard);
             break;
-        case SWC_LAUNCH_EVENT_ACTIVATED:
+        case SWC_EVENT_ACTIVATED:
         {
 #ifdef ENABLE_LIBINPUT
             if (libinput_resume(seat.libinput) != 0)
@@ -170,10 +172,6 @@ static void handle_launch_event(struct wl_listener * listener, void * data)
         }
     }
 }
-
-static struct wl_listener launch_listener = {
-    .notify = &handle_launch_event
-};
 
 /* Wayland Seat Interface */
 static void get_pointer(struct wl_client * client,
@@ -462,7 +460,8 @@ bool swc_seat_initialize(const char * seat_name)
 
     seat.capabilities = 0;
     wl_list_init(&seat.resources);
-    wl_signal_add(&swc.launch->event_signal, &launch_listener);
+    seat.swc_listener.notify = &handle_swc_event;
+    wl_signal_add(&swc.event_signal, &seat.swc_listener);
 
     if (!data_device_initialize(&seat.data_device))
     {

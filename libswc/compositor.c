@@ -75,6 +75,7 @@ static struct
 {
     struct wl_list views;
     pixman_region32_t damage, opaque;
+    struct wl_listener swc_listener;
 
     /* A mask of screens that have been repainted but are waiting on a page
      * flip. */
@@ -84,8 +85,7 @@ static struct
      * idle. */
     uint32_t scheduled_updates;
 
-    bool active, updating;
-
+    bool updating;
     struct wl_global * global;
 } compositor;
 
@@ -384,7 +384,7 @@ static bool update(struct view * base)
 {
     struct compositor_view * view = (void *) base;
 
-    if (!compositor.active || !view->visible)
+    if (!swc.active || !view->visible)
         return false;
 
     schedule_updates(view->base.screens);
@@ -698,8 +698,7 @@ static void update_screen(struct screen * screen)
             /* If we get an EACCES, it is because this session is being
              * deactivated, but we haven't yet received the deactivate signal
              * from swc-launch. */
-            compositor.active = false;
-            compositor.scheduled_updates = 0;
+            swc_deactivate();
             break;
         case 0:
             compositor.pending_flips |= screen_mask(screen);
@@ -713,7 +712,7 @@ static void perform_update(void * data)
     uint32_t updates = compositor.scheduled_updates
                      & ~compositor.pending_flips;
 
-    if (!compositor.active || !updates)
+    if (!swc.active || !updates)
         return;
 
     DEBUG("Performing update\n");
@@ -773,26 +772,20 @@ static void handle_switch_vt(void * data, uint32_t time,
         swc_launch_activate_vt(vt);
 }
 
-static void handle_launch_event(struct wl_listener * listener, void * data)
+static void handle_swc_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
 
     switch (event->type)
     {
-        case SWC_LAUNCH_EVENT_ACTIVATED:
-            compositor.active = true;
+        case SWC_EVENT_ACTIVATED:
             schedule_updates(-1);
             break;
-        case SWC_LAUNCH_EVENT_DEACTIVATED:
-            compositor.active = false;
+        case SWC_EVENT_DEACTIVATED:
             compositor.scheduled_updates = 0;
             break;
     }
 }
-
-static struct wl_listener launch_listener = {
-    .notify = &handle_launch_event
-};
 
 static void create_surface(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
@@ -854,17 +847,18 @@ bool swc_compositor_initialize()
 
     compositor.scheduled_updates = 0;
     compositor.pending_flips = 0;
-    compositor.active = true;
     compositor.updating = false;
     pixman_region32_init(&compositor.damage);
     pixman_region32_init(&compositor.opaque);
     wl_list_init(&compositor.views);
     wl_signal_init(&swc_compositor.signal.new_surface);
-    wl_signal_add(&swc.launch->event_signal, &launch_listener);
+    compositor.swc_listener.notify = &handle_swc_event;
+    wl_signal_add(&swc.event_signal, &compositor.swc_listener);
 
     wl_list_for_each(screen, &swc.screens, link)
         target_new(screen);
-    schedule_updates(-1);
+    if (swc.active)
+        schedule_updates(-1);
 
     swc_add_binding(SWC_BINDING_KEY, SWC_MOD_CTRL | SWC_MOD_ALT,
                     XKB_KEY_BackSpace, &handle_terminate, NULL);

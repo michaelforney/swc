@@ -27,17 +27,6 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-enum
-{
-    SWC_LAUNCH_EVENT_ACTIVATED,
-    SWC_LAUNCH_EVENT_DEACTIVATED
-};
-
-struct swc_launch
-{
-    struct wl_signal event_signal;
-};
-
 bool swc_launch_initialize();
 void swc_launch_finalize();
 

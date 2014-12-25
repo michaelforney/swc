@@ -31,7 +31,7 @@ struct cursor_plane
     struct view view;
     const struct swc_rectangle * origin;
     uint32_t crtc;
-    struct wl_listener launch_listener;
+    struct wl_listener swc_listener;
 };
 
 bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,

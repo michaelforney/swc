@@ -30,8 +30,6 @@
 #include <unistd.h>
 #include <wayland-server.h>
 
-struct swc_launch swc_launch;
-
 static struct
 {
     int socket;
@@ -44,14 +42,13 @@ static bool handle_event(struct swc_launch_event * event)
     switch (event->type)
     {
         case SWC_LAUNCH_EVENT_ACTIVATE:
-            swc_send_event(&swc.launch->event_signal,
-                           SWC_LAUNCH_EVENT_ACTIVATED, NULL);
+            swc_activate();
             break;
         case SWC_LAUNCH_EVENT_DEACTIVATE:
-            swc_send_event(&swc.launch->event_signal,
-                           SWC_LAUNCH_EVENT_DEACTIVATED, NULL);
+            swc_deactivate();
             break;
-        default: return false;
+        default:
+            return false;
     }
 
     return true;
@@ -84,8 +81,6 @@ bool swc_launch_initialize()
 
     if (!launch.source)
         return false;
-
-    wl_signal_init(&swc.launch->event_signal);
 
     return true;
 }

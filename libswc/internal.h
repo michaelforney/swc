@@ -24,15 +24,23 @@
 #ifndef SWC_INTERNAL_H
 #define SWC_INTERNAL_H
 
-#include <wayland-util.h>
+#include <wayland-server.h>
+#include <stdbool.h>
+
+enum
+{
+    SWC_EVENT_ACTIVATED,
+    SWC_EVENT_DEACTIVATED,
+};
 
 struct swc
 {
     struct wl_display * display;
     struct wl_event_loop * event_loop;
     const struct swc_manager * manager;
+    struct wl_signal event_signal;
+    bool active;
 
-    struct swc_launch * const launch;
     const struct swc_seat * const seat;
     const struct swc_bindings * const bindings;
     struct wl_list screens;
@@ -46,6 +54,9 @@ struct swc
 };
 
 extern struct swc swc;
+
+void swc_activate();
+void swc_deactivate();
 
 #endif
 

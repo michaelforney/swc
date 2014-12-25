@@ -175,15 +175,15 @@ static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
     view_frame(&plane->view, time);
 }
 
-static void handle_launch_event(struct wl_listener * listener, void * data)
+static void handle_swc_event(struct wl_listener * listener, void * data)
 {
     struct swc_event * event = data;
     struct framebuffer_plane * plane
-        = wl_container_of(listener, plane, launch_listener);
+        = wl_container_of(listener, plane, swc_listener);
 
     switch (event->type)
     {
-        case SWC_LAUNCH_EVENT_ACTIVATED:
+        case SWC_EVENT_ACTIVATED:
             plane->need_modeset = true;
             break;
     }
@@ -220,9 +220,9 @@ bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
     plane->view.geometry.width = mode->width;
     plane->view.geometry.height = mode->height;
     plane->drm_handler.page_flip = &handle_page_flip;
-    plane->launch_listener.notify = &handle_launch_event;
+    plane->swc_listener.notify = &handle_swc_event;
     plane->mode = *mode;
-    wl_signal_add(&swc.launch->event_signal, &plane->launch_listener);
+    wl_signal_add(&swc.event_signal, &plane->swc_listener);
 
     return true;
 
