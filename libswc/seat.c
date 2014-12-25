@@ -371,6 +371,9 @@ bool initialize_libinput(const char * seat_name)
         goto error2;
     }
 
+    if (!swc.active)
+        libinput_suspend(seat.libinput);
+
     return true;
 
   error2:

@@ -74,13 +74,15 @@ static struct
     long console_mode;
 } original_vt_state;
 
+static bool nflag;
+
 static void __attribute__((noreturn,format(printf,1,2)))
     die(const char * format, ...);
 
 static void __attribute__((noreturn)) usage(const char * name)
 {
-    fprintf(stderr, "Usage: %s [-s <server-socket>] [-t <tty-device>] [--] "
-                    "<server> [server arguments...]\n", name);
+    fprintf(stderr, "Usage: %s [-n] [-s <server-socket>] [-t <tty-device>] "
+                    "[--] <server> [server arguments...]\n", name);
     exit(EXIT_FAILURE);
 }
 
@@ -388,16 +390,19 @@ static void setup_tty(int fd)
         goto error1;
     }
 
-    if (ioctl(fd, VT_ACTIVATE, vt) == -1)
+    if (!nflag)
     {
-        perror("Could not activate VT");
-        goto error2;
-    }
+        if (ioctl(fd, VT_ACTIVATE, vt) == -1)
+        {
+            perror("Could not activate VT");
+            goto error2;
+        }
 
-    if (ioctl(fd, VT_WAITACTIVE, vt) == -1)
-    {
-        perror("Could not wait for VT to become active");
-        goto error2;
+        if (ioctl(fd, VT_WAITACTIVE, vt) == -1)
+        {
+            perror("Could not wait for VT to become active");
+            goto error2;
+        }
     }
 
     original_vt_state.altered = true;
@@ -422,10 +427,13 @@ int main(int argc, char * argv[])
     struct sigaction action = { 0 };
     sigset_t set;
 
-    while ((option = getopt(argc, argv, "s:t:")) != -1)
+    while ((option = getopt(argc, argv, "ns:t:")) != -1)
     {
         switch (option)
         {
+            case 'n':
+                nflag = true;
+                break;
             case 's':
                 setenv("WAYLAND_DISPLAY", optarg, true);
                 break;
