@@ -233,7 +233,7 @@ static void update_capabilities(uint32_t capabilities)
 #ifdef ENABLE_LIBINPUT
 static int open_restricted(const char * path, int flags, void * user_data)
 {
-    return swc_launch_open_device(path, flags);
+    return launch_open_device(path, flags);
 }
 
 static void close_restricted(int fd, void * user_data)

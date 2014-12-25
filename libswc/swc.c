@@ -121,7 +121,7 @@ bool swc_initialize(struct wl_display * display,
     const char * default_seat = "seat0";
     wl_signal_init(&swc.event_signal);
 
-    if (!(swc_launch_initialize()))
+    if (!(launch_initialize()))
     {
         ERROR("Could not connect to swc-launch\n");
         goto error0;
@@ -222,7 +222,7 @@ bool swc_initialize(struct wl_display * display,
   error2:
     swc_drm_finalize();
   error1:
-    swc_launch_finalize();
+    launch_finalize();
   error0:
     return false;
 }
@@ -242,6 +242,6 @@ void swc_finalize()
     swc_bindings_finalize();
     swc_shm_finalize();
     swc_drm_finalize();
-    swc_launch_finalize();
+    launch_finalize();
 }
 

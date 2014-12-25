@@ -27,11 +27,11 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-bool swc_launch_initialize();
-void swc_launch_finalize();
+bool launch_initialize();
+void launch_finalize();
 
-int swc_launch_open_device(const char * path, int flags);
-bool swc_launch_activate_vt(unsigned vt);
+int launch_open_device(const char * path, int flags);
+bool launch_activate_vt(unsigned vt);
 
 #endif
 

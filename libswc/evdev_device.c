@@ -204,7 +204,7 @@ struct swc_evdev_device * swc_evdev_device_new
     if (!(device = malloc(sizeof *device)))
         goto error0;
 
-    device->fd = swc_launch_open_device(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
+    device->fd = launch_open_device(path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
 
     if (device->fd == -1)
     {
@@ -282,8 +282,8 @@ bool swc_evdev_device_reopen(struct swc_evdev_device * device)
     if (device->source)
         close_device(device);
 
-    device->fd = swc_launch_open_device(device->path,
-                                        O_RDWR | O_NONBLOCK | O_CLOEXEC);
+    device->fd = launch_open_device(device->path,
+                                    O_RDWR | O_NONBLOCK | O_CLOEXEC);
 
     if (device->fd == -1)
     {

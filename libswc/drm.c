@@ -289,7 +289,7 @@ bool swc_drm_initialize()
     }
 
     drm.taken_ids = 0;
-    swc.drm->fd = swc_launch_open_device(drm.path, O_RDWR | O_CLOEXEC);
+    swc.drm->fd = launch_open_device(drm.path, O_RDWR | O_CLOEXEC);
 
     if (swc.drm->fd == -1)
     {

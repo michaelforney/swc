@@ -769,7 +769,7 @@ static void handle_switch_vt(void * data, uint32_t time,
     uint8_t vt = value - XKB_KEY_XF86Switch_VT_1 + 1;
 
     if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-        swc_launch_activate_vt(vt);
+        launch_activate_vt(vt);
 }
 
 static void handle_swc_event(struct wl_listener * listener, void * data)

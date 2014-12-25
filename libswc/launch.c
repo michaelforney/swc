@@ -64,7 +64,7 @@ static int handle_data(int fd, uint32_t mask, void * data)
     return 1;
 }
 
-bool swc_launch_initialize()
+bool launch_initialize()
 {
     char * socket_string, * end;
 
@@ -85,7 +85,7 @@ bool swc_launch_initialize()
     return true;
 }
 
-void swc_launch_finalize()
+void launch_finalize()
 {
     wl_event_source_remove(launch.source);
     close(launch.socket);
@@ -114,7 +114,7 @@ static bool send_request(struct swc_launch_request * request, size_t size,
     return false;
 }
 
-int swc_launch_open_device(const char * path, int flags)
+int launch_open_device(const char * path, int flags)
 {
     size_t path_size = strlen(path);
     char buffer[sizeof(struct swc_launch_request) + path_size + 1];
@@ -132,7 +132,7 @@ int swc_launch_open_device(const char * path, int flags)
     return fd;
 }
 
-bool swc_launch_activate_vt(unsigned vt)
+bool launch_activate_vt(unsigned vt)
 {
     struct swc_launch_request request;
     struct swc_launch_event response;
