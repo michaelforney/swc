@@ -31,6 +31,7 @@
 #include "wayland_buffer.h"
 
 #include <dirent.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,7 +48,7 @@ struct swc_drm swc_drm;
 
 static struct
 {
-    char * path;
+    char path[128];
 
     uint32_t taken_ids;
 
@@ -58,15 +59,6 @@ static struct
 static void authenticate(struct wl_client * client,
                          struct wl_resource * resource, uint32_t magic)
 {
-    int ret;
-
-    if ((ret = drmAuthMagic(swc.drm->fd, magic)) == 0)
-        wl_drm_send_authenticated(resource);
-    else
-    {
-        wl_resource_post_error(resource, WL_DRM_ERROR_AUTHENTICATE_FAIL,
-                               "drmAuthMagic failed: %d\n", ret);
-    }
 }
 
 static void create_buffer(struct wl_client * client,
@@ -138,12 +130,11 @@ static int select_card(const struct dirent * entry)
     return sscanf(entry->d_name, "card%u", &num) == 1;
 }
 
-static bool find_primary_drm_device(char ** device_path)
+static bool find_primary_drm_device(char * path, size_t size)
 {
     struct dirent ** cards, * card = NULL;
     int num_cards, ret;
     unsigned index;
-    char path[64];
     FILE * file;
     unsigned char boot_vga;
 
@@ -154,8 +145,8 @@ static bool find_primary_drm_device(char ** device_path)
 
     for (index = 0; index < num_cards; ++index)
     {
-        snprintf(path, sizeof path,
-                 "/sys/class/drm/%s/device/boot_vga", cards[index]->d_name);
+        snprintf(path, size, "/sys/class/drm/%s/device/boot_vga",
+                 cards[index]->d_name);
 
         if ((file = fopen(path, "r")))
         {
@@ -182,14 +173,10 @@ static bool find_primary_drm_device(char ** device_path)
     if (!card)
         return false;
 
-    *device_path = malloc(sizeof "/dev/dri/" + strlen(card->d_name));
-
-    if (!*device_path)
+    if (snprintf(path, size, "/dev/dri/%s", card->d_name) >= size)
         return false;
 
-    sprintf(*device_path, "/dev/dri/%s", card->d_name);
     free(card);
-
     return true;
 }
 
@@ -282,7 +269,9 @@ static void bind_drm(struct wl_client * client, void * data, uint32_t version,
 
 bool swc_drm_initialize()
 {
-    if (!find_primary_drm_device(&drm.path))
+    struct stat master, render;
+
+    if (!find_primary_drm_device(drm.path, sizeof drm.path))
     {
         ERROR("Could not find DRM device\n");
         goto error0;
@@ -294,19 +283,46 @@ bool swc_drm_initialize()
     if (swc.drm->fd == -1)
     {
         ERROR("Could not open DRM device at %s\n", drm.path);
+        goto error0;
+    }
+
+    if (fstat(swc.drm->fd, &master) != 0)
+    {
+        ERROR("Could not fstat DRM FD: %s\n", strerror(errno));
+        goto error1;
+    }
+
+    if (snprintf(drm.path, sizeof drm.path, "/dev/dri/renderD%d",
+                 minor(master.st_rdev) + 0x80) >= sizeof drm.path)
+    {
+        ERROR("Render node path is too long");
+        goto error1;
+    }
+
+    if (stat(drm.path, &render) != 0)
+    {
+        ERROR("Could not stat render node for primary DRM device: %s\n",
+              strerror(errno));
+        goto error1;
+    }
+
+    if (master.st_mode != render.st_mode
+        || minor(master.st_rdev) + 0x80 != minor(render.st_rdev))
+    {
+        ERROR("Render node does not have expected mode or minor number\n");
         goto error1;
     }
 
     if (!(swc.drm->context = wld_drm_create_context(swc.drm->fd)))
     {
         ERROR("Could not create WLD DRM context\n");
-        goto error2;
+        goto error1;
     }
 
     if (!(swc.drm->renderer = wld_create_renderer(swc.drm->context)))
     {
         ERROR("Could not create WLD DRM renderer\n");
-        goto error3;
+        goto error2;
     }
 
     drm.event_source = wl_event_loop_add_fd
@@ -315,7 +331,7 @@ bool swc_drm_initialize()
     if (!drm.event_source)
     {
         ERROR("Could not create DRM event source\n");
-        goto error4;
+        goto error3;
     }
 
     if (!wld_drm_is_dumb(swc.drm->context))
@@ -326,22 +342,20 @@ bool swc_drm_initialize()
         if (!drm.global)
         {
             ERROR("Could not create wl_drm global\n");
-            goto error5;
+            goto error4;
         }
     }
 
     return true;
 
-  error5:
-    wl_event_source_remove(drm.event_source);
   error4:
-    wld_destroy_renderer(swc.drm->renderer);
+    wl_event_source_remove(drm.event_source);
   error3:
-    wld_destroy_context(swc.drm->context);
+    wld_destroy_renderer(swc.drm->renderer);
   error2:
-    close(swc.drm->fd);
+    wld_destroy_context(swc.drm->context);
   error1:
-    free(drm.path);
+    close(swc.drm->fd);
   error0:
     return false;
 }
@@ -353,7 +367,6 @@ void swc_drm_finalize()
     wl_event_source_remove(drm.event_source);
     wld_destroy_renderer(swc.drm->renderer);
     wld_destroy_context(swc.drm->context);
-    free(drm.path);
     close(swc.drm->fd);
 }
 
