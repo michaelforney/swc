@@ -36,7 +36,7 @@ struct swc_launch_request
     enum
     {
         SWC_LAUNCH_REQUEST_OPEN_DEVICE,
-        SWC_LAUNCH_REQUEST_ACTIVATE_VT
+        SWC_LAUNCH_REQUEST_ACTIVATE_VT,
     } type;
 
     uint32_t serial;
