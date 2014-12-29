@@ -42,7 +42,6 @@ static bool update(struct view * view)
 static int attach(struct view * view, struct wld_buffer * buffer)
 {
     struct cursor_plane * plane = wl_container_of(view, plane, view);
-    int ret;
 
     if (buffer)
     {
@@ -56,22 +55,18 @@ static int attach(struct view * view, struct wld_buffer * buffer)
             return -EINVAL;
         }
 
-        ret = drmModeSetCursor(swc.drm->fd, plane->crtc, object.u32,
-                               buffer->width, buffer->height);
-
-        if (ret < 0)
+        if (swc.active && drmModeSetCursor(swc.drm->fd, plane->crtc, object.u32,
+                                           buffer->width, buffer->height) < 0)
         {
-            ERROR("Could not set cursor: %s\n", strerror(-ret));
-            return ret;
+            ERROR("Could not set cursor: %s\n", strerror(errno));
+            return -errno;
         }
     }
-    else
+    else if (swc.active && drmModeSetCursor(swc.drm->fd, plane->crtc,
+                                            0, 0, 0) < 0)
     {
-        if ((ret = drmModeSetCursor(swc.drm->fd, plane->crtc, 0, 0, 0)) < 0)
-        {
-            ERROR("Could not unset cursor: %s\n", strerror(-ret));
-            return ret;
-        }
+        ERROR("Could not unset cursor: %s\n", strerror(errno));
+        return -errno;
     }
 
     view_set_size_from_buffer(view, buffer);
@@ -82,8 +77,9 @@ static bool move(struct view * view, int32_t x, int32_t y)
 {
     struct cursor_plane * plane = wl_container_of(view, plane, view);
 
-    if (drmModeMoveCursor(swc.drm->fd, plane->crtc,
-                          x - plane->origin->x, y - plane->origin->y) != 0)
+    if (swc.active && drmModeMoveCursor(swc.drm->fd, plane->crtc,
+                                        x - plane->origin->x,
+                                        y - plane->origin->y) != 0)
     {
         ERROR("Could not move cursor: %s\n", strerror(errno));
         return false;
@@ -118,9 +114,6 @@ static void handle_swc_event(struct wl_listener * listener, void * data)
 bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,
                              const struct swc_rectangle * origin)
 {
-    if (drmModeSetCursor(swc.drm->fd, crtc, 0, 0, 0) != 0)
-        return false;
-
     plane->origin = origin;
     plane->crtc = crtc;
     plane->swc_listener.notify = &handle_swc_event;
@@ -132,6 +125,5 @@ bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,
 
 void cursor_plane_finalize(struct cursor_plane * plane)
 {
-    drmModeSetCursor(swc.drm->fd, plane->crtc, 0, 0, 0);
 }
 
