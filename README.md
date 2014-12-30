@@ -85,6 +85,12 @@ window manager using the Wayland protocol?", only to be turned off by the
 response "Write a weston shell plugin". Hopefully it is less intimidating to
 implement a window manager using swc.
 
+How can I try out swc?
+----------------------
+
+If you are not interested in developing your own window manager, check out my
+swc-based window manager, [velox](http://github.com/michaelforney/velox).
+
 TODO
 ----
 * XWayland copy-paste integration.
@@ -98,4 +104,14 @@ Contact
 
 If you have questions or want to discuss swc feel free to join #swc on
 freenode.
+
+Related projects
+----------------
+
+Since swc's creation, several other projects with similar goals have been
+created.
+
+- [wlc](http://github.com/Cloudef/wlc) and
+  [loliwm](http://github.com/Cloudef/loliwm)
+- [waysome](http://github.com/waysome/waysome)
 
