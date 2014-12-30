@@ -83,7 +83,7 @@ static void __attribute__((noreturn)) usage(const char * name)
 {
     fprintf(stderr, "Usage: %s [-n] [-s <server-socket>] [-t <tty-device>] "
                     "[--] <server> [server arguments...]\n", name);
-    exit(EXIT_FAILURE);
+    exit(2);
 }
 
 static void start_devices()
