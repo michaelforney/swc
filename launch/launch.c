@@ -328,8 +328,10 @@ static void find_vt(char * vt, size_t size)
 
 static int open_tty(const char * tty_name)
 {
+    char * stdin_tty;
+
     /* Check if we are running on the desired VT */
-    if (strcmp(tty_name, ttyname(STDIN_FILENO)) == 0)
+    if ((stdin_tty = ttyname(STDIN_FILENO)) && strcmp(tty_name, stdin_tty) == 0)
         return STDIN_FILENO;
     else
     {
