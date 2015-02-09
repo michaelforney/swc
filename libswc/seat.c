@@ -320,12 +320,20 @@ static int handle_libinput_data(int fd, uint32_t mask, void * data)
             {
                 struct libinput_event_pointer * event;
                 wl_fixed_t amount;
+                enum libinput_pointer_axis axis;
 
                 event = libinput_event_get_pointer_event(generic_event);
-                amount = wl_fixed_from_double
-                    (libinput_event_pointer_get_axis_value(event));
-                handle_axis(libinput_event_pointer_get_time(event),
-                            libinput_event_pointer_get_axis(event), amount);
+                for (axis = LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL;
+                     axis <= LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL;
+                     ++axis)
+                {
+                    if (libinput_event_pointer_has_axis(event, axis)) {
+                        amount = wl_fixed_from_double
+                            (libinput_event_pointer_get_axis_value(event, axis));
+                        handle_axis(libinput_event_pointer_get_time(event),
+                            axis, amount);
+                    }
+                }
                 break;
             }
             default:
