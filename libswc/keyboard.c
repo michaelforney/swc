@@ -216,12 +216,13 @@ struct wl_resource * keyboard_bind(struct keyboard * keyboard,
                                          version, id);
     wl_resource_set_implementation(client_resource, &keyboard_implementation,
                                    keyboard, &unbind);
-    input_focus_add_resource(&keyboard->focus, client_resource);
 
     /* Subtract one to remove terminating NULL character. */
     wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1,
                             keyboard->xkb.keymap.fd,
                             keyboard->xkb.keymap.size - 1);
+
+    input_focus_add_resource(&keyboard->focus, client_resource);
 
     if (version >= 4)
     {
