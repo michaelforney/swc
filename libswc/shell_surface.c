@@ -195,7 +195,7 @@ static void set_class(struct wl_client * client, struct wl_resource * resource,
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
 
-    window_set_class(&shell_surface->window, class);
+    window_set_app_id(&shell_surface->window, class);
 }
 
 static const struct wl_shell_surface_interface shell_surface_implementation = {

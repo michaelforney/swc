@@ -389,7 +389,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     DEBUG("Initializing window, %p\n", window);
 
     window->base.title = NULL;
-    window->base.class = NULL;
+    window->base.app_id = NULL;
     window->base.parent = NULL;
 
     if (!(window->view = swc_compositor_create_view(surface)))
@@ -428,7 +428,7 @@ void window_finalize(struct window * window)
     window_unmanage(window);
     compositor_view_destroy(window->view);
     free(window->base.title);
-    free(window->base.class);
+    free(window->base.app_id);
 }
 
 void window_manage(struct window * window)
@@ -460,13 +460,13 @@ void window_set_title(struct window * window, const char * title, size_t length)
         window->handler->title_changed(window->handler_data);
 }
 
-void window_set_class(struct window * window, const char * class)
+void window_set_app_id(struct window * window, const char * app_id)
 {
-    free(window->base.class);
-    window->base.class = strdup(class);
+    free(window->base.app_id);
+    window->base.app_id = strdup(app_id);
 
-    if (window->handler->class_changed)
-        window->handler->class_changed(window->handler_data);
+    if (window->handler->app_id_changed)
+        window->handler->app_id_changed(window->handler_data);
 }
 
 void window_set_parent(struct window * window, struct window * parent)

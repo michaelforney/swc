@@ -108,9 +108,9 @@ struct swc_window_handler
     void (* title_changed)(void * data);
 
     /**
-     * Called when the window's class changes.
+     * Called when the window's application identifier changes.
      */
-    void (* class_changed)(void * data);
+    void (* app_id_changed)(void * data);
 
     /**
      * Called when the window's parent changes.
@@ -147,7 +147,7 @@ struct swc_window_handler
 struct swc_window
 {
     char * title;
-    char * class;
+    char * app_id;
 
     struct swc_window * parent;
 };

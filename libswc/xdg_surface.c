@@ -184,7 +184,7 @@ static void set_app_id(struct wl_client * client, struct wl_resource * resource,
 {
     struct xdg_surface * surface = wl_resource_get_user_data(resource);
 
-    window_set_class(&surface->window, app_id);
+    window_set_app_id(&surface->window, app_id);
 }
 
 static void show_window_menu(struct wl_client * client,

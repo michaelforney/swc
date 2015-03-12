@@ -103,7 +103,7 @@ void window_unmanage(struct window * window);
 void window_set_title(struct window * window,
                       const char * title, size_t length);
 
-void window_set_class(struct window * window, const char * class);
+void window_set_app_id(struct window * window, const char * app_id);
 
 void window_set_parent(struct window * window, struct window * parent);
 
