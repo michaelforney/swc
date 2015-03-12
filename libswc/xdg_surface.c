@@ -158,16 +158,14 @@ static void destroy(struct wl_client * client, struct wl_resource * resource)
 static void set_parent(struct wl_client * client, struct wl_resource * resource,
                        struct wl_resource * parent_resource)
 {
-    struct xdg_surface * xdg_surface = wl_resource_get_user_data(resource);
-    struct swc_surface * parent_surface;
-    struct compositor_view * parent_view;
+    struct xdg_surface * xdg_surface = wl_resource_get_user_data(resource),
+                       * parent_surface;
     struct window * parent_window = NULL;
 
     if (parent_resource)
     {
         parent_surface = wl_resource_get_user_data(parent_resource);
-        parent_view = compositor_view(parent_surface->view);
-        parent_window = parent_view->window;
+        parent_window = &parent_surface->window;
     }
 
     window_set_parent(&xdg_surface->window, parent_window);

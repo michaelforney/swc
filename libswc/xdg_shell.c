@@ -30,7 +30,7 @@
 #include <wayland-server.h>
 #include "protocol/xdg-shell-server-protocol.h"
 
-#define XDG_SHELL_VERSION 4
+#define XDG_SHELL_VERSION 5
 
 static_assert(XDG_SHELL_VERSION == XDG_SHELL_VERSION_CURRENT,
               "xdg_shell implementation does not match protocol version");
@@ -39,6 +39,11 @@ static struct
 {
     struct wl_global * global;
 } shell;
+
+static void destroy(struct wl_client * client, struct wl_resource * resource)
+{
+    wl_resource_destroy(resource);
+}
 
 static void use_unstable_version(struct wl_client * client,
                                  struct wl_resource * resource, int32_t version)
@@ -64,7 +69,7 @@ static void get_xdg_popup(struct wl_client * client,
                           struct wl_resource * surface_resource,
                           struct wl_resource * parent_resource,
                           struct wl_resource * seat_resource,
-                          uint32_t serial, int32_t x, int32_t y, uint32_t flags)
+                          uint32_t serial, int32_t x, int32_t y)
 {
     struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
     struct swc_surface * parent = wl_resource_get_user_data(parent_resource);
@@ -83,6 +88,7 @@ static void pong(struct wl_client * client, struct wl_resource * resource,
 }
 
 static const struct xdg_shell_interface shell_implementation = {
+    .destroy = &destroy,
     .use_unstable_version = &use_unstable_version,
     .get_xdg_surface = &get_xdg_surface,
     .get_xdg_popup = &get_xdg_popup,
