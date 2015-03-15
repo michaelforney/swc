@@ -102,7 +102,7 @@ static int unversioned_dispatch(const void * implementation, void * target,
 {
     struct wl_resource * resource = target;
 
-    if (opcode != 0)
+    if (opcode != 1)
     {
         wl_resource_post_error(resource, WL_DISPLAY_ERROR_INVALID_OBJECT,
                                "use_unstable_version must be called first");
