@@ -36,6 +36,7 @@
 #include "seat.h"
 #include "shell.h"
 #include "shm.h"
+#include "subcompositor.h"
 #include "util.h"
 #include "window.h"
 #include "xdg_shell.h"
@@ -145,53 +146,59 @@ bool swc_initialize(struct wl_display * display,
         goto error3;
     }
 
+    if (!subcompositor_initialize())
+    {
+        ERROR("Could not initialize subcompositor\n");
+        goto error4;
+    }
+
     if (!screens_initialize())
     {
         ERROR("Could not initialize screens\n");
-        goto error4;
+        goto error5;
     }
 
     if (!compositor_initialize())
     {
         ERROR("Could not initialize compositor\n");
-        goto error5;
+        goto error6;
     }
 
     if (!data_device_manager_initialize())
     {
         ERROR("Could not initialize data device manager\n");
-        goto error6;
+        goto error7;
     }
 
     if (!seat_initialize(default_seat))
     {
         ERROR("Could not initialize seat\n");
-        goto error7;
+        goto error8;
     }
 
     if (!shell_initialize())
     {
         ERROR("Could not initialize shell\n");
-        goto error8;
+        goto error9;
     }
 
     if (!xdg_shell_initialize())
     {
         ERROR("Could not initialize XDG shell\n");
-        goto error9;
+        goto error10;
     }
 
     if (!panel_manager_initialize())
     {
         ERROR("Could not initialize panel manager\n");
-        goto error10;
+        goto error11;
     }
 
 #ifdef ENABLE_XWAYLAND
     if (!xserver_initialize())
     {
         ERROR("Could not initialize xwayland\n");
-        goto error11;
+        goto error12;
     }
 #endif
 
@@ -200,17 +207,19 @@ bool swc_initialize(struct wl_display * display,
     return true;
 
 #ifdef ENABLE_XWAYLAND
-  error11:
+  error12:
     panel_manager_finalize();
 #endif
-  error10:
+  error11:
     xdg_shell_finalize();
-  error9:
+  error10:
     shell_finalize();
-  error8:
+  error9:
     seat_finalize();
-  error7:
+  error8:
     data_device_manager_finalize();
+  error7:
+    subcompositor_finalize();
   error6:
     compositor_finalize();
   error5:

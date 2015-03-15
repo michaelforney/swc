@@ -43,6 +43,8 @@ SWC_SOURCES =                       \
     libswc/shell.c                  \
     libswc/shell_surface.c          \
     libswc/shm.c                    \
+    libswc/subcompositor.c          \
+    libswc/subsurface.c             \
     libswc/surface.c                \
     libswc/swc.c                    \
     libswc/util.c                   \
