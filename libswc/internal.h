@@ -55,8 +55,8 @@ struct swc
 
 extern struct swc swc;
 
-void swc_activate();
-void swc_deactivate();
+void swc_activate(void);
+void swc_deactivate(void);
 
 #endif
 

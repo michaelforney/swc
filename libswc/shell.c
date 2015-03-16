@@ -62,7 +62,7 @@ static void bind_shell(struct wl_client * client, void * data,
     wl_resource_set_implementation(resource, &shell_implementation, NULL, NULL);
 }
 
-bool swc_shell_initialize()
+bool swc_shell_initialize(void)
 {
     shell.global = wl_global_create(swc.display, &wl_shell_interface, 1,
                                     NULL, &bind_shell);
@@ -70,7 +70,7 @@ bool swc_shell_initialize()
     return shell.global;
 }
 
-void swc_shell_finalize()
+void swc_shell_finalize(void)
 {
     wl_global_destroy(shell.global);
 }

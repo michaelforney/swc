@@ -64,7 +64,7 @@ struct wl_resource;
 
 void swc_remove_resource(struct wl_resource * resource);
 
-static inline uint32_t swc_time()
+static inline uint32_t swc_time(void)
 {
     struct timeval timeval;
 

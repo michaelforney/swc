@@ -17,8 +17,8 @@ struct swc_drm
     struct wld_renderer * renderer;
 };
 
-bool swc_drm_initialize();
-void swc_drm_finalize();
+bool swc_drm_initialize(void);
+void swc_drm_finalize(void);
 
 bool swc_drm_create_screens(struct wl_list * screens);
 

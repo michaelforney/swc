@@ -69,8 +69,8 @@ struct screen
     struct wl_list link;
 };
 
-bool screens_initialize();
-void screens_finalize();
+bool screens_initialize(void);
+void screens_finalize(void);
 
 struct screen * screen_new(uint32_t crtc, struct swc_output * output);
 void screen_destroy(struct screen * screen);

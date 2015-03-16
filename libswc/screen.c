@@ -57,7 +57,7 @@ void swc_screen_set_handler(struct swc_screen * base,
     screen->handler_data = data;
 }
 
-bool screens_initialize()
+bool screens_initialize(void)
 {
     wl_list_init(&swc.screens);
 
@@ -70,7 +70,7 @@ bool screens_initialize()
     return true;
 }
 
-void screens_finalize()
+void screens_finalize(void)
 {
     struct screen * screen, * tmp;
 

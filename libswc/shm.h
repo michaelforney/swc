@@ -32,9 +32,9 @@ struct swc_shm
     struct wld_renderer * renderer;
 };
 
-bool swc_shm_initialize();
+bool swc_shm_initialize(void);
 
-void swc_shm_finalize();
+void swc_shm_finalize(void);
 
 #endif
 

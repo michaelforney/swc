@@ -397,7 +397,7 @@ bool initialize_libinput(const char * seat_name)
     return false;
 }
 
-void finalize_libinput()
+void finalize_libinput(void)
 {
     wl_event_source_remove(seat.libinput_source);
     libinput_unref(seat.libinput);
@@ -432,7 +432,7 @@ static int select_device(const struct dirent * entry)
     return sscanf(entry->d_name, "event%u", &num) == 1;
 }
 
-static bool add_devices()
+static bool add_devices(void)
 {
     struct dirent ** devices;
     int num_devices;
@@ -527,7 +527,7 @@ bool swc_seat_initialize(const char * seat_name)
     return false;
 }
 
-void swc_seat_finalize()
+void swc_seat_finalize(void)
 {
 #ifdef ENABLE_LIBINPUT
     finalize_libinput();

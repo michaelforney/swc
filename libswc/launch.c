@@ -64,7 +64,7 @@ static int handle_data(int fd, uint32_t mask, void * data)
     return 1;
 }
 
-bool launch_initialize()
+bool launch_initialize(void)
 {
     char * socket_string, * end;
 
@@ -85,7 +85,7 @@ bool launch_initialize()
     return true;
 }
 
-void launch_finalize()
+void launch_finalize(void)
 {
     wl_event_source_remove(launch.source);
     close(launch.socket);

@@ -268,7 +268,7 @@ static void bind_drm(struct wl_client * client, void * data, uint32_t version,
     wl_drm_send_format(resource, WL_DRM_FORMAT_ARGB8888);
 }
 
-bool swc_drm_initialize()
+bool swc_drm_initialize(void)
 {
     struct stat master, render;
 
@@ -361,7 +361,7 @@ bool swc_drm_initialize()
     return false;
 }
 
-void swc_drm_finalize()
+void swc_drm_finalize(void)
 {
     if (drm.global)
         wl_global_destroy(drm.global);

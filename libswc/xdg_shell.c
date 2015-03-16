@@ -135,7 +135,7 @@ static void bind_shell(struct wl_client * client, void * data,
                                NULL, NULL, NULL);
 }
 
-bool xdg_shell_initialize()
+bool xdg_shell_initialize(void)
 {
     shell.global = wl_global_create(swc.display, &xdg_shell_interface, 1,
                                     NULL, &bind_shell);
@@ -143,7 +143,7 @@ bool xdg_shell_initialize()
     return shell.global;
 }
 
-void xdg_shell_finalize()
+void xdg_shell_finalize(void)
 {
     wl_global_destroy(shell.global);
 }

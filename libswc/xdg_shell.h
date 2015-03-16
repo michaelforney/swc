@@ -26,8 +26,8 @@
 
 #include <stdbool.h>
 
-bool xdg_shell_initialize();
-void xdg_shell_finalize();
+bool xdg_shell_initialize(void);
+void xdg_shell_finalize(void);
 
 #endif
 

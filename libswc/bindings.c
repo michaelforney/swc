@@ -147,7 +147,7 @@ bool handle_button(struct pointer_handler * handler, uint32_t time,
     return handle_binding(time, &button->press, state, &find_button_binding);
 }
 
-bool swc_bindings_initialize()
+bool swc_bindings_initialize(void)
 {
     wl_array_init(&key_bindings);
     wl_array_init(&button_bindings);
@@ -155,7 +155,7 @@ bool swc_bindings_initialize()
     return true;
 }
 
-void swc_bindings_finalize()
+void swc_bindings_finalize(void)
 {
     wl_array_release(&key_bindings);
     wl_array_release(&button_bindings);

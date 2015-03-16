@@ -237,7 +237,7 @@ static void bind_shm(struct wl_client * client, void * data, uint32_t version,
     wl_shm_send_format(resource, WL_SHM_FORMAT_ARGB8888);
 }
 
-bool swc_shm_initialize()
+bool swc_shm_initialize(void)
 {
     if (!(swc.shm->context = wld_pixman_create_context()))
         goto error0;
@@ -261,7 +261,7 @@ bool swc_shm_initialize()
     return false;
 }
 
-void swc_shm_finalize()
+void swc_shm_finalize(void)
 {
     wl_global_destroy(shm.global);
     wld_destroy_renderer(swc.shm->renderer);

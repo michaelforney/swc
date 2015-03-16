@@ -86,7 +86,7 @@ static void __attribute__((noreturn)) usage(const char * name)
     exit(2);
 }
 
-static void start_devices()
+static void start_devices(void)
 {
     unsigned index;
 
@@ -122,7 +122,7 @@ static void stop_devices(bool fatal)
     launcher.num_input_fds = 0;
 }
 
-static void cleanup()
+static void cleanup(void)
 {
     struct vt_mode mode = { .mode = VT_AUTO };
 

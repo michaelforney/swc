@@ -27,7 +27,7 @@
 #include <stdbool.h>
 
 bool xwm_initialize(int fd);
-void xwm_finalize();
+void xwm_finalize(void);
 
 #endif
 

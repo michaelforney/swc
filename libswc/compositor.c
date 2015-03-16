@@ -589,7 +589,7 @@ void compositor_view_set_border_color(struct compositor_view * view,
 
 /* }}} */
 
-static void calculate_damage()
+static void calculate_damage(void)
 {
     struct compositor_view * view;
     pixman_region32_t surface_opaque, * surface_damage;
@@ -834,7 +834,7 @@ static void bind_compositor(struct wl_client * client, void * data,
                                    NULL, NULL);
 }
 
-bool swc_compositor_initialize()
+bool swc_compositor_initialize(void)
 {
     struct screen * screen;
     uint32_t keysym;
@@ -874,7 +874,7 @@ bool swc_compositor_initialize()
     return true;
 }
 
-void swc_compositor_finalize()
+void swc_compositor_finalize(void)
 {
     pixman_region32_fini(&compositor.damage);
     pixman_region32_fini(&compositor.opaque);

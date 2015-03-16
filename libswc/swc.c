@@ -66,7 +66,7 @@ struct swc swc = {
 #endif
 };
 
-static void setup_compositor()
+static void setup_compositor(void)
 {
     pixman_region32_t pointer_region;
     struct screen * screen;
@@ -98,13 +98,13 @@ static void setup_compositor()
     pixman_region32_fini(&pointer_region);
 }
 
-void swc_activate()
+void swc_activate(void)
 {
     swc.active = true;
     swc_send_event(&swc.event_signal, SWC_EVENT_ACTIVATED, NULL);
 }
 
-void swc_deactivate()
+void swc_deactivate(void)
 {
     swc.active = false;
     swc_send_event(&swc.event_signal, SWC_EVENT_DEACTIVATED, NULL);
@@ -228,7 +228,7 @@ bool swc_initialize(struct wl_display * display,
 }
 
 EXPORT
-void swc_finalize()
+void swc_finalize(void)
 {
 #ifdef ENABLE_XWAYLAND
     xserver_finalize();

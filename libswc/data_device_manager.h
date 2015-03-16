@@ -26,8 +26,8 @@
 
 #include <stdbool.h>
 
-bool data_device_manager_initialize();
-void data_device_manager_finalize();
+bool data_device_manager_initialize(void);
+void data_device_manager_finalize(void);
 
 #endif
 

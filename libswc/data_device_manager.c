@@ -72,7 +72,7 @@ static void bind_data_device_manager(struct wl_client * client, void * data,
         (resource, &data_device_manager_implementation, NULL, NULL);
 }
 
-bool data_device_manager_initialize()
+bool data_device_manager_initialize(void)
 {
     data_device_manager.global
         = wl_global_create(swc.display, &wl_data_device_manager_interface, 1,
@@ -81,7 +81,7 @@ bool data_device_manager_initialize()
     return data_device_manager.global != NULL;
 }
 
-void data_device_manager_finalize()
+void data_device_manager_finalize(void)
 {
     wl_global_destroy(data_device_manager.global);
 }

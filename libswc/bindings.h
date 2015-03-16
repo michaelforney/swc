@@ -32,8 +32,8 @@ struct swc_bindings
     struct pointer_handler * pointer_handler;
 };
 
-bool swc_bindings_initialize();
-void swc_bindings_finalize();
+bool swc_bindings_initialize(void);
+void swc_bindings_finalize(void);
 
 #endif
 

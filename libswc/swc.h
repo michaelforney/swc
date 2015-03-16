@@ -334,7 +334,7 @@ bool swc_initialize(struct wl_display * display,
 /**
  * Stops the compositor, releasing any used resources.
  */
-void swc_finalize();
+void swc_finalize(void);
 
 #endif
 

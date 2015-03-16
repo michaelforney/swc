@@ -34,8 +34,8 @@ struct swc_seat
 };
 
 bool swc_seat_initialize(const char * seat_name);
-void swc_seat_finalize();
-void swc_seat_reopen_devices();
+void swc_seat_finalize(void);
+void swc_seat_reopen_devices(void);
 
 #endif
 

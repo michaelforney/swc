@@ -84,7 +84,7 @@ static int open_socket(struct sockaddr_un * addr, size_t path_size)
     return -1;
 }
 
-static bool open_display()
+static bool open_display(void)
 {
     char lock_name[64], pid[12];
     int lock_fd;
@@ -169,7 +169,7 @@ static bool open_display()
     return true;
 }
 
-static void close_display()
+static void close_display(void)
 {
     char path[64];
 
@@ -197,7 +197,7 @@ static int handle_usr1(int signal_number, void * data)
     return 0;
 }
 
-bool xserver_initialize()
+bool xserver_initialize(void)
 {
     int wl[2], wm[2];
 
@@ -314,7 +314,7 @@ bool xserver_initialize()
     return false;
 }
 
-void xserver_finalize()
+void xserver_finalize(void)
 {
     xwm_finalize();
     close_display();

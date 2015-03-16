@@ -124,7 +124,7 @@ static void data_destroy(struct wl_resource * source)
     free(data);
 }
 
-static struct data * data_new()
+static struct data * data_new(void)
 {
     struct data * data;
 

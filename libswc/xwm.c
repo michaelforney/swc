@@ -565,7 +565,7 @@ bool xwm_initialize(int fd)
     return false;
 }
 
-void xwm_finalize()
+void xwm_finalize(void)
 {
     wl_event_source_remove(xwm.source);
     xcb_ewmh_connection_wipe(&xwm.ewmh);

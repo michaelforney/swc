@@ -44,8 +44,8 @@ struct swc_compositor
     } signal;
 };
 
-bool swc_compositor_initialize();
-void swc_compositor_finalize();
+bool swc_compositor_initialize(void);
+void swc_compositor_finalize(void);
 
 struct compositor_view
 {

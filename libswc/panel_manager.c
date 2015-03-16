@@ -61,7 +61,7 @@ static void bind_panel_manager(struct wl_client * client, void * data,
                                    NULL, NULL);
 }
 
-bool panel_manager_initialize()
+bool panel_manager_initialize(void)
 {
     panel_manager.global = wl_global_create(swc.display,
                                             &swc_panel_manager_interface, 1,
@@ -73,7 +73,7 @@ bool panel_manager_initialize()
     return true;
 }
 
-void panel_manager_finalize()
+void panel_manager_finalize(void)
 {
     wl_global_destroy(panel_manager.global);
 }

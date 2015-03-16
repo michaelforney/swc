@@ -264,7 +264,7 @@ static struct {
 } data_buffer;
 
 static void
-init_data_buffer()
+init_data_buffer(void)
 {
 	data_buffer.data = malloc(sizeof(uint32_t) * 10);
 	data_buffer.capacity = 10;
