@@ -262,6 +262,19 @@ static uint32_t device_capabilities(struct libinput_device * device)
     return capabilities;
 }
 
+static void handle_libinput_axis_event(struct libinput_event_pointer * event,
+                                       enum libinput_pointer_axis axis)
+{
+    if (!libinput_event_pointer_has_axis(event, axis))
+        return;
+
+    double amount;
+
+    amount = libinput_event_pointer_get_axis_value(event, axis);
+    handle_axis(libinput_event_pointer_get_time(event), axis,
+                wl_fixed_from_double(amount));
+}
+
 static int handle_libinput_data(int fd, uint32_t mask, void * data)
 {
     struct libinput_event * generic_event;
@@ -319,13 +332,13 @@ static int handle_libinput_data(int fd, uint32_t mask, void * data)
             case LIBINPUT_EVENT_POINTER_AXIS:
             {
                 struct libinput_event_pointer * event;
-                wl_fixed_t amount;
 
                 event = libinput_event_get_pointer_event(generic_event);
-                amount = wl_fixed_from_double
-                    (libinput_event_pointer_get_axis_value(event));
-                handle_axis(libinput_event_pointer_get_time(event),
-                            libinput_event_pointer_get_axis(event), amount);
+                handle_libinput_axis_event
+                    (event, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL);
+                handle_libinput_axis_event
+                    (event, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL);
+
                 break;
             }
             default:
