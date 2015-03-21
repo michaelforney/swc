@@ -80,7 +80,7 @@ static bool client_handle_key(struct keyboard * keyboard, uint32_t time,
         {
             if (*value == key->press.value)
             {
-                swc_array_remove(&keyboard->client_keys, value, sizeof *value);
+                array_remove(&keyboard->client_keys, value, sizeof *value);
                 break;
             }
         }
@@ -156,7 +156,7 @@ void keyboard_finalize(struct keyboard * keyboard)
 void keyboard_reset(struct keyboard * keyboard)
 {
     struct key * key;
-    uint32_t time = swc_time();
+    uint32_t time = get_time();
 
     /* Send simulated key release events for all current key handlers. */
     wl_array_for_each(key, &keyboard->keys)
@@ -259,7 +259,7 @@ void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
                 key->handler->key(keyboard, time, key, state);
             }
 
-            swc_array_remove(&keyboard->keys, key, sizeof *key);
+            array_remove(&keyboard->keys, key, sizeof *key);
             goto update_xkb_state;
         }
     }

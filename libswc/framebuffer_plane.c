@@ -82,7 +82,7 @@ static void send_frame(void * data)
 {
     struct framebuffer_plane * plane = data;
 
-    view_frame(&plane->view, swc_time());
+    view_frame(&plane->view, get_time());
 }
 
 static int attach(struct view * view, struct wld_buffer * buffer)
@@ -167,7 +167,7 @@ const static struct view_impl view_impl = {
     .move = &move
 };
 
-static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
+static void handle_page_flip(struct drm_handler * handler, uint32_t time)
 {
     struct framebuffer_plane * plane
         = wl_container_of(handler, plane, drm_handler);
@@ -177,7 +177,7 @@ static void handle_page_flip(struct swc_drm_handler * handler, uint32_t time)
 
 static void handle_swc_event(struct wl_listener * listener, void * data)
 {
-    struct swc_event * event = data;
+    struct event * event = data;
     struct framebuffer_plane * plane
         = wl_container_of(listener, plane, swc_listener);
 
@@ -190,7 +190,7 @@ static void handle_swc_event(struct wl_listener * listener, void * data)
 }
 
 bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
-                                  uint32_t crtc, struct swc_mode * mode,
+                                  uint32_t crtc, struct mode * mode,
                                   uint32_t * connectors,
                                   uint32_t num_connectors)
 {

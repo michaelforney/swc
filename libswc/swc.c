@@ -101,13 +101,13 @@ static void setup_compositor(void)
 void swc_activate(void)
 {
     swc.active = true;
-    swc_send_event(&swc.event_signal, SWC_EVENT_ACTIVATED, NULL);
+    send_event(&swc.event_signal, SWC_EVENT_ACTIVATED, NULL);
 }
 
 void swc_deactivate(void)
 {
     swc.active = false;
-    swc_send_event(&swc.event_signal, SWC_EVENT_DEACTIVATED, NULL);
+    send_event(&swc.event_signal, SWC_EVENT_DEACTIVATED, NULL);
 }
 
 EXPORT
@@ -121,25 +121,25 @@ bool swc_initialize(struct wl_display * display,
     const char * default_seat = "seat0";
     wl_signal_init(&swc.event_signal);
 
-    if (!(launch_initialize()))
+    if (!launch_initialize())
     {
         ERROR("Could not connect to swc-launch\n");
         goto error0;
     }
 
-    if (!swc_drm_initialize())
+    if (!drm_initialize())
     {
         ERROR("Could not initialize DRM\n");
         goto error1;
     }
 
-    if (!swc_shm_initialize())
+    if (!shm_initialize())
     {
         ERROR("Could not initialize SHM\n");
         goto error2;
     }
 
-    if (!swc_bindings_initialize())
+    if (!bindings_initialize())
     {
         ERROR("Could not initialize bindings\n");
         goto error3;
@@ -151,7 +151,7 @@ bool swc_initialize(struct wl_display * display,
         goto error4;
     }
 
-    if (!swc_compositor_initialize())
+    if (!compositor_initialize())
     {
         ERROR("Could not initialize compositor\n");
         goto error5;
@@ -163,13 +163,13 @@ bool swc_initialize(struct wl_display * display,
         goto error6;
     }
 
-    if (!swc_seat_initialize(default_seat))
+    if (!seat_initialize(default_seat))
     {
         ERROR("Could not initialize seat\n");
         goto error7;
     }
 
-    if (!swc_shell_initialize())
+    if (!shell_initialize())
     {
         ERROR("Could not initialize shell\n");
         goto error8;
@@ -206,21 +206,21 @@ bool swc_initialize(struct wl_display * display,
   error10:
     xdg_shell_finalize();
   error9:
-    swc_shell_finalize();
+    shell_finalize();
   error8:
-    swc_seat_finalize();
+    seat_finalize();
   error7:
     data_device_manager_finalize();
   error6:
-    swc_compositor_finalize();
+    compositor_finalize();
   error5:
     screens_finalize();
   error4:
-    swc_bindings_finalize();
+    bindings_finalize();
   error3:
-    swc_shm_finalize();
+    shm_finalize();
   error2:
-    swc_drm_finalize();
+    drm_finalize();
   error1:
     launch_finalize();
   error0:
@@ -234,14 +234,14 @@ void swc_finalize(void)
     xserver_finalize();
 #endif
     panel_manager_finalize();
-    swc_shell_finalize();
-    swc_seat_finalize();
+    shell_finalize();
+    seat_finalize();
     data_device_manager_finalize();
-    swc_compositor_finalize();
+    compositor_finalize();
     screens_finalize();
-    swc_bindings_finalize();
-    swc_shm_finalize();
-    swc_drm_finalize();
+    bindings_finalize();
+    shm_finalize();
+    drm_finalize();
     launch_finalize();
 }
 

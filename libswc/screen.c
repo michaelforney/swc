@@ -61,7 +61,7 @@ bool screens_initialize(void)
 {
     wl_list_init(&swc.screens);
 
-    if (!swc_drm_create_screens(&swc.screens))
+    if (!drm_create_screens(&swc.screens))
         return false;
 
     if (wl_list_empty(&swc.screens))
@@ -95,12 +95,11 @@ static void bind_screen(struct wl_client * client, void * data,
         return;
     }
 
-    wl_resource_set_implementation(resource, NULL,
-                                   screen, &swc_remove_resource);
+    wl_resource_set_implementation(resource, NULL, screen, &remove_resource);
     wl_list_insert(&screen->resources, wl_resource_get_link(resource));
 }
 
-struct screen * screen_new(uint32_t crtc, struct swc_output * output)
+struct screen * screen_new(uint32_t crtc, struct output * output)
 {
     struct screen * screen;
     int32_t x = 0;
@@ -163,7 +162,7 @@ struct screen * screen_new(uint32_t crtc, struct swc_output * output)
 
 void screen_destroy(struct screen * screen)
 {
-    struct swc_output * output, * next;
+    struct output * output, * next;
 
     if (active_screen == screen)
         active_screen = NULL;
@@ -171,7 +170,7 @@ void screen_destroy(struct screen * screen)
         screen->handler->destroy(screen->handler_data);
     wl_signal_emit(&screen->destroy_signal, NULL);
     wl_list_for_each_safe(output, next, &screen->outputs, link)
-        swc_output_destroy(output);
+        output_destroy(output);
     framebuffer_plane_finalize(&screen->planes.framebuffer);
     cursor_plane_finalize(&screen->planes.cursor);
     free(screen);
@@ -222,7 +221,7 @@ bool handle_motion(struct pointer_handler * handler, uint32_t time,
 
     wl_list_for_each(screen, &swc.screens, link)
     {
-        if (swc_rectangle_contains_point(&screen->base.geometry, x, y))
+        if (rectangle_contains_point(&screen->base.geometry, x, y))
         {
             if (screen != active_screen)
             {

@@ -40,13 +40,13 @@
  */
 static void handle_buffer_destroy(struct wl_listener * listener, void * data)
 {
-    struct swc_surface_state * state;
+    struct surface_state * state;
 
     state = wl_container_of(listener, state, buffer_destroy_listener);
     state->buffer = NULL;
 }
 
-static void state_initialize(struct swc_surface_state * state)
+static void state_initialize(struct surface_state * state)
 {
     state->buffer = NULL;
     state->buffer_destroy_listener.notify = &handle_buffer_destroy;
@@ -58,7 +58,7 @@ static void state_initialize(struct swc_surface_state * state)
     wl_list_init(&state->frame_callbacks);
 }
 
-static void state_finalize(struct swc_surface_state * state)
+static void state_finalize(struct surface_state * state)
 {
     struct wl_resource * resource, * tmp;
 
@@ -81,11 +81,10 @@ static void state_finalize(struct swc_surface_state * state)
  * In order to set the buffer of a surface state (current or pending), we need
  * to manage the destroy listeners we have for the new and old buffer.
  */
-static void state_set_buffer(struct swc_surface_state * state,
+static void state_set_buffer(struct surface_state * state,
                              struct wl_resource * resource)
 {
-    struct wld_buffer * buffer = resource ? swc_wayland_buffer_get(resource)
-                                          : NULL;
+    struct wld_buffer * buffer = resource ? wayland_buffer_get(resource) : NULL;
 
     if (state->buffer)
     {
@@ -107,7 +106,7 @@ static void state_set_buffer(struct swc_surface_state * state,
 
 static void handle_frame(struct view_handler * handler, uint32_t time)
 {
-    struct swc_surface * surface
+    struct surface * surface
         = wl_container_of(handler, surface, view_handler);
     struct wl_resource * resource, * tmp;
 
@@ -124,10 +123,10 @@ static void handle_frame(struct view_handler * handler, uint32_t time)
 static void handle_screens(struct view_handler * handler,
                            uint32_t entered, uint32_t left)
 {
-    struct swc_surface * surface
+    struct surface * surface
         = wl_container_of(handler, surface, view_handler);
     struct screen * screen;
-    struct swc_output * output;
+    struct output * output;
     struct wl_client * client;
     struct wl_resource * resource;
 
@@ -167,9 +166,9 @@ static void destroy(struct wl_client * client, struct wl_resource * resource)
 static void attach(struct wl_client * client, struct wl_resource * resource,
                    struct wl_resource * buffer_resource, int32_t x, int32_t y)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct surface * surface = wl_resource_get_user_data(resource);
 
-    surface->pending.commit |= SWC_SURFACE_COMMIT_ATTACH;
+    surface->pending.commit |= SURFACE_COMMIT_ATTACH;
 
     state_set_buffer(&surface->pending.state, buffer_resource);
     surface->pending.x = x;
@@ -179,9 +178,9 @@ static void attach(struct wl_client * client, struct wl_resource * resource,
 static void damage(struct wl_client * client, struct wl_resource * resource,
                    int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct surface * surface = wl_resource_get_user_data(resource);
 
-    surface->pending.commit |= SWC_SURFACE_COMMIT_DAMAGE;
+    surface->pending.commit |= SURFACE_COMMIT_DAMAGE;
 
     pixman_region32_union_rect(&surface->pending.state.damage,
                                &surface->pending.state.damage,
@@ -191,15 +190,15 @@ static void damage(struct wl_client * client, struct wl_resource * resource,
 static void frame(struct wl_client * client, struct wl_resource * resource,
                   uint32_t id)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct surface * surface = wl_resource_get_user_data(resource);
     struct wl_resource * callback_resource;
 
-    surface->pending.commit |= SWC_SURFACE_COMMIT_FRAME;
+    surface->pending.commit |= SURFACE_COMMIT_FRAME;
 
     callback_resource = wl_resource_create(client, &wl_callback_interface,
                                            1, id);
     wl_resource_set_implementation(callback_resource, NULL, NULL,
-                                   &swc_remove_resource);
+                                   &remove_resource);
     wl_list_insert(surface->pending.state.frame_callbacks.prev,
                    wl_resource_get_link(callback_resource));
 }
@@ -208,13 +207,13 @@ static void set_opaque_region(struct wl_client * client,
                               struct wl_resource * resource,
                               struct wl_resource * region_resource)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct surface * surface = wl_resource_get_user_data(resource);
 
-    surface->pending.commit |= SWC_SURFACE_COMMIT_OPAQUE;
+    surface->pending.commit |= SURFACE_COMMIT_OPAQUE;
 
     if (region_resource)
     {
-        struct swc_region * region = wl_resource_get_user_data(region_resource);
+        struct region * region = wl_resource_get_user_data(region_resource);
 
         pixman_region32_copy(&surface->pending.state.opaque, &region->region);
     }
@@ -226,13 +225,13 @@ static void set_input_region(struct wl_client * client,
                              struct wl_resource * resource,
                              struct wl_resource * region_resource)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct surface * surface = wl_resource_get_user_data(resource);
 
-    surface->pending.commit |= SWC_SURFACE_COMMIT_INPUT;
+    surface->pending.commit |= SURFACE_COMMIT_INPUT;
 
     if (region_resource)
     {
-        struct swc_region * region = wl_resource_get_user_data(region_resource);
+        struct region * region = wl_resource_get_user_data(region_resource);
 
         pixman_region32_copy(&surface->pending.state.input, &region->region);
     }
@@ -250,11 +249,11 @@ static inline void trim_region(pixman_region32_t * region,
 
 static void commit(struct wl_client * client, struct wl_resource * resource)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct surface * surface = wl_resource_get_user_data(resource);
     struct wld_buffer * buffer;
 
     /* Attach */
-    if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
+    if (surface->pending.commit & SURFACE_COMMIT_ATTACH)
     {
         if (surface->state.buffer
             && surface->state.buffer != surface->pending.state.buffer)
@@ -269,7 +268,7 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     buffer = surface->state.buffer;
 
     /* Damage */
-    if (surface->pending.commit & SWC_SURFACE_COMMIT_DAMAGE)
+    if (surface->pending.commit & SURFACE_COMMIT_DAMAGE)
     {
         pixman_region32_union(&surface->state.damage, &surface->state.damage,
                               &surface->pending.state.damage);
@@ -277,21 +276,21 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
     }
 
     /* Opaque */
-    if (surface->pending.commit & SWC_SURFACE_COMMIT_OPAQUE)
+    if (surface->pending.commit & SURFACE_COMMIT_OPAQUE)
     {
         pixman_region32_copy(&surface->state.opaque,
                              &surface->pending.state.opaque);
     }
 
     /* Input */
-    if (surface->pending.commit & SWC_SURFACE_COMMIT_INPUT)
+    if (surface->pending.commit & SURFACE_COMMIT_INPUT)
     {
         pixman_region32_copy(&surface->state.input,
                              &surface->pending.state.input);
     }
 
     /* Frame */
-    if (surface->pending.commit & SWC_SURFACE_COMMIT_FRAME)
+    if (surface->pending.commit & SURFACE_COMMIT_FRAME)
     {
         wl_list_insert_list(&surface->state.frame_callbacks,
                             &surface->pending.state.frame_callbacks);
@@ -303,7 +302,7 @@ static void commit(struct wl_client * client, struct wl_resource * resource)
 
     if (surface->view)
     {
-        if (surface->pending.commit & SWC_SURFACE_COMMIT_ATTACH)
+        if (surface->pending.commit & SURFACE_COMMIT_ATTACH)
             view_attach(surface->view, buffer);
         view_update(surface->view);
     }
@@ -337,7 +336,7 @@ static struct wl_surface_interface surface_implementation = {
 
 static void surface_destroy(struct wl_resource * resource)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(resource);
+    struct surface * surface = wl_resource_get_user_data(resource);
 
     state_finalize(&surface->state);
     state_finalize(&surface->pending.state);
@@ -355,10 +354,10 @@ static void surface_destroy(struct wl_resource * resource)
  *
  * @return The newly allocated surface.
  */
-struct swc_surface * swc_surface_new(struct wl_client * client,
-                                     uint32_t version, uint32_t id)
+struct surface * surface_new(struct wl_client * client,
+                             uint32_t version, uint32_t id)
 {
-    struct swc_surface * surface;
+    struct surface * surface;
 
     surface = malloc(sizeof *surface);
 
@@ -382,7 +381,7 @@ struct swc_surface * swc_surface_new(struct wl_client * client,
     return surface;
 }
 
-void swc_surface_set_view(struct swc_surface * surface, struct view * view)
+void surface_set_view(struct surface * surface, struct view * view)
 {
     if (surface->view == view)
         return;

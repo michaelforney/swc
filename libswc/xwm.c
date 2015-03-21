@@ -260,7 +260,7 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
 static bool manage_window(struct xwl_window * xwl_window)
 {
     struct wl_resource * resource;
-    struct swc_surface * surface;
+    struct surface * surface;
     xcb_get_geometry_cookie_t geometry_cookie;
     xcb_get_geometry_reply_t * geometry_reply;
 
@@ -311,7 +311,7 @@ static bool manage_window(struct xwl_window * xwl_window)
 
 static void handle_new_surface(struct wl_listener * listener, void * data)
 {
-    struct swc_surface * surface = data;
+    struct surface * surface = data;
     struct xwl_window * window;
 
     window = find_window_by_surface_id(&xwm.unpaired_windows,

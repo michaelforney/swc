@@ -23,7 +23,7 @@
 
 #include "mode.h"
 
-bool swc_mode_initialize(struct swc_mode * mode, drmModeModeInfo * mode_info)
+bool mode_initialize(struct mode * mode, drmModeModeInfo * mode_info)
 {
     mode->width = mode_info->hdisplay;
     mode->height = mode_info->vdisplay;
@@ -35,11 +35,11 @@ bool swc_mode_initialize(struct swc_mode * mode, drmModeModeInfo * mode_info)
     return true;
 }
 
-void swc_mode_finish(struct swc_mode * mode)
+void mode_finish(struct mode * mode)
 {
 }
 
-bool swc_mode_equal(const struct swc_mode * mode1, const struct swc_mode * mode2)
+bool mode_equal(const struct mode * mode1, const struct mode * mode2)
 {
     return mode1->width == mode2->width
         && mode1->height == mode2->height

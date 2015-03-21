@@ -70,7 +70,7 @@ static bool remove_state(struct xdg_surface * xdg_surface, uint32_t state)
     {
         if (*current_state == state)
         {
-            swc_array_remove(&xdg_surface->states, current_state, sizeof state);
+            array_remove(&xdg_surface->states, current_state, sizeof state);
             return true;
         }
     }
@@ -303,7 +303,7 @@ static void destroy_xdg_surface(struct wl_resource * resource)
 
 struct xdg_surface * xdg_surface_new(struct wl_client * client,
                                      uint32_t version, uint32_t id,
-                                     struct swc_surface * surface)
+                                     struct surface * surface)
 {
     struct xdg_surface * xdg_surface;
 

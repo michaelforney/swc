@@ -169,7 +169,7 @@ struct wl_resource * data_offer_new(struct wl_client * client,
 
     offer = wl_resource_create(client, &wl_data_offer_interface, version, 0);
     wl_resource_set_implementation(offer, &data_offer_implementation,
-                                   data, &swc_remove_resource);
+                                   data, &remove_resource);
     wl_list_insert(&data->offers, wl_resource_get_link(offer));
 
     return offer;

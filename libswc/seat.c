@@ -95,7 +95,7 @@ static void handle_relative_motion(uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 static void handle_keyboard_focus_event(struct wl_listener * listener,
                                         void * data)
 {
-    struct swc_event * event = data;
+    struct event * event = data;
     struct input_focus_event_data * event_data = event->data;
 
     switch (event->type)
@@ -119,7 +119,7 @@ static struct wl_listener keyboard_focus_listener = {
 
 static void handle_data_device_event(struct wl_listener * listener, void * data)
 {
-    struct swc_event * event = data;
+    struct event * event = data;
 
     switch (event->type)
     {
@@ -140,7 +140,7 @@ static struct wl_listener data_device_listener = {
 
 static void handle_swc_event(struct wl_listener * listener, void * data)
 {
-    struct swc_event * event = data;
+    struct event * event = data;
 
     switch (event->type)
     {
@@ -156,15 +156,15 @@ static void handle_swc_event(struct wl_listener * listener, void * data)
             if (libinput_resume(seat.libinput) != 0)
                 WARNING("Failed to resume libinput context\n");
 #else
-            struct swc_evdev_device * device, * next;
+            struct evdev_device * device, * next;
 
             /* Re-open all input devices */
             wl_list_for_each_safe(device, next, &seat.devices, link)
             {
-                if (!swc_evdev_device_reopen(device))
+                if (!evdev_device_reopen(device))
                 {
                     wl_list_remove(&device->link);
-                    swc_evdev_device_destroy(device);
+                    evdev_device_destroy(device);
                 }
             }
 #endif
@@ -209,7 +209,7 @@ static void bind_seat(struct wl_client * client, void * data, uint32_t version,
 
     resource = wl_resource_create(client, &wl_seat_interface, version, id);
     wl_resource_set_implementation(resource, &seat_implementation, NULL,
-                                   &swc_remove_resource);
+                                   &remove_resource);
     wl_list_insert(&seat.resources, wl_resource_get_link(resource));
 
     if (version >= 2)
@@ -404,7 +404,7 @@ void finalize_libinput(void)
     udev_unref(seat.udev);
 }
 #else
-const static struct swc_evdev_device_handler evdev_handler = {
+const static struct evdev_device_handler evdev_handler = {
     .key = &handle_key,
     .button = &handle_button,
     .axis = &handle_axis,
@@ -413,9 +413,9 @@ const static struct swc_evdev_device_handler evdev_handler = {
 
 static void add_device(const char * path)
 {
-    struct swc_evdev_device * device;
+    struct evdev_device * device;
 
-    if (!(device = swc_evdev_device_new(path, &evdev_handler)))
+    if (!(device = evdev_device_new(path, &evdev_handler)))
     {
         ERROR("Could not create evdev device\n");
         return;
@@ -460,7 +460,7 @@ static bool add_devices(void)
 }
 #endif
 
-bool swc_seat_initialize(const char * seat_name)
+bool seat_initialize(const char * seat_name)
 {
     if (!(seat.name = strdup(seat_name)))
     {
@@ -527,14 +527,14 @@ bool swc_seat_initialize(const char * seat_name)
     return false;
 }
 
-void swc_seat_finalize(void)
+void seat_finalize(void)
 {
 #ifdef ENABLE_LIBINPUT
     finalize_libinput();
 #else
-    struct swc_evdev_device * device, * tmp;
+    struct evdev_device * device, * tmp;
     wl_list_for_each_safe(device, tmp, &seat.devices, link)
-        swc_evdev_device_destroy(device);
+        evdev_device_destroy(device);
 #endif
 
     pointer_finalize(&seat.pointer);

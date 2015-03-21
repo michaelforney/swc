@@ -8,7 +8,7 @@
 
 struct wl_display;
 
-struct swc_output
+struct output
 {
     struct screen * screen;
 
@@ -16,7 +16,7 @@ struct swc_output
     uint32_t physical_width, physical_height;
 
     struct wl_array modes;
-    struct swc_mode * preferred_mode;
+    struct mode * preferred_mode;
 
     pixman_region32_t current_damage, previous_damage;
 
@@ -28,8 +28,8 @@ struct swc_output
     struct wl_list link;
 };
 
-struct swc_output * swc_output_new(drmModeConnector * connector);
-void swc_output_destroy(struct swc_output * output);
+struct output * output_new(drmModeConnector * connector);
+void output_destroy(struct output * output);
 
 #endif
 

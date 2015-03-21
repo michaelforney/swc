@@ -37,20 +37,20 @@ struct swc_compositor
         /**
          * Emitted when a new surface is created.
          *
-         * The data argument of the signal refers to the swc_surface that has
-         * been created.
+         * The data argument of the signal refers to the surface that has been
+         * created.
          */
         struct wl_signal new_surface;
     } signal;
 };
 
-bool swc_compositor_initialize(void);
-void swc_compositor_finalize(void);
+bool compositor_initialize(void);
+void compositor_finalize(void);
 
 struct compositor_view
 {
     struct view base;
-    struct swc_surface * surface;
+    struct surface * surface;
     struct wld_buffer * buffer;
     struct window * window;
     struct compositor_view * parent;
@@ -76,8 +76,7 @@ struct compositor_view
     struct wl_signal destroy_signal;
 };
 
-struct compositor_view * swc_compositor_create_view
-    (struct swc_surface * surface);
+struct compositor_view * compositor_create_view(struct surface * surface);
 
 void compositor_view_destroy(struct compositor_view * view);
 

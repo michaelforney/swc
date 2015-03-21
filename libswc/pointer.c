@@ -76,7 +76,7 @@ static bool update(struct view * view)
 static int attach(struct view * view, struct wld_buffer * buffer)
 {
     struct pointer * pointer = wl_container_of(view, pointer, cursor.view);
-    struct swc_surface * surface = pointer->cursor.surface;
+    struct surface * surface = pointer->cursor.surface;
 
     if (surface && !pixman_region32_not_empty(&surface->state.damage))
         return 0;
@@ -292,7 +292,7 @@ static void set_cursor(struct wl_client * client,
                        int32_t hotspot_x, int32_t hotspot_y)
 {
     struct pointer * pointer = wl_resource_get_user_data(resource);
-    struct swc_surface * surface;
+    struct surface * surface;
 
     if (pointer->cursor.surface)
         wl_list_remove(&pointer->cursor.destroy_listener.link);
@@ -305,7 +305,7 @@ static void set_cursor(struct wl_client * client,
 
     if (surface)
     {
-        swc_surface_set_view(surface, &pointer->cursor.view);
+        surface_set_view(surface, &pointer->cursor.view);
         wl_resource_add_destroy_listener(surface->resource,
                                          &pointer->cursor.destroy_listener);
         update_cursor(pointer);
@@ -379,7 +379,7 @@ void pointer_handle_button(struct pointer * pointer, uint32_t time,
                                             button, state);
                 }
 
-                swc_array_remove(&pointer->buttons, button, sizeof *button);
+                array_remove(&pointer->buttons, button, sizeof *button);
                 break;
             }
         }

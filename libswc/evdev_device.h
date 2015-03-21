@@ -32,10 +32,10 @@
 #include <linux/input.h>
 #include <wayland-util.h>
 
-struct swc_evdev_device;
+struct evdev_device;
 struct wl_event_loop;
 
-struct swc_evdev_device_handler
+struct evdev_device_handler
 {
     void (* key)(uint32_t time, uint32_t key, uint32_t state);
     void (* button)(uint32_t time, uint32_t key, uint32_t state);
@@ -43,14 +43,14 @@ struct swc_evdev_device_handler
     void (* relative_motion)(uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
 };
 
-struct swc_evdev_device
+struct evdev_device
 {
     char * path;
     int fd;
     struct libevdev * dev;
     bool needs_sync;
 
-    const struct swc_evdev_device_handler * handler;
+    const struct evdev_device_handler * handler;
 
     struct
     {
@@ -78,12 +78,12 @@ struct swc_evdev_device
     struct wl_list link;
 };
 
-struct swc_evdev_device * swc_evdev_device_new
-    (const char * path, const struct swc_evdev_device_handler * handler);
+struct evdev_device * evdev_device_new
+    (const char * path, const struct evdev_device_handler * handler);
 
-void swc_evdev_device_destroy(struct swc_evdev_device * device);
+void evdev_device_destroy(struct evdev_device * device);
 
-bool swc_evdev_device_reopen(struct swc_evdev_device * device);
+bool evdev_device_reopen(struct evdev_device * device);
 
 #endif
 

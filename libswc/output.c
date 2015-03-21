@@ -14,9 +14,9 @@
 static void bind_output(struct wl_client * client, void * data,
                         uint32_t version, uint32_t id)
 {
-    struct swc_output * output = data;
+    struct output * output = data;
     struct screen * screen = output->screen;
-    struct swc_mode * mode;
+    struct mode * mode;
     struct wl_resource * resource;
     uint32_t flags;
 
@@ -31,8 +31,7 @@ static void bind_output(struct wl_client * client, void * data,
         return;
     }
 
-    wl_resource_set_implementation(resource, NULL, output,
-                                   &swc_remove_resource);
+    wl_resource_set_implementation(resource, NULL, output, &remove_resource);
     wl_list_insert(&output->resources, wl_resource_get_link(resource));
 
     wl_output_send_geometry
@@ -45,7 +44,7 @@ static void bind_output(struct wl_client * client, void * data,
         flags = 0;
         if (mode->preferred)
             flags |= WL_OUTPUT_MODE_PREFERRED;
-        if (swc_mode_equal(&screen->planes.framebuffer.mode, mode))
+        if (mode_equal(&screen->planes.framebuffer.mode, mode))
             flags |= WL_OUTPUT_MODE_CURRENT;
 
         wl_output_send_mode(resource, flags,
@@ -56,10 +55,10 @@ static void bind_output(struct wl_client * client, void * data,
         wl_output_send_done(resource);
 }
 
-struct swc_output * swc_output_new(drmModeConnectorPtr connector)
+struct output * output_new(drmModeConnectorPtr connector)
 {
-    struct swc_output * output;
-    struct swc_mode * modes;
+    struct output * output;
+    struct mode * modes;
     uint32_t index;
 
     if (!(output = malloc(sizeof *output)))
@@ -94,7 +93,7 @@ struct swc_output * swc_output_new(drmModeConnectorPtr connector)
 
     for (index = 0; index < connector->count_modes; ++index)
     {
-        swc_mode_initialize(&modes[index], &connector->modes[index]);
+        mode_initialize(&modes[index], &connector->modes[index]);
 
         if (modes[index].preferred)
             output->preferred_mode = &modes[index];
@@ -110,12 +109,12 @@ struct swc_output * swc_output_new(drmModeConnectorPtr connector)
     return NULL;
 }
 
-void swc_output_destroy(struct swc_output * output)
+void output_destroy(struct output * output)
 {
-    struct swc_mode * mode;
+    struct mode * mode;
 
     wl_array_for_each(mode, &output->modes)
-        swc_mode_finish(mode);
+        mode_finish(mode);
     wl_array_release(&output->modes);
 
     wl_global_destroy(output->global);

@@ -30,7 +30,7 @@
 #include <wayland-server.h>
 
 struct panel * panel_new(struct wl_client * client, uint32_t version,
-                         uint32_t id, struct swc_surface * surface);
+                         uint32_t id, struct surface * surface);
 
 #endif
 

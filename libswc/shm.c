@@ -121,7 +121,7 @@ static void create_buffer(struct wl_client * client,
     if (!buffer)
         goto error0;
 
-    buffer_resource = swc_wayland_buffer_create_resource
+    buffer_resource = wayland_buffer_create_resource
         (client, wl_resource_get_version(resource), id, buffer);
 
     if (!buffer_resource)
@@ -237,7 +237,7 @@ static void bind_shm(struct wl_client * client, void * data, uint32_t version,
     wl_shm_send_format(resource, WL_SHM_FORMAT_ARGB8888);
 }
 
-bool swc_shm_initialize(void)
+bool shm_initialize(void)
 {
     if (!(swc.shm->context = wld_pixman_create_context()))
         goto error0;
@@ -261,7 +261,7 @@ bool swc_shm_initialize(void)
     return false;
 }
 
-void swc_shm_finalize(void)
+void shm_finalize(void)
 {
     wl_global_destroy(shm.global);
     wld_destroy_renderer(swc.shm->renderer);

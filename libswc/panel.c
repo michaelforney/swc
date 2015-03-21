@@ -227,7 +227,7 @@ static void handle_surface_destroy(struct wl_listener * listener, void * data)
 }
 
 struct panel * panel_new(struct wl_client * client, uint32_t version,
-                         uint32_t id, struct swc_surface * surface)
+                         uint32_t id, struct surface * surface)
 {
     struct panel * panel;
 
@@ -242,7 +242,7 @@ struct panel * panel_new(struct wl_client * client, uint32_t version,
     if (!panel->resource)
         goto error1;
 
-    if (!(panel->view = swc_compositor_create_view(surface)))
+    if (!(panel->view = compositor_create_view(surface)))
         goto error2;
 
     wl_resource_set_implementation(panel->resource, &panel_implementation,

@@ -118,7 +118,7 @@ static void set_transient(struct wl_client * client,
                           int32_t x, int32_t y, uint32_t flags)
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
-    struct swc_surface * parent_surface
+    struct surface * parent_surface
         = wl_resource_get_user_data(parent_resource);
     struct compositor_view * parent_view
         = compositor_view(parent_surface->view);
@@ -136,7 +136,7 @@ static void set_fullscreen(struct wl_client * client,
                            struct wl_resource * output_resource)
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
-    struct swc_output * output = output_resource
+    struct output * output = output_resource
         ? wl_resource_get_user_data(output_resource) : NULL;
     struct screen * screen;
 
@@ -155,7 +155,7 @@ static void set_popup(struct wl_client * client, struct wl_resource * resource,
                       int32_t x, int32_t y, uint32_t flags)
 {
     struct shell_surface * shell_surface = wl_resource_get_user_data(resource);
-    struct swc_surface * parent_surface
+    struct surface * parent_surface
         = wl_resource_get_user_data(parent_resource);
     struct compositor_view * parent_view
         = compositor_view(parent_surface->view);
@@ -229,7 +229,7 @@ static void destroy_shell_surface(struct wl_resource * resource)
 
 struct shell_surface * shell_surface_new(struct wl_client * client,
                                          uint32_t version, uint32_t id,
-                                         struct swc_surface * surface)
+                                         struct surface * surface)
 {
     struct shell_surface * shell_surface;
 

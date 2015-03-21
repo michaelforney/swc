@@ -57,8 +57,8 @@ static void set_selection(struct wl_client * client,
             (data_source, &data_device->selection_destroy_listener);
     }
 
-    swc_send_event(&data_device->event_signal,
-                   DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
+    send_event(&data_device->event_signal,
+               DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
 static struct wl_data_device_interface data_device_implementation = {
@@ -72,8 +72,8 @@ static void handle_selection_destroy(struct wl_listener * listener, void * data)
         = wl_container_of(listener, data_device, selection_destroy_listener);
 
     data_device->selection = NULL;
-    swc_send_event(&data_device->event_signal,
-                   DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
+    send_event(&data_device->event_signal,
+               DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
 bool data_device_initialize(struct data_device * data_device)
@@ -101,7 +101,7 @@ void data_device_bind(struct data_device * data_device,
     resource = wl_resource_create(client, &wl_data_device_interface,
                                   version, id);
     wl_resource_set_implementation(resource, &data_device_implementation,
-                                   data_device, &swc_remove_resource);
+                                   data_device, &remove_resource);
     wl_list_insert(&data_device->resources, &resource->link);
 }
 

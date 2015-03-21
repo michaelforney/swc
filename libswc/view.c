@@ -144,7 +144,7 @@ void view_update_screens(struct view * view)
 
     wl_list_for_each(screen, &swc.screens, link)
     {
-        if (swc_rectangle_overlap(&screen->base.geometry, &view->geometry))
+        if (rectangle_overlap(&screen->base.geometry, &view->geometry))
             screens |= screen_mask(screen);
     }
 

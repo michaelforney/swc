@@ -37,7 +37,7 @@ static void create_panel(struct wl_client * client,
                          struct wl_resource * resource, uint32_t id,
                          struct wl_resource * surface_resource)
 {
-    struct swc_surface * surface = wl_resource_get_user_data(surface_resource);
+    struct surface * surface = wl_resource_get_user_data(surface_resource);
 
     if (!panel_new(client, wl_resource_get_version(resource), id, surface))
         wl_client_post_no_memory(client);

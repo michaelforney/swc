@@ -26,8 +26,8 @@
 
 #include <stdbool.h>
 
-bool swc_shell_initialize(void);
-void swc_shell_finalize(void);
+bool shell_initialize(void);
+void shell_finalize(void);
 
 #endif
 

@@ -57,7 +57,7 @@ struct pointer
     struct
     {
         struct view view;
-        struct swc_surface * surface;
+        struct surface * surface;
         struct wl_listener destroy_listener;
         struct wld_buffer * buffer;
 

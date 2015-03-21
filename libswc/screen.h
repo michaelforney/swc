@@ -30,7 +30,7 @@
 
 #include <wayland-util.h>
 
-struct swc_output;
+struct output;
 struct pixman_region32;
 
 struct screen_modifier
@@ -72,7 +72,7 @@ struct screen
 bool screens_initialize(void);
 void screens_finalize(void);
 
-struct screen * screen_new(uint32_t crtc, struct swc_output * output);
+struct screen * screen_new(uint32_t crtc, struct output * output);
 void screen_destroy(struct screen * screen);
 
 static inline uint32_t screen_mask(struct screen * screen)

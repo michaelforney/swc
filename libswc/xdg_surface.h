@@ -26,12 +26,12 @@
 
 #include <stdint.h>
 
-struct swc_surface;
+struct surface;
 struct wl_client;
 
 struct xdg_surface * xdg_surface_new(struct wl_client * client,
                                      uint32_t version, uint32_t id,
-                                     struct swc_surface * surface);
+                                     struct surface * surface);
 
 #endif
 

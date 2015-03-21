@@ -456,8 +456,7 @@ const static struct view_impl view_impl = {
     .move = &move
 };
 
-struct compositor_view * swc_compositor_create_view
-    (struct swc_surface * surface)
+struct compositor_view * compositor_create_view(struct surface * surface)
 {
     struct compositor_view * view;
 
@@ -481,7 +480,7 @@ struct compositor_view * swc_compositor_create_view
     view->border.damaged = false;
     pixman_region32_init(&view->clip);
     wl_signal_init(&view->destroy_signal);
-    swc_surface_set_view(surface, &view->base);
+    surface_set_view(surface, &view->base);
     wl_list_insert(&compositor.views, &view->link);
 
     return view;
@@ -491,7 +490,7 @@ void compositor_view_destroy(struct compositor_view * view)
 {
     wl_signal_emit(&view->destroy_signal, NULL);
     compositor_view_hide(view);
-    swc_surface_set_view(view->surface, NULL);
+    surface_set_view(view->surface, NULL);
     view_finalize(&view->base);
     pixman_region32_fini(&view->clip);
     wl_list_remove(&view->link);
@@ -741,7 +740,7 @@ bool handle_motion(struct pointer_handler * handler, uint32_t time,
         if (!view->visible)
             continue;
 
-        if (swc_rectangle_contains_point(&view->base.geometry, x, y)
+        if (rectangle_contains_point(&view->base.geometry, x, y)
             && pixman_region32_contains_point(&view->surface->state.input,
                                               x - view->base.geometry.x,
                                               y - view->base.geometry.y, NULL))
@@ -774,7 +773,7 @@ static void handle_switch_vt(void * data, uint32_t time,
 
 static void handle_swc_event(struct wl_listener * listener, void * data)
 {
-    struct swc_event * event = data;
+    struct event * event = data;
 
     switch (event->type)
     {
@@ -790,10 +789,10 @@ static void handle_swc_event(struct wl_listener * listener, void * data)
 static void create_surface(struct wl_client * client,
                            struct wl_resource * resource, uint32_t id)
 {
-    struct swc_surface * surface;
+    struct surface * surface;
 
     /* Initialize surface. */
-    surface = swc_surface_new(client, wl_resource_get_version(resource), id);
+    surface = surface_new(client, wl_resource_get_version(resource), id);
 
     if (!surface)
     {
@@ -807,9 +806,9 @@ static void create_surface(struct wl_client * client,
 static void create_region(struct wl_client * client,
                           struct wl_resource * resource, uint32_t id)
 {
-    struct swc_region * region;
+    struct region * region;
 
-    region = swc_region_new(client, wl_resource_get_version(resource), id);
+    region = region_new(client, wl_resource_get_version(resource), id);
 
     if (!region)
         wl_resource_post_no_memory(resource);
@@ -834,7 +833,7 @@ static void bind_compositor(struct wl_client * client, void * data,
                                    NULL, NULL);
 }
 
-bool swc_compositor_initialize(void)
+bool compositor_initialize(void)
 {
     struct screen * screen;
     uint32_t keysym;
@@ -874,7 +873,7 @@ bool swc_compositor_initialize(void)
     return true;
 }
 
-void swc_compositor_finalize(void)
+void compositor_finalize(void)
 {
     pixman_region32_fini(&compositor.damage);
     pixman_region32_fini(&compositor.opaque);

@@ -48,7 +48,7 @@ static inline uint32_t timeval_to_msec(struct timeval * time)
     return time->tv_sec * 1000 + time->tv_usec / 1000;
 }
 
-static void handle_key_event(struct swc_evdev_device * device,
+static void handle_key_event(struct evdev_device * device,
                              struct input_event * input_event)
 {
     uint32_t time = timeval_to_msec(&input_event->time);
@@ -69,7 +69,7 @@ static void handle_key_event(struct swc_evdev_device * device,
     }
 }
 
-static void handle_rel_event(struct swc_evdev_device * device,
+static void handle_rel_event(struct evdev_device * device,
                              struct input_event * input_event)
 {
     uint32_t time = timeval_to_msec(&input_event->time);
@@ -99,12 +99,12 @@ static void handle_rel_event(struct swc_evdev_device * device,
     device->handler->axis(time, axis, amount);
 }
 
-static void handle_abs_event(struct swc_evdev_device * device,
+static void handle_abs_event(struct evdev_device * device,
                              struct input_event * input_event)
 {
 }
 
-static void (* event_handlers[])(struct swc_evdev_device * device,
+static void (* event_handlers[])(struct evdev_device * device,
                                  struct input_event * input_event) = {
     [EV_KEY] = &handle_key_event,
     [EV_REL] = &handle_rel_event,
@@ -117,7 +117,7 @@ static bool is_motion_event(struct input_event * event)
         || (event->type == EV_ABS && (event->code == ABS_X || event->code == ABS_Y));
 }
 
-static void handle_motion_events(struct swc_evdev_device * device,
+static void handle_motion_events(struct evdev_device * device,
                                  uint32_t time)
 {
     if (device->motion.rel.pending)
@@ -133,7 +133,7 @@ static void handle_motion_events(struct swc_evdev_device * device,
     }
 }
 
-static void handle_event(struct swc_evdev_device * device,
+static void handle_event(struct evdev_device * device,
                          struct input_event * event)
 {
     if (!is_motion_event(event))
@@ -146,7 +146,7 @@ static void handle_event(struct swc_evdev_device * device,
     }
 }
 
-static void close_device(struct swc_evdev_device * device)
+static void close_device(struct evdev_device * device)
 {
     wl_event_source_remove(device->source);
     close(device->fd);
@@ -156,7 +156,7 @@ static void close_device(struct swc_evdev_device * device)
 
 static int handle_data(int fd, uint32_t mask, void * data)
 {
-    struct swc_evdev_device * device = data;
+    struct evdev_device * device = data;
     struct input_event event;
     unsigned flags = device->needs_sync ? LIBEVDEV_READ_FLAG_FORCE_SYNC
                                         : LIBEVDEV_READ_FLAG_NORMAL;
@@ -196,10 +196,10 @@ static int handle_data(int fd, uint32_t mask, void * data)
     return 1;
 }
 
-struct swc_evdev_device * swc_evdev_device_new
-    (const char * path, const struct swc_evdev_device_handler * handler)
+struct evdev_device * evdev_device_new
+    (const char * path, const struct evdev_device_handler * handler)
 {
-    struct swc_evdev_device * device;
+    struct evdev_device * device;
 
     if (!(device = malloc(sizeof *device)))
         goto error0;
@@ -267,7 +267,7 @@ struct swc_evdev_device * swc_evdev_device_new
     return NULL;
 }
 
-void swc_evdev_device_destroy(struct swc_evdev_device * device)
+void evdev_device_destroy(struct evdev_device * device)
 {
     if (device->source)
         close_device(device);
@@ -277,7 +277,7 @@ void swc_evdev_device_destroy(struct swc_evdev_device * device)
     free(device);
 }
 
-bool swc_evdev_device_reopen(struct swc_evdev_device * device)
+bool evdev_device_reopen(struct evdev_device * device)
 {
     if (device->source)
         close_device(device);

@@ -32,14 +32,14 @@
 
 enum
 {
-    SWC_SURFACE_COMMIT_ATTACH = (1 << 0),
-    SWC_SURFACE_COMMIT_DAMAGE = (1 << 1),
-    SWC_SURFACE_COMMIT_OPAQUE = (1 << 2),
-    SWC_SURFACE_COMMIT_INPUT = (1 << 3),
-    SWC_SURFACE_COMMIT_FRAME = (1 << 4)
+    SURFACE_COMMIT_ATTACH = (1 << 0),
+    SURFACE_COMMIT_DAMAGE = (1 << 1),
+    SURFACE_COMMIT_OPAQUE = (1 << 2),
+    SURFACE_COMMIT_INPUT = (1 << 3),
+    SURFACE_COMMIT_FRAME = (1 << 4)
 };
 
-struct swc_surface_state
+struct surface_state
 {
     struct wld_buffer * buffer;
     struct wl_resource * buffer_resource;
@@ -57,15 +57,15 @@ struct swc_surface_state
     struct wl_list frame_callbacks;
 };
 
-struct swc_surface
+struct surface
 {
     struct wl_resource * resource;
 
-    struct swc_surface_state state;
+    struct surface_state state;
 
     struct
     {
-        struct swc_surface_state state;
+        struct surface_state state;
         uint32_t commit;
         int32_t x, y;
     } pending;
@@ -74,10 +74,10 @@ struct swc_surface
     struct view_handler view_handler;
 };
 
-struct swc_surface * swc_surface_new(struct wl_client * client,
-                                     uint32_t version, uint32_t id);
+struct surface * surface_new(struct wl_client * client,
+                             uint32_t version, uint32_t id);
 
-void swc_surface_set_view(struct swc_surface * surface, struct view * view);
+void surface_set_view(struct surface * surface, struct view * view);
 
 #endif
 

@@ -40,7 +40,7 @@ static const struct swc_window_handler null_handler;
 
 static void handle_window_enter(struct wl_listener * listener, void * data)
 {
-    struct swc_event * event = data;
+    struct event * event = data;
     struct input_focus_event_data * event_data = event->data;
     struct window * window;
 
@@ -96,7 +96,7 @@ static void end_interaction(struct window_pointer_interaction * interaction,
         }
 
         interaction->original_handler->button(interaction->original_handler,
-                                              swc_time(), button,
+                                              get_time(), button,
                                               WL_POINTER_BUTTON_STATE_RELEASED);
     }
 
@@ -384,7 +384,7 @@ static const struct view_handler_impl view_handler_impl = {
 };
 
 bool window_initialize(struct window * window, const struct window_impl * impl,
-                       struct swc_surface * surface)
+                       struct surface * surface)
 {
     DEBUG("Initializing window, %p\n", window);
 
@@ -392,7 +392,7 @@ bool window_initialize(struct window * window, const struct window_impl * impl,
     window->base.app_id = NULL;
     window->base.parent = NULL;
 
-    if (!(window->view = swc_compositor_create_view(surface)))
+    if (!(window->view = compositor_create_view(surface)))
         return false;
 
     window->impl = impl;

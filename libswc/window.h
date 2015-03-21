@@ -92,7 +92,7 @@ struct window_impl
 extern struct wl_listener window_enter_listener;
 
 bool window_initialize(struct window * window, const struct window_impl * impl,
-                       struct swc_surface * surface);
+                       struct surface * surface);
 
 void window_finalize(struct window * window);
 

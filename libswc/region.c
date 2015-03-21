@@ -11,7 +11,7 @@ static void destroy(struct wl_client * client, struct wl_resource * resource)
 static void add(struct wl_client * client, struct wl_resource * resource,
                 int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    struct swc_region * region = wl_resource_get_user_data(resource);
+    struct region * region = wl_resource_get_user_data(resource);
 
     pixman_region32_union_rect(&region->region, &region->region,
                                x, y, width, height);
@@ -20,7 +20,7 @@ static void add(struct wl_client * client, struct wl_resource * resource,
 static void subtract(struct wl_client * client, struct wl_resource * resource,
                      int32_t x, int32_t y, int32_t width, int32_t height)
 {
-    struct swc_region * region = wl_resource_get_user_data(resource);
+    struct region * region = wl_resource_get_user_data(resource);
     pixman_region32_t operand;
 
     pixman_region32_init_rect(&operand, x, y, width, height);
@@ -35,7 +35,7 @@ static const struct wl_region_interface region_implementation = {
 
 static void region_destroy(struct wl_resource * resource)
 {
-    struct swc_region * region = wl_resource_get_user_data(resource);
+    struct region * region = wl_resource_get_user_data(resource);
 
     /* Finish the region. */
     pixman_region32_fini(&region->region);
@@ -43,10 +43,10 @@ static void region_destroy(struct wl_resource * resource)
     free(region);
 }
 
-struct swc_region * swc_region_new(struct wl_client * client,
-                                   uint32_t version, uint32_t id)
+struct region * region_new(struct wl_client * client,
+                           uint32_t version, uint32_t id)
 {
-    struct swc_region * region;
+    struct region * region;
 
     region = malloc(sizeof *region);
 

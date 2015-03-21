@@ -103,7 +103,7 @@ static void create_prime_buffer(struct wl_client * client,
     if (!buffer)
         goto error0;
 
-    buffer_resource = swc_wayland_buffer_create_resource
+    buffer_resource = wayland_buffer_create_resource
         (client, wl_resource_get_version(resource), id, buffer);
 
     if (!buffer_resource)
@@ -231,7 +231,7 @@ static void handle_vblank(int fd, unsigned int sequence, unsigned int sec,
 static void handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
                              unsigned int usec, void * data)
 {
-    struct swc_drm_handler * handler = data;
+    struct drm_handler * handler = data;
 
     handler->page_flip(handler, sec * 1000 + usec / 1000);
 }
@@ -268,7 +268,7 @@ static void bind_drm(struct wl_client * client, void * data, uint32_t version,
     wl_drm_send_format(resource, WL_DRM_FORMAT_ARGB8888);
 }
 
-bool swc_drm_initialize(void)
+bool drm_initialize(void)
 {
     struct stat master, render;
 
@@ -361,7 +361,7 @@ bool swc_drm_initialize(void)
     return false;
 }
 
-void swc_drm_finalize(void)
+void drm_finalize(void)
 {
     if (drm.global)
         wl_global_destroy(drm.global);
@@ -371,12 +371,12 @@ void swc_drm_finalize(void)
     close(swc.drm->fd);
 }
 
-bool swc_drm_create_screens(struct wl_list * screens)
+bool drm_create_screens(struct wl_list * screens)
 {
     drmModeRes * resources;
     drmModeConnector * connector;
     uint32_t index;
-    struct swc_output * output;
+    struct output * output;
     uint32_t taken_crtcs = 0;
 
     if (!(resources = drmModeGetResources(swc.drm->fd)))
@@ -410,7 +410,7 @@ bool swc_drm_create_screens(struct wl_list * screens)
                 break;
             }
 
-            if (!(output = swc_output_new(connector)))
+            if (!(output = output_new(connector)))
                 continue;
 
             output->screen = screen_new(resources->crtcs[crtc_index], output);

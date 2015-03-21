@@ -5,9 +5,9 @@
 #include <stdint.h>
 #include <wayland-server.h>
 
-struct swc_drm_handler
+struct drm_handler
 {
-    void (* page_flip)(struct swc_drm_handler * handler, uint32_t time);
+    void (* page_flip)(struct drm_handler * handler, uint32_t time);
 };
 
 struct swc_drm
@@ -17,10 +17,10 @@ struct swc_drm
     struct wld_renderer * renderer;
 };
 
-bool swc_drm_initialize(void);
-void swc_drm_finalize(void);
+bool drm_initialize(void);
+void drm_finalize(void);
 
-bool swc_drm_create_screens(struct wl_list * screens);
+bool drm_create_screens(struct wl_list * screens);
 
 #endif
 

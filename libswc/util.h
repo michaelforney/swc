@@ -62,9 +62,9 @@
 
 struct wl_resource;
 
-void swc_remove_resource(struct wl_resource * resource);
+void remove_resource(struct wl_resource * resource);
 
-static inline uint32_t swc_time(void)
+static inline uint32_t get_time(void)
 {
     struct timeval timeval;
 
@@ -74,15 +74,15 @@ static inline uint32_t swc_time(void)
 
 extern pixman_box32_t infinite_extents;
 
-static inline bool swc_rectangle_contains_point
+static inline bool rectangle_contains_point
     (const struct swc_rectangle * rectangle, int32_t x, int32_t y)
 {
     return x > rectangle->x && x < rectangle->x + rectangle->width
         && y > rectangle->y && y < rectangle->y + rectangle->height;
 }
 
-static inline bool swc_rectangle_overlap
-    (const struct swc_rectangle * r1, const struct swc_rectangle * r2)
+static inline bool rectangle_overlap(const struct swc_rectangle * r1,
+                                     const struct swc_rectangle * r2)
 {
     return (MAX(r1->x + r1->width, r2->x + r2->width) - MIN(r1->x, r2->x)
             < r1->width + r2->width)
@@ -90,8 +90,8 @@ static inline bool swc_rectangle_overlap
             < r1->height + r2->height);
 }
 
-static inline void swc_array_remove(struct wl_array * array,
-                                    void * item, size_t size)
+static inline void array_remove(struct wl_array * array,
+                                void * item, size_t size)
 {
     size_t bytes = array->size - ((intptr_t) item + size - (intptr_t) array->data);
     if (bytes > 0)

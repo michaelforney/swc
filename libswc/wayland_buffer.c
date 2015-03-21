@@ -38,7 +38,7 @@ static const struct wl_buffer_interface buffer_implementation = {
     .destroy = &destroy
 };
 
-struct wld_buffer * swc_wayland_buffer_get(struct wl_resource * resource)
+struct wld_buffer * wayland_buffer_get(struct wl_resource * resource)
 {
     if (wl_resource_instance_of(resource, &wl_buffer_interface,
                                 &buffer_implementation))
@@ -56,7 +56,7 @@ static void destroy_buffer(struct wl_resource * resource)
     wld_buffer_unreference(buffer);
 }
 
-struct wl_resource * swc_wayland_buffer_create_resource
+struct wl_resource * wayland_buffer_create_resource
     (struct wl_client * client, uint32_t version, uint32_t id,
      struct wld_buffer * buffer)
 {

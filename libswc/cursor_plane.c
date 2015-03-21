@@ -98,7 +98,7 @@ static const struct view_impl view_impl = {
 
 static void handle_swc_event(struct wl_listener * listener, void * data)
 {
-    struct swc_event * event = data;
+    struct event * event = data;
     struct cursor_plane * plane
         = wl_container_of(listener, plane, swc_listener);
 

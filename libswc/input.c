@@ -121,7 +121,7 @@ void input_focus_remove_resource(struct input_focus * input_focus,
     if (resource == input_focus->resource)
         input_focus->resource = NULL;
 
-    swc_remove_resource(resource);
+    remove_resource(resource);
 }
 
 void input_focus_set(struct input_focus * input_focus,
@@ -141,8 +141,7 @@ void input_focus_set(struct input_focus * input_focus,
     /* Focus new view, if given. */
     focus(input_focus, view);
 
-    swc_send_event(&input_focus->event_signal, INPUT_FOCUS_EVENT_CHANGED,
-                   &data);
+    send_event(&input_focus->event_signal, INPUT_FOCUS_EVENT_CHANGED, &data);
 
     return;
 }

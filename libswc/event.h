@@ -10,7 +10,7 @@
  * An event is the data passed to the listeners of the event_signals of various
  * objects.
  */
-struct swc_event
+struct event
 {
     /**
      * The type of event that was sent.
@@ -29,10 +29,10 @@ struct swc_event
     void * data;
 };
 
-static inline void swc_send_event(struct wl_signal * signal, uint32_t type,
-                                  void * event_data)
+static inline void send_event(struct wl_signal * signal, uint32_t type,
+                              void * event_data)
 {
-    struct swc_event event = { .type = type, .data = event_data };
+    struct event event = { .type = type, .data = event_data };
 
     wl_signal_emit(signal, &event);
 }
