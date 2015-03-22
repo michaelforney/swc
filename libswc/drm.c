@@ -59,6 +59,7 @@ static struct
 static void authenticate(struct wl_client * client,
                          struct wl_resource * resource, uint32_t magic)
 {
+    wl_drm_send_authenticated(resource);
 }
 
 static void create_buffer(struct wl_client * client,
