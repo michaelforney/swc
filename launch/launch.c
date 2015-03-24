@@ -164,6 +164,24 @@ void __attribute__((noreturn,format(printf,1,2)))
     exit(EXIT_FAILURE);
 }
 
+static void activate(void)
+{
+    struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_ACTIVATE };
+
+    start_devices();
+    send(launcher.socket, &event, sizeof event, 0);
+    launcher.active = true;
+}
+
+static void deactivate(void)
+{
+    struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_DEACTIVATE };
+
+    send(launcher.socket, &event, sizeof event, 0);
+    stop_devices(true);
+    launcher.active = false;
+}
+
 static void handle_chld(int signal)
 {
     int status;
@@ -176,22 +194,14 @@ static void handle_chld(int signal)
 
 static void handle_usr1(int signal)
 {
-    struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_DEACTIVATE };
-
-    send(launcher.socket, &event, sizeof event, 0);
-    stop_devices(true);
+    deactivate();
     ioctl(launcher.tty_fd, VT_RELDISP, 1);
-    launcher.active = false;
 }
 
 static void handle_usr2(int signal)
 {
-    struct swc_launch_event event = { .type = SWC_LAUNCH_EVENT_ACTIVATE };
-
     ioctl(launcher.tty_fd, VT_RELDISP, VT_ACKACQ);
-    start_devices();
-    send(launcher.socket, &event, sizeof event, 0);
-    launcher.active = true;
+    activate();
 }
 
 static void forward_signal(int signal)
@@ -392,7 +402,9 @@ static void setup_tty(int fd)
         goto error1;
     }
 
-    if (!nflag)
+    if (vt == original_vt_state.vt)
+        activate();
+    else if (!nflag)
     {
         if (ioctl(fd, VT_ACTIVATE, vt) == -1)
         {
