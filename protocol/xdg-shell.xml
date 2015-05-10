@@ -49,6 +49,9 @@
 
     <enum name="error">
       <entry name="role" value="0" summary="given wl_surface has another role"/>
+      <entry name="defunct_surfaces" value="1" summary="xdg_shell was destroyed before children"/>
+      <entry name="not_the_topmost_popup" value="2" summary="the client tried to map or destroy a non-topmost popup"/>
+      <entry name="invalid_popup_parent" value="3" summary="the client specified an invalid popup parent surface"/>
     </enum>
 
     <request name="destroy" type="destructor">
@@ -56,9 +59,8 @@
         Destroy this xdg_shell object.
 
         Destroying a bound xdg_shell object while there are surfaces
-        still alive with roles from this interface is illegal and will
-        result in a protocol error. Make sure to destroy all surfaces
-        before destroying this object.
+        still alive created by this xdg_shell object instance is illegal
+        and will result in a protocol error.
       </description>
     </request>
 
@@ -130,6 +132,19 @@
       It provides requests to treat surfaces like windows, allowing to set
       properties like maximized, fullscreen, minimized, and to move and resize
       them, and associate metadata like title and app id.
+
+      The client must call wl_surface.commit on the corresponding wl_surface
+      for the xdg_surface state to take effect. Prior to committing the new
+      state, it can set up initial configuration, such as maximizing or setting
+      a window geometry.
+
+      Even without attaching a buffer the compositor must respond to initial
+      committed configuration, for instance sending a configure event with
+      expected window geometry if the client maximized its surface during
+      initialization.
+
+      For a surface to be mapped by the compositor the client must have
+      committed both an xdg_surface state and a buffer.
     </description>
 
     <request name="destroy" type="destructor">
@@ -147,7 +162,7 @@
 	surface is mapped.
 
 	Parent windows should be set on dialogs, toolboxes, or other
-	"auxilliary" surfaces, so that the parent is raised when the dialog
+	"auxiliary" surfaces, so that the parent is raised when the dialog
 	is raised.
       </description>
       <arg name="parent" type="object" interface="xdg_surface" allow-null="true"/>
@@ -172,11 +187,10 @@
 
 	The app ID identifies the general class of applications to which
 	the surface belongs. The compositor can use this to group multiple
-	applications together, or to determine how to launch a new
-	application.
+	surfaces together, or to determine how to launch a new application.
 
 	See the desktop-entry specification [0] for more details on
-	application identifiers and how they relate to well-known DBus
+	application identifiers and how they relate to well-known D-Bus
 	names and .desktop files.
 
 	[0] http://standards.freedesktop.org/desktop-entry-spec/
@@ -301,7 +315,12 @@
 
 	The width and height arguments specify a hint to the window
 	about how its surface should be resized in window geometry
-	coordinates.
+	coordinates. See set_window_geometry.
+
+	If the width or height arguments are zero, it means the client
+	should decide its own window dimension. This may happen when the
+	compositor need to configure the state of the surface but doesn't
+	have any information about any previous or expected dimension.
 
 	The states listed in the event specify how the width/height
 	arguments should be interpreted, and possibly how it should be
@@ -330,9 +349,9 @@
         must make a ack_configure request before the commit request,
         passing along the serial of the configure event.
 
-        The compositor might use this information to move a surface
-        to the top left only when the client has drawn itself for
-        the maximized or fullscreen state.
+        For instance, the compositor might use this information to move
+        a surface to the top left only when the client has drawn itself
+        for the maximized or fullscreen state.
 
         If the client receives multiple configure events before it
         can respond to one, it only has to ack the last configure event.
@@ -347,6 +366,9 @@
         portions like drop-shadows which should be ignored for the
         purposes of aligning, placing and constraining windows.
 
+        The window geometry is double buffered, and will be applied at the
+        time wl_surface.commit of the corresponding wl_surface is called.
+
         Once the window geometry of the surface is set once, it is not
         possible to unset it, and it will remain the same until
         set_window_geometry is called again, even if a new subsurface or
@@ -359,6 +381,9 @@
         If responding to a configure event, the window geometry in here
         must respect the sizing negotiations specified by the states in
         the configure event.
+
+        The arguments are given in the surface local coordinate space of
+        the wl_surface associated with this xdg_surface.
 
         The width and height must be greater than zero.
       </description>
@@ -378,6 +403,10 @@
         You can specify an output that you would prefer to be fullscreen.
 	If this value is NULL, it's up to the compositor to choose which
         display will be used to map this surface.
+
+        If the surface doesn't cover the whole output, the compositor will
+        position the surface in the center of the output and compensate with
+        black borders filling the rest of the output.
       </description>
       <arg name="output" type="object" interface="wl_output" allow-null="true"/>
     </request>
@@ -449,20 +478,21 @@
       A parent surface must be mapped before the new popup is mapped.
 
       When compositors choose to dismiss a popup, they will likely
-      dismiss every nested popup as well.
+      dismiss every nested popup as well. When a compositor dismisses
+      popups, it will follow the same dismissing order as required
+      from the client.
 
-      The x and y arguments specify where the top left of the popup
-      should be placed, relative to the local surface coordinates of the
-      parent surface.
+      The x and y arguments passed when creating the popup object specify
+      where the top left of the popup should be placed, relative to the
+      local surface coordinates of the parent surface. See
+      xdg_shell.get_xdg_popup.
+
+      The client must call wl_surface.commit on the corresponding wl_surface
+      for the xdg_popup state to take effect.
+
+      For a surface to be mapped by the compositor the client must have
+      committed both the xdg_popup state and a buffer.
     </description>
-
-    <enum name="error">
-      <description summary="xdg_popup error values">
-	These errors can be emitted in response to xdg_popup requests.
-      </description>
-      <entry name="not_the_topmost_popup" value="0" summary="The client tried to map or destroy a non-topmost popup"/>
-      <entry name="invalid_parent" value="1" summary="The client specified an invalid parent surface"/>
-    </enum>
 
     <request name="destroy" type="destructor">
       <description summary="remove xdg_popup interface">
@@ -476,8 +506,9 @@
 
     <event name="popup_done">
       <description summary="popup interaction is done">
-	The popup_done event is sent out when a popup is dismissed
-	by the compositor.
+	The popup_done event is sent out when a popup is dismissed by the
+	compositor. The client should destroy the xdg_popup object at this
+	point.
       </description>
     </event>
 
