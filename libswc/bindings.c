@@ -36,7 +36,7 @@ struct binding
 {
     uint32_t value;
     uint32_t modifiers;
-    swc_binding_handler_t handler;
+    swc_binding_handler handler;
     void * data;
 };
 
@@ -164,7 +164,7 @@ void bindings_finalize(void)
 EXPORT
 int swc_add_binding(enum swc_binding_type type,
                     uint32_t modifiers, uint32_t value,
-                    swc_binding_handler_t handler, void * data)
+                    swc_binding_handler handler, void * data)
 {
     struct binding * binding;
     struct wl_array * bindings;

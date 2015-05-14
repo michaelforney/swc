@@ -292,8 +292,8 @@ enum swc_binding_type
     SWC_BINDING_BUTTON,
 };
 
-typedef void (* swc_binding_handler_t)(void * data, uint32_t time,
-                                       uint32_t value, uint32_t state);
+typedef void (* swc_binding_handler)(void * data, uint32_t time,
+                                     uint32_t value, uint32_t state);
 
 /**
  * Register a new input binding.
@@ -302,7 +302,7 @@ typedef void (* swc_binding_handler_t)(void * data, uint32_t time,
  */
 int swc_add_binding(enum swc_binding_type type,
                     uint32_t modifiers, uint32_t value,
-                    swc_binding_handler_t handler, void * data);
+                    swc_binding_handler handler, void * data);
 
 /* }}} */
 
