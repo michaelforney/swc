@@ -294,6 +294,9 @@ static void set_cursor(struct wl_client * client,
     struct pointer * pointer = wl_resource_get_user_data(resource);
     struct surface * surface;
 
+    if (!pointer->focus.resource || client != wl_resource_get_client(pointer->focus.resource))
+        return;
+
     if (pointer->cursor.surface)
         wl_list_remove(&pointer->cursor.destroy_listener.link);
 
