@@ -131,8 +131,8 @@ screen_usable_geometry_changed(void *data)
 	struct screen *screen = data;
 
 	/* If the usable geometry of the screen changes, for example when a panel is
-     * docked to the edge of the screen, we need to rearrange the windows to
-     * ensure they are all within the new usable geometry. */
+	 * docked to the edge of the screen, we need to rearrange the windows to
+	 * ensure they are all within the new usable geometry. */
 	arrange(screen);
 }
 

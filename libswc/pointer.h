@@ -37,12 +37,9 @@ struct button {
 };
 
 struct pointer_handler {
-	bool (*motion)(struct pointer_handler *handler, uint32_t time,
-	               wl_fixed_t x, wl_fixed_t y);
-	bool (*button)(struct pointer_handler *handler, uint32_t time,
-	               struct button *button, uint32_t state);
-	bool (*axis)(struct pointer_handler *handler, uint32_t time,
-	             enum wl_pointer_axis axis, wl_fixed_t amount);
+	bool (*motion)(struct pointer_handler *handler, uint32_t time, wl_fixed_t x, wl_fixed_t y);
+	bool (*button)(struct pointer_handler *handler, uint32_t time, struct button *button, uint32_t state);
+	bool (*axis)(struct pointer_handler *handler, uint32_t time, enum wl_pointer_axis axis, wl_fixed_t amount);
 
 	struct wl_list link;
 };
@@ -51,8 +48,7 @@ struct pointer {
 	struct input_focus focus;
 	struct input_focus_handler focus_handler;
 
-	struct
-	    {
+	struct {
 		struct view view;
 		struct surface *surface;
 		struct wl_listener destroy_listener;
@@ -61,8 +57,7 @@ struct pointer {
 		/* Used for cursors set with pointer_set_cursor */
 		struct wld_buffer *internal_buffer;
 
-		struct
-		    {
+		struct {
 			int32_t x, y;
 		} hotspot;
 	} cursor;
@@ -83,14 +78,9 @@ void pointer_set_cursor(struct pointer *pointer, uint32_t id);
 
 struct button *pointer_get_button(struct pointer *pointer, uint32_t serial);
 
-struct wl_resource *pointer_bind(struct pointer *pointer,
-                                 struct wl_client *client,
-                                 uint32_t version, uint32_t id);
-void pointer_handle_button(struct pointer *pointer, uint32_t time,
-                           uint32_t button, uint32_t state);
-void pointer_handle_axis(struct pointer *pointer, uint32_t time,
-                         uint32_t axis, wl_fixed_t amount);
-void pointer_handle_relative_motion(struct pointer *pointer, uint32_t time,
-                                    wl_fixed_t dx, wl_fixed_t dy);
+struct wl_resource *pointer_bind(struct pointer *pointer, struct wl_client *client, uint32_t version, uint32_t id);
+void pointer_handle_button(struct pointer *pointer, uint32_t time, uint32_t button, uint32_t state);
+void pointer_handle_axis(struct pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t amount);
+void pointer_handle_relative_motion(struct pointer *pointer, uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
 
 #endif

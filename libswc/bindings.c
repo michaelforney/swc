@@ -39,38 +39,33 @@ struct binding {
 	void *data;
 };
 
-static bool handle_key(struct keyboard *keyboard, uint32_t time,
-                       struct key *key, uint32_t state);
+static bool handle_key(struct keyboard *keyboard, uint32_t time, struct key *key, uint32_t state);
 
 static struct keyboard_handler key_binding_handler = {
-	.key = &handle_key
+	.key = handle_key,
 };
 
-static bool handle_button(struct pointer_handler *handler, uint32_t time,
-                          struct button *button, uint32_t state);
+static bool handle_button(struct pointer_handler *handler, uint32_t time, struct button *button, uint32_t state);
 
 static struct pointer_handler button_binding_handler = {
-	.button = &handle_button
+	.button = handle_button,
 };
 
 static struct wl_array key_bindings, button_bindings;
 
 const struct swc_bindings swc_bindings = {
 	.keyboard_handler = &key_binding_handler,
-	.pointer_handler = &button_binding_handler
+	.pointer_handler = &button_binding_handler,
 };
 
 static struct binding *
-find_binding(struct wl_array *bindings,
-             uint32_t modifiers, uint32_t value)
+find_binding(struct wl_array *bindings, uint32_t modifiers, uint32_t value)
 {
 	struct binding *binding;
 
 	wl_array_for_each (binding, bindings) {
-		if (binding->value == value && (binding->modifiers == modifiers
-		                                || binding->modifiers == SWC_MOD_ANY)) {
+		if (binding->value == value && (binding->modifiers == modifiers || binding->modifiers == SWC_MOD_ANY))
 			return binding;
-		}
 	}
 
 	return NULL;
@@ -95,8 +90,7 @@ find_key_binding(uint32_t modifiers, uint32_t key)
 
 	/* Then try the keysym associated with shift-level 0 for the key. */
 	layout = xkb_state_key_get_layout(xkb->state, XKB_KEY(key));
-	xkb_keymap_key_get_syms_by_level(xkb->keymap.map, XKB_KEY(key),
-	                                 layout, 0, &keysyms);
+	xkb_keymap_key_get_syms_by_level(xkb->keymap.map, XKB_KEY(key), layout, 0, &keysyms);
 
 	if (!keysyms)
 		return NULL;
@@ -113,8 +107,7 @@ find_button_binding(uint32_t modifiers, uint32_t value)
 }
 
 static bool
-handle_binding(uint32_t time, struct press *press, uint32_t state,
-               struct binding *(*find_binding)(uint32_t, uint32_t))
+handle_binding(uint32_t time, struct press *press, uint32_t state, struct binding *(*find_binding)(uint32_t, uint32_t))
 {
 	struct binding *binding;
 
@@ -125,8 +118,9 @@ handle_binding(uint32_t time, struct press *press, uint32_t state,
 			return false;
 
 		press->data = binding;
-	} else
+	} else {
 		binding = press->data;
+	}
 
 	binding->handler(binding->data, time, binding->value, state);
 
@@ -134,15 +128,13 @@ handle_binding(uint32_t time, struct press *press, uint32_t state,
 }
 
 bool
-handle_key(struct keyboard *keyboard, uint32_t time,
-           struct key *key, uint32_t state)
+handle_key(struct keyboard *keyboard, uint32_t time, struct key *key, uint32_t state)
 {
 	return handle_binding(time, &key->press, state, &find_key_binding);
 }
 
 bool
-handle_button(struct pointer_handler *handler, uint32_t time,
-              struct button *button, uint32_t state)
+handle_button(struct pointer_handler *handler, uint32_t time, struct button *button, uint32_t state)
 {
 	return handle_binding(time, &button->press, state, &find_button_binding);
 }
@@ -163,11 +155,8 @@ bindings_finalize(void)
 	wl_array_release(&button_bindings);
 }
 
-EXPORT
-int
-swc_add_binding(enum swc_binding_type type,
-                uint32_t modifiers, uint32_t value,
-                swc_binding_handler handler, void *data)
+EXPORT int
+swc_add_binding(enum swc_binding_type type, uint32_t modifiers, uint32_t value, swc_binding_handler handler, void *data)
 {
 	struct binding *binding;
 	struct wl_array *bindings;

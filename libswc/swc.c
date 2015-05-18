@@ -41,7 +41,7 @@
 #include "window.h"
 #include "xdg_shell.h"
 #ifdef ENABLE_XWAYLAND
-#include "xserver.h"
+# include "xserver.h"
 #endif
 
 extern struct swc_launch swc_launch;
@@ -72,27 +72,20 @@ setup_compositor(void)
 {
 	pixman_region32_t pointer_region;
 	struct screen *screen;
-	struct swc_rectangle *geometry;
+	struct swc_rectangle *geom;
 
-	wl_list_insert(&swc.seat->keyboard->handlers,
-	               &swc.bindings->keyboard_handler->link);
-	wl_list_insert(&swc.seat->pointer->handlers,
-	               &swc.bindings->pointer_handler->link);
-	wl_list_insert(&swc.seat->pointer->handlers,
-	               &swc.compositor->pointer_handler->link);
-	wl_list_insert(&swc.seat->pointer->handlers,
-	               &screens_pointer_handler.link);
-	wl_signal_add(&swc.seat->pointer->focus.event_signal,
-	              &window_enter_listener);
+	wl_list_insert(&swc.seat->keyboard->handlers, &swc.bindings->keyboard_handler->link);
+	wl_list_insert(&swc.seat->pointer->handlers, &swc.bindings->pointer_handler->link);
+	wl_list_insert(&swc.seat->pointer->handlers, &swc.compositor->pointer_handler->link);
+	wl_list_insert(&swc.seat->pointer->handlers, &screens_pointer_handler.link);
+	wl_signal_add(&swc.seat->pointer->focus.event_signal, &window_enter_listener);
 
 	/* Calculate pointer region */
 	pixman_region32_init(&pointer_region);
 
 	wl_list_for_each (screen, &swc.screens, link) {
-		geometry = &screen->base.geometry;
-		pixman_region32_union_rect(&pointer_region, &pointer_region,
-		                           geometry->x, geometry->y,
-		                           geometry->width, geometry->height);
+		geom = &screen->base.geometry;
+		pixman_region32_union_rect(&pointer_region, &pointer_region, geom->x, geom->y, geom->width, geom->height);
 	}
 
 	pointer_set_region(swc.seat->pointer, &pointer_region);
@@ -113,14 +106,11 @@ swc_deactivate(void)
 	send_event(&swc.event_signal, SWC_EVENT_DEACTIVATED, NULL);
 }
 
-EXPORT
-bool
-swc_initialize(struct wl_display *display,
-               struct wl_event_loop *event_loop,
-               const struct swc_manager *manager)
+EXPORT bool
+swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, const struct swc_manager *manager)
 {
 	swc.display = display;
-	swc.event_loop = event_loop ?: wl_display_get_event_loop(display);
+	swc.event_loop = event_loop ? event_loop : wl_display_get_event_loop(display);
 	swc.manager = manager;
 	const char *default_seat = "seat0";
 	wl_signal_init(&swc.event_signal);
@@ -226,8 +216,7 @@ error0:
 	return false;
 }
 
-EXPORT
-void
+EXPORT void
 swc_finalize(void)
 {
 #ifdef ENABLE_XWAYLAND

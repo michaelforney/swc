@@ -31,14 +31,13 @@
 
 struct swc_compositor {
 	struct pointer_handler *const pointer_handler;
-	struct
-	    {
+	struct {
 		/**
-         * Emitted when a new surface is created.
-         *
-         * The data argument of the signal refers to the surface that has been
-         * created.
-         */
+		 * Emitted when a new surface is created.
+		 *
+		 * The data argument of the signal refers to the surface that has been
+		 * created.
+		 */
 		struct wl_signal new_surface;
 	} signal;
 };
@@ -60,11 +59,10 @@ struct compositor_view {
 	pixman_box32_t extents;
 
 	/* The region that is covered by opaque regions of surfaces above this
-     * surface. */
+	 * surface. */
 	pixman_region32_t clip;
 
-	struct
-	    {
+	struct {
 		uint32_t width;
 		uint32_t color;
 		bool damaged;
@@ -83,15 +81,12 @@ void compositor_view_destroy(struct compositor_view *view);
  */
 struct compositor_view *compositor_view(struct view *view);
 
-void compositor_view_set_parent(struct compositor_view *view,
-                                struct compositor_view *parent);
+void compositor_view_set_parent(struct compositor_view *view, struct compositor_view *parent);
 
 void compositor_view_show(struct compositor_view *view);
 void compositor_view_hide(struct compositor_view *view);
 
-void compositor_view_set_border_color(struct compositor_view *view,
-                                      uint32_t color);
-void compositor_view_set_border_width(struct compositor_view *view,
-                                      uint32_t width);
+void compositor_view_set_border_color(struct compositor_view *view, uint32_t color);
+void compositor_view_set_border_width(struct compositor_view *view, uint32_t width);
 
 #endif

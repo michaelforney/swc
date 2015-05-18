@@ -43,14 +43,13 @@ destroy(struct wl_client *client, struct wl_resource *resource)
 }
 
 static const struct xdg_popup_interface xdg_popup_implementation = {
-	.destroy = &destroy
+	.destroy = destroy,
 };
 
 static void
 handle_surface_destroy(struct wl_listener *listener, void *data)
 {
 	struct xdg_popup *popup = wl_container_of(listener, popup, surface_destroy_listener);
-
 	wl_resource_destroy(popup->resource);
 }
 
@@ -65,11 +64,8 @@ destroy_popup(struct wl_resource *resource)
 }
 
 struct xdg_popup *
-xdg_popup_new(struct wl_client *client,
-              uint32_t version, uint32_t id,
-              struct surface *surface,
-              struct surface *parent_surface,
-              int32_t x, int32_t y)
+xdg_popup_new(struct wl_client *client, uint32_t version,
+              uint32_t id, struct surface *surface, struct surface *parent_surface, int32_t x, int32_t y)
 {
 	struct xdg_popup *popup;
 	struct compositor_view *parent = compositor_view(parent_surface->view);
@@ -82,23 +78,19 @@ xdg_popup_new(struct wl_client *client,
 	if (!popup)
 		goto error0;
 
-	popup->resource = wl_resource_create(client, &xdg_popup_interface,
-	                                     version, id);
+	popup->resource = wl_resource_create(client, &xdg_popup_interface, version, id);
 
 	if (!popup->resource)
 		goto error1;
 
 	popup->surface_destroy_listener.notify = &handle_surface_destroy;
-	wl_resource_add_destroy_listener(surface->resource,
-	                                 &popup->surface_destroy_listener);
-	wl_resource_set_implementation(popup->resource, &xdg_popup_implementation,
-	                               popup, &destroy_popup);
+	wl_resource_add_destroy_listener(surface->resource, &popup->surface_destroy_listener);
+	wl_resource_set_implementation(popup->resource, &xdg_popup_implementation, popup, &destroy_popup);
 
 	if (!(popup->view = compositor_create_view(surface)))
 		goto error2;
 
-	view_move(&popup->view->base,
-	          parent->base.geometry.x + x, parent->base.geometry.y + y);
+	view_move(&popup->view->base, parent->base.geometry.x + x, parent->base.geometry.y + y);
 	compositor_view_set_parent(popup->view, parent);
 
 	return popup;

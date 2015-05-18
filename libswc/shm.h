@@ -32,7 +32,6 @@ struct swc_shm {
 };
 
 bool shm_initialize(void);
-
 void shm_finalize(void);
 
 #endif

@@ -39,18 +39,14 @@
 static struct screen *active_screen;
 static const struct swc_screen_handler null_handler;
 
-static bool handle_motion(struct pointer_handler *handler, uint32_t time,
-                          wl_fixed_t x, wl_fixed_t y);
+static bool handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t x, wl_fixed_t y);
 
 struct pointer_handler screens_pointer_handler = {
-	.motion = &handle_motion
+	.motion = handle_motion,
 };
 
-EXPORT
-void
-swc_screen_set_handler(struct swc_screen *base,
-                       const struct swc_screen_handler *handler,
-                       void *data)
+EXPORT void
+swc_screen_set_handler(struct swc_screen *base, const struct swc_screen_handler *handler, void *data)
 {
 	struct screen *screen = INTERNAL(base);
 
@@ -82,8 +78,7 @@ screens_finalize(void)
 }
 
 static void
-bind_screen(struct wl_client *client, void *data,
-            uint32_t version, uint32_t id)
+bind_screen(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
 	struct screen *screen = data;
 	struct wl_resource *resource;
@@ -115,23 +110,19 @@ screen_new(uint32_t crtc, struct output *output)
 	if (!(screen = malloc(sizeof *screen)))
 		goto error0;
 
-	screen->global = wl_global_create(swc.display, &swc_screen_interface, 1,
-	                                  screen, &bind_screen);
+	screen->global = wl_global_create(swc.display, &swc_screen_interface, 1, screen, &bind_screen);
 
 	if (!screen->global) {
 		ERROR("Failed to create screen global\n");
 		goto error1;
 	}
 
-	if (!framebuffer_plane_initialize(&screen->planes.framebuffer, crtc,
-	                                  output->preferred_mode,
-	                                  &output->connector, 1)) {
+	if (!framebuffer_plane_initialize(&screen->planes.framebuffer, crtc, output->preferred_mode, &output->connector, 1)) {
 		ERROR("Failed to initialize framebuffer plane\n");
 		goto error2;
 	}
 
-	if (!cursor_plane_initialize(&screen->planes.cursor, crtc,
-	                             &screen->base.geometry)) {
+	if (!cursor_plane_initialize(&screen->planes.cursor, crtc, &screen->base.geometry)) {
 		ERROR("Failed to initialize cursor plane\n");
 		goto error3;
 	}
@@ -184,26 +175,25 @@ screen_update_usable_geometry(struct screen *screen)
 	pixman_region32_t total_usable, usable;
 	pixman_box32_t *extents;
 	struct screen_modifier *modifier;
+	struct swc_rectangle *geom = &screen->base.geometry;
 
 	DEBUG("Updating usable geometry\n");
 
-	pixman_region32_init_rect(&total_usable,
-	                          screen->base.geometry.x, screen->base.geometry.y,
-	                          screen->base.geometry.width,
-	                          screen->base.geometry.height);
+	pixman_region32_init_rect(&total_usable, geom->x, geom->y, geom->width, geom->height);
 	pixman_region32_init(&usable);
 
 	wl_list_for_each (modifier, &screen->modifiers, link) {
-		modifier->modify(modifier, &screen->base.geometry, &usable);
+		modifier->modify(modifier, geom, &usable);
 		pixman_region32_intersect(&total_usable, &total_usable, &usable);
 	}
 
 	extents = pixman_region32_extents(&total_usable);
 
 	if (extents->x1 != screen->base.usable_geometry.x
-	    || extents->y1 != screen->base.usable_geometry.y
-	    || (extents->x2 - extents->x1) != screen->base.usable_geometry.width
-	    || (extents->y2 - extents->y1) != screen->base.usable_geometry.height) {
+	 || extents->y1 != screen->base.usable_geometry.y
+	 || (extents->x2 - extents->x1) != screen->base.usable_geometry.width
+	 || (extents->y2 - extents->y1) != screen->base.usable_geometry.height)
+	{
 		screen->base.usable_geometry.x = extents->x1;
 		screen->base.usable_geometry.y = extents->y1;
 		screen->base.usable_geometry.width = extents->x2 - extents->x1;
@@ -215,8 +205,7 @@ screen_update_usable_geometry(struct screen *screen)
 }
 
 bool
-handle_motion(struct pointer_handler *handler, uint32_t time,
-              wl_fixed_t fx, wl_fixed_t fy)
+handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t fx, wl_fixed_t fy)
 {
 	struct screen *screen;
 	int32_t x = wl_fixed_to_int(fx), y = wl_fixed_to_int(fy);

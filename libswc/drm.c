@@ -46,8 +46,7 @@
 
 struct swc_drm swc_drm;
 
-static struct
-    {
+static struct {
 	char path[128];
 
 	uint32_t taken_ids;
@@ -57,51 +56,40 @@ static struct
 } drm;
 
 static void
-authenticate(struct wl_client *client,
-             struct wl_resource *resource, uint32_t magic)
+authenticate(struct wl_client *client, struct wl_resource *resource, uint32_t magic)
 {
 	wl_drm_send_authenticated(resource);
 }
 
 static void
-create_buffer(struct wl_client *client,
-              struct wl_resource *resource, uint32_t id,
-              uint32_t name, int32_t width, int32_t height,
-              uint32_t stride, uint32_t format)
+create_buffer(struct wl_client *client, struct wl_resource *resource, uint32_t id,
+              uint32_t name, int32_t width, int32_t height, uint32_t stride, uint32_t format)
 {
-	wl_resource_post_error(resource, WL_DRM_ERROR_INVALID_NAME,
-	                       "GEM names are not supported, "
-	                       "use a PRIME fd instead");
+	wl_resource_post_error(resource, WL_DRM_ERROR_INVALID_NAME, "GEM names are not supported, use a PRIME fd instead");
 }
 
 static void
-create_planar_buffer(struct wl_client *client,
-                     struct wl_resource *resource, uint32_t id,
-                     uint32_t name, int32_t width, int32_t height,
-                     uint32_t format,
+create_planar_buffer(struct wl_client *client, struct wl_resource *resource, uint32_t id,
+                     uint32_t name, int32_t width, int32_t height, uint32_t format,
                      int32_t offset0, int32_t stride0,
                      int32_t offset1, int32_t stride1,
                      int32_t offset2, int32_t stride2)
 {
-	wl_resource_post_error(resource, WL_DRM_ERROR_INVALID_FORMAT,
-	                       "planar buffers are not supported\n");
+	wl_resource_post_error(resource, WL_DRM_ERROR_INVALID_FORMAT, "planar buffers are not supported\n");
 }
 
 static void
-create_prime_buffer(struct wl_client *client,
-                    struct wl_resource *resource, uint32_t id,
-                    int32_t fd, int32_t width, int32_t height,
-                    uint32_t format,
+create_prime_buffer(struct wl_client *client, struct wl_resource *resource, uint32_t id,
+                    int32_t fd, int32_t width, int32_t height, uint32_t format,
                     int32_t offset0, int32_t stride0,
                     int32_t offset1, int32_t stride1,
                     int32_t offset2, int32_t stride2)
 {
 	struct wld_buffer *buffer;
 	struct wl_resource *buffer_resource;
-	union wld_object object = {.i = fd };
+	union wld_object object = { .i = fd };
 
-	buffer = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_PRIME_FD,
-	                           object, width, height, format, stride0);
+	buffer = wld_import_buffer(swc.drm->context, WLD_DRM_OBJECT_PRIME_FD, object, width, height, format, stride0);
 	close(fd);
 
 	if (!buffer)
@@ -121,17 +109,16 @@ error0:
 }
 
 static const struct wl_drm_interface drm_implementation = {
-	.authenticate = &authenticate,
-	.create_buffer = &create_buffer,
-	.create_planar_buffer = &create_planar_buffer,
-	.create_prime_buffer = &create_prime_buffer
+	.authenticate = authenticate,
+	.create_buffer = create_buffer,
+	.create_planar_buffer = create_planar_buffer,
+	.create_prime_buffer = create_prime_buffer,
 };
 
 static int
 select_card(const struct dirent *entry)
 {
 	unsigned num;
-
 	return sscanf(entry->d_name, "card%u", &num) == 1;
 }
 
@@ -150,8 +137,7 @@ find_primary_drm_device(char *path, size_t size)
 		return false;
 
 	for (index = 0; index < num_cards; ++index) {
-		snprintf(path, size, "/sys/class/drm/%s/device/boot_vga",
-		         cards[index]->d_name);
+		snprintf(path, size, "/sys/class/drm/%s/device/boot_vga", cards[index]->d_name);
 
 		if ((file = fopen(path, "r"))) {
 			ret = fscanf(file, "%hhu", &boot_vga);
@@ -184,26 +170,20 @@ find_primary_drm_device(char *path, size_t size)
 }
 
 static bool
-find_available_crtc(drmModeRes *resources,
-                    drmModeConnector *connector,
-                    uint32_t taken_crtcs, uint32_t *crtc)
+find_available_crtc(drmModeRes *resources, drmModeConnector *connector, uint32_t taken_crtcs, int *crtc_index)
 {
-	uint32_t encoder_index, crtc_index;
+	int i, j;
 	uint32_t possible_crtcs;
 	drmModeEncoder *encoder;
 
-	for (encoder_index = 0;
-	     encoder_index < connector->count_encoders;
-	     ++encoder_index) {
-		encoder = drmModeGetEncoder(swc.drm->fd,
-		                            connector->encoders[encoder_index]);
+	for (i = 0; i < connector->count_encoders; ++i) {
+		encoder = drmModeGetEncoder(swc.drm->fd, connector->encoders[i]);
 		possible_crtcs = encoder->possible_crtcs;
 		drmModeFreeEncoder(encoder);
 
-		for (crtc_index = 0; crtc_index < resources->count_crtcs; ++crtc_index) {
-			if ((possible_crtcs & (1 << crtc_index))
-			    && !(taken_crtcs & (1 << crtc_index))) {
-				*crtc = crtc_index;
+		for (j = 0; j < resources->count_crtcs; ++j) {
+			if ((possible_crtcs & (1 << j)) && !(taken_crtcs & (1 << j))) {
+				*crtc_index = j;
 				return true;
 			}
 		}
@@ -225,14 +205,12 @@ find_available_id(uint32_t *id)
 }
 
 static void
-handle_vblank(int fd, unsigned int sequence, unsigned int sec,
-              unsigned int usec, void *data)
+handle_vblank(int fd, unsigned int sequence, unsigned int sec, unsigned int usec, void *data)
 {
 }
 
 static void
-handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
-                 unsigned int usec, void *data)
+handle_page_flip(int fd, unsigned int sequence, unsigned int sec, unsigned int usec, void *data)
 {
 	struct drm_handler *handler = data;
 
@@ -241,21 +219,19 @@ handle_page_flip(int fd, unsigned int sequence, unsigned int sec,
 
 static drmEventContext event_context = {
 	.version = DRM_EVENT_CONTEXT_VERSION,
-	.vblank_handler = &handle_vblank,
-	.page_flip_handler = &handle_page_flip
+	.vblank_handler = handle_vblank,
+	.page_flip_handler = handle_page_flip,
 };
 
 static int
 handle_data(int fd, uint32_t mask, void *data)
 {
 	drmHandleEvent(fd, &event_context);
-
 	return 1;
 }
 
 static void
-bind_drm(struct wl_client *client, void *data, uint32_t version,
-         uint32_t id)
+bind_drm(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
 	struct wl_resource *resource;
 
@@ -296,20 +272,17 @@ drm_initialize(void)
 		goto error1;
 	}
 
-	if (snprintf(drm.path, sizeof drm.path, "/dev/dri/renderD%d",
-	             minor(master.st_rdev) + 0x80) >= sizeof drm.path) {
+	if (snprintf(drm.path, sizeof drm.path, "/dev/dri/renderD%d", minor(master.st_rdev) + 0x80) >= sizeof drm.path) {
 		ERROR("Render node path is too long");
 		goto error1;
 	}
 
 	if (stat(drm.path, &render) != 0) {
-		ERROR("Could not stat render node for primary DRM device: %s\n",
-		      strerror(errno));
+		ERROR("Could not stat render node for primary DRM device: %s\n", strerror(errno));
 		goto error1;
 	}
 
-	if (master.st_mode != render.st_mode
-	    || minor(master.st_rdev) + 0x80 != minor(render.st_rdev)) {
+	if (master.st_mode != render.st_mode || minor(master.st_rdev) + 0x80 != minor(render.st_rdev)) {
 		ERROR("Render node does not have expected mode or minor number\n");
 		goto error1;
 	}
@@ -332,8 +305,7 @@ drm_initialize(void)
 	}
 
 	if (!wld_drm_is_dumb(swc.drm->context)) {
-		drm.global = wl_global_create(swc.display, &wl_drm_interface, 2,
-		                              NULL, &bind_drm);
+		drm.global = wl_global_create(swc.display, &wl_drm_interface, 2, NULL, &bind_drm);
 
 		if (!drm.global) {
 			ERROR("Could not create wl_drm global\n");
@@ -371,7 +343,7 @@ drm_create_screens(struct wl_list *screens)
 {
 	drmModeRes *resources;
 	drmModeConnector *connector;
-	uint32_t index;
+	int i;
 	struct output *output;
 	uint32_t taken_crtcs = 0;
 
@@ -380,18 +352,15 @@ drm_create_screens(struct wl_list *screens)
 		return false;
 	}
 
-	for (index = 0; index < resources->count_connectors;
-	     ++index, drmModeFreeConnector(connector)) {
-		connector = drmModeGetConnector(swc.drm->fd,
-		                                resources->connectors[index]);
+	for (i = 0; i < resources->count_connectors; ++i, drmModeFreeConnector(connector)) {
+		connector = drmModeGetConnector(swc.drm->fd, resources->connectors[i]);
 
 		if (connector->connection == DRM_MODE_CONNECTED) {
-			uint32_t crtc_index;
+			int crtc_index;
 			uint32_t id;
 
-			if (!find_available_crtc(resources, connector, taken_crtcs,
-			                         &crtc_index)) {
-				WARNING("Could not find CRTC for connector %u\n", index);
+			if (!find_available_crtc(resources, connector, taken_crtcs, &crtc_index)) {
+				WARNING("Could not find CRTC for connector %d\n", i);
 				continue;
 			}
 

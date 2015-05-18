@@ -27,17 +27,14 @@
 
 static void
 start_drag(struct wl_client *client, struct wl_resource *resource,
-           struct wl_resource *source_resource,
-           struct wl_resource *origin_resource,
+           struct wl_resource *source_resource, struct wl_resource *origin_resource,
            struct wl_resource *icon_resource, uint32_t serial)
 {
 	/* XXX: Implement */
 }
 
 static void
-set_selection(struct wl_client *client,
-              struct wl_resource *resource,
-              struct wl_resource *data_source, uint32_t serial)
+set_selection(struct wl_client *client, struct wl_resource *resource, struct wl_resource *data_source, uint32_t serial)
 {
 	struct data_device *data_device = wl_resource_get_user_data(resource);
 
@@ -52,17 +49,15 @@ set_selection(struct wl_client *client,
 
 	data_device->selection = data_source;
 
-	if (data_source) {
+	if (data_source)
 		wl_resource_add_destroy_listener(data_source, &data_device->selection_destroy_listener);
-	}
 
-	send_event(&data_device->event_signal,
-	           DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
+	send_event(&data_device->event_signal, DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
 static struct wl_data_device_interface data_device_implementation = {
-	.start_drag = &start_drag,
-	.set_selection = &set_selection
+	.start_drag = start_drag,
+	.set_selection = set_selection,
 };
 
 static void
@@ -71,8 +66,7 @@ handle_selection_destroy(struct wl_listener *listener, void *data)
 	struct data_device *data_device = wl_container_of(listener, data_device, selection_destroy_listener);
 
 	data_device->selection = NULL;
-	send_event(&data_device->event_signal,
-	           DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
+	send_event(&data_device->event_signal, DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
 bool
@@ -95,22 +89,17 @@ data_device_finalize(struct data_device *data_device)
 }
 
 void
-data_device_bind(struct data_device *data_device,
-                 struct wl_client *client, uint32_t version, uint32_t id)
+data_device_bind(struct data_device *data_device, struct wl_client *client, uint32_t version, uint32_t id)
 {
 	struct wl_resource *resource;
 
-	resource = wl_resource_create(client, &wl_data_device_interface,
-	                              version, id);
-	wl_resource_set_implementation(resource, &data_device_implementation,
-	                               data_device, &remove_resource);
+	resource = wl_resource_create(client, &wl_data_device_interface, version, id);
+	wl_resource_set_implementation(resource, &data_device_implementation, data_device, &remove_resource);
 	wl_list_insert(&data_device->resources, &resource->link);
 }
 
 static struct wl_resource *
-new_offer(struct wl_resource *resource,
-          struct wl_client *client,
-          struct wl_resource *source)
+new_offer(struct wl_resource *resource, struct wl_client *client, struct wl_resource *source)
 {
 	struct wl_resource *offer;
 
@@ -122,8 +111,7 @@ new_offer(struct wl_resource *resource,
 }
 
 void
-data_device_offer_selection(struct data_device *data_device,
-                            struct wl_client *client)
+data_device_offer_selection(struct data_device *data_device, struct wl_client *client)
 {
 	struct wl_resource *resource;
 	struct wl_resource *offer;
@@ -136,9 +124,7 @@ data_device_offer_selection(struct data_device *data_device,
 		return;
 
 	/* If we don't have a selection, send NULL to the client. */
-	offer = data_device->selection
-	            ? new_offer(resource, client, data_device->selection)
-	            : NULL;
+	offer = data_device->selection ? new_offer(resource, client, data_device->selection) : NULL;
 
 	wl_data_device_send_selection(resource, offer);
 }

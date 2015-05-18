@@ -53,8 +53,7 @@ static void
 update_position(struct panel *panel)
 {
 	int32_t x, y;
-	struct swc_rectangle *screen = &panel->screen->base.geometry,
-	                     *view = &panel->view->base.geometry;
+	struct swc_rectangle *screen = &panel->screen->base.geometry, *view = &panel->view->base.geometry;
 
 	switch (panel->edge) {
 	case SWC_PANEL_EDGE_TOP:
@@ -81,16 +80,16 @@ update_position(struct panel *panel)
 }
 
 static void
-dock(struct wl_client *client, struct wl_resource *resource,
-     uint32_t edge, struct wl_resource *screen_resource,
-     uint32_t focus)
+dock(struct wl_client *client, struct wl_resource *resource, uint32_t edge, struct wl_resource *screen_resource, uint32_t focus)
 {
 	struct panel *panel = wl_resource_get_user_data(resource);
-	struct screen *screen = screen_resource
-	                            ? wl_resource_get_user_data(screen_resource)
-	                            : wl_container_of(swc.screens.next, screen, link);
-	bool screen_changed = screen != panel->screen;
+	struct screen *screen;
 	uint32_t length;
+
+	if (screen_resource)
+		screen = wl_resource_get_user_data(screen_resource);
+	else
+		screen = wl_container_of(swc.screens.next, screen, link);
 
 	switch (edge) {
 	case SWC_PANEL_EDGE_TOP:
@@ -105,7 +104,7 @@ dock(struct wl_client *client, struct wl_resource *resource,
 		return;
 	}
 
-	if (panel->screen && screen_changed) {
+	if (panel->screen && screen != panel->screen) {
 		wl_list_remove(&panel->modifier.link);
 		screen_update_usable_geometry(panel->screen);
 	}
@@ -125,56 +124,51 @@ dock(struct wl_client *client, struct wl_resource *resource,
 }
 
 static void
-set_offset(struct wl_client *client, struct wl_resource *resource,
-           uint32_t offset)
+set_offset(struct wl_client *client, struct wl_resource *resource, uint32_t offset)
 {
 	struct panel *panel = wl_resource_get_user_data(resource);
 
 	panel->offset = offset;
-
 	if (panel->docked)
 		update_position(panel);
 }
 
 static void
-set_strut(struct wl_client *client, struct wl_resource *resource,
-          uint32_t size, uint32_t begin, uint32_t end)
+set_strut(struct wl_client *client, struct wl_resource *resource, uint32_t size, uint32_t begin, uint32_t end)
 {
 	struct panel *panel = wl_resource_get_user_data(resource);
 
 	panel->strut_size = size;
-
 	if (panel->docked)
 		screen_update_usable_geometry(panel->screen);
 }
 
 static const struct swc_panel_interface panel_implementation = {
-	.dock = &dock,
-	.set_offset = &set_offset,
-	.set_strut = &set_strut
+	.dock = dock,
+	.set_offset = set_offset,
+	.set_strut = set_strut,
 };
 
 static void
-handle_resize(struct view_handler *handler,
-              uint32_t old_width, uint32_t old_height)
+handle_resize(struct view_handler *handler, uint32_t old_width, uint32_t old_height)
 {
 	struct panel *panel = wl_container_of(handler, panel, view_handler);
-
 	update_position(panel);
 }
 
 static const struct view_handler_impl view_handler_impl = {
-	.resize = &handle_resize,
+	.resize = handle_resize,
 };
 
 static void
-modify(struct screen_modifier *modifier,
-       const struct swc_rectangle *geometry,
-       pixman_region32_t *usable)
+modify(struct screen_modifier *modifier, const struct swc_rectangle *geom, pixman_region32_t *usable)
 {
 	struct panel *panel = wl_container_of(modifier, panel, modifier);
 	pixman_box32_t box = {
-		.x1 = geometry->x, .y1 = geometry->y, .x2 = geometry->x + geometry->width, .y2 = geometry->y + geometry->height
+		.x1 = geom->x,
+		.y1 = geom->y,
+		.x2 = geom->x + geom->width,
+		.y2 = geom->y + geom->height
 	};
 
 	assert(panel->docked);
@@ -184,18 +178,16 @@ modify(struct screen_modifier *modifier,
 
 	switch (panel->edge) {
 	case SWC_PANEL_EDGE_TOP:
-		box.y1 = MAX(box.y1, geometry->y + panel->strut_size);
+		box.y1 = MAX(box.y1, geom->y + panel->strut_size);
 		break;
 	case SWC_PANEL_EDGE_BOTTOM:
-		box.y2 = MIN(box.y2, geometry->y + geometry->height
-		                         - panel->strut_size);
+		box.y2 = MIN(box.y2, geom->y + geom->height - panel->strut_size);
 		break;
 	case SWC_PANEL_EDGE_LEFT:
-		box.x1 = MAX(box.x1, geometry->x + panel->strut_size);
+		box.x1 = MAX(box.x1, geom->x + panel->strut_size);
 		break;
 	case SWC_PANEL_EDGE_RIGHT:
-		box.x2 = MIN(box.x2, geometry->x + geometry->width
-		                         - panel->strut_size);
+		box.x2 = MIN(box.x2, geom->x + geom->width - panel->strut_size);
 		break;
 	}
 
@@ -223,13 +215,11 @@ static void
 handle_surface_destroy(struct wl_listener *listener, void *data)
 {
 	struct panel *panel = wl_container_of(listener, panel, surface_destroy_listener);
-
 	wl_resource_destroy(panel->resource);
 }
 
 struct panel *
-panel_new(struct wl_client *client, uint32_t version,
-          uint32_t id, struct surface *surface)
+panel_new(struct wl_client *client, uint32_t version, uint32_t id, struct surface *surface)
 {
 	struct panel *panel;
 
@@ -238,8 +228,7 @@ panel_new(struct wl_client *client, uint32_t version,
 	if (!panel)
 		goto error0;
 
-	panel->resource = wl_resource_create(client, &swc_panel_interface,
-	                                     version, id);
+	panel->resource = wl_resource_create(client, &swc_panel_interface, version, id);
 
 	if (!panel->resource)
 		goto error1;
@@ -247,9 +236,7 @@ panel_new(struct wl_client *client, uint32_t version,
 	if (!(panel->view = compositor_create_view(surface)))
 		goto error2;
 
-	wl_resource_set_implementation(panel->resource, &panel_implementation,
-	                               panel, &destroy_panel);
-
+	wl_resource_set_implementation(panel->resource, &panel_implementation, panel, &destroy_panel);
 	panel->surface_destroy_listener.notify = &handle_surface_destroy;
 	panel->view_handler.impl = &view_handler_impl;
 	panel->modifier.modify = &modify;
@@ -257,10 +244,8 @@ panel_new(struct wl_client *client, uint32_t version,
 	panel->offset = 0;
 	panel->strut_size = 0;
 	panel->docked = false;
-
 	wl_list_insert(&panel->view->base.handlers, &panel->view_handler.link);
-	wl_resource_add_destroy_listener(surface->resource,
-	                                 &panel->surface_destroy_listener);
+	wl_resource_add_destroy_listener(surface->resource, &panel->surface_destroy_listener);
 
 	return panel;
 

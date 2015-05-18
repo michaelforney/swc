@@ -53,8 +53,7 @@ struct window {
 	bool managed;
 	unsigned mode;
 
-	struct
-	    {
+	struct {
 		struct window_pointer_interaction interaction;
 		struct {
 			int32_t x, y;
@@ -64,8 +63,7 @@ struct window {
 		int32_t x, y;
 	} move;
 
-	struct
-	    {
+	struct {
 		struct window_pointer_interaction interaction;
 		struct {
 			int32_t x, y;
@@ -73,8 +71,7 @@ struct window {
 		uint32_t edges;
 	} resize;
 
-	struct
-	    {
+	struct {
 		bool pending, acknowledged;
 		uint32_t width, height;
 	} configure;
@@ -91,25 +88,14 @@ struct window_impl {
 
 extern struct wl_listener window_enter_listener;
 
-bool window_initialize(struct window *window, const struct window_impl *impl,
-                       struct surface *surface);
-
+bool window_initialize(struct window *window, const struct window_impl *impl, struct surface *surface);
 void window_finalize(struct window *window);
-
 void window_manage(struct window *window);
-
 void window_unmanage(struct window *window);
-
-void window_set_title(struct window *window,
-                      const char *title, size_t length);
-
+void window_set_title(struct window *window, const char *title, size_t length);
 void window_set_app_id(struct window *window, const char *app_id);
-
 void window_set_parent(struct window *window, struct window *parent);
-
 void window_begin_move(struct window *window, struct button *button);
-
-void window_begin_resize(struct window *window, uint32_t edges,
-                         struct button *button);
+void window_begin_resize(struct window *window, uint32_t edges, struct button *button);
 
 #endif

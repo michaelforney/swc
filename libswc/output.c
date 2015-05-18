@@ -12,8 +12,7 @@
 #include <xf86drm.h>
 
 static void
-bind_output(struct wl_client *client, void *data,
-            uint32_t version, uint32_t id)
+bind_output(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
 	struct output *output = data;
 	struct screen *screen = output->screen;
@@ -35,8 +34,8 @@ bind_output(struct wl_client *client, void *data,
 	wl_list_insert(&output->resources, wl_resource_get_link(resource));
 
 	wl_output_send_geometry(resource, screen->base.geometry.x, screen->base.geometry.y,
-	                        output->physical_width, output->physical_height, 0, "unknown",
-	                        "unknown", WL_OUTPUT_TRANSFORM_NORMAL);
+	                        output->physical_width, output->physical_height,
+	                        0, "unknown", "unknown", WL_OUTPUT_TRANSFORM_NORMAL);
 
 	wl_array_for_each (mode, &output->modes) {
 		flags = 0;
@@ -45,8 +44,7 @@ bind_output(struct wl_client *client, void *data,
 		if (mode_equal(&screen->planes.framebuffer.mode, mode))
 			flags |= WL_OUTPUT_MODE_CURRENT;
 
-		wl_output_send_mode(resource, flags,
-		                    mode->width, mode->height, mode->refresh);
+		wl_output_send_mode(resource, flags, mode->width, mode->height, mode->refresh);
 	}
 
 	if (version >= 2)
@@ -58,15 +56,14 @@ output_new(drmModeConnectorPtr connector)
 {
 	struct output *output;
 	struct mode *modes;
-	uint32_t index;
+	uint32_t i;
 
 	if (!(output = malloc(sizeof *output))) {
 		ERROR("Failed to allocated output\n");
 		goto error0;
 	}
 
-	output->global = wl_global_create(swc.display, &wl_output_interface, 2,
-	                                  output, &bind_output);
+	output->global = wl_global_create(swc.display, &wl_output_interface, 2, output, &bind_output);
 
 	if (!output->global) {
 		ERROR("Failed to create output global\n");
@@ -88,11 +85,11 @@ output_new(drmModeConnectorPtr connector)
 	if (!modes)
 		goto error2;
 
-	for (index = 0; index < connector->count_modes; ++index) {
-		mode_initialize(&modes[index], &connector->modes[index]);
+	for (i = 0; i < connector->count_modes; ++i) {
+		mode_initialize(&modes[i], &connector->modes[i]);
 
-		if (modes[index].preferred)
-			output->preferred_mode = &modes[index];
+		if (modes[i].preferred)
+			output->preferred_mode = &modes[i];
 	}
 
 	return output;

@@ -51,7 +51,7 @@ attach(struct view *view, struct wld_buffer *buffer)
 		if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object)) {
 			ERROR("Could not get export buffer to DRM handle\n");
 			/* XXX: Not the best error code, but we don't know better until wld
-             * returns an actual error code. */
+			 * returns an actual error code. */
 			return -EINVAL;
 		}
 
@@ -84,9 +84,9 @@ move(struct view *view, int32_t x, int32_t y)
 }
 
 static const struct view_impl view_impl = {
-	.update = &update,
-	.attach = &attach,
-	.move = &move
+	.update = update,
+	.attach = attach,
+	.move = move,
 };
 
 static void
@@ -104,8 +104,7 @@ handle_swc_event(struct wl_listener *listener, void *data)
 }
 
 bool
-cursor_plane_initialize(struct cursor_plane *plane, uint32_t crtc,
-                        const struct swc_rectangle *origin)
+cursor_plane_initialize(struct cursor_plane *plane, uint32_t crtc, const struct swc_rectangle *origin)
 {
 	plane->origin = origin;
 	plane->crtc = crtc;

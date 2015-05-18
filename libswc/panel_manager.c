@@ -28,15 +28,12 @@
 #include <wayland-server.h>
 #include "protocol/swc-server-protocol.h"
 
-static struct
-    {
+static struct {
 	struct wl_global *global;
 } panel_manager;
 
 static void
-create_panel(struct wl_client *client,
-             struct wl_resource *resource, uint32_t id,
-             struct wl_resource *surface_resource)
+create_panel(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface_resource)
 {
 	struct surface *surface = wl_resource_get_user_data(surface_resource);
 
@@ -45,30 +42,25 @@ create_panel(struct wl_client *client,
 }
 
 static const struct swc_panel_manager_interface panel_manager_implementation = {
-	.create_panel = &create_panel
+	.create_panel = create_panel,
 };
 
 static void
-bind_panel_manager(struct wl_client *client, void *data,
-                   uint32_t version, uint32_t id)
+bind_panel_manager(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
 	struct wl_resource *resource;
 
 	if (version > 1)
 		version = 1;
 
-	resource = wl_resource_create(client, &swc_panel_manager_interface,
-	                              version, id);
-	wl_resource_set_implementation(resource, &panel_manager_implementation,
-	                               NULL, NULL);
+	resource = wl_resource_create(client, &swc_panel_manager_interface, version, id);
+	wl_resource_set_implementation(resource, &panel_manager_implementation, NULL, NULL);
 }
 
 bool
 panel_manager_initialize(void)
 {
-	panel_manager.global = wl_global_create(swc.display,
-	                                        &swc_panel_manager_interface, 1,
-	                                        NULL, &bind_panel_manager);
+	panel_manager.global = wl_global_create(swc.display, &swc_panel_manager_interface, 1, NULL, &bind_panel_manager);
 
 	if (!panel_manager.global)
 		return false;
@@ -81,5 +73,3 @@ panel_manager_finalize(void)
 {
 	wl_global_destroy(panel_manager.global);
 }
-
-// vim: fdm=syntax fo=croql et sw=4 sts=4 ts=8

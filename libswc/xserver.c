@@ -44,8 +44,7 @@
 #define SOCKET_DIR "/tmp/.X11-unix"
 #define SOCKET_FMT SOCKET_DIR "/X%d"
 
-static struct
-    {
+static struct {
 	struct wl_resource *resource;
 	struct wl_event_source *usr1_source;
 	int display;
@@ -65,7 +64,7 @@ open_socket(struct sockaddr_un *addr, size_t path_size)
 		goto error0;
 
 	/* Unlink the socket location in case it was being used by a process which
-     * left around a stale lockfile. */
+	 * left around a stale lockfile. */
 	unlink(addr->sun_path);
 
 	if (bind(fd, (struct sockaddr *)addr, size) < 0)
@@ -90,7 +89,7 @@ open_display(void)
 {
 	char lock_name[64], pid[12];
 	int lock_fd;
-	struct sockaddr_un addr = {.sun_family = AF_LOCAL };
+	struct sockaddr_un addr = {.sun_family = AF_LOCAL};
 	size_t path_size;
 
 	xserver.display = 0;
@@ -149,20 +148,17 @@ begin:
 
 	/* Bind to abstract socket */
 	addr.sun_path[0] = '\0';
-	path_size = snprintf(addr.sun_path + 1, sizeof addr.sun_path - 1,
-	                     SOCKET_FMT, xserver.display);
+	path_size = snprintf(addr.sun_path + 1, sizeof addr.sun_path - 1, SOCKET_FMT, xserver.display);
 	if ((xserver.abstract_fd = open_socket(&addr, path_size)) < 0)
 		goto retry1;
 
 	/* Bind to unix socket */
 	mkdir(SOCKET_DIR, 0777);
-	path_size = snprintf(addr.sun_path, sizeof addr.sun_path,
-	                     SOCKET_FMT, xserver.display);
+	path_size = snprintf(addr.sun_path, sizeof addr.sun_path, SOCKET_FMT, xserver.display);
 	if ((xserver.unix_fd = open_socket(&addr, path_size)) < 0)
 		goto retry2;
 
-	snprintf(xserver.display_name, sizeof xserver.display_name,
-	         ":%d", xserver.display);
+	snprintf(xserver.display_name, sizeof xserver.display_name, ":%d", xserver.display);
 	setenv("DISPLAY", xserver.display_name, true);
 
 	return true;
@@ -208,8 +204,7 @@ xserver_initialize(void)
 		goto error0;
 	}
 
-	xserver.usr1_source = wl_event_loop_add_signal(swc.event_loop, SIGUSR1,
-	                                               &handle_usr1, NULL);
+	xserver.usr1_source = wl_event_loop_add_signal(swc.event_loop, SIGUSR1, &handle_usr1, NULL);
 
 	if (!xserver.usr1_source) {
 		ERROR("Failed to create SIGUSR1 event source\n");
@@ -241,27 +236,24 @@ xserver_initialize(void)
 		unsigned index;
 		struct sigaction action = {.sa_handler = SIG_IGN };
 
-		/* Unset the FD_CLOEXEC flag on the FDs that will get passed to
-             * Xwayland. */
+		/* Unset the FD_CLOEXEC flag on the FDs that will get passed to Xwayland. */
 		for (index = 0; index < ARRAY_LENGTH(fds); ++index) {
 			if (fcntl(fds[index], F_SETFD, 0) != 0) {
 				ERROR("fcntl() failed: %s\n", strerror(errno));
 				goto fail;
 			}
 
-			if (snprintf(strings[index], sizeof strings[index],
-			             "%d", fds[index]) >= sizeof strings[index]) {
+			if (snprintf(strings[index], sizeof strings[index], "%d", fds[index]) >= sizeof strings[index]) {
 				ERROR("FD is too large\n");
 				goto fail;
 			}
 		}
 
-		/* Ignore the USR1 signal so that Xwayland will send a USR1 signal
-             * to the parent process (us) after it finishes initializing. See
-             * Xserver(1) for more details. */
+		/* Ignore the USR1 signal so that Xwayland will send a USR1 signal to the
+		 * parent process (us) after it finishes initializing. See Xserver(1) for
+		 * more details. */
 		if (sigaction(SIGUSR1, &action, NULL) != 0) {
-			ERROR("Failed to set SIGUSR1 handler to SIG_IGN: %s\n",
-			      strerror(errno));
+			ERROR("Failed to set SIGUSR1 handler to SIG_IGN: %s\n", strerror(errno));
 			goto fail;
 		}
 
@@ -279,8 +271,7 @@ xserver_initialize(void)
 		exit(EXIT_FAILURE);
 	}
 	case -1:
-		ERROR("fork() failed when trying to start X server: %s\n",
-		      strerror(errno));
+		ERROR("fork() failed when trying to start X server: %s\n", strerror(errno));
 		goto error5;
 	}
 

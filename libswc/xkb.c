@@ -103,8 +103,7 @@ xkb_update_keymap(struct xkb *xkb)
 {
 	const char *keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
 	char *keymap_string;
-	char keymap_path[strlen(keymap_directory) + 1
-	                 + sizeof keymap_file_template];
+	char keymap_path[strlen(keymap_directory) + 1 + sizeof keymap_file_template];
 
 	xkb->indices.ctrl = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_CTRL);
 	xkb->indices.alt = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_ALT);
@@ -113,8 +112,7 @@ xkb_update_keymap(struct xkb *xkb)
 
 	/* In order to send the keymap to clients, we must first convert it to a
      * string and then mmap it to a file. */
-	keymap_string = xkb_keymap_get_as_string(xkb->keymap.map,
-	                                         XKB_KEYMAP_FORMAT_TEXT_V1);
+	keymap_string = xkb_keymap_get_as_string(xkb->keymap.map, XKB_KEYMAP_FORMAT_TEXT_V1);
 
 	if (!keymap_string) {
 		WARNING("Could not get XKB keymap as a string\n");
@@ -138,8 +136,7 @@ xkb_update_keymap(struct xkb *xkb)
 		goto error2;
 	}
 
-	xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE,
-	                        MAP_SHARED, xkb->keymap.fd, 0);
+	xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE, MAP_SHARED, xkb->keymap.fd, 0);
 
 	if (xkb->keymap.area == MAP_FAILED) {
 		WARNING("Could not mmap XKB keymap string\n");

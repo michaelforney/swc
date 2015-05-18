@@ -82,9 +82,7 @@ configure(struct window *window, uint32_t width, uint32_t height)
 
 	window->configure.acknowledged = false;
 	xdg_surface->configure_serial = wl_display_next_serial(swc.display);
-	xdg_surface_send_configure(xdg_surface->resource, width, height,
-	                           &xdg_surface->states,
-	                           xdg_surface->configure_serial);
+	xdg_surface_send_configure(xdg_surface->resource, width, height, &xdg_surface->states, xdg_surface->configure_serial);
 }
 
 static void
@@ -152,11 +150,9 @@ destroy(struct wl_client *client, struct wl_resource *resource)
 }
 
 static void
-set_parent(struct wl_client *client, struct wl_resource *resource,
-           struct wl_resource *parent_resource)
+set_parent(struct wl_client *client, struct wl_resource *resource, struct wl_resource *parent_resource)
 {
-	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource),
-	                   *parent_surface;
+	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource), *parent_surface;
 	struct window *parent_window = NULL;
 
 	if (parent_resource) {
@@ -168,34 +164,27 @@ set_parent(struct wl_client *client, struct wl_resource *resource,
 }
 
 static void
-set_title(struct wl_client *client, struct wl_resource *resource,
-          const char *title)
+set_title(struct wl_client *client, struct wl_resource *resource, const char *title)
 {
 	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource);
-
 	window_set_title(&xdg_surface->window, title, -1);
 }
 
 static void
-set_app_id(struct wl_client *client, struct wl_resource *resource,
-           const char *app_id)
+set_app_id(struct wl_client *client, struct wl_resource *resource, const char *app_id)
 {
 	struct xdg_surface *surface = wl_resource_get_user_data(resource);
-
 	window_set_app_id(&surface->window, app_id);
 }
 
 static void
-show_window_menu(struct wl_client *client,
-                 struct wl_resource *resource,
-                 struct wl_resource *seat_resource,
-                 uint32_t serial, int32_t x, int32_t y)
+show_window_menu(struct wl_client *client, struct wl_resource *resource,
+                 struct wl_resource *seat_resource, uint32_t serial, int32_t x, int32_t y)
 {
 }
 
 static void
-move(struct wl_client *client, struct wl_resource *resource,
-     struct wl_resource *seat_resource, uint32_t serial)
+move(struct wl_client *client, struct wl_resource *resource, struct wl_resource *seat_resource, uint32_t serial)
 {
 	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource);
 	struct button *button;
@@ -208,8 +197,7 @@ move(struct wl_client *client, struct wl_resource *resource,
 
 static void
 resize(struct wl_client *client, struct wl_resource *resource,
-       struct wl_resource *seat_resource, uint32_t serial,
-       uint32_t edges)
+       struct wl_resource *seat_resource, uint32_t serial, uint32_t edges)
 {
 	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource);
 	struct button *button;
@@ -221,8 +209,7 @@ resize(struct wl_client *client, struct wl_resource *resource,
 }
 
 static void
-ack_configure(struct wl_client *client,
-              struct wl_resource *resource, uint32_t serial)
+ack_configure(struct wl_client *client, struct wl_resource *resource, uint32_t serial)
 {
 	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource);
 
@@ -231,72 +218,63 @@ ack_configure(struct wl_client *client,
 }
 
 static void
-set_window_geometry(struct wl_client *client,
-                    struct wl_resource *resource,
-                    int32_t x, int32_t y,
-                    int32_t width, int32_t height)
+set_window_geometry(struct wl_client *client, struct wl_resource *resource,
+                    int32_t x, int32_t y, int32_t width, int32_t height)
 {
 	/* TODO: Implement set_window_geometry. */
 }
 
 static void
-set_maximized(struct wl_client *client,
-              struct wl_resource *resource)
+set_maximized(struct wl_client *client, struct wl_resource *resource)
 {
 	/* TODO: Implement set_maximized. */
 }
 
 static void
-unset_maximized(struct wl_client *client,
-                struct wl_resource *resource)
+unset_maximized(struct wl_client *client, struct wl_resource *resource)
 {
 	/* TODO: Implement unset_maximized. */
 }
 
 static void
-set_fullscreen(struct wl_client *client,
-               struct wl_resource *resource,
-               struct wl_resource *output_resource)
+set_fullscreen(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource)
 {
 	/* TODO: Implement set_fullscreen. */
 }
 
 static void
-unset_fullscreen(struct wl_client *client,
-                 struct wl_resource *resource)
+unset_fullscreen(struct wl_client *client, struct wl_resource *resource)
 {
 	/* TODO: Implement unset_fullscreen. */
 }
 
 static void
-set_minimized(struct wl_client *client,
-              struct wl_resource *resource)
+set_minimized(struct wl_client *client, struct wl_resource *resource)
 {
 	/* TODO: Implement set_minimized. */
 }
 
 static const struct xdg_surface_interface xdg_surface_implementation = {
-	.destroy = &destroy,
-	.set_parent = &set_parent,
-	.set_title = &set_title,
-	.set_app_id = &set_app_id,
-	.show_window_menu = &show_window_menu,
-	.move = &move,
-	.resize = &resize,
-	.ack_configure = &ack_configure,
-	.set_window_geometry = &set_window_geometry,
-	.set_maximized = &set_maximized,
-	.unset_maximized = &unset_maximized,
-	.set_fullscreen = &set_fullscreen,
-	.unset_fullscreen = &unset_fullscreen,
-	.set_minimized = &set_minimized,
+	.destroy = destroy,
+	.set_parent = set_parent,
+	.set_title = set_title,
+	.set_app_id = set_app_id,
+	.show_window_menu = show_window_menu,
+	.move = move,
+	.resize = resize,
+	.ack_configure = ack_configure,
+	.set_window_geometry = set_window_geometry,
+	.set_maximized = set_maximized,
+	.unset_maximized = unset_maximized,
+	.set_fullscreen = set_fullscreen,
+	.unset_fullscreen = unset_fullscreen,
+	.set_minimized = set_minimized,
 };
 
 static void
 handle_surface_destroy(struct wl_listener *listener, void *data)
 {
 	struct xdg_surface *xdg_surface = wl_container_of(listener, xdg_surface, surface_destroy_listener);
-
 	wl_resource_destroy(xdg_surface->resource);
 }
 
@@ -311,9 +289,7 @@ destroy_xdg_surface(struct wl_resource *resource)
 }
 
 struct xdg_surface *
-xdg_surface_new(struct wl_client *client,
-                uint32_t version, uint32_t id,
-                struct surface *surface)
+xdg_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struct surface *surface)
 {
 	struct xdg_surface *xdg_surface;
 
@@ -322,8 +298,7 @@ xdg_surface_new(struct wl_client *client,
 	if (!xdg_surface)
 		goto error0;
 
-	xdg_surface->resource = wl_resource_create(client, &xdg_surface_interface,
-	                                           version, id);
+	xdg_surface->resource = wl_resource_create(client, &xdg_surface_interface, version, id);
 
 	if (!xdg_surface->resource)
 		goto error1;
@@ -331,11 +306,8 @@ xdg_surface_new(struct wl_client *client,
 	window_initialize(&xdg_surface->window, &xdg_surface_window_impl, surface);
 	xdg_surface->surface_destroy_listener.notify = &handle_surface_destroy;
 	wl_array_init(&xdg_surface->states);
-	wl_resource_add_destroy_listener(surface->resource,
-	                                 &xdg_surface->surface_destroy_listener);
-	wl_resource_set_implementation(xdg_surface->resource,
-	                               &xdg_surface_implementation,
-	                               xdg_surface, &destroy_xdg_surface);
+	wl_resource_add_destroy_listener(surface->resource, &xdg_surface->surface_destroy_listener);
+	wl_resource_set_implementation(xdg_surface->resource, &xdg_surface_implementation, xdg_surface, &destroy_xdg_surface);
 	window_manage(&xdg_surface->window);
 
 	return xdg_surface;

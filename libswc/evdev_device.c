@@ -50,47 +50,42 @@ timeval_to_msec(struct timeval *time)
 }
 
 static void
-handle_key_event(struct evdev_device *device,
-                 struct input_event *input_event)
+handle_key_event(struct evdev_device *device, struct input_event *ev)
 {
-	uint32_t time = timeval_to_msec(&input_event->time);
+	uint32_t time = timeval_to_msec(&ev->time);
 	uint32_t state;
 
-	if ((input_event->code >= BTN_MISC && input_event->code <= BTN_GEAR_UP)
-	    || input_event->code >= BTN_TRIGGER_HAPPY) {
-		state = input_event->value ? WL_POINTER_BUTTON_STATE_PRESSED
-		                           : WL_POINTER_BUTTON_STATE_RELEASED;
-		device->handler->button(time, input_event->code, state);
+	if ((ev->code >= BTN_MISC && ev->code <= BTN_GEAR_UP) || ev->code >= BTN_TRIGGER_HAPPY) {
+		state = ev->value ? WL_POINTER_BUTTON_STATE_PRESSED : WL_POINTER_BUTTON_STATE_RELEASED;
+		device->handler->button(time, ev->code, state);
 	} else {
-		state = input_event->value ? WL_KEYBOARD_KEY_STATE_PRESSED
-		                           : WL_KEYBOARD_KEY_STATE_RELEASED;
-		device->handler->key(time, input_event->code, state);
+		state = ev->value ? WL_KEYBOARD_KEY_STATE_PRESSED : WL_KEYBOARD_KEY_STATE_RELEASED;
+		device->handler->key(time, ev->code, state);
 	}
 }
 
 static void
-handle_rel_event(struct evdev_device *device,
-                 struct input_event *input_event)
+handle_rel_event(struct evdev_device *device, struct input_event *ev)
 {
-	uint32_t time = timeval_to_msec(&input_event->time);
+	uint32_t time = timeval_to_msec(&ev->time);
 	uint32_t axis, amount;
 
-	switch (input_event->code) {
+	switch (ev->code) {
 	case REL_X:
-		device->motion.rel.dx += input_event->value;
+		device->motion.rel.dx += ev->value;
 		device->motion.rel.pending = true;
 		return;
 	case REL_Y:
-		device->motion.rel.dy += input_event->value;
+		device->motion.rel.dy += ev->value;
 		device->motion.rel.pending = true;
 		return;
 	case REL_WHEEL:
 		axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
-		amount = -AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
+		amount = -AXIS_STEP_DISTANCE * wl_fixed_from_int(ev->value);
 		break;
 	case REL_HWHEEL:
 		axis = WL_POINTER_AXIS_HORIZONTAL_SCROLL;
-		amount = AXIS_STEP_DISTANCE * wl_fixed_from_int(input_event->value);
+		amount = AXIS_STEP_DISTANCE * wl_fixed_from_int(ev->value);
 		break;
 	default:
 		return;
@@ -100,28 +95,25 @@ handle_rel_event(struct evdev_device *device,
 }
 
 static void
-handle_abs_event(struct evdev_device *device,
-                 struct input_event *input_event)
+handle_abs_event(struct evdev_device *device, struct input_event *input_event)
 {
 }
 
-static void (*event_handlers[])(struct evdev_device *device,
-                                struct input_event *input_event) = {
-	    [EV_KEY] = &handle_key_event,
-	    [EV_REL] = &handle_rel_event,
-	    [EV_ABS] = &handle_abs_event
+static void (*event_handlers[])(struct evdev_device *device, struct input_event *ev) = {
+	[EV_KEY] = handle_key_event,
+	[EV_REL] = handle_rel_event,
+	[EV_ABS] = handle_abs_event,
 };
 
 static bool
-is_motion_event(struct input_event *event)
+is_motion_event(struct input_event *ev)
 {
-	return (event->type == EV_REL && (event->code == REL_X || event->code == REL_Y))
-	       || (event->type == EV_ABS && (event->code == ABS_X || event->code == ABS_Y));
+	return (ev->type == EV_REL && (ev->code == REL_X || ev->code == REL_Y))
+	    || (ev->type == EV_ABS && (ev->code == ABS_X || ev->code == ABS_Y));
 }
 
 static void
-handle_motion_events(struct evdev_device *device,
-                     uint32_t time)
+handle_motion_events(struct evdev_device *device, uint32_t time)
 {
 	if (device->motion.rel.pending) {
 		wl_fixed_t dx = wl_fixed_from_int(device->motion.rel.dx);
@@ -136,16 +128,13 @@ handle_motion_events(struct evdev_device *device,
 }
 
 static void
-handle_event(struct evdev_device *device,
-             struct input_event *event)
+handle_event(struct evdev_device *device, struct input_event *ev)
 {
-	if (!is_motion_event(event))
-		handle_motion_events(device, timeval_to_msec(&event->time));
+	if (!is_motion_event(ev))
+		handle_motion_events(device, timeval_to_msec(&ev->time));
 
-	if (event->type < ARRAY_SIZE(event_handlers)
-	    && event_handlers[event->type]) {
-		event_handlers[event->type](device, event);
-	}
+	if (ev->type < ARRAY_SIZE(event_handlers) && event_handlers[ev->type])
+		event_handlers[ev->type](device, ev);
 }
 
 static void
@@ -162,29 +151,30 @@ handle_data(int fd, uint32_t mask, void *data)
 {
 	struct evdev_device *device = data;
 	struct input_event event;
-	unsigned flags = device->needs_sync ? LIBEVDEV_READ_FLAG_FORCE_SYNC
-	                                    : LIBEVDEV_READ_FLAG_NORMAL;
+	unsigned flags = device->needs_sync ? LIBEVDEV_READ_FLAG_FORCE_SYNC : LIBEVDEV_READ_FLAG_NORMAL;
 	int ret;
 
 	device->needs_sync = false;
 
-	while (true) {
+	for (;;) {
 		ret = libevdev_next_event(device->dev, flags, &event);
 
-		if (ret < 0)
-			goto done;
-		else if (ret == LIBEVDEV_READ_STATUS_SUCCESS)
+		switch (ret) {
+		case LIBEVDEV_READ_STATUS_SUCCESS:
 			handle_event(device, &event);
-		else {
+			break;
+		case LIBEVDEV_READ_STATUS_SYNC:
 			while (ret == LIBEVDEV_READ_STATUS_SYNC) {
-				ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_SYNC,
-				                          &event);
+				ret = libevdev_next_event(device->dev, LIBEVDEV_READ_FLAG_SYNC, &event);
 
 				if (ret < 0)
 					goto done;
 
 				handle_event(device, &event);
 			}
+			break;
+		default:
+			goto done;
 		}
 	}
 
@@ -240,8 +230,9 @@ evdev_device_new(const char *path, const struct evdev_device_handler *handler)
 	}
 
 	if (libevdev_has_event_code(device->dev, EV_REL, REL_X)
-	    && libevdev_has_event_code(device->dev, EV_REL, REL_Y)
-	    && libevdev_has_event_code(device->dev, EV_KEY, BTN_MOUSE)) {
+	 && libevdev_has_event_code(device->dev, EV_REL, REL_Y)
+	 && libevdev_has_event_code(device->dev, EV_KEY, BTN_MOUSE))
+	{
 		device->capabilities |= WL_SEAT_CAPABILITY_POINTER;
 		DEBUG("\tThis device is a pointer\n");
 	}
@@ -279,12 +270,10 @@ evdev_device_reopen(struct evdev_device *device)
 	if (device->source)
 		close_device(device);
 
-	device->fd = launch_open_device(device->path,
-	                                O_RDWR | O_NONBLOCK | O_CLOEXEC);
+	device->fd = launch_open_device(device->path, O_RDWR | O_NONBLOCK | O_CLOEXEC);
 
 	if (device->fd == -1) {
-		WARNING("Failed to reopen input device at %s: %s\n",
-		        device->path, strerror(errno));
+		WARNING("Failed to reopen input device at %s: %s\n", device->path, strerror(errno));
 		goto error0;
 	}
 
@@ -293,8 +282,8 @@ evdev_device_reopen(struct evdev_device *device)
 		goto error1;
 	}
 
-	/* According to libevdev documentation, after changing the fd for the
-     * device, you should force a sync to bring it's state up to date. */
+	/* According to libevdev documentation, after changing the fd for the device,
+	 * you should force a sync to bring it's state up to date. */
 	device->needs_sync = true;
 	device->source = wl_event_loop_add_fd(swc.event_loop, device->fd, WL_EVENT_READABLE, handle_data, device);
 

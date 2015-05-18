@@ -24,8 +24,7 @@
 #ifndef SWC_SUBCOMPOSITOR_H
 #define SWC_SUBCOMPOSITOR_H
 
-bool subcompositor_initialize();
-
-void subcompositor_finalize();
+bool subcompositor_initialize(void);
+void subcompositor_finalize(void);
 
 #endif

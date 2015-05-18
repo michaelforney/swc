@@ -45,10 +45,8 @@ struct keyboard_modifier_state {
 };
 
 struct keyboard_handler {
-	bool (*key)(struct keyboard *keyboard, uint32_t time,
-	            struct key *key, uint32_t state);
-	bool (*modifiers)(struct keyboard *keyboard,
-	                  const struct keyboard_modifier_state *state);
+	bool (*key)(struct keyboard *keyboard, uint32_t time, struct key *key, uint32_t state);
+	bool (*modifiers)(struct keyboard *keyboard, const struct keyboard_modifier_state *state);
 
 	struct wl_list link;
 };
@@ -70,12 +68,8 @@ struct keyboard {
 bool keyboard_initialize(struct keyboard *keyboard);
 void keyboard_finalize(struct keyboard *keyboard);
 void keyboard_reset(struct keyboard *keyboard);
-void keyboard_set_focus(struct keyboard *keyboard,
-                        struct compositor_view *view);
-struct wl_resource *keyboard_bind(struct keyboard *keyboard,
-                                  struct wl_client *client,
-                                  uint32_t version, uint32_t id);
-void keyboard_handle_key(struct keyboard *keyboard, uint32_t time,
-                         uint32_t key, uint32_t state);
+void keyboard_set_focus(struct keyboard *keyboard, struct compositor_view *view);
+struct wl_resource *keyboard_bind(struct keyboard *keyboard, struct wl_client *client, uint32_t version, uint32_t id);
+void keyboard_handle_key(struct keyboard *keyboard, uint32_t time, uint32_t key, uint32_t state);
 
 #endif

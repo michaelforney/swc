@@ -44,9 +44,9 @@
 #define MESSAGE_SOURCE
 #endif
 
-#define MESSAGE(type, format, ...)                                \
-	do {                                                      \
-		MESSAGE_SOURCE                                    \
+#define MESSAGE(type, format, ...) \
+	do { \
+		MESSAGE_SOURCE \
 		fprintf(stderr, type ": " format, ##__VA_ARGS__); \
 	} while (false)
 
@@ -84,8 +84,7 @@ rectangle_contains_point(const struct swc_rectangle *rectangle, int32_t x, int32
 }
 
 static inline bool
-rectangle_overlap(const struct swc_rectangle *r1,
-                  const struct swc_rectangle *r2)
+rectangle_overlap(const struct swc_rectangle *r1, const struct swc_rectangle *r2)
 {
 	return (MAX(r1->x + r1->width, r2->x + r2->width) - MIN(r1->x, r2->x)
 	        < r1->width + r2->width)
@@ -94,8 +93,7 @@ rectangle_overlap(const struct swc_rectangle *r1,
 }
 
 static inline void
-array_remove(struct wl_array *array,
-             void *item, size_t size)
+array_remove(struct wl_array *array, void *item, size_t size)
 {
 	size_t bytes = array->size - ((intptr_t)item + size - (intptr_t)array->data);
 	if (bytes > 0)

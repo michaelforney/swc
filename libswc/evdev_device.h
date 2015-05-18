@@ -50,12 +50,9 @@ struct evdev_device {
 
 	const struct evdev_device_handler *handler;
 
-	struct
-	    {
-		struct
-		    {
-			struct
-			    {
+	struct {
+		struct {
+			struct {
 				struct input_absinfo x, y;
 			} info;
 
@@ -63,8 +60,7 @@ struct evdev_device {
 			bool pending;
 		} abs;
 
-		struct
-		    {
+		struct {
 			int32_t dx, dy;
 			bool pending;
 		} rel;
@@ -77,9 +73,7 @@ struct evdev_device {
 };
 
 struct evdev_device *evdev_device_new(const char *path, const struct evdev_device_handler *handler);
-
 void evdev_device_destroy(struct evdev_device *device);
-
 bool evdev_device_reopen(struct evdev_device *device);
 
 #endif

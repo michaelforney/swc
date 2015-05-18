@@ -40,11 +40,7 @@ struct framebuffer_plane {
 	struct wl_listener swc_listener;
 };
 
-bool framebuffer_plane_initialize(struct framebuffer_plane *plane,
-                                  uint32_t crtc, struct mode *mode,
-                                  uint32_t *connectors,
-                                  uint32_t num_connectors);
-
+bool framebuffer_plane_initialize(struct framebuffer_plane *plane, uint32_t crtc, struct mode *mode, uint32_t *connectors, uint32_t num_connectors);
 void framebuffer_plane_finalize(struct framebuffer_plane *plane);
 
 #endif

@@ -24,12 +24,11 @@
 #ifndef SWC_PANEL_H
 #define SWC_PANEL_H
 
-#include "screen.h"
+#include <stdint.h>
 
-#include <stdbool.h>
-#include <wayland-server.h>
+struct surface;
+struct wl_client;
 
-struct panel *panel_new(struct wl_client *client, uint32_t version,
-                        uint32_t id, struct surface *surface);
+struct panel *panel_new(struct wl_client *client, uint32_t version, uint32_t id, struct surface *surface);
 
 #endif

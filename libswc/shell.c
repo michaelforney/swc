@@ -27,33 +27,28 @@
 
 #include <wayland-server.h>
 
-static struct
-    {
+static struct {
 	struct wl_global *global;
 } shell;
 
 static void
-get_shell_surface(struct wl_client *client,
-                  struct wl_resource *resource, uint32_t id,
-                  struct wl_resource *surface_resource)
+get_shell_surface(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface_resource)
 {
 	struct surface *surface = wl_resource_get_user_data(surface_resource);
 	struct shell_surface *shell_surface;
 
-	shell_surface = shell_surface_new(client, wl_resource_get_version(resource),
-	                                  id, surface);
+	shell_surface = shell_surface_new(client, wl_resource_get_version(resource), id, surface);
 
 	if (!shell_surface)
 		wl_resource_post_no_memory(resource);
 }
 
 static const struct wl_shell_interface shell_implementation = {
-	&get_shell_surface
+	.get_shell_surface = get_shell_surface,
 };
 
 static void
-bind_shell(struct wl_client *client, void *data,
-           uint32_t version, uint32_t id)
+bind_shell(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
 	struct wl_resource *resource;
 
@@ -67,9 +62,7 @@ bind_shell(struct wl_client *client, void *data,
 bool
 shell_initialize(void)
 {
-	shell.global = wl_global_create(swc.display, &wl_shell_interface, 1,
-	                                NULL, &bind_shell);
-
+	shell.global = wl_global_create(swc.display, &wl_shell_interface, 1, NULL, &bind_shell);
 	return shell.global;
 }
 

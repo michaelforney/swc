@@ -45,9 +45,7 @@ struct framebuffer {
 };
 
 static bool
-framebuffer_export(struct wld_exporter *exporter,
-                   struct wld_buffer *buffer,
-                   uint32_t type, union wld_object *object)
+framebuffer_export(struct wld_exporter *exporter, struct wld_buffer *buffer, uint32_t type, union wld_object *object)
 {
 	struct framebuffer *framebuffer = wl_container_of(exporter, framebuffer, exporter);
 
@@ -103,8 +101,7 @@ attach(struct view *view, struct wld_buffer *buffer)
 		if (!(framebuffer = malloc(sizeof *framebuffer)))
 			return -ENOMEM;
 
-		ret = drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32,
-		                   buffer->pitch, object.u32, &framebuffer->id);
+		ret = drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32, buffer->pitch, object.u32, &framebuffer->id);
 
 		if (ret < 0) {
 			free(framebuffer);
@@ -120,21 +117,17 @@ attach(struct view *view, struct wld_buffer *buffer)
 	}
 
 	if (plane->need_modeset) {
-		ret = drmModeSetCrtc(swc.drm->fd, plane->crtc, object.u32, 0, 0,
-		                     plane->connectors.data, plane->connectors.size / 4,
-		                     &plane->mode.info);
+		ret = drmModeSetCrtc(swc.drm->fd, plane->crtc, object.u32, 0, 0, plane->connectors.data, plane->connectors.size / 4, &plane->mode.info);
 
 		if (ret == 0) {
 			wl_event_loop_add_idle(swc.event_loop, &send_frame, plane);
 			plane->need_modeset = false;
 		} else {
-			ERROR("Could not set CRTC to next framebuffer: %s\n",
-			      strerror(-ret));
+			ERROR("Could not set CRTC to next framebuffer: %s\n", strerror(-ret));
 			return ret;
 		}
 	} else {
-		ret = drmModePageFlip(swc.drm->fd, plane->crtc, object.u32,
-		                      DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler);
+		ret = drmModePageFlip(swc.drm->fd, plane->crtc, object.u32, DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler);
 
 		if (ret < 0) {
 			ERROR("Page flip failed: %s\n", strerror(errno));
@@ -149,21 +142,19 @@ static bool
 move(struct view *view, int32_t x, int32_t y)
 {
 	view_set_position(view, x, y);
-
 	return true;
 }
 
 const static struct view_impl view_impl = {
-	.update = &update,
-	.attach = &attach,
-	.move = &move
+	.update = update,
+	.attach = attach,
+	.move = move,
 };
 
 static void
 handle_page_flip(struct drm_handler *handler, uint32_t time)
 {
 	struct framebuffer_plane *plane = wl_container_of(handler, plane, drm_handler);
-
 	view_frame(&plane->view, time);
 }
 
@@ -181,22 +172,17 @@ handle_swc_event(struct wl_listener *listener, void *data)
 }
 
 bool
-framebuffer_plane_initialize(struct framebuffer_plane *plane,
-                             uint32_t crtc, struct mode *mode,
-                             uint32_t *connectors,
-                             uint32_t num_connectors)
+framebuffer_plane_initialize(struct framebuffer_plane *plane, uint32_t crtc, struct mode *mode, uint32_t *connectors, uint32_t num_connectors)
 {
 	uint32_t *plane_connectors;
 
 	if (!(plane->original_crtc_state = drmModeGetCrtc(swc.drm->fd, crtc))) {
-		ERROR("Failed to get CRTC state for CRTC %u: %s\n",
-		      crtc, strerror(errno));
+		ERROR("Failed to get CRTC state for CRTC %u: %s\n", crtc, strerror(errno));
 		goto error0;
 	}
 
 	wl_array_init(&plane->connectors);
-	plane_connectors = wl_array_add(&plane->connectors,
-	                                num_connectors * sizeof connectors[0]);
+	plane_connectors = wl_array_add(&plane->connectors, num_connectors * sizeof connectors[0]);
 
 	if (!plane_connectors) {
 		ERROR("Failed to allocate connector array\n");
@@ -227,7 +213,6 @@ framebuffer_plane_finalize(struct framebuffer_plane *plane)
 {
 	wl_array_release(&plane->connectors);
 	drmModeCrtcPtr crtc = plane->original_crtc_state;
-	drmModeSetCrtc(swc.drm->fd, crtc->crtc_id, crtc->buffer_id,
-	               crtc->x, crtc->y, NULL, 0, &crtc->mode);
+	drmModeSetCrtc(swc.drm->fd, crtc->crtc_id, crtc->buffer_id, crtc->x, crtc->y, NULL, 0, &crtc->mode);
 	drmModeFreeCrtc(crtc);
 }

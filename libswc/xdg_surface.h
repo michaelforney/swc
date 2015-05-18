@@ -29,8 +29,6 @@
 struct surface;
 struct wl_client;
 
-struct xdg_surface *xdg_surface_new(struct wl_client *client,
-                                    uint32_t version, uint32_t id,
-                                    struct surface *surface);
+struct xdg_surface *xdg_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struct surface *surface);
 
 #endif

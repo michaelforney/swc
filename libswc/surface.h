@@ -60,8 +60,7 @@ struct surface {
 
 	struct surface_state state;
 
-	struct
-	    {
+	struct {
 		struct surface_state state;
 		uint32_t commit;
 		int32_t x, y;
@@ -71,9 +70,7 @@ struct surface {
 	struct view_handler view_handler;
 };
 
-struct surface *surface_new(struct wl_client *client,
-                            uint32_t version, uint32_t id);
-
+struct surface *surface_new(struct wl_client *client, uint32_t version, uint32_t id);
 void surface_set_view(struct surface *surface, struct view *view);
 
 #endif

@@ -34,16 +34,14 @@ struct xkb {
 	struct xkb_context *context;
 	struct xkb_state *state;
 
-	struct
-	    {
+	struct {
 		struct xkb_keymap *map;
 		int fd;
 		uint32_t size;
 		char *area;
 	} keymap;
 
-	struct
-	    {
+	struct {
 		uint32_t ctrl, alt, super, shift;
 	} indices;
 };
@@ -51,7 +49,6 @@ struct xkb {
 bool xkb_initialize(struct xkb *xkb);
 void xkb_finalize(struct xkb *xkb);
 bool xkb_reset_state(struct xkb *xkb);
-
 bool xkb_update_keymap(struct xkb *xkb);
 
 #endif

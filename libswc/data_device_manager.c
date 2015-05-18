@@ -27,50 +27,41 @@
 #include "internal.h"
 #include "seat.h"
 
-static struct
-    {
+static struct {
 	struct wl_global *global;
 } data_device_manager;
 
 static void
-create_data_source(struct wl_client *client,
-                   struct wl_resource *resource, uint32_t id)
+create_data_source(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
 	struct wl_resource *data_source;
 
-	data_source = data_source_new(client,
-	                              wl_resource_get_version(resource), id);
+	data_source = data_source_new(client, wl_resource_get_version(resource), id);
 
 	if (!data_source)
 		wl_resource_post_no_memory(resource);
 }
 
 static void
-get_data_device(struct wl_client *client,
-                struct wl_resource *resource, uint32_t id,
-                struct wl_resource *seat_resource)
+get_data_device(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *seat_resource)
 {
-	data_device_bind(swc.seat->data_device, client,
-	                 wl_resource_get_version(resource), id);
+	data_device_bind(swc.seat->data_device, client, wl_resource_get_version(resource), id);
 }
 
-static struct wl_data_device_manager_interface
-    data_device_manager_implementation = {
-	    .create_data_source = &create_data_source,
-	    .get_data_device = &get_data_device
-    };
+static struct wl_data_device_manager_interface data_device_manager_implementation = {
+	.create_data_source = create_data_source,
+	.get_data_device = get_data_device,
+};
 
 static void
-bind_data_device_manager(struct wl_client *client, void *data,
-                         uint32_t version, uint32_t id)
+bind_data_device_manager(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
 	struct wl_resource *resource;
 
 	if (version > 1)
 		version = 1;
 
-	resource = wl_resource_create(client, &wl_data_device_manager_interface,
-	                              version, id);
+	resource = wl_resource_create(client, &wl_data_device_manager_interface, version, id);
 	wl_resource_set_implementation(resource, &data_device_manager_implementation, NULL, NULL);
 }
 

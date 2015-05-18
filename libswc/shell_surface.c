@@ -48,9 +48,8 @@ configure(struct window *window, uint32_t width, uint32_t height)
 {
 	struct shell_surface *shell_surface = wl_container_of(window, shell_surface, window);
 
-	wl_shell_surface_send_configure(shell_surface->resource,
-	                                WL_SHELL_SURFACE_RESIZE_NONE,
-	                                width, height);
+	wl_shell_surface_send_configure(shell_surface->resource, WL_SHELL_SURFACE_RESIZE_NONE, width, height);
+
 	/* wl_shell does not support acknowledging configures. */
 	window->configure.acknowledged = true;
 }
@@ -68,19 +67,17 @@ close(struct window *window)
 }
 
 static const struct window_impl window_impl = {
-	.configure = &configure,
-	.close = &close,
+	.configure = configure,
+	.close = close,
 };
 
 static void
-pong(struct wl_client *client, struct wl_resource *resource,
-     uint32_t serial)
+pong(struct wl_client *client, struct wl_resource *resource, uint32_t serial)
 {
 }
 
 static void
-move(struct wl_client *client, struct wl_resource *resource,
-     struct wl_resource *seat_resource, uint32_t serial)
+move(struct wl_client *client, struct wl_resource *resource, struct wl_resource *seat_resource, uint32_t serial)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
 	struct button *button;
@@ -93,8 +90,7 @@ move(struct wl_client *client, struct wl_resource *resource,
 
 static void
 resize(struct wl_client *client, struct wl_resource *resource,
-       struct wl_resource *seat_resource, uint32_t serial,
-       uint32_t edges)
+       struct wl_resource *seat_resource, uint32_t serial, uint32_t edges)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
 	struct button *button;
@@ -106,8 +102,7 @@ resize(struct wl_client *client, struct wl_resource *resource,
 }
 
 static void
-set_toplevel(struct wl_client *client,
-             struct wl_resource *resource)
+set_toplevel(struct wl_client *client, struct wl_resource *resource)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
 
@@ -116,10 +111,8 @@ set_toplevel(struct wl_client *client,
 }
 
 static void
-set_transient(struct wl_client *client,
-              struct wl_resource *resource,
-              struct wl_resource *parent_resource,
-              int32_t x, int32_t y, uint32_t flags)
+set_transient(struct wl_client *client, struct wl_resource *resource,
+              struct wl_resource *parent_resource, int32_t x, int32_t y, uint32_t flags)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
 	struct surface *parent_surface = wl_resource_get_user_data(parent_resource);
@@ -133,19 +126,14 @@ set_transient(struct wl_client *client,
 }
 
 static void
-set_fullscreen(struct wl_client *client,
-               struct wl_resource *resource,
-               uint32_t method, uint32_t framerate,
-               struct wl_resource *output_resource)
+set_fullscreen(struct wl_client *client, struct wl_resource *resource,
+               uint32_t method, uint32_t framerate, struct wl_resource *output_resource)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
-	struct output *output = output_resource
-	                            ? wl_resource_get_user_data(output_resource)
-	                            : NULL;
+	struct output *output = output_resource ? wl_resource_get_user_data(output_resource) : NULL;
 	struct screen *screen;
 
-	screen = output ? output->screen
-	                : wl_container_of(swc.screens.next, screen, link);
+	screen = output ? output->screen : wl_container_of(swc.screens.next, screen, link);
 
 	/* TODO: Handle fullscreen windows. */
 
@@ -156,8 +144,7 @@ set_fullscreen(struct wl_client *client,
 static void
 set_popup(struct wl_client *client, struct wl_resource *resource,
           struct wl_resource *seat_resource, uint32_t serial,
-          struct wl_resource *parent_resource,
-          int32_t x, int32_t y, uint32_t flags)
+          struct wl_resource *parent_resource, int32_t x, int32_t y, uint32_t flags)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
 	struct surface *parent_surface = wl_resource_get_user_data(parent_resource);
@@ -168,15 +155,11 @@ set_popup(struct wl_client *client, struct wl_resource *resource,
 
 	window_unmanage(&shell_surface->window);
 	window_set_parent(&shell_surface->window, parent_view->window);
-	view_move(&shell_surface->window.view->base,
-	          parent_view->base.geometry.x + x,
-	          parent_view->base.geometry.y + y);
+	view_move(&shell_surface->window.view->base, parent_view->base.geometry.x + x, parent_view->base.geometry.y + y);
 }
 
 static void
-set_maximized(struct wl_client *client,
-              struct wl_resource *resource,
-              struct wl_resource *output_resource)
+set_maximized(struct wl_client *client, struct wl_resource *resource, struct wl_resource *output_resource)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
 
@@ -187,41 +170,36 @@ set_maximized(struct wl_client *client,
 }
 
 static void
-set_title(struct wl_client *client, struct wl_resource *resource,
-          const char *title)
+set_title(struct wl_client *client, struct wl_resource *resource, const char *title)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
-
 	window_set_title(&shell_surface->window, title, -1);
 }
 
 static void
-set_class(struct wl_client *client, struct wl_resource *resource,
-          const char *class)
+set_class(struct wl_client *client, struct wl_resource *resource, const char *class)
 {
 	struct shell_surface *shell_surface = wl_resource_get_user_data(resource);
-
 	window_set_app_id(&shell_surface->window, class);
 }
 
 static const struct wl_shell_surface_interface shell_surface_implementation = {
-	.pong = &pong,
-	.move = &move,
-	.resize = &resize,
-	.set_toplevel = &set_toplevel,
-	.set_transient = &set_transient,
-	.set_fullscreen = &set_fullscreen,
-	.set_popup = &set_popup,
-	.set_maximized = &set_maximized,
-	.set_title = &set_title,
-	.set_class = &set_class
+	.pong = pong,
+	.move = move,
+	.resize = resize,
+	.set_toplevel = set_toplevel,
+	.set_transient = set_transient,
+	.set_fullscreen = set_fullscreen,
+	.set_popup = set_popup,
+	.set_maximized = set_maximized,
+	.set_title = set_title,
+	.set_class = set_class,
 };
 
 static void
 handle_surface_destroy(struct wl_listener *listener, void *data)
 {
 	struct shell_surface *shell_surface = wl_container_of(listener, shell_surface, surface_destroy_listener);
-
 	wl_resource_destroy(shell_surface->resource);
 }
 
@@ -235,9 +213,7 @@ destroy_shell_surface(struct wl_resource *resource)
 }
 
 struct shell_surface *
-shell_surface_new(struct wl_client *client,
-                  uint32_t version, uint32_t id,
-                  struct surface *surface)
+shell_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struct surface *surface)
 {
 	struct shell_surface *shell_surface;
 
@@ -251,14 +227,10 @@ shell_surface_new(struct wl_client *client,
 	if (!shell_surface->resource)
 		goto error1;
 
-	wl_resource_set_implementation(shell_surface->resource,
-	                               &shell_surface_implementation,
-	                               shell_surface, &destroy_shell_surface);
-
+	wl_resource_set_implementation(shell_surface->resource, &shell_surface_implementation, shell_surface, &destroy_shell_surface);
 	window_initialize(&shell_surface->window, &window_impl, surface);
 	shell_surface->surface_destroy_listener.notify = &handle_surface_destroy;
-	wl_resource_add_destroy_listener(surface->resource,
-	                                 &shell_surface->surface_destroy_listener);
+	wl_resource_add_destroy_listener(surface->resource, &shell_surface->surface_destroy_listener);
 
 	return shell_surface;
 

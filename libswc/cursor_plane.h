@@ -33,9 +33,7 @@ struct cursor_plane {
 	struct wl_listener swc_listener;
 };
 
-bool cursor_plane_initialize(struct cursor_plane *plane, uint32_t crtc,
-                             const struct swc_rectangle *origin);
-
+bool cursor_plane_initialize(struct cursor_plane *plane, uint32_t crtc, const struct swc_rectangle *origin);
 void cursor_plane_finalize(struct cursor_plane *plane);
 
 #endif

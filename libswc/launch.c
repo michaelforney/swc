@@ -30,8 +30,7 @@
 #include <unistd.h>
 #include <wayland-server.h>
 
-static struct
-    {
+static struct {
 	int socket;
 	struct wl_event_source *source;
 	uint32_t next_serial;
@@ -61,7 +60,6 @@ handle_data(int fd, uint32_t mask, void *data)
 
 	if (receive_fd(fd, NULL, &event, sizeof event) != -1)
 		handle_event(&event);
-
 	return 1;
 }
 
@@ -78,8 +76,7 @@ launch_initialize(void)
 	if (*end != '\0')
 		return false;
 
-	launch.source = wl_event_loop_add_fd(swc.event_loop, launch.socket,
-	                                     WL_EVENT_READABLE, &handle_data, NULL);
+	launch.source = wl_event_loop_add_fd(swc.event_loop, launch.socket, WL_EVENT_READABLE, &handle_data, NULL);
 
 	if (!launch.source)
 		return false;
@@ -95,9 +92,7 @@ launch_finalize(void)
 }
 
 static bool
-send_request(struct swc_launch_request *request, size_t size,
-             struct swc_launch_event *event,
-             int out_fd, int *in_fd)
+send_request(struct swc_launch_request *request, size_t size, struct swc_launch_event *event, int out_fd, int *in_fd)
 {
 	request->serial = ++launch.next_serial;
 
@@ -105,11 +100,8 @@ send_request(struct swc_launch_request *request, size_t size,
 		return false;
 
 	while (receive_fd(launch.socket, in_fd, event, sizeof *event) != -1) {
-		if (event->type == SWC_LAUNCH_EVENT_RESPONSE
-		    && event->serial == request->serial) {
+		if (event->type == SWC_LAUNCH_EVENT_RESPONSE && event->serial == request->serial)
 			return true;
-		}
-
 		handle_event(event);
 	}
 

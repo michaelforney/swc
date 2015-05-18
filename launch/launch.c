@@ -55,8 +55,7 @@
 
 pid_t child_pid = -1;
 
-static struct
-    {
+static struct {
 	int socket;
 	int input_fds[128];
 	unsigned num_input_fds;
@@ -66,8 +65,7 @@ static struct
 	bool active;
 } launcher;
 
-static struct
-    {
+static struct {
 	bool altered;
 	int vt;
 	long kb_mode;
@@ -109,12 +107,10 @@ stop_devices(bool fatal)
 	}
 
 	for (index = 0; index < launcher.num_input_fds; ++index) {
-		if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1
-		    && errno != ENODEV && fatal) {
+		if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1 && errno != ENODEV && fatal)
 			die("FATAL: Your kernel does not support EVIOCREVOKE; "
 			    "input devices cannot be revoked: %s",
 			    strerror(errno));
-		}
 
 		close(launcher.input_fds[index]);
 	}
@@ -136,8 +132,8 @@ cleanup(void)
 	ioctl(launcher.tty_fd, KDSETMODE, original_vt_state.console_mode);
 	ioctl(launcher.tty_fd, KDSKBMODE, original_vt_state.kb_mode);
 
-	/* Stop devices before switching the VT to make sure we have released the
-     * DRM device before the next session tries to claim it. */
+	/* Stop devices before switching the VT to make sure we have released the DRM
+	 * device before the next session tries to claim it. */
 	stop_devices(false);
 	ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
 
@@ -236,8 +232,7 @@ handle_socket_data(int socket)
 
 	switch (request->type) {
 	case SWC_LAUNCH_REQUEST_OPEN_DEVICE:
-		if (request->path[size - __builtin_offsetof(typeof(*request),
-		                                            path) - 1] != '\0') {
+		if (request->path[size - __builtin_offsetof(typeof(*request), path) - 1] != '\0') {
 			fprintf(stderr, "Path is not NULL terminated\n");
 			goto fail;
 		}
@@ -252,15 +247,13 @@ handle_socket_data(int socket)
 			if (!launcher.active)
 				goto fail;
 
-			if (launcher.num_input_fds
-			    == ARRAY_LENGTH(launcher.input_fds)) {
+			if (launcher.num_input_fds == ARRAY_LENGTH(launcher.input_fds)) {
 				fprintf(stderr, "Too many input devices opened\n");
 				goto fail;
 			}
 			break;
 		case DRM_MAJOR:
-			if (launcher.num_drm_fds
-			    == ARRAY_LENGTH(launcher.drm_fds)) {
+			if (launcher.num_drm_fds == ARRAY_LENGTH(launcher.drm_fds)) {
 				fprintf(stderr, "Too many DRM devices opened\n");
 				goto fail;
 			}
@@ -291,10 +284,8 @@ handle_socket_data(int socket)
 		if (!launcher.active)
 			goto fail;
 
-		if (ioctl(launcher.tty_fd, VT_ACTIVATE, request->vt) == -1) {
-			fprintf(stderr, "Could not activate VT %d: %s\n",
-			        request->vt, strerror(errno));
-		}
+		if (ioctl(launcher.tty_fd, VT_ACTIVATE, request->vt) == -1)
+			fprintf(stderr, "Could not activate VT %d: %s\n", request->vt, strerror(errno));
 		break;
 	default:
 		fprintf(stderr, "Unknown request %u\n", request->type);

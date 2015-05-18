@@ -30,9 +30,7 @@ mode_initialize(struct mode *mode, drmModeModeInfo *mode_info)
 	mode->height = mode_info->vdisplay;
 	mode->refresh = mode_info->vrefresh * 1000;
 	mode->preferred = mode_info->type & DRM_MODE_TYPE_PREFERRED;
-
 	mode->info = *mode_info;
-
 	return true;
 }
 
@@ -45,6 +43,6 @@ bool
 mode_equal(const struct mode *mode1, const struct mode *mode2)
 {
 	return mode1->width == mode2->width
-	       && mode1->height == mode2->height
-	       && mode1->refresh == mode2->refresh;
+	    && mode1->height == mode2->height
+	    && mode1->refresh == mode2->refresh;
 }

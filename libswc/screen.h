@@ -35,12 +35,10 @@ struct pixman_region32;
 
 struct screen_modifier {
 	/**
-     * Takes the screen geometry and sets 'usable' to the usable region of the
-     * screen. 'usable' is an already initialized pixman region.
-     */
-	void (*modify)(struct screen_modifier *modifier,
-	               const struct swc_rectangle *geometry,
-	               struct pixman_region32 *usable);
+	 * Takes the screen geometry and sets 'usable' to the usable region of the
+	 * screen. 'usable' is an already initialized pixman region.
+	 */
+	void (*modify)(struct screen_modifier *modifier, const struct swc_rectangle *geometry, struct pixman_region32 *usable);
 
 	struct wl_list link;
 };
@@ -53,8 +51,7 @@ struct screen {
 	struct wl_signal destroy_signal;
 	uint8_t id;
 
-	struct
-	    {
+	struct {
 		struct framebuffer_plane framebuffer;
 		struct cursor_plane cursor;
 	} planes;
