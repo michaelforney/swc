@@ -26,16 +26,14 @@
 
 #include <stdbool.h>
 
-struct swc_seat
-{
-    struct pointer * pointer;
-    struct keyboard * keyboard;
-    struct data_device * data_device;
+struct swc_seat {
+	struct pointer *pointer;
+	struct keyboard *keyboard;
+	struct data_device *data_device;
 };
 
-bool seat_initialize(const char * seat_name);
+bool seat_initialize(const char *seat_name);
 void seat_finalize(void);
 void seat_reopen_devices(void);
 
 #endif
-

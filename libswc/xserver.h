@@ -26,13 +26,11 @@
 
 #include <stdbool.h>
 
-struct swc_xserver
-{
-    struct wl_client * client;
+struct swc_xserver {
+	struct wl_client *client;
 };
 
 bool xserver_initialize(void);
 void xserver_finalize(void);
 
 #endif
-

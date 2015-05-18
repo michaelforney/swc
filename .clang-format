@@ -1,0 +1,24 @@
+# clang-format isn't authoritative for the style decisions in this project, but
+# these rules mostly align with the suggested style, and clang-format can be
+# used fix any potential style-mistakes.
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: true
+BinPackArguments: true
+BinPackParameters: true
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Linux
+ColumnLimit: 0
+Cpp11BracedListStyle: false
+ForEachMacros: [wl_list_for_each, wl_array_for_each, wl_list_for_each_safe, wl_list_for_each_reverse, wl_resource_for_each]
+IndentWidth: 8
+MaxEmptyLinesToKeep: 1
+PointerAlignment: Right
+SpaceAfterCStyleCast: false
+TabWidth: 8
+UseTab: ForIndentation
+...
+# vim: ft=yaml

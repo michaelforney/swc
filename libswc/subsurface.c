@@ -26,81 +26,88 @@
 #include <stdlib.h>
 #include <wayland-server.h>
 
-static void destroy(struct wl_client * client, struct wl_resource * resource)
+static void
+destroy(struct wl_client *client, struct wl_resource *resource)
 {
-    wl_resource_destroy(resource);
+	wl_resource_destroy(resource);
 }
 
-static void set_position(struct wl_client * client,
-                         struct wl_resource * resource,
-                         int32_t x, int32_t y)
+static void
+set_position(struct wl_client *client,
+             struct wl_resource *resource,
+             int32_t x, int32_t y)
 {
-    /* TODO: Implement. */
+	/* TODO: Implement. */
 }
 
-static void place_above(struct wl_client * client,
-                        struct wl_resource * resource,
-                        struct wl_resource * sibling_resource)
+static void
+place_above(struct wl_client *client,
+            struct wl_resource *resource,
+            struct wl_resource *sibling_resource)
 {
-    /* TODO: Implement. */
+	/* TODO: Implement. */
 }
 
-static void place_below(struct wl_client * client,
-                        struct wl_resource * resource,
-                        struct wl_resource * sibling_resource)
+static void
+place_below(struct wl_client *client,
+            struct wl_resource *resource,
+            struct wl_resource *sibling_resource)
 {
-    /* TODO: Implement. */
+	/* TODO: Implement. */
 }
 
-static void set_sync(struct wl_client * client, struct wl_resource * resource)
+static void
+set_sync(struct wl_client *client, struct wl_resource *resource)
 {
-    /* TODO: Implement. */
+	/* TODO: Implement. */
 }
 
-static void set_desync(struct wl_client * client, struct wl_resource * resource)
+static void
+set_desync(struct wl_client *client, struct wl_resource *resource)
 {
-    /* TODO: Implement. */
+	/* TODO: Implement. */
 }
 
 static struct wl_subsurface_interface subsurface_implementation = {
-    .destroy = &destroy,
-    .set_position = &set_position,
-    .place_above = &place_above,
-    .place_below = &place_below,
-    .set_sync = &set_sync,
-    .set_desync = &set_desync,
+	.destroy = &destroy,
+	.set_position = &set_position,
+	.place_above = &place_above,
+	.place_below = &place_below,
+	.set_sync = &set_sync,
+	.set_desync = &set_desync,
 };
 
-static void subsurface_destroy(struct wl_resource * resource)
+static void
+subsurface_destroy(struct wl_resource *resource)
 {
-    struct subsurface * subsurface = wl_resource_get_user_data(resource);
+	struct subsurface *subsurface = wl_resource_get_user_data(resource);
 
-    free(subsurface);
+	free(subsurface);
 }
 
-struct subsurface * subsurface_new(struct wl_client * client,
-                                   uint32_t version, uint32_t id)
+struct subsurface *
+subsurface_new(struct wl_client *client,
+               uint32_t version, uint32_t id)
 {
-    struct subsurface * subsurface;
+	struct subsurface *subsurface;
 
-    if (!(subsurface = malloc(sizeof *subsurface)))
-        goto error0;
+	if (!(subsurface = malloc(sizeof *subsurface)))
+		goto error0;
 
-    subsurface->resource = wl_resource_create(client, &wl_subsurface_interface,
-                                              version, id);
+	subsurface->resource = wl_resource_create(client, &wl_subsurface_interface,
+	                                          version, id);
 
-    if (!subsurface->resource)
-        goto error1;
+	if (!subsurface->resource)
+		goto error1;
 
-    wl_resource_set_implementation(subsurface->resource,
-                                   &subsurface_implementation,
-                                   subsurface, &subsurface_destroy);
+	wl_resource_set_implementation(subsurface->resource,
+	                               &subsurface_implementation,
+	                               subsurface, &subsurface_destroy);
 
-    return subsurface;
+	return subsurface;
 
-  error1:
-    free(subsurface);
-  error0:
-    return NULL;
+error1:
+	free(subsurface);
+error0:
+	return NULL;
 }
-

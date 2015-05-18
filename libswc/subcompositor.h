@@ -29,4 +29,3 @@ bool subcompositor_initialize();
 void subcompositor_finalize();
 
 #endif
-

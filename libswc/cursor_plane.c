@@ -34,96 +34,89 @@
 #include <wld/drm.h>
 #include <xf86drmMode.h>
 
-static bool update(struct view * view)
+static bool
+update(struct view *view)
 {
-    return true;
+	return true;
 }
 
-static int attach(struct view * view, struct wld_buffer * buffer)
+static int
+attach(struct view *view, struct wld_buffer *buffer)
 {
-    struct cursor_plane * plane = wl_container_of(view, plane, view);
+	struct cursor_plane *plane = wl_container_of(view, plane, view);
 
-    if (buffer)
-    {
-        union wld_object object;
+	if (buffer) {
+		union wld_object object;
 
-        if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object))
-        {
-            ERROR("Could not get export buffer to DRM handle\n");
-            /* XXX: Not the best error code, but we don't know better until wld
+		if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object)) {
+			ERROR("Could not get export buffer to DRM handle\n");
+			/* XXX: Not the best error code, but we don't know better until wld
              * returns an actual error code. */
-            return -EINVAL;
-        }
+			return -EINVAL;
+		}
 
-        if (swc.active && drmModeSetCursor(swc.drm->fd, plane->crtc, object.u32,
-                                           buffer->width, buffer->height) < 0)
-        {
-            ERROR("Could not set cursor: %s\n", strerror(errno));
-            return -errno;
-        }
-    }
-    else if (swc.active && drmModeSetCursor(swc.drm->fd, plane->crtc,
-                                            0, 0, 0) < 0)
-    {
-        ERROR("Could not unset cursor: %s\n", strerror(errno));
-        return -errno;
-    }
+		if (swc.active && drmModeSetCursor(swc.drm->fd, plane->crtc, object.u32, buffer->width, buffer->height) < 0) {
+			ERROR("Could not set cursor: %s\n", strerror(errno));
+			return -errno;
+		}
+	} else if (swc.active && drmModeSetCursor(swc.drm->fd, plane->crtc, 0, 0, 0) < 0) {
+		ERROR("Could not unset cursor: %s\n", strerror(errno));
+		return -errno;
+	}
 
-    view_set_size_from_buffer(view, buffer);
-    return 0;
+	view_set_size_from_buffer(view, buffer);
+	return 0;
 }
 
-static bool move(struct view * view, int32_t x, int32_t y)
+static bool
+move(struct view *view, int32_t x, int32_t y)
 {
-    struct cursor_plane * plane = wl_container_of(view, plane, view);
+	struct cursor_plane *plane = wl_container_of(view, plane, view);
 
-    if (swc.active && drmModeMoveCursor(swc.drm->fd, plane->crtc,
-                                        x - plane->origin->x,
-                                        y - plane->origin->y) != 0)
-    {
-        ERROR("Could not move cursor: %s\n", strerror(errno));
-        return false;
-    }
+	if (swc.active && drmModeMoveCursor(swc.drm->fd, plane->crtc, x - plane->origin->x, y - plane->origin->y) != 0) {
+		ERROR("Could not move cursor: %s\n", strerror(errno));
+		return false;
+	}
 
-    view_set_position(view, x, y);
+	view_set_position(view, x, y);
 
-    return true;
+	return true;
 }
 
 static const struct view_impl view_impl = {
-    .update = &update,
-    .attach = &attach,
-    .move = &move
+	.update = &update,
+	.attach = &attach,
+	.move = &move
 };
 
-static void handle_swc_event(struct wl_listener * listener, void * data)
+static void
+handle_swc_event(struct wl_listener *listener, void *data)
 {
-    struct event * event = data;
-    struct cursor_plane * plane
-        = wl_container_of(listener, plane, swc_listener);
+	struct event *event = data;
+	struct cursor_plane *plane = wl_container_of(listener, plane, swc_listener);
 
-    switch (event->type)
-    {
-        case SWC_EVENT_ACTIVATED:
-            move(&plane->view, plane->view.geometry.x, plane->view.geometry.y);
-            attach(&plane->view, plane->view.buffer);
-            break;
-    }
+	switch (event->type) {
+	case SWC_EVENT_ACTIVATED:
+		move(&plane->view, plane->view.geometry.x, plane->view.geometry.y);
+		attach(&plane->view, plane->view.buffer);
+		break;
+	}
 }
 
-bool cursor_plane_initialize(struct cursor_plane * plane, uint32_t crtc,
-                             const struct swc_rectangle * origin)
+bool
+cursor_plane_initialize(struct cursor_plane *plane, uint32_t crtc,
+                        const struct swc_rectangle *origin)
 {
-    plane->origin = origin;
-    plane->crtc = crtc;
-    plane->swc_listener.notify = &handle_swc_event;
-    wl_signal_add(&swc.event_signal, &plane->swc_listener);
-    view_initialize(&plane->view, &view_impl);
+	plane->origin = origin;
+	plane->crtc = crtc;
+	plane->swc_listener.notify = &handle_swc_event;
+	wl_signal_add(&swc.event_signal, &plane->swc_listener);
+	view_initialize(&plane->view, &view_impl);
 
-    return true;
+	return true;
 }
 
-void cursor_plane_finalize(struct cursor_plane * plane)
+void
+cursor_plane_finalize(struct cursor_plane *plane)
 {
 }
-

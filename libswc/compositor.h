@@ -29,72 +29,69 @@
 #include <stdbool.h>
 #include <pixman.h>
 
-struct swc_compositor
-{
-    struct pointer_handler * const pointer_handler;
-    struct
-    {
-        /**
+struct swc_compositor {
+	struct pointer_handler *const pointer_handler;
+	struct
+	    {
+		/**
          * Emitted when a new surface is created.
          *
          * The data argument of the signal refers to the surface that has been
          * created.
          */
-        struct wl_signal new_surface;
-    } signal;
+		struct wl_signal new_surface;
+	} signal;
 };
 
 bool compositor_initialize(void);
 void compositor_finalize(void);
 
-struct compositor_view
-{
-    struct view base;
-    struct surface * surface;
-    struct wld_buffer * buffer;
-    struct window * window;
-    struct compositor_view * parent;
+struct compositor_view {
+	struct view base;
+	struct surface *surface;
+	struct wld_buffer *buffer;
+	struct window *window;
+	struct compositor_view *parent;
 
-    /* Whether or not the view is visible (mapped). */
-    bool visible;
+	/* Whether or not the view is visible (mapped). */
+	bool visible;
 
-    /* The box that the surface covers (including it's border). */
-    pixman_box32_t extents;
+	/* The box that the surface covers (including it's border). */
+	pixman_box32_t extents;
 
-    /* The region that is covered by opaque regions of surfaces above this
+	/* The region that is covered by opaque regions of surfaces above this
      * surface. */
-    pixman_region32_t clip;
+	pixman_region32_t clip;
 
-    struct
-    {
-        uint32_t width;
-        uint32_t color;
-        bool damaged;
-    } border;
+	struct
+	    {
+		uint32_t width;
+		uint32_t color;
+		bool damaged;
+	} border;
 
-    struct wl_list link;
-    struct wl_signal destroy_signal;
+	struct wl_list link;
+	struct wl_signal destroy_signal;
 };
 
-struct compositor_view * compositor_create_view(struct surface * surface);
+struct compositor_view *compositor_create_view(struct surface *surface);
 
-void compositor_view_destroy(struct compositor_view * view);
+void compositor_view_destroy(struct compositor_view *view);
 
 /**
  * Returns view as a compositor_view, or NULL if view is not a compositor_view.
  */
-struct compositor_view * compositor_view(struct view * view);
+struct compositor_view *compositor_view(struct view *view);
 
-void compositor_view_set_parent(struct compositor_view * view,
-                                struct compositor_view * parent);
+void compositor_view_set_parent(struct compositor_view *view,
+                                struct compositor_view *parent);
 
-void compositor_view_show(struct compositor_view * view);
-void compositor_view_hide(struct compositor_view * view);
+void compositor_view_show(struct compositor_view *view);
+void compositor_view_hide(struct compositor_view *view);
 
-void compositor_view_set_border_color(struct compositor_view * view,
+void compositor_view_set_border_color(struct compositor_view *view,
                                       uint32_t color);
-void compositor_view_set_border_width(struct compositor_view * view,
+void compositor_view_set_border_width(struct compositor_view *view,
                                       uint32_t width);
 
 #endif
-

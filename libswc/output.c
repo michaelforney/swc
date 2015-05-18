@@ -11,113 +11,109 @@
 #include <libdrm/drm.h>
 #include <xf86drm.h>
 
-static void bind_output(struct wl_client * client, void * data,
-                        uint32_t version, uint32_t id)
+static void
+bind_output(struct wl_client *client, void *data,
+            uint32_t version, uint32_t id)
 {
-    struct output * output = data;
-    struct screen * screen = output->screen;
-    struct mode * mode;
-    struct wl_resource * resource;
-    uint32_t flags;
+	struct output *output = data;
+	struct screen *screen = output->screen;
+	struct mode *mode;
+	struct wl_resource *resource;
+	uint32_t flags;
 
-    if (version > 2)
-        version = 2;
+	if (version > 2)
+		version = 2;
 
-    resource = wl_resource_create(client, &wl_output_interface, version, id);
+	resource = wl_resource_create(client, &wl_output_interface, version, id);
 
-    if (!resource)
-    {
-        wl_client_post_no_memory(client);
-        return;
-    }
+	if (!resource) {
+		wl_client_post_no_memory(client);
+		return;
+	}
 
-    wl_resource_set_implementation(resource, NULL, output, &remove_resource);
-    wl_list_insert(&output->resources, wl_resource_get_link(resource));
+	wl_resource_set_implementation(resource, NULL, output, &remove_resource);
+	wl_list_insert(&output->resources, wl_resource_get_link(resource));
 
-    wl_output_send_geometry
-        (resource, screen->base.geometry.x, screen->base.geometry.y,
-         output->physical_width, output->physical_height, 0, "unknown",
-         "unknown", WL_OUTPUT_TRANSFORM_NORMAL);
+	wl_output_send_geometry(resource, screen->base.geometry.x, screen->base.geometry.y,
+	                        output->physical_width, output->physical_height, 0, "unknown",
+	                        "unknown", WL_OUTPUT_TRANSFORM_NORMAL);
 
-    wl_array_for_each(mode, &output->modes)
-    {
-        flags = 0;
-        if (mode->preferred)
-            flags |= WL_OUTPUT_MODE_PREFERRED;
-        if (mode_equal(&screen->planes.framebuffer.mode, mode))
-            flags |= WL_OUTPUT_MODE_CURRENT;
+	wl_array_for_each (mode, &output->modes) {
+		flags = 0;
+		if (mode->preferred)
+			flags |= WL_OUTPUT_MODE_PREFERRED;
+		if (mode_equal(&screen->planes.framebuffer.mode, mode))
+			flags |= WL_OUTPUT_MODE_CURRENT;
 
-        wl_output_send_mode(resource, flags,
-                            mode->width, mode->height, mode->refresh);
-    }
+		wl_output_send_mode(resource, flags,
+		                    mode->width, mode->height, mode->refresh);
+	}
 
-    if (version >= 2)
-        wl_output_send_done(resource);
+	if (version >= 2)
+		wl_output_send_done(resource);
 }
 
-struct output * output_new(drmModeConnectorPtr connector)
+struct output *
+output_new(drmModeConnectorPtr connector)
 {
-    struct output * output;
-    struct mode * modes;
-    uint32_t index;
+	struct output *output;
+	struct mode *modes;
+	uint32_t index;
 
-    if (!(output = malloc(sizeof *output)))
-    {
-        ERROR("Failed to allocated output\n");
-        goto error0;
-    }
+	if (!(output = malloc(sizeof *output))) {
+		ERROR("Failed to allocated output\n");
+		goto error0;
+	}
 
-    output->global = wl_global_create(swc.display, &wl_output_interface, 2,
-                                      output, &bind_output);
+	output->global = wl_global_create(swc.display, &wl_output_interface, 2,
+	                                  output, &bind_output);
 
-    if (!output->global)
-    {
-        ERROR("Failed to create output global\n");
-        goto error1;
-    }
+	if (!output->global) {
+		ERROR("Failed to create output global\n");
+		goto error1;
+	}
 
-    output->physical_width = connector->mmWidth;
-    output->physical_height = connector->mmHeight;
+	output->physical_width = connector->mmWidth;
+	output->physical_height = connector->mmHeight;
 
-    wl_list_init(&output->resources);
-    wl_array_init(&output->modes);
-    pixman_region32_init(&output->current_damage);
-    pixman_region32_init(&output->previous_damage);
+	wl_list_init(&output->resources);
+	wl_array_init(&output->modes);
+	pixman_region32_init(&output->current_damage);
+	pixman_region32_init(&output->previous_damage);
 
-    output->connector = connector->connector_id;
+	output->connector = connector->connector_id;
 
-    modes = wl_array_add(&output->modes, connector->count_modes * sizeof *modes);
+	modes = wl_array_add(&output->modes, connector->count_modes * sizeof *modes);
 
-    if (!modes)
-        goto error2;
+	if (!modes)
+		goto error2;
 
-    for (index = 0; index < connector->count_modes; ++index)
-    {
-        mode_initialize(&modes[index], &connector->modes[index]);
+	for (index = 0; index < connector->count_modes; ++index) {
+		mode_initialize(&modes[index], &connector->modes[index]);
 
-        if (modes[index].preferred)
-            output->preferred_mode = &modes[index];
-    }
+		if (modes[index].preferred)
+			output->preferred_mode = &modes[index];
+	}
 
-    return output;
+	return output;
 
-  error2:
-    wl_global_destroy(output->global);
-  error1:
-    free(output);
-  error0:
-    return NULL;
+error2:
+	wl_global_destroy(output->global);
+error1:
+	free(output);
+error0:
+	return NULL;
 }
 
-void output_destroy(struct output * output)
+void
+output_destroy(struct output *output)
 {
-    struct mode * mode;
+	struct mode *mode;
 
-    wl_array_for_each(mode, &output->modes)
-        mode_finish(mode);
-    wl_array_release(&output->modes);
+	wl_array_for_each (mode, &output->modes)
+		mode_finish(mode);
+	wl_array_release(&output->modes);
 
-    wl_global_destroy(output->global);
-    free(output);
+	wl_global_destroy(output->global);
+	free(output);
 }
-

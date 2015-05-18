@@ -26,14 +26,12 @@
 
 #include <stdbool.h>
 
-struct swc_bindings
-{
-    struct keyboard_handler * keyboard_handler;
-    struct pointer_handler * pointer_handler;
+struct swc_bindings {
+	struct keyboard_handler *keyboard_handler;
+	struct pointer_handler *pointer_handler;
 };
 
 bool bindings_initialize(void);
 void bindings_finalize(void);
 
 #endif
-

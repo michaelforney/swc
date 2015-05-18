@@ -26,10 +26,9 @@
 
 #include <stdbool.h>
 
-struct swc_shm
-{
-    struct wld_context * context;
-    struct wld_renderer * renderer;
+struct swc_shm {
+	struct wld_context *context;
+	struct wld_renderer *renderer;
 };
 
 bool shm_initialize(void);
@@ -37,4 +36,3 @@ bool shm_initialize(void);
 void shm_finalize(void);
 
 #endif
-

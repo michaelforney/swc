@@ -38,21 +38,19 @@
  * way, allowing operations like setting the output view of a surface directly
  * to an output's framebuffer plane, bypassing the compositor.
  */
-struct view
-{
-    const struct view_impl * impl;
-    struct wl_list handlers;
+struct view {
+	const struct view_impl *impl;
+	struct wl_list handlers;
 
-    struct swc_rectangle geometry;
-    uint32_t screens;
+	struct swc_rectangle geometry;
+	uint32_t screens;
 
-    struct wld_buffer * buffer;
+	struct wld_buffer *buffer;
 };
 
-struct view_handler
-{
-    const struct view_handler_impl * impl;
-    struct wl_list link;
+struct view_handler {
+	const struct view_handler_impl *impl;
+	struct wl_list link;
 };
 
 /**
@@ -60,27 +58,25 @@ struct view_handler
  *
  * For descriptions, see the corresponding view_* function.
  */
-struct view_impl
-{
-    bool (* update)(struct view * view);
-    int (* attach)(struct view * view, struct wld_buffer * buffer);
-    bool (* move)(struct view * view, int32_t x, int32_t y);
+struct view_impl {
+	bool (*update)(struct view *view);
+	int (*attach)(struct view *view, struct wld_buffer *buffer);
+	bool (*move)(struct view *view, int32_t x, int32_t y);
 };
 
-struct view_handler_impl
-{
-    /* Called when the view has displayed the next frame. */
-    void (* frame)(struct view_handler * handler, uint32_t time);
-    /* Called when a new buffer is attached to the view. */
-    void (* attach)(struct view_handler * handler);
-    /* Called after the view's position changes. */
-    void (* move)(struct view_handler * handler);
-    /* Called after the view's size changes. */
-    void (* resize)(struct view_handler * handler,
-                    uint32_t old_width, uint32_t old_height);
-    /* Called when the set of screens the view is visible on changes. */
-    void (* screens)(struct view_handler * handler,
-                     uint32_t left, uint32_t entered);
+struct view_handler_impl {
+	/* Called when the view has displayed the next frame. */
+	void (*frame)(struct view_handler *handler, uint32_t time);
+	/* Called when a new buffer is attached to the view. */
+	void (*attach)(struct view_handler *handler);
+	/* Called after the view's position changes. */
+	void (*move)(struct view_handler *handler);
+	/* Called after the view's size changes. */
+	void (*resize)(struct view_handler *handler,
+	               uint32_t old_width, uint32_t old_height);
+	/* Called when the set of screens the view is visible on changes. */
+	void (*screens)(struct view_handler *handler,
+	                uint32_t left, uint32_t entered);
 };
 
 /**
@@ -90,39 +86,39 @@ struct view_handler_impl
  *
  * @return 0 on success, negative error code otherwise.
  */
-int view_attach(struct view * view, struct wld_buffer * buffer);
+int view_attach(struct view *view, struct wld_buffer *buffer);
 
 /**
  * Display a new frame consisting of the currently attached buffer.
  *
  * @return Whether or not the update succeeds.
  */
-bool view_update(struct view * view);
+bool view_update(struct view *view);
 
 /**
  * Move the view to the specified coordinates, if supported.
  *
  * @return Whether or not the move succeeds.
  */
-bool view_move(struct view * view, int32_t x, int32_t y);
+bool view_move(struct view *view, int32_t x, int32_t y);
 
 /**** For internal view use only ****/
 
 /**
  * Initialize a new view with the specified implementation.
  */
-void view_initialize(struct view * view, const struct view_impl * impl);
+void view_initialize(struct view *view, const struct view_impl *impl);
 
 /**
  * Release any resources associated with this view.
  */
-void view_finalize(struct view * view);
+void view_finalize(struct view *view);
 
-bool view_set_position(struct view * view, int32_t x, int32_t y);
-bool view_set_size(struct view * view, uint32_t width, uint32_t height);
-bool view_set_size_from_buffer(struct view * view, struct wld_buffer * bufer);
-void view_set_screens(struct view * view, uint32_t screens);
-void view_update_screens(struct view * view);
+bool view_set_position(struct view *view, int32_t x, int32_t y);
+bool view_set_size(struct view *view, uint32_t width, uint32_t height);
+bool view_set_size_from_buffer(struct view *view, struct wld_buffer *bufer);
+void view_set_screens(struct view *view, uint32_t screens);
+void view_update_screens(struct view *view);
 
 /**
  * Send a new frame event through the view's event signal.
@@ -131,7 +127,6 @@ void view_update_screens(struct view * view);
  * the user. If time information is not available, swc_time() can be passed
  * instead.
  */
-void view_frame(struct view * view, uint32_t time);
+void view_frame(struct view *view, uint32_t time);
 
 #endif
-

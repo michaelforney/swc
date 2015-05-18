@@ -33,54 +33,52 @@
 struct output;
 struct pixman_region32;
 
-struct screen_modifier
-{
-    /**
+struct screen_modifier {
+	/**
      * Takes the screen geometry and sets 'usable' to the usable region of the
      * screen. 'usable' is an already initialized pixman region.
      */
-    void (* modify)(struct screen_modifier * modifier,
-                    const struct swc_rectangle * geometry,
-                    struct pixman_region32 * usable);
+	void (*modify)(struct screen_modifier *modifier,
+	               const struct swc_rectangle *geometry,
+	               struct pixman_region32 *usable);
 
-    struct wl_list link;
+	struct wl_list link;
 };
 
-struct screen
-{
-    struct swc_screen base;
-    const struct swc_screen_handler * handler;
-    void * handler_data;
+struct screen {
+	struct swc_screen base;
+	const struct swc_screen_handler *handler;
+	void *handler_data;
 
-    struct wl_signal destroy_signal;
-    uint8_t id;
+	struct wl_signal destroy_signal;
+	uint8_t id;
 
-    struct
-    {
-        struct framebuffer_plane framebuffer;
-        struct cursor_plane cursor;
-    } planes;
+	struct
+	    {
+		struct framebuffer_plane framebuffer;
+		struct cursor_plane cursor;
+	} planes;
 
-    struct wl_global * global;
-    struct wl_list resources;
+	struct wl_global *global;
+	struct wl_list resources;
 
-    struct wl_list outputs;
-    struct wl_list modifiers;
-    struct wl_list link;
+	struct wl_list outputs;
+	struct wl_list modifiers;
+	struct wl_list link;
 };
 
 bool screens_initialize(void);
 void screens_finalize(void);
 
-struct screen * screen_new(uint32_t crtc, struct output * output);
-void screen_destroy(struct screen * screen);
+struct screen *screen_new(uint32_t crtc, struct output *output);
+void screen_destroy(struct screen *screen);
 
-static inline uint32_t screen_mask(struct screen * screen)
+static inline uint32_t
+screen_mask(struct screen *screen)
 {
-    return 1 << screen->id;
+	return 1 << screen->id;
 }
 
-void screen_update_usable_geometry(struct screen * screen);
+void screen_update_usable_geometry(struct screen *screen);
 
 #endif
-

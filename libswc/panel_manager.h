@@ -30,4 +30,3 @@ bool panel_manager_initialize(void);
 void panel_manager_finalize(void);
 
 #endif
-

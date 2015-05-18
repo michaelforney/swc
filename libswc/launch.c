@@ -31,118 +31,121 @@
 #include <wayland-server.h>
 
 static struct
-{
-    int socket;
-    struct wl_event_source * source;
-    uint32_t next_serial;
+    {
+	int socket;
+	struct wl_event_source *source;
+	uint32_t next_serial;
 } launch;
 
-static bool handle_event(struct swc_launch_event * event)
+static bool
+handle_event(struct swc_launch_event *event)
 {
-    switch (event->type)
-    {
-        case SWC_LAUNCH_EVENT_ACTIVATE:
-            swc_activate();
-            break;
-        case SWC_LAUNCH_EVENT_DEACTIVATE:
-            swc_deactivate();
-            break;
-        default:
-            return false;
-    }
+	switch (event->type) {
+	case SWC_LAUNCH_EVENT_ACTIVATE:
+		swc_activate();
+		break;
+	case SWC_LAUNCH_EVENT_DEACTIVATE:
+		swc_deactivate();
+		break;
+	default:
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
-static int handle_data(int fd, uint32_t mask, void * data)
+static int
+handle_data(int fd, uint32_t mask, void *data)
 {
-    struct swc_launch_event event;
+	struct swc_launch_event event;
 
-    if (receive_fd(fd, NULL, &event, sizeof event) != -1)
-        handle_event(&event);
+	if (receive_fd(fd, NULL, &event, sizeof event) != -1)
+		handle_event(&event);
 
-    return 1;
+	return 1;
 }
 
-bool launch_initialize(void)
+bool
+launch_initialize(void)
 {
-    char * socket_string, * end;
+	char *socket_string, *end;
 
-    if (!(socket_string = getenv(SWC_LAUNCH_SOCKET_ENV)))
-        return false;
+	if (!(socket_string = getenv(SWC_LAUNCH_SOCKET_ENV)))
+		return false;
 
-    launch.socket = strtol(socket_string, &end, 10);
+	launch.socket = strtol(socket_string, &end, 10);
 
-    if (*end != '\0')
-        return false;
+	if (*end != '\0')
+		return false;
 
-    launch.source = wl_event_loop_add_fd(swc.event_loop, launch.socket,
-                                         WL_EVENT_READABLE, &handle_data, NULL);
+	launch.source = wl_event_loop_add_fd(swc.event_loop, launch.socket,
+	                                     WL_EVENT_READABLE, &handle_data, NULL);
 
-    if (!launch.source)
-        return false;
+	if (!launch.source)
+		return false;
 
-    return true;
+	return true;
 }
 
-void launch_finalize(void)
+void
+launch_finalize(void)
 {
-    wl_event_source_remove(launch.source);
-    close(launch.socket);
+	wl_event_source_remove(launch.source);
+	close(launch.socket);
 }
 
-static bool send_request(struct swc_launch_request * request, size_t size,
-                         struct swc_launch_event * event,
-                         int out_fd, int * in_fd)
+static bool
+send_request(struct swc_launch_request *request, size_t size,
+             struct swc_launch_event *event,
+             int out_fd, int *in_fd)
 {
-    request->serial = ++launch.next_serial;
+	request->serial = ++launch.next_serial;
 
-    if (send_fd(launch.socket, out_fd, request, size) == -1)
-        return false;
+	if (send_fd(launch.socket, out_fd, request, size) == -1)
+		return false;
 
-    while (receive_fd(launch.socket, in_fd, event, sizeof *event) != -1)
-    {
-        if (event->type == SWC_LAUNCH_EVENT_RESPONSE
-            && event->serial == request->serial)
-        {
-            return true;
-        }
+	while (receive_fd(launch.socket, in_fd, event, sizeof *event) != -1) {
+		if (event->type == SWC_LAUNCH_EVENT_RESPONSE
+		    && event->serial == request->serial) {
+			return true;
+		}
 
-        handle_event(event);
-    }
+		handle_event(event);
+	}
 
-    return false;
+	return false;
 }
 
-int launch_open_device(const char * path, int flags)
+int
+launch_open_device(const char *path, int flags)
 {
-    size_t path_size = strlen(path);
-    char buffer[sizeof(struct swc_launch_request) + path_size + 1];
-    struct swc_launch_request * request = (void *) buffer;
-    struct swc_launch_event response;
-    int fd;
+	size_t path_size = strlen(path);
+	char buffer[sizeof(struct swc_launch_request) + path_size + 1];
+	struct swc_launch_request *request = (void *)buffer;
+	struct swc_launch_event response;
+	int fd;
 
-    request->type = SWC_LAUNCH_REQUEST_OPEN_DEVICE;
-    request->flags = flags;
-    strcpy(request->path, path);
+	request->type = SWC_LAUNCH_REQUEST_OPEN_DEVICE;
+	request->flags = flags;
+	strcpy(request->path, path);
 
-    if (!send_request(request, sizeof buffer, &response, -1, &fd))
-        return -1;
+	if (!send_request(request, sizeof buffer, &response, -1, &fd))
+		return -1;
 
-    return fd;
+	return fd;
 }
 
-bool launch_activate_vt(unsigned vt)
+bool
+launch_activate_vt(unsigned vt)
 {
-    struct swc_launch_request request;
-    struct swc_launch_event response;
+	struct swc_launch_request request;
+	struct swc_launch_event response;
 
-    request.type = SWC_LAUNCH_REQUEST_ACTIVATE_VT;
-    request.vt = vt;
+	request.type = SWC_LAUNCH_REQUEST_ACTIVATE_VT;
+	request.vt = vt;
 
-    if (!send_request(&request, sizeof request, &response, -1, NULL))
-        return false;
+	if (!send_request(&request, sizeof request, &response, -1, NULL))
+		return false;
 
-    return response.success;
+	return response.success;
 }
-

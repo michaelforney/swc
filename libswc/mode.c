@@ -23,26 +23,28 @@
 
 #include "mode.h"
 
-bool mode_initialize(struct mode * mode, drmModeModeInfo * mode_info)
+bool
+mode_initialize(struct mode *mode, drmModeModeInfo *mode_info)
 {
-    mode->width = mode_info->hdisplay;
-    mode->height = mode_info->vdisplay;
-    mode->refresh = mode_info->vrefresh * 1000;
-    mode->preferred = mode_info->type & DRM_MODE_TYPE_PREFERRED;
+	mode->width = mode_info->hdisplay;
+	mode->height = mode_info->vdisplay;
+	mode->refresh = mode_info->vrefresh * 1000;
+	mode->preferred = mode_info->type & DRM_MODE_TYPE_PREFERRED;
 
-    mode->info = *mode_info;
+	mode->info = *mode_info;
 
-    return true;
+	return true;
 }
 
-void mode_finish(struct mode * mode)
+void
+mode_finish(struct mode *mode)
 {
 }
 
-bool mode_equal(const struct mode * mode1, const struct mode * mode2)
+bool
+mode_equal(const struct mode *mode1, const struct mode *mode2)
 {
-    return mode1->width == mode2->width
-        && mode1->height == mode2->height
-        && mode1->refresh == mode2->refresh;
+	return mode1->width == mode2->width
+	       && mode1->height == mode2->height
+	       && mode1->refresh == mode2->refresh;
 }
-

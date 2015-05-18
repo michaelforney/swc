@@ -27,29 +27,27 @@
 #include <wayland-server.h>
 #include <stdbool.h>
 
-enum
-{
-    SWC_EVENT_ACTIVATED,
-    SWC_EVENT_DEACTIVATED,
+enum {
+	SWC_EVENT_ACTIVATED,
+	SWC_EVENT_DEACTIVATED,
 };
 
-struct swc
-{
-    struct wl_display * display;
-    struct wl_event_loop * event_loop;
-    const struct swc_manager * manager;
-    struct wl_signal event_signal;
-    bool active;
+struct swc {
+	struct wl_display *display;
+	struct wl_event_loop *event_loop;
+	const struct swc_manager *manager;
+	struct wl_signal event_signal;
+	bool active;
 
-    const struct swc_seat * const seat;
-    const struct swc_bindings * const bindings;
-    struct wl_list screens;
-    struct swc_compositor * const compositor;
-    struct swc_shm * const shm;
-    struct swc_drm * const drm;
+	const struct swc_seat *const seat;
+	const struct swc_bindings *const bindings;
+	struct wl_list screens;
+	struct swc_compositor *const compositor;
+	struct swc_shm *const shm;
+	struct swc_drm *const drm;
 
 #ifdef ENABLE_XWAYLAND
-    const struct swc_xserver * const xserver;
+	const struct swc_xserver *const xserver;
 #endif
 };
 
@@ -59,4 +57,3 @@ void swc_activate(void);
 void swc_deactivate(void);
 
 #endif
-

@@ -53,24 +53,24 @@ struct glyph {
 static struct {
 	int count;
 	struct glyph *glyphs;
-} extracted_font = {0, NULL};
+} extracted_font = { 0, NULL };
 
-#define PCF_PROPERTIES		    (1<<0)
-#define PCF_ACCELERATORS	    (1<<1)
-#define PCF_METRICS		    (1<<2)
-#define PCF_BITMAPS		    (1<<3)
-#define PCF_INK_METRICS		    (1<<4)
-#define PCF_BDF_ENCODINGS	    (1<<5)
-#define PCF_SWIDTHS		    (1<<6)
-#define PCF_GLYPH_NAMES		    (1<<7)
-#define PCF_BDF_ACCELERATORS	    (1<<8)
+#define PCF_PROPERTIES (1 << 0)
+#define PCF_ACCELERATORS (1 << 1)
+#define PCF_METRICS (1 << 2)
+#define PCF_BITMAPS (1 << 3)
+#define PCF_INK_METRICS (1 << 4)
+#define PCF_BDF_ENCODINGS (1 << 5)
+#define PCF_SWIDTHS (1 << 6)
+#define PCF_GLYPH_NAMES (1 << 7)
+#define PCF_BDF_ACCELERATORS (1 << 8)
 
-#define PCF_DEFAULT_FORMAT	0x00000000
-#define PCF_INKBOUNDS		0x00000200
-#define PCF_ACCEL_W_INKBOUNDS	0x00000100
-#define PCF_COMPRESSED_METRICS	0x00000100
+#define PCF_DEFAULT_FORMAT 0x00000000
+#define PCF_INKBOUNDS 0x00000200
+#define PCF_ACCEL_W_INKBOUNDS 0x00000100
+#define PCF_COMPRESSED_METRICS 0x00000100
 
-#define PCF_FORMAT_MASK		0xffffff00
+#define PCF_FORMAT_MASK 0xffffff00
 
 struct pcf_header {
 	char header[4];
@@ -137,12 +137,12 @@ handle_compressed_metrics(int32_t count, struct compressed_metrics *m)
 	for (i = 0; i < count; ++i) {
 		struct glyph *glyph = &extracted_font.glyphs[i];
 		glyph->left_bearing =
-			((int16_t) m[i].left_sided_bearing) - 0x80;
+		    ((int16_t)m[i].left_sided_bearing) - 0x80;
 		glyph->right_bearing =
-			((int16_t) m[i].right_side_bearing) - 0x80;
-		glyph->width = ((int16_t) m[i].character_width) - 0x80;
-		glyph->ascent = ((int16_t) m[i].character_ascent) - 0x80;
-		glyph->descent = ((int16_t) m[i].character_descent) - 0x80;
+		    ((int16_t)m[i].right_side_bearing) - 0x80;
+		glyph->width = ((int16_t)m[i].character_width) - 0x80;
+		glyph->ascent = ((int16_t)m[i].character_ascent) - 0x80;
+		glyph->descent = ((int16_t)m[i].character_descent) - 0x80;
 
 		/* computed stuff */
 		glyph->height = glyph->ascent + glyph->descent;
@@ -160,8 +160,7 @@ handle_metrics(void *metricbuf)
 
 	if ((metrics->format & PCF_FORMAT_MASK) == PCF_DEFAULT_FORMAT) {
 		fprintf(stderr, "todo...\n");
-	} else if ((metrics->format & PCF_FORMAT_MASK) ==
-		   PCF_COMPRESSED_METRICS) {
+	} else if ((metrics->format & PCF_FORMAT_MASK) == PCF_COMPRESSED_METRICS) {
 		handle_compressed_metrics(
 		    metrics->compressed.count,
 		    &metrics->compressed.compressed_metrics[0]);
@@ -182,13 +181,13 @@ handle_glyph_names(struct glyph_names *names)
 
 	fprintf(stderr, "glyph names format %x\n", names->format);
 
-	char *names_start = ((char *) names) + sizeof(struct glyph_names)
-		+ (names->glyph_count + 1) * sizeof(int32_t);
+	char *names_start = ((char *)names) + sizeof(struct glyph_names)
+	                    + (names->glyph_count + 1) * sizeof(int32_t);
 
 	int i;
 	for (i = 0; i < names->glyph_count; ++i) {
 		int32_t start = names->offsets[i];
-		int32_t end = names->offsets[i+1];
+		int32_t end = names->offsets[i + 1];
 		char *name = names_start + start;
 		extracted_font.glyphs[i].name = calloc(1, end - start + 1);
 		memcpy(extracted_font.glyphs[i].name, name, end - start);
@@ -211,8 +210,8 @@ handle_bitmaps(struct bitmaps *bitmaps)
 		abort();
 	}
 
-	char *bitmaps_start = ((char*) bitmaps) + sizeof(struct bitmaps)
-		+ (bitmaps->glyph_count + 4) * sizeof(int32_t);
+	char *bitmaps_start = ((char *)bitmaps) + sizeof(struct bitmaps)
+	                      + (bitmaps->glyph_count + 4) * sizeof(int32_t);
 
 	for (unsigned i = 0; i < bitmaps->glyph_count; ++i) {
 		int32_t offset = bitmaps->offsets[i];
@@ -233,11 +232,11 @@ handle_pcf(void *fontbuf)
 		struct toc_entry *entry = &header->tables[i];
 		fprintf(stderr, "type: %d\n", entry->type);
 		if (entry->type == PCF_METRICS) {
-			handle_metrics((void *)((uintptr_t) fontbuf + entry->offset));
+			handle_metrics((void *)((uintptr_t)fontbuf + entry->offset));
 		} else if (entry->type == PCF_GLYPH_NAMES) {
-			handle_glyph_names((void *)((uintptr_t) fontbuf + entry->offset));
+			handle_glyph_names((void *)((uintptr_t)fontbuf + entry->offset));
 		} else if (entry->type == PCF_BITMAPS) {
-			handle_bitmaps((void *)((uintptr_t) fontbuf + entry->offset));
+			handle_bitmaps((void *)((uintptr_t)fontbuf + entry->offset));
 		}
 	}
 }
@@ -248,12 +247,11 @@ get_glyph_pixel(struct glyph *glyph, int x, int y)
 	int absx = glyph->hotx + x;
 	int absy = glyph->hoty + y;
 
-	if (absx < 0 || absx >= glyph->width ||
-	    absy < 0 || absy >= glyph->height)
+	if (absx < 0 || absx >= glyph->width || absy < 0 || absy >= glyph->height)
 		return 0;
 
 	int stride = (glyph->width + 31) / 32 * 4;
-	unsigned char block = glyph->data[absy * stride + (absx/8)];
+	unsigned char block = glyph->data[absy * stride + (absx / 8)];
 	int idx = absx % 8;
 	return (block >> idx) & 1;
 }
@@ -277,8 +275,8 @@ add_pixel(uint32_t pixel)
 	if (data_buffer.size == data_buffer.capacity) {
 		data_buffer.capacity *= 2;
 		data_buffer.data =
-			realloc(data_buffer.data,
-				sizeof(uint32_t) * data_buffer.capacity);
+		    realloc(data_buffer.data,
+		            sizeof(uint32_t) * data_buffer.capacity);
 	}
 	data_buffer.data[data_buffer.size++] = pixel;
 }
@@ -292,14 +290,14 @@ struct reconstructed_glyph {
 
 static void
 reconstruct_glyph(struct glyph *cursor, struct glyph *mask, char *name,
-		  struct reconstructed_glyph *glyph)
+                  struct reconstructed_glyph *glyph)
 {
 	int minx = min(-cursor->hotx, -mask->hotx);
 	int maxx = max(cursor->right_bearing, mask->right_bearing);
 
 	int miny = min(-cursor->hoty, -mask->hoty);
 	int maxy = max(cursor->height - cursor->hoty,
-		       mask->height - mask->hoty);
+	               mask->height - mask->hoty);
 
 	int width = maxx - minx;
 	int height = maxy - miny;
@@ -330,28 +328,28 @@ reconstruct_glyph(struct glyph *cursor, struct glyph *mask, char *name,
 
 /* From http://cgit.freedesktop.org/xorg/lib/libXfont/tree/src/builtins/fonts.c */
 static const char cursor_licence[] =
-	"/*\n"
- 	"* Copyright 1999 SuSE, Inc.\n"
- 	"*\n"
- 	"* Permission to use, copy, modify, distribute, and sell this software and its\n"
- 	"* documentation for any purpose is hereby granted without fee, provided that\n"
- 	"* the above copyright notice appear in all copies and that both that\n"
- 	"* copyright notice and this permission notice appear in supporting\n"
- 	"* documentation, and that the name of SuSE not be used in advertising or\n"
- 	"* publicity pertaining to distribution of the software without specific,\n"
- 	"* written prior permission.  SuSE makes no representations about the\n"
- 	"* suitability of this software for any purpose.  It is provided \"as is\"\n"
- 	"* without express or implied warranty.\n"
- 	"*\n"
- 	"* SuSE DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL\n"
- 	"* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE\n"
- 	"* BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\n"
- 	"* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION\n"
- 	"* OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN\n"
- 	"* CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n"
- 	"*\n"
- 	"* Author:  Keith Packard, SuSE, Inc.\n"
- 	"*/\n";
+    "/*\n"
+    "* Copyright 1999 SuSE, Inc.\n"
+    "*\n"
+    "* Permission to use, copy, modify, distribute, and sell this software and its\n"
+    "* documentation for any purpose is hereby granted without fee, provided that\n"
+    "* the above copyright notice appear in all copies and that both that\n"
+    "* copyright notice and this permission notice appear in supporting\n"
+    "* documentation, and that the name of SuSE not be used in advertising or\n"
+    "* publicity pertaining to distribution of the software without specific,\n"
+    "* written prior permission.  SuSE makes no representations about the\n"
+    "* suitability of this software for any purpose.  It is provided \"as is\"\n"
+    "* without express or implied warranty.\n"
+    "*\n"
+    "* SuSE DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL\n"
+    "* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL SuSE\n"
+    "* BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\n"
+    "* WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION\n"
+    "* OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN\n"
+    "* CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n"
+    "*\n"
+    "* Author:  Keith Packard, SuSE, Inc.\n"
+    "*/\n";
 
 static void
 write_output_file(FILE *file, struct reconstructed_glyph *glyphs, int n)
@@ -384,17 +382,17 @@ write_output_file(FILE *file, struct reconstructed_glyph *glyphs, int n)
 	fputs("};\n\n", file);
 
 	fprintf(file,
-		"static struct cursor {\n"
-		"\tint width, height;\n"
-		"\tint hotspot_x, hotspot_y;\n"
-		"\tsize_t offset;\n"
-		"} cursor_metadata[] = {\n");
+	        "static struct cursor {\n"
+	        "\tint width, height;\n"
+	        "\tint hotspot_x, hotspot_y;\n"
+	        "\tsize_t offset;\n"
+	        "} cursor_metadata[] = {\n");
 
 	for (i = 0; i < n; ++i)
 		fprintf(file, "\t{ %d, %d, %d, %d, %zu }, /* %s */\n",
-			glyphs[i].width, glyphs[i].height,
-			glyphs[i].hotspot_x, glyphs[i].hotspot_y,
-			glyphs[i].offset, glyphs[i].name);
+		        glyphs[i].width, glyphs[i].height,
+		        glyphs[i].hotspot_x, glyphs[i].hotspot_y,
+		        glyphs[i].offset, glyphs[i].name);
 
 	fputs("};\n", file);
 }
@@ -410,9 +408,7 @@ find_mask_glyph(char *name)
 	for (i = 0; i < extracted_font.count; ++i) {
 		struct glyph *g = &extracted_font.glyphs[i];
 		int l2 = strlen(g->name);
-		if ((l2 == len + masklen) &&
-		    (memcmp(g->name, name, len) == 0) &&
-		    (memcmp(g->name + len, mask, masklen) == 0)) {
+		if ((l2 == len + masklen) && (memcmp(g->name, name, len) == 0) && (memcmp(g->name + len, mask, masklen) == 0)) {
 			return g;
 		}
 	}
@@ -421,8 +417,8 @@ find_mask_glyph(char *name)
 
 static void
 find_cursor_and_mask(const char *name,
-		     struct glyph **cursor,
-		     struct glyph **mask)
+                     struct glyph **cursor,
+                     struct glyph **mask)
 {
 	int i;
 	char mask_name[100];
@@ -463,31 +459,32 @@ output_interesting_cursors(FILE *file)
 	int i;
 	int n = sizeof(interesting_cursors) / sizeof(interesting_cursors[0]);
 	struct reconstructed_glyph *glyphs =
-		malloc(n * sizeof(*glyphs));
+	    malloc(n * sizeof(*glyphs));
 
 	for (i = 0; i < n; ++i) {
 		struct glyph *cursor, *mask;
 		find_cursor_and_mask(interesting_cursors[i].source_name,
-				     &cursor, &mask);
+		                     &cursor, &mask);
 		if (!cursor) {
 			fprintf(stderr, "no cursor for %s\n",
-			       interesting_cursors[i].source_name);
+			        interesting_cursors[i].source_name);
 			abort();
 		}
 		if (!mask) {
 			fprintf(stderr, "no mask for %s\n",
-			       interesting_cursors[i].source_name);
+			        interesting_cursors[i].source_name);
 			abort();
 		}
 		reconstruct_glyph(cursor, mask,
-				  interesting_cursors[i].target_name,
-				  &glyphs[i]);
+		                  interesting_cursors[i].target_name,
+		                  &glyphs[i]);
 	}
 
 	write_output_file(file, glyphs, n);
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
 	if (argc != 3) {
 		fprintf(stderr, "Usage: %s input.pcf output.h\n", argv[0]);
@@ -500,7 +497,7 @@ int main(int argc, char *argv[])
 	fstat(fd, &filestat);
 
 	void *fontbuf = mmap(NULL, filestat.st_size, PROT_READ,
-			     MAP_PRIVATE, fd, 0);
+	                     MAP_PRIVATE, fd, 0);
 
 	handle_pcf(fontbuf);
 

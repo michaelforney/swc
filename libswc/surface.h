@@ -30,54 +30,50 @@
 #include <wayland-server.h>
 #include <pixman.h>
 
-enum
-{
-    SURFACE_COMMIT_ATTACH = (1 << 0),
-    SURFACE_COMMIT_DAMAGE = (1 << 1),
-    SURFACE_COMMIT_OPAQUE = (1 << 2),
-    SURFACE_COMMIT_INPUT = (1 << 3),
-    SURFACE_COMMIT_FRAME = (1 << 4)
+enum {
+	SURFACE_COMMIT_ATTACH = (1 << 0),
+	SURFACE_COMMIT_DAMAGE = (1 << 1),
+	SURFACE_COMMIT_OPAQUE = (1 << 2),
+	SURFACE_COMMIT_INPUT = (1 << 3),
+	SURFACE_COMMIT_FRAME = (1 << 4)
 };
 
-struct surface_state
-{
-    struct wld_buffer * buffer;
-    struct wl_resource * buffer_resource;
-    struct wl_listener buffer_destroy_listener;
+struct surface_state {
+	struct wld_buffer *buffer;
+	struct wl_resource *buffer_resource;
+	struct wl_listener buffer_destroy_listener;
 
-    /* The region that needs to be repainted. */
-    pixman_region32_t damage;
+	/* The region that needs to be repainted. */
+	pixman_region32_t damage;
 
-    /* The region that is opaque. */
-    pixman_region32_t opaque;
+	/* The region that is opaque. */
+	pixman_region32_t opaque;
 
-    /* The region that accepts input. */
-    pixman_region32_t input;
+	/* The region that accepts input. */
+	pixman_region32_t input;
 
-    struct wl_list frame_callbacks;
+	struct wl_list frame_callbacks;
 };
 
-struct surface
-{
-    struct wl_resource * resource;
+struct surface {
+	struct wl_resource *resource;
 
-    struct surface_state state;
+	struct surface_state state;
 
-    struct
-    {
-        struct surface_state state;
-        uint32_t commit;
-        int32_t x, y;
-    } pending;
+	struct
+	    {
+		struct surface_state state;
+		uint32_t commit;
+		int32_t x, y;
+	} pending;
 
-    struct view * view;
-    struct view_handler view_handler;
+	struct view *view;
+	struct view_handler view_handler;
 };
 
-struct surface * surface_new(struct wl_client * client,
-                             uint32_t version, uint32_t id);
+struct surface *surface_new(struct wl_client *client,
+                            uint32_t version, uint32_t id);
 
-void surface_set_view(struct surface * surface, struct view * view);
+void surface_set_view(struct surface *surface, struct view *view);
 
 #endif
-

@@ -29,64 +29,58 @@
 
 /* Focus {{{ */
 
-enum
-{
-    INPUT_FOCUS_EVENT_CHANGED
+enum {
+	INPUT_FOCUS_EVENT_CHANGED
 };
 
-struct input_focus_event_data
-{
-    struct compositor_view * old, * new;
+struct input_focus_event_data {
+	struct compositor_view *old, *new;
 };
 
-struct input_focus_handler
-{
-    void (* enter)(struct input_focus_handler * handler,
-                   struct wl_resource * resource,
-                   struct compositor_view * view);
-    void (* leave)(struct input_focus_handler * handler,
-                   struct wl_resource * resource,
-                   struct compositor_view * view);
+struct input_focus_handler {
+	void (*enter)(struct input_focus_handler *handler,
+	              struct wl_resource *resource,
+	              struct compositor_view *view);
+	void (*leave)(struct input_focus_handler *handler,
+	              struct wl_resource *resource,
+	              struct compositor_view *view);
 };
 
-struct input_focus
-{
-    struct wl_resource * resource;
-    struct compositor_view * view;
-    struct wl_listener view_destroy_listener;
+struct input_focus {
+	struct wl_resource *resource;
+	struct compositor_view *view;
+	struct wl_listener view_destroy_listener;
 
-    struct input_focus_handler * handler;
-    struct wl_list resources;
+	struct input_focus_handler *handler;
+	struct wl_list resources;
 
-    struct wl_signal event_signal;
+	struct wl_signal event_signal;
 };
 
-bool input_focus_initialize(struct input_focus * input_focus,
-                            struct input_focus_handler * input_handler);
+bool input_focus_initialize(struct input_focus *input_focus,
+                            struct input_focus_handler *input_handler);
 
-void input_focus_finalize(struct input_focus * input_focus);
+void input_focus_finalize(struct input_focus *input_focus);
 
-void input_focus_add_resource(struct input_focus * input_focus,
-                              struct wl_resource * resource);
+void input_focus_add_resource(struct input_focus *input_focus,
+                              struct wl_resource *resource);
 
-void input_focus_remove_resource(struct input_focus * input_focus,
-                                 struct wl_resource * resource);
+void input_focus_remove_resource(struct input_focus *input_focus,
+                                 struct wl_resource *resource);
 
-void input_focus_set(struct input_focus * input_focus,
-                     struct compositor_view * view);
+void input_focus_set(struct input_focus *input_focus,
+                     struct compositor_view *view);
 
 /* }}} */
 
 /* Key/button handling {{{ */
 
-struct press
-{
-    uint32_t value;
-    uint32_t serial;
-    void * data;
+struct press {
+	uint32_t value;
+	uint32_t serial;
+	void *data;
 };
 
 /* }}} */
 
 #endif
-

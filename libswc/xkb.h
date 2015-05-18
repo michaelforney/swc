@@ -30,30 +30,28 @@
 /* Keycodes are offset by 8 in XKB. */
 #define XKB_KEY(key) ((key) + 8)
 
-struct xkb
-{
-    struct xkb_context * context;
-    struct xkb_state * state;
+struct xkb {
+	struct xkb_context *context;
+	struct xkb_state *state;
 
-    struct
-    {
-        struct xkb_keymap * map;
-        int fd;
-        uint32_t size;
-        char * area;
-    } keymap;
+	struct
+	    {
+		struct xkb_keymap *map;
+		int fd;
+		uint32_t size;
+		char *area;
+	} keymap;
 
-    struct
-    {
-        uint32_t ctrl, alt, super, shift;
-    } indices;
+	struct
+	    {
+		uint32_t ctrl, alt, super, shift;
+	} indices;
 };
 
-bool xkb_initialize(struct xkb * xkb);
-void xkb_finalize(struct xkb * xkb);
-bool xkb_reset_state(struct xkb * xkb);
+bool xkb_initialize(struct xkb *xkb);
+void xkb_finalize(struct xkb *xkb);
+bool xkb_reset_state(struct xkb *xkb);
 
-bool xkb_update_keymap(struct xkb * xkb);
+bool xkb_update_keymap(struct xkb *xkb);
 
 #endif
-

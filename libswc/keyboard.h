@@ -32,55 +32,50 @@
 struct keyboard;
 struct wl_client;
 
-struct key
-{
-    struct press press;
-    struct keyboard_handler * handler;
+struct key {
+	struct press press;
+	struct keyboard_handler *handler;
 };
 
-struct keyboard_modifier_state
-{
-    uint32_t depressed;
-    uint32_t latched;
-    uint32_t locked;
-    uint32_t group;
+struct keyboard_modifier_state {
+	uint32_t depressed;
+	uint32_t latched;
+	uint32_t locked;
+	uint32_t group;
 };
 
-struct keyboard_handler
-{
-    bool (* key)(struct keyboard * keyboard, uint32_t time,
-                 struct key * key, uint32_t state);
-    bool (* modifiers)(struct keyboard * keyboard,
-                       const struct keyboard_modifier_state * state);
+struct keyboard_handler {
+	bool (*key)(struct keyboard *keyboard, uint32_t time,
+	            struct key *key, uint32_t state);
+	bool (*modifiers)(struct keyboard *keyboard,
+	                  const struct keyboard_modifier_state *state);
 
-    struct wl_list link;
+	struct wl_list link;
 };
 
-struct keyboard
-{
-    struct input_focus focus;
-    struct input_focus_handler focus_handler;
-    struct xkb xkb;
+struct keyboard {
+	struct input_focus focus;
+	struct input_focus_handler focus_handler;
+	struct xkb xkb;
 
-    struct wl_array keys;
-    struct wl_list handlers;
-    struct keyboard_handler client_handler;
-    struct wl_array client_keys;
+	struct wl_array keys;
+	struct wl_list handlers;
+	struct keyboard_handler client_handler;
+	struct wl_array client_keys;
 
-    struct keyboard_modifier_state modifier_state;
-    uint32_t modifiers;
+	struct keyboard_modifier_state modifier_state;
+	uint32_t modifiers;
 };
 
-bool keyboard_initialize(struct keyboard * keyboard);
-void keyboard_finalize(struct keyboard * keyboard);
-void keyboard_reset(struct keyboard * keyboard);
-void keyboard_set_focus(struct keyboard * keyboard,
-                        struct compositor_view * view);
-struct wl_resource * keyboard_bind(struct keyboard * keyboard,
-                                   struct wl_client * client,
-                                   uint32_t version, uint32_t id);
-void keyboard_handle_key(struct keyboard * keyboard, uint32_t time,
+bool keyboard_initialize(struct keyboard *keyboard);
+void keyboard_finalize(struct keyboard *keyboard);
+void keyboard_reset(struct keyboard *keyboard);
+void keyboard_set_focus(struct keyboard *keyboard,
+                        struct compositor_view *view);
+struct wl_resource *keyboard_bind(struct keyboard *keyboard,
+                                  struct wl_client *client,
+                                  uint32_t version, uint32_t id);
+void keyboard_handle_key(struct keyboard *keyboard, uint32_t time,
                          uint32_t key, uint32_t state);
 
 #endif
-

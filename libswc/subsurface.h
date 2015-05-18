@@ -28,13 +28,11 @@
 
 struct wl_client;
 
-struct subsurface
-{
-    struct wl_resource * resource;
+struct subsurface {
+	struct wl_resource *resource;
 };
 
-struct subsurface * subsurface_new(struct wl_client * client,
-                                   uint32_t version, uint32_t id);
+struct subsurface *subsurface_new(struct wl_client *client,
+                                  uint32_t version, uint32_t id);
 
 #endif
-

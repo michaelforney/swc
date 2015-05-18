@@ -38,66 +38,69 @@
 #define EXPORT __attribute__((visibility("default")))
 
 #if ENABLE_DEBUG
-# define MESSAGE_SOURCE \
-    fprintf(stderr, "[swc:%s:%d] ", __FILE__, __LINE__);
+#define MESSAGE_SOURCE \
+	fprintf(stderr, "[swc:%s:%d] ", __FILE__, __LINE__);
 #else
-# define MESSAGE_SOURCE
+#define MESSAGE_SOURCE
 #endif
 
-#define MESSAGE(type, format, ...) \
-    do { MESSAGE_SOURCE                                         \
-         fprintf(stderr, type ": " format, ## __VA_ARGS__); }   \
-    while (false)
+#define MESSAGE(type, format, ...)                                \
+	do {                                                      \
+		MESSAGE_SOURCE                                    \
+		fprintf(stderr, type ": " format, ##__VA_ARGS__); \
+	} while (false)
 
-#define WARNING(format, ...)    MESSAGE("WARNING", format, ## __VA_ARGS__)
-#define ERROR(format, ...)      MESSAGE("ERROR", format, ## __VA_ARGS__)
+#define WARNING(format, ...) MESSAGE("WARNING", format, ##__VA_ARGS__)
+#define ERROR(format, ...) MESSAGE("ERROR", format, ##__VA_ARGS__)
 
 #if ENABLE_DEBUG
-# define DEBUG(format, ...)     MESSAGE("DEBUG", format, ## __VA_ARGS__)
+#define DEBUG(format, ...) MESSAGE("DEBUG", format, ##__VA_ARGS__)
 #else
-# define DEBUG(format, ...)
+#define DEBUG(format, ...)
 #endif
 
-#define ARRAY_LENGTH(array) (sizeof (array) / sizeof (array)[0])
+#define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
 
 struct wl_resource;
 
-void remove_resource(struct wl_resource * resource);
+void remove_resource(struct wl_resource *resource);
 
-static inline uint32_t get_time(void)
+static inline uint32_t
+get_time(void)
 {
-    struct timeval timeval;
+	struct timeval timeval;
 
-    gettimeofday(&timeval, NULL);
-    return timeval.tv_sec * 1000 + timeval.tv_usec / 1000;
+	gettimeofday(&timeval, NULL);
+	return timeval.tv_sec * 1000 + timeval.tv_usec / 1000;
 }
 
 extern pixman_box32_t infinite_extents;
 
-static inline bool rectangle_contains_point
-    (const struct swc_rectangle * rectangle, int32_t x, int32_t y)
+static inline bool
+rectangle_contains_point(const struct swc_rectangle *rectangle, int32_t x, int32_t y)
 {
-    return x > rectangle->x && x < rectangle->x + rectangle->width
-        && y > rectangle->y && y < rectangle->y + rectangle->height;
+	return x > rectangle->x && x < rectangle->x + rectangle->width
+	       && y > rectangle->y && y < rectangle->y + rectangle->height;
 }
 
-static inline bool rectangle_overlap(const struct swc_rectangle * r1,
-                                     const struct swc_rectangle * r2)
+static inline bool
+rectangle_overlap(const struct swc_rectangle *r1,
+                  const struct swc_rectangle *r2)
 {
-    return (MAX(r1->x + r1->width, r2->x + r2->width) - MIN(r1->x, r2->x)
-            < r1->width + r2->width)
-        && (MAX(r1->y + r1->height, r2->y + r2->height) - MIN(r1->y, r2->y)
-            < r1->height + r2->height);
+	return (MAX(r1->x + r1->width, r2->x + r2->width) - MIN(r1->x, r2->x)
+	        < r1->width + r2->width)
+	       && (MAX(r1->y + r1->height, r2->y + r2->height) - MIN(r1->y, r2->y)
+	           < r1->height + r2->height);
 }
 
-static inline void array_remove(struct wl_array * array,
-                                void * item, size_t size)
+static inline void
+array_remove(struct wl_array *array,
+             void *item, size_t size)
 {
-    size_t bytes = array->size - ((intptr_t) item + size - (intptr_t) array->data);
-    if (bytes > 0)
-        memmove(item, (void *)((intptr_t) item + size), bytes);
-    array->size -= size;
+	size_t bytes = array->size - ((intptr_t)item + size - (intptr_t)array->data);
+	if (bytes > 0)
+		memmove(item, (void *)((intptr_t)item + size), bytes);
+	array->size -= size;
 }
 
 #endif
-

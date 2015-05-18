@@ -35,55 +35,51 @@
 struct evdev_device;
 struct wl_event_loop;
 
-struct evdev_device_handler
-{
-    void (* key)(uint32_t time, uint32_t key, uint32_t state);
-    void (* button)(uint32_t time, uint32_t key, uint32_t state);
-    void (* axis)(uint32_t time, uint32_t axis, wl_fixed_t amount);
-    void (* relative_motion)(uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
+struct evdev_device_handler {
+	void (*key)(uint32_t time, uint32_t key, uint32_t state);
+	void (*button)(uint32_t time, uint32_t key, uint32_t state);
+	void (*axis)(uint32_t time, uint32_t axis, wl_fixed_t amount);
+	void (*relative_motion)(uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
 };
 
-struct evdev_device
-{
-    char * path;
-    int fd;
-    struct libevdev * dev;
-    bool needs_sync;
+struct evdev_device {
+	char *path;
+	int fd;
+	struct libevdev *dev;
+	bool needs_sync;
 
-    const struct evdev_device_handler * handler;
+	const struct evdev_device_handler *handler;
 
-    struct
-    {
-        struct
-        {
-            struct
-            {
-                struct input_absinfo x, y;
-            } info;
+	struct
+	    {
+		struct
+		    {
+			struct
+			    {
+				struct input_absinfo x, y;
+			} info;
 
-            int32_t x, y;
-            bool pending;
-        } abs;
+			int32_t x, y;
+			bool pending;
+		} abs;
 
-        struct
-        {
-            int32_t dx, dy;
-            bool pending;
-        } rel;
-    } motion;
+		struct
+		    {
+			int32_t dx, dy;
+			bool pending;
+		} rel;
+	} motion;
 
-    uint32_t capabilities;
+	uint32_t capabilities;
 
-    struct wl_event_source * source;
-    struct wl_list link;
+	struct wl_event_source *source;
+	struct wl_list link;
 };
 
-struct evdev_device * evdev_device_new
-    (const char * path, const struct evdev_device_handler * handler);
+struct evdev_device *evdev_device_new(const char *path, const struct evdev_device_handler *handler);
 
-void evdev_device_destroy(struct evdev_device * device);
+void evdev_device_destroy(struct evdev_device *device);
 
-bool evdev_device_reopen(struct evdev_device * device);
+bool evdev_device_reopen(struct evdev_device *device);
 
 #endif
-

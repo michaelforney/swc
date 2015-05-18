@@ -29,24 +29,22 @@
 #include "surface.h"
 #include "view.h"
 
-struct framebuffer_plane
-{
-    uint32_t crtc;
-    drmModeCrtcPtr original_crtc_state;
-    struct mode mode;
-    struct view view;
-    struct wl_array connectors;
-    bool need_modeset;
-    struct drm_handler drm_handler;
-    struct wl_listener swc_listener;
+struct framebuffer_plane {
+	uint32_t crtc;
+	drmModeCrtcPtr original_crtc_state;
+	struct mode mode;
+	struct view view;
+	struct wl_array connectors;
+	bool need_modeset;
+	struct drm_handler drm_handler;
+	struct wl_listener swc_listener;
 };
 
-bool framebuffer_plane_initialize(struct framebuffer_plane * plane,
-                                  uint32_t crtc, struct mode * mode,
-                                  uint32_t * connectors,
+bool framebuffer_plane_initialize(struct framebuffer_plane *plane,
+                                  uint32_t crtc, struct mode *mode,
+                                  uint32_t *connectors,
                                   uint32_t num_connectors);
 
-void framebuffer_plane_finalize(struct framebuffer_plane * plane);
+void framebuffer_plane_finalize(struct framebuffer_plane *plane);
 
 #endif
-

@@ -30,4 +30,3 @@ bool shell_initialize(void);
 void shell_finalize(void);
 
 #endif
-

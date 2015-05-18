@@ -31,70 +31,66 @@
 #include <wayland-server.h>
 #include <pixman.h>
 
-struct button
-{
-    struct press press;
-    struct pointer_handler * handler;
+struct button {
+	struct press press;
+	struct pointer_handler *handler;
 };
 
-struct pointer_handler
-{
-    bool (* motion)(struct pointer_handler * handler, uint32_t time,
-                    wl_fixed_t x, wl_fixed_t y);
-    bool (* button)(struct pointer_handler * handler, uint32_t time,
-                    struct button * button, uint32_t state);
-    bool (* axis)(struct pointer_handler * handler, uint32_t time,
-                  enum wl_pointer_axis axis, wl_fixed_t amount);
+struct pointer_handler {
+	bool (*motion)(struct pointer_handler *handler, uint32_t time,
+	               wl_fixed_t x, wl_fixed_t y);
+	bool (*button)(struct pointer_handler *handler, uint32_t time,
+	               struct button *button, uint32_t state);
+	bool (*axis)(struct pointer_handler *handler, uint32_t time,
+	             enum wl_pointer_axis axis, wl_fixed_t amount);
 
-    struct wl_list link;
+	struct wl_list link;
 };
 
-struct pointer
-{
-    struct input_focus focus;
-    struct input_focus_handler focus_handler;
+struct pointer {
+	struct input_focus focus;
+	struct input_focus_handler focus_handler;
 
-    struct
-    {
-        struct view view;
-        struct surface * surface;
-        struct wl_listener destroy_listener;
-        struct wld_buffer * buffer;
+	struct
+	    {
+		struct view view;
+		struct surface *surface;
+		struct wl_listener destroy_listener;
+		struct wld_buffer *buffer;
 
-        /* Used for cursors set with pointer_set_cursor */
-        struct wld_buffer * internal_buffer;
+		/* Used for cursors set with pointer_set_cursor */
+		struct wld_buffer *internal_buffer;
 
-        struct
-        {
-            int32_t x, y;
-        } hotspot;
-    } cursor;
+		struct
+		    {
+			int32_t x, y;
+		} hotspot;
+	} cursor;
 
-    struct wl_array buttons;
-    struct wl_list handlers;
-    struct pointer_handler client_handler;
+	struct wl_array buttons;
+	struct wl_list handlers;
+	struct pointer_handler client_handler;
 
-    wl_fixed_t x, y;
-    pixman_region32_t region;
+	wl_fixed_t x, y;
+	pixman_region32_t region;
 };
 
-bool pointer_initialize(struct pointer * pointer);
-void pointer_finalize(struct pointer * pointer);
-void pointer_set_focus(struct pointer * pointer, struct compositor_view * view);
-void pointer_set_region(struct pointer * pointer, pixman_region32_t * region);
-void pointer_set_cursor(struct pointer * pointer, uint32_t id);
+bool pointer_initialize(struct pointer *pointer);
+void pointer_finalize(struct pointer *pointer);
+void pointer_set_focus(struct pointer *pointer, struct compositor_view *view);
+void pointer_set_region(struct pointer *pointer, pixman_region32_t *region);
+void pointer_set_cursor(struct pointer *pointer, uint32_t id);
 
-struct button * pointer_get_button(struct pointer * pointer, uint32_t serial);
+struct button *pointer_get_button(struct pointer *pointer, uint32_t serial);
 
-struct wl_resource * pointer_bind(struct pointer * pointer,
-                                  struct wl_client * client,
-                                  uint32_t version, uint32_t id);
-void pointer_handle_button(struct pointer * pointer, uint32_t time,
+struct wl_resource *pointer_bind(struct pointer *pointer,
+                                 struct wl_client *client,
+                                 uint32_t version, uint32_t id);
+void pointer_handle_button(struct pointer *pointer, uint32_t time,
                            uint32_t button, uint32_t state);
-void pointer_handle_axis(struct pointer * pointer, uint32_t time,
+void pointer_handle_axis(struct pointer *pointer, uint32_t time,
                          uint32_t axis, wl_fixed_t amount);
-void pointer_handle_relative_motion(struct pointer * pointer, uint32_t time,
+void pointer_handle_relative_motion(struct pointer *pointer, uint32_t time,
                                     wl_fixed_t dx, wl_fixed_t dy);
 
 #endif
-

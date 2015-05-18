@@ -29,85 +29,90 @@
 #include <unistd.h>
 #include <wayland-server.h>
 
-struct data
-{
-    struct wl_array mime_types;
-    struct wl_resource * source;
-    struct wl_list offers;
+struct data {
+	struct wl_array mime_types;
+	struct wl_resource *source;
+	struct wl_list offers;
 };
 
-static void offer_accept(struct wl_client * client,
-                         struct wl_resource * offer,
-                         uint32_t serial, const char * mime_type)
+static void
+offer_accept(struct wl_client *client,
+             struct wl_resource *offer,
+             uint32_t serial, const char *mime_type)
 {
-    struct data * data = wl_resource_get_user_data(offer);
+	struct data *data = wl_resource_get_user_data(offer);
 
-    /* Protect against expired data_offers being used. */
-    if (!data)
-        return;
+	/* Protect against expired data_offers being used. */
+	if (!data)
+		return;
 
-    wl_data_source_send_target(data->source, mime_type);
+	wl_data_source_send_target(data->source, mime_type);
 }
 
-static void offer_receive(struct wl_client * client,
-                          struct wl_resource * offer,
-                          const char * mime_type, int fd)
+static void
+offer_receive(struct wl_client *client,
+              struct wl_resource *offer,
+              const char *mime_type, int fd)
 {
-    struct data * data = wl_resource_get_user_data(offer);
+	struct data *data = wl_resource_get_user_data(offer);
 
-    /* Protect against expired data_offers being used. */
-    if (!data)
-        return;
+	/* Protect against expired data_offers being used. */
+	if (!data)
+		return;
 
-    wl_data_source_send_send(data->source, mime_type, fd);
-    close(fd);
+	wl_data_source_send_send(data->source, mime_type, fd);
+	close(fd);
 }
 
-static void offer_destroy(struct wl_client * client,
-                          struct wl_resource * offer)
+static void
+offer_destroy(struct wl_client *client,
+              struct wl_resource *offer)
 {
-    wl_resource_destroy(offer);
+	wl_resource_destroy(offer);
 }
 
 static struct wl_data_offer_interface data_offer_implementation = {
-    .accept = &offer_accept,
-    .receive = &offer_receive,
-    .destroy = &offer_destroy
+	.accept = &offer_accept,
+	.receive = &offer_receive,
+	.destroy = &offer_destroy
 };
 
-static void source_offer(struct wl_client * client,
-                         struct wl_resource * source,
-                         const char * mime_type)
+static void
+source_offer(struct wl_client *client,
+             struct wl_resource *source,
+             const char *mime_type)
 {
-    struct data * data = wl_resource_get_user_data(source);
-    char ** destination;
+	struct data *data = wl_resource_get_user_data(source);
+	char **destination;
 
-    destination = wl_array_add(&data->mime_types, sizeof *destination);
-    *destination = strdup(mime_type);
+	destination = wl_array_add(&data->mime_types, sizeof *destination);
+	*destination = strdup(mime_type);
 }
 
-static void source_destroy(struct wl_client * client,
-                           struct wl_resource * source)
+static void
+source_destroy(struct wl_client *client,
+               struct wl_resource *source)
 {
-    wl_resource_destroy(source);
+	wl_resource_destroy(source);
 }
 
 static struct wl_data_source_interface data_source_implementation = {
-    .offer = &source_offer,
-    .destroy = &source_destroy
+	.offer = &source_offer,
+	.destroy = &source_destroy
 };
 
-static void data_destroy(struct wl_resource * source)
+static void
+data_destroy(struct wl_resource *source)
 {
-    struct data * data = wl_resource_get_user_data(source);
-    struct wl_resource * offer;
-    char ** mime_type;
+	struct data *data = wl_resource_get_user_data(source);
+	struct wl_resource *offer;
+	char **mime_type;
 
-    wl_array_for_each(mime_type, &data->mime_types)
-        free(*mime_type);
-    wl_array_release(&data->mime_types);
+	wl_array_for_each (mime_type, &data->mime_types)
+		free(*mime_type);
+	wl_array_release(&data->mime_types);
 
-    /* After this data_source is destroyed, each of the data_offer objects
+	/* After this data_source is destroyed, each of the data_offer objects
      * associated with the data_source has a pointer to a free'd struct. We
      * can't destroy the resources because this results in a segfault on the
      * client when it correctly tries to call data_source.destroy. However, a
@@ -115,73 +120,75 @@ static void data_destroy(struct wl_resource * source)
      * data_offer, which would crash the server.
      *
      * So, we clear the user data on each of the offers to protect us. */
-    wl_resource_for_each(offer, &data->offers)
-    {
-        wl_resource_set_user_data(offer, NULL);
-        wl_resource_set_destructor(offer, NULL);
-    }
+	wl_resource_for_each (offer, &data->offers) {
+		wl_resource_set_user_data(offer, NULL);
+		wl_resource_set_destructor(offer, NULL);
+	}
 
-    free(data);
+	free(data);
 }
 
-static struct data * data_new(void)
+static struct data *
+data_new(void)
 {
-    struct data * data;
+	struct data *data;
 
-    data = malloc(sizeof *data);
+	data = malloc(sizeof *data);
 
-    if (!data)
-        return NULL;
+	if (!data)
+		return NULL;
 
-    wl_array_init(&data->mime_types);
-    wl_list_init(&data->offers);
+	wl_array_init(&data->mime_types);
+	wl_list_init(&data->offers);
 
-    return data;
+	return data;
 }
 
-struct wl_resource * data_source_new(struct wl_client * client,
-                                     uint32_t version, uint32_t id)
+struct wl_resource *
+data_source_new(struct wl_client *client,
+                uint32_t version, uint32_t id)
 {
-    struct data * data;
+	struct data *data;
 
-    data = data_new();
+	data = data_new();
 
-    if (!data)
-        return NULL;
+	if (!data)
+		return NULL;
 
-    /* Add the data source to the client. */
-    data->source = wl_resource_create(client, &wl_data_source_interface,
-                                      version, id);
+	/* Add the data source to the client. */
+	data->source = wl_resource_create(client, &wl_data_source_interface,
+	                                  version, id);
 
-    /* Destroy the data object when the source disappears. */
-    wl_resource_set_implementation(data->source, &data_source_implementation,
-                                   data, &data_destroy);
+	/* Destroy the data object when the source disappears. */
+	wl_resource_set_implementation(data->source, &data_source_implementation,
+	                               data, &data_destroy);
 
-    return data->source;
+	return data->source;
 }
 
-struct wl_resource * data_offer_new(struct wl_client * client,
-                                    struct wl_resource * source,
-                                    uint32_t version)
+struct wl_resource *
+data_offer_new(struct wl_client *client,
+               struct wl_resource *source,
+               uint32_t version)
 {
-    struct data * data = wl_resource_get_user_data(source);
-    struct wl_resource * offer;
+	struct data *data = wl_resource_get_user_data(source);
+	struct wl_resource *offer;
 
-    offer = wl_resource_create(client, &wl_data_offer_interface, version, 0);
-    wl_resource_set_implementation(offer, &data_offer_implementation,
-                                   data, &remove_resource);
-    wl_list_insert(&data->offers, wl_resource_get_link(offer));
+	offer = wl_resource_create(client, &wl_data_offer_interface, version, 0);
+	wl_resource_set_implementation(offer, &data_offer_implementation,
+	                               data, &remove_resource);
+	wl_list_insert(&data->offers, wl_resource_get_link(offer));
 
-    return offer;
+	return offer;
 }
 
-void data_send_mime_types(struct wl_resource * source,
-                          struct wl_resource * offer)
+void
+data_send_mime_types(struct wl_resource *source,
+                     struct wl_resource *offer)
 {
-    struct data * data = wl_resource_get_user_data(source);
-    char ** mime_type;
+	struct data *data = wl_resource_get_user_data(source);
+	char **mime_type;
 
-    wl_array_for_each(mime_type, &data->mime_types)
-        wl_data_offer_send_offer(offer, *mime_type);
+	wl_array_for_each (mime_type, &data->mime_types)
+		wl_data_offer_send_offer(offer, *mime_type);
 }
-
