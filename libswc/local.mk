@@ -54,7 +54,6 @@ SWC_SOURCES =                       \
     libswc/xdg_popup.c              \
     libswc/xdg_shell.c              \
     libswc/xdg_surface.c            \
-    libswc/xkb.c                    \
     protocol/swc-protocol.c         \
     protocol/wayland-drm-protocol.c \
     protocol/xdg-shell-protocol.c

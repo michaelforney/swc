@@ -33,11 +33,15 @@
 #include "util.h"
 
 #include <assert.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include <xkbcommon/xkbcommon.h>
 
 static const int repeat_delay = 500, repeat_rate = 40;
+static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
 
 static void
 enter(struct input_focus_handler *handler, struct wl_resource *resource, struct compositor_view *view)
@@ -103,16 +107,91 @@ client_handle_modifiers(struct keyboard *keyboard, const struct keyboard_modifie
 	return true;
 }
 
-bool
-keyboard_initialize(struct keyboard *keyboard)
+static bool
+update_keymap(struct xkb *xkb)
 {
-	if (!xkb_initialize(&keyboard->xkb)) {
-		ERROR("Could not initialize XKB\n");
+	const char *keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
+	char *keymap_string;
+	char keymap_path[strlen(keymap_directory) + 1 + sizeof keymap_file_template];
+
+	xkb->indices.ctrl = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_CTRL);
+	xkb->indices.alt = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_ALT);
+	xkb->indices.super = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_LOGO);
+	xkb->indices.shift = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_SHIFT);
+
+	/* In order to send the keymap to clients, we must first convert it to a
+	 * string and then mmap it to a file. */
+	keymap_string = xkb_keymap_get_as_string(xkb->keymap.map, XKB_KEYMAP_FORMAT_TEXT_V1);
+
+	if (!keymap_string) {
+		WARNING("Could not get XKB keymap as a string\n");
 		goto error0;
 	}
 
-	if (!input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
+	sprintf(keymap_path, "%s/%s", keymap_directory, keymap_file_template);
+
+	xkb->keymap.size = strlen(keymap_string) + 1;
+	xkb->keymap.fd = mkostemp(keymap_path, O_CLOEXEC);
+
+	if (xkb->keymap.fd == -1) {
+		WARNING("Could not create XKB keymap file\n");
 		goto error1;
+	}
+
+	unlink(keymap_path);
+
+	if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0) {
+		WARNING("Could not resize XKB keymap file\n");
+		goto error2;
+	}
+
+	xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE, MAP_SHARED, xkb->keymap.fd, 0);
+
+	if (xkb->keymap.area == MAP_FAILED) {
+		WARNING("Could not mmap XKB keymap string\n");
+		goto error2;
+	}
+
+	strcpy(xkb->keymap.area, keymap_string);
+	free(keymap_string);
+
+	return true;
+
+error2:
+	close(xkb->keymap.fd);
+error1:
+	free(keymap_string);
+error0:
+	return false;
+}
+
+bool
+keyboard_initialize(struct keyboard *keyboard)
+{
+	struct xkb *xkb = &keyboard->xkb;
+
+	if (!(xkb->context = xkb_context_new(0))) {
+		ERROR("Could not create XKB context\n");
+		goto error0;
+	}
+
+	if (!(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, NULL, 0))) {
+		ERROR("Could not create XKB keymap\n");
+		goto error1;
+	}
+
+	if (!(xkb->state = xkb_state_new(xkb->keymap.map))) {
+		ERROR("Could not create XKB state\n");
+		goto error2;
+	}
+
+	if (!update_keymap(xkb)) {
+		ERROR("Could not update XKB keymap\n");
+		goto error3;
+	}
+
+	if (!input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
+		goto error3;
 
 	keyboard->modifier_state = (struct keyboard_modifier_state){};
 	keyboard->modifiers = 0;
@@ -127,8 +206,12 @@ keyboard_initialize(struct keyboard *keyboard)
 
 	return true;
 
+error3:
+	xkb_state_unref(keyboard->xkb.state);
+error2:
+	xkb_keymap_unref(keyboard->xkb.keymap.map);
 error1:
-	xkb_finalize(&keyboard->xkb);
+	xkb_context_unref(keyboard->xkb.context);
 error0:
 	return false;
 }
@@ -139,14 +222,19 @@ keyboard_finalize(struct keyboard *keyboard)
 	wl_array_release(&keyboard->client_keys);
 	wl_array_release(&keyboard->keys);
 	input_focus_finalize(&keyboard->focus);
-	xkb_finalize(&keyboard->xkb);
+	munmap(keyboard->xkb.keymap.area, keyboard->xkb.keymap.size);
+	close(keyboard->xkb.keymap.fd);
+	xkb_state_unref(keyboard->xkb.state);
+	xkb_keymap_unref(keyboard->xkb.keymap.map);
+	xkb_context_unref(keyboard->xkb.context);
 }
 
-void
+bool
 keyboard_reset(struct keyboard *keyboard)
 {
 	struct key *key;
 	uint32_t time = get_time();
+	struct xkb_state *state;
 
 	/* Send simulated key release events for all current key handlers. */
 	wl_array_for_each (key, &keyboard->keys) {
@@ -165,7 +253,16 @@ keyboard_reset(struct keyboard *keyboard)
 	keyboard->keys.size = 0;
 	keyboard->modifier_state = (struct keyboard_modifier_state){};
 	keyboard->modifiers = 0;
-	xkb_reset_state(&keyboard->xkb);
+
+	if (!(state = xkb_state_new(keyboard->xkb.keymap.map))) {
+		ERROR("Failed to allocate new XKB state\n");
+		return false;
+	}
+
+	xkb_state_unref(keyboard->xkb.state);
+	keyboard->xkb.state = state;
+
+	return true;
 }
 
 /**

@@ -25,9 +25,11 @@
 #define SWC_KEYBOARD_H
 
 #include "input.h"
-#include "xkb.h"
 
 #include <wayland-util.h>
+
+/* Keycodes are offset by 8 in XKB. */
+#define XKB_KEY(key) ((key) + 8)
 
 struct keyboard;
 struct wl_client;
@@ -51,6 +53,22 @@ struct keyboard_handler {
 	struct wl_list link;
 };
 
+struct xkb {
+	struct xkb_context *context;
+	struct xkb_state *state;
+
+	struct {
+		struct xkb_keymap *map;
+		int fd;
+		uint32_t size;
+		char *area;
+	} keymap;
+
+	struct {
+		uint32_t ctrl, alt, super, shift;
+	} indices;
+};
+
 struct keyboard {
 	struct input_focus focus;
 	struct input_focus_handler focus_handler;
@@ -67,7 +85,7 @@ struct keyboard {
 
 bool keyboard_initialize(struct keyboard *keyboard);
 void keyboard_finalize(struct keyboard *keyboard);
-void keyboard_reset(struct keyboard *keyboard);
+bool keyboard_reset(struct keyboard *keyboard);
 void keyboard_set_focus(struct keyboard *keyboard, struct compositor_view *view);
 struct wl_resource *keyboard_bind(struct keyboard *keyboard, struct wl_client *client, uint32_t version, uint32_t id);
 void keyboard_handle_key(struct keyboard *keyboard, uint32_t time, uint32_t key, uint32_t state);
