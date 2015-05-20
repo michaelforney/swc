@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <wayland-server.h>
+
+struct wl_list;
 
 struct drm_handler {
 	void (*page_flip)(struct drm_handler *handler, uint32_t time);

@@ -25,11 +25,10 @@
 #define SWC_POINTER_H
 
 #include "input.h"
-#include "surface.h"
 #include "view.h"
 
-#include <wayland-server.h>
 #include <pixman.h>
+#include <wayland-server.h>
 
 struct button {
 	struct press press;

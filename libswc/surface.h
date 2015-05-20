@@ -26,9 +26,8 @@
 
 #include "view.h"
 
-#include <stdbool.h>
-#include <wayland-server.h>
 #include <pixman.h>
+#include <wayland-server.h>
 
 enum {
 	SURFACE_COMMIT_ATTACH = (1 << 0),

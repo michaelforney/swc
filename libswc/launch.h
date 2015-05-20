@@ -25,7 +25,6 @@
 #define SWC_LAUNCH_H
 
 #include <stdbool.h>
-#include <wayland-server.h>
 
 bool launch_initialize(void);
 void launch_finalize(void);

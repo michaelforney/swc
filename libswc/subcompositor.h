@@ -24,6 +24,8 @@
 #ifndef SWC_SUBCOMPOSITOR_H
 #define SWC_SUBCOMPOSITOR_H
 
+#include <stdbool.h>
+
 bool subcompositor_initialize(void);
 void subcompositor_finalize(void);
 

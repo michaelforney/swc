@@ -27,6 +27,7 @@
 #include "internal.h"
 #include "screen.h"
 #include "shm.h"
+#include "surface.h"
 #include "util.h"
 #include "cursor/cursor_data.h"
 

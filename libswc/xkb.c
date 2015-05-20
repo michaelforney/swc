@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <xkbcommon/xkbcommon.h>
 
 static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
 

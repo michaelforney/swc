@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <xkbcommon/xkbcommon.h>
 
 static const int repeat_delay = 500, repeat_rate = 40;
 

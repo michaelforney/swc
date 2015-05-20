@@ -31,6 +31,7 @@
 
 #include <errno.h>
 #include <wayland-util.h>
+#include <xkbcommon/xkbcommon.h>
 
 struct binding {
 	uint32_t value;

@@ -21,11 +21,11 @@
  * SOFTWARE.
  */
 
-#include <stdbool.h>
-#include <xkbcommon/xkbcommon.h>
-
 #ifndef SWC_XKB_H
 #define SWC_XKB_H
+
+#include <stdbool.h>
+#include <stdint.h>
 
 /* Keycodes are offset by 8 in XKB. */
 #define XKB_KEY(key) ((key) + 8)

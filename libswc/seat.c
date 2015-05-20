@@ -30,6 +30,7 @@
 #include "keyboard.h"
 #include "launch.h"
 #include "pointer.h"
+#include "surface.h"
 #include "util.h"
 
 #include <errno.h>

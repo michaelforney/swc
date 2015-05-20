@@ -23,6 +23,7 @@
 
 #include "data_device.h"
 #include "data.h"
+#include "event.h"
 #include "util.h"
 
 static void

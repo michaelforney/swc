@@ -26,8 +26,11 @@
 
 #include "drm.h"
 #include "mode.h"
-#include "surface.h"
 #include "view.h"
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <wayland-server.h>
 
 struct framebuffer_plane {
 	uint32_t crtc;

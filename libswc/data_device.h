@@ -24,8 +24,6 @@
 #ifndef SWC_DATA_DEVICE_H
 #define SWC_DATA_DEVICE_H
 
-#include "event.h"
-
 #include <stdbool.h>
 #include <wayland-server.h>
 
