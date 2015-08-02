@@ -49,7 +49,7 @@ static void new_screen(struct swc_screen * screen)
 Create a `struct swc_manager` containing pointers to these functions.
 
 ```C
-static const struct swc_manager manager = { &new_window, &new_screen };
+static const struct swc_manager manager = { &new_screen, &new_window };
 ```
 
 In your startup code, you must create a Wayland display.
