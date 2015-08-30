@@ -11,7 +11,7 @@
 
 CC              = gcc
 CFLAGS          = -pipe
-OBJCOPY         = objcopy
+# OBJCOPY         = objcopy
 # PKG_CONFIG      = pkg-config
 # WAYLAND_SCANNER = wayland-scanner
 

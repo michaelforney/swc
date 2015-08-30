@@ -11,6 +11,7 @@ INCLUDEDIR      ?= $(PREFIX)/include
 DATADIR         ?= $(PREFIX)/share
 PKGCONFIGDIR    ?= $(LIBDIR)/pkgconfig
 
+OBJCOPY         ?= objcopy
 PKG_CONFIG      ?= pkg-config
 WAYLAND_SCANNER ?= wayland-scanner
 
