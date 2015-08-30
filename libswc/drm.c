@@ -278,7 +278,7 @@ drm_initialize(void)
 	}
 
 	if (stat(drm.path, &render) != 0) {
-		ERROR("Could not stat render node for primary DRM device: %s\n", strerror(errno));
+		ERROR("stat %s failed (does your kernel support render nodes?): %s\n", drm.path, strerror(errno));
 		goto error1;
 	}
 
