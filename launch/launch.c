@@ -305,12 +305,11 @@ done:
 static void
 find_vt(char *vt, size_t size)
 {
-	char *vt_num_string;
+	char *vtnr;
 
-	if ((vt_num_string = getenv("XDG_VTNR"))) {
-		if (snprintf(vt, size, "/dev/tty%s", vt_num_string) >= size)
-			die("XDG_VTNR is too long");
-	} else {
+	/* If we are running from an existing X or wayland session, always open a new
+	 * VT instead of using the current one. */
+	if (getenv("DISPLAY") || getenv("WAYLAND_DISPLAY") || !(vtnr = getenv("XDG_VTNR"))) {
 		int tty0_fd, vt_num;
 
 		tty0_fd = open("/dev/tty0", O_RDWR);
@@ -321,6 +320,9 @@ find_vt(char *vt, size_t size)
 		close(tty0_fd);
 		if (snprintf(vt, size, "/dev/tty%d", vt_num) >= size)
 			die("VT number is too large");
+	} else {
+		if (snprintf(vt, size, "/dev/tty%s", vtnr) >= size)
+			die("XDG_VTNR is too long");
 	}
 }
 
