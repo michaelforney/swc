@@ -69,6 +69,7 @@ handle_cursor_surface_destroy(struct wl_listener *listener, void *data)
 static bool
 update(struct view *view)
 {
+	view_frame(view, get_time());
 	return true;
 }
 

@@ -122,7 +122,7 @@ void view_update_screens(struct view *view);
  * Send a new frame event through the view's event signal.
  *
  * This should be called by the view itself when the next frame is visible to
- * the user. If time information is not available, swc_time() can be passed
+ * the user. If time information is not available, get_time() can be passed
  * instead.
  */
 void view_frame(struct view *view, uint32_t time);
