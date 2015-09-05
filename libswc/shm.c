@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #include <wayland-server.h>
 #include <wld/pixman.h>
 #include <wld/wld.h>
@@ -172,33 +173,34 @@ create_pool(struct wl_client *client, struct wl_resource *resource, uint32_t id,
 
 	if (!(pool = malloc(sizeof *pool))) {
 		wl_resource_post_no_memory(resource);
-		return;
+		goto error0;
 	}
 
 	pool->resource = wl_resource_create(client, &wl_shm_pool_interface, wl_resource_get_version(resource), id);
 
 	if (!pool->resource) {
 		wl_resource_post_no_memory(resource);
-		goto error0;
+		goto error1;
 	}
 
 	wl_resource_set_implementation(pool->resource, &shm_pool_implementation, pool, &destroy_pool_resource);
 	pool->data = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
-
 	if (pool->data == MAP_FAILED) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD, "mmap failed: %s", strerror(errno));
-		goto error1;
+		goto error2;
 	}
 
+	close(fd);
 	pool->size = size;
 	pool->references = 1;
-
 	return;
 
-error1:
+error2:
 	wl_resource_destroy(pool->resource);
-error0:
+error1:
 	free(pool);
+error0:
+	close(fd);
 }
 
 static struct wl_shm_interface shm_implementation = {
