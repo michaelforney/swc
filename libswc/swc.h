@@ -301,6 +301,16 @@ struct swc_manager {
 	 * Called when a new window is created.
 	 */
 	void (*new_window)(struct swc_window *window);
+
+	/**
+	 * Called when the session gets activated (for example, startup or VT switch).
+	 */
+	void (*activate)();
+
+	/**
+	 * Called when the session gets deactivated.
+	 */
+	void (*deactivate)();
 };
 
 /**

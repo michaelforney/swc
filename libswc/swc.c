@@ -97,6 +97,8 @@ swc_activate(void)
 {
 	swc.active = true;
 	send_event(&swc.event_signal, SWC_EVENT_ACTIVATED, NULL);
+	if (swc.manager->activate)
+		swc.manager->activate();
 }
 
 void
@@ -104,6 +106,8 @@ swc_deactivate(void)
 {
 	swc.active = false;
 	send_event(&swc.event_signal, SWC_EVENT_DEACTIVATED, NULL);
+	if (swc.manager->deactivate)
+		swc.manager->deactivate();
 }
 
 EXPORT bool
