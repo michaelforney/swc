@@ -50,6 +50,7 @@ static struct {
 	int display;
 	char display_name[16];
 	int abstract_fd, unix_fd, wm_fd;
+	bool xwm_initialized;
 } xserver;
 
 struct swc_xserver swc_xserver;
@@ -183,7 +184,9 @@ close_display(void)
 static int
 handle_usr1(int signal_number, void *data)
 {
-	if (!xwm_initialize(xserver.wm_fd)) {
+	if (xwm_initialize(xserver.wm_fd)) {
+		xserver.xwm_initalized = true;
+	} else {
 		ERROR("Failed to initialize X window manager\n");
 		/* XXX: How do we handle this case? */
 	}
@@ -299,7 +302,8 @@ error0:
 void
 xserver_finalize(void)
 {
-	xwm_finalize();
+	if (xserver.xwm_initialized)
+		xwm_finalize();
 	close_display();
 	wl_client_destroy(swc_xserver.client);
 }
