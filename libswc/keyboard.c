@@ -298,10 +298,11 @@ keyboard_bind(struct keyboard *keyboard, struct wl_client *client, uint32_t vers
 
 	client_resource = wl_resource_create(client, &wl_keyboard_interface, version, id);
 	wl_resource_set_implementation(client_resource, &keyboard_implementation, keyboard, &unbind);
-	input_focus_add_resource(&keyboard->focus, client_resource);
 
 	/* Subtract one to remove terminating NULL character. */
 	wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, keyboard->xkb.keymap.fd, keyboard->xkb.keymap.size - 1);
+
+	input_focus_add_resource(&keyboard->focus, client_resource);
 
 	if (version >= 4)
 		wl_keyboard_send_repeat_info(client_resource, repeat_rate, repeat_delay);
