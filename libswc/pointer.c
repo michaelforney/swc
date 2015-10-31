@@ -32,7 +32,6 @@
 #include "cursor/cursor_data.h"
 
 #include <stdio.h>
-#include <assert.h>
 #include <wld/wld.h>
 
 static void
@@ -258,7 +257,12 @@ clip_position(struct pointer *pointer, wl_fixed_t fx, wl_fixed_t fy)
 	last_y = wl_fixed_to_int(pointer->y);
 
 	if (!pixman_region32_contains_point(&pointer->region, x, y, NULL)) {
-		assert(pixman_region32_contains_point(&pointer->region, last_x, last_y, &box));
+		if (!pixman_region32_contains_point(&pointer->region, last_x, last_y, &box)) {
+			WARNING("cursor is not in the visible screen area\n");
+			pointer->x = 0;
+			pointer->y = 0;
+			return;
+		}
 
 		/* Do some clipping. */
 		x = MAX(MIN(x, box.x2 - 1), box.x1);
