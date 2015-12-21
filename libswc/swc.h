@@ -20,9 +20,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 #ifndef SWC_H
 #define SWC_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -313,6 +316,10 @@ bool swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop
  * Stops the compositor, releasing any used resources.
  */
 void swc_finalize(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
