@@ -28,6 +28,10 @@
 #include <stdint.h>
 #include <wayland-server.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Rectangles {{{ */
 
 struct swc_rectangle {
@@ -323,6 +327,10 @@ bool swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop
  * Stops the compositor, releasing any used resources.
  */
 void swc_finalize(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
