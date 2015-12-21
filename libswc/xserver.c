@@ -185,7 +185,7 @@ static int
 handle_usr1(int signal_number, void *data)
 {
 	if (xwm_initialize(xserver.wm_fd)) {
-		xserver.xwm_initalized = true;
+		xserver.xwm_initialized = true;
 	} else {
 		ERROR("Failed to initialize X window manager\n");
 		/* XXX: How do we handle this case? */
