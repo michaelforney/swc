@@ -196,6 +196,15 @@ handle_usr1(int signal_number, void *data)
 	return 0;
 }
 
+static void
+handle_client_destroy(struct wl_listener *listener, void *data) {
+	swc_xserver.client = NULL;
+}
+
+static struct wl_listener client_destroy_listener = {
+	.notify = handle_client_destroy,
+};
+
 bool
 xserver_initialize(void)
 {
@@ -229,6 +238,7 @@ xserver_initialize(void)
 	if (!(swc_xserver.client = wl_client_create(swc.display, wl[0])))
 		goto error4;
 
+	wl_client_add_destroy_listener(swc_xserver.client, &client_destroy_listener);
 	xserver.wm_fd = wm[0];
 
 	/* Start the X server */
@@ -304,6 +314,7 @@ xserver_finalize(void)
 {
 	if (xserver.xwm_initialized)
 		xwm_finalize();
+	if (swc_xserver.client)
+		wl_client_destroy(swc_xserver.client);
 	close_display();
-	wl_client_destroy(swc_xserver.client);
 }
