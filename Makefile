@@ -50,19 +50,11 @@ libinput_CONSTRAINTS        := --atleast-version=0.4
 wayland-server_CONSTRAINTS  := --atleast-version=1.6.0
 
 define check
-    $(1)_EXISTS = $$(shell $$(PKG_CONFIG) --exists $$($(1)_CONSTRAINTS) $(1) && echo yes)
-
-    ifeq ($$(origin $(1)_CFLAGS),undefined)
-        ifneq ($$($(1)_EXISTS),yes)
-            $$(error Could not find package $(1))
-        endif
-        $(1)_CFLAGS = $$(shell $$(PKG_CONFIG) --cflags $(1))
+    ifeq ($$(origin $(1)_EXISTS),undefined)
+        $(1)_EXISTS = $$(shell $$(PKG_CONFIG) --exists $$($(1)_CONSTRAINTS) $(1) && echo yes)
     endif
-    ifeq ($$(origin $(1)_LIBS),undefined)
-        ifneq ($$($(1)_EXISTS),yes)
-            $$(error Could not find package $(1))
-        endif
-        $(1)_LIBS = $$(shell $$(PKG_CONFIG) --libs $(1))
+    ifneq ($$($(1)_EXISTS),yes)
+        $$(error Could not find package $(1) $$($(1)_CONSTRAINTS))
     endif
 endef
 
@@ -95,6 +87,8 @@ Q_SYM     = $(call quiet,SYM    )
 compile   = $(Q_CC)$(CC) $(FINAL_CPPFLAGS) $(FINAL_CFLAGS) -I . -c -o $@ $< \
             -MMD -MP -MF .deps/$(basename $<).d -MT $(basename $@).o -MT $(basename $@).lo
 link      = $(Q_CCLD)$(CC) $(LDFLAGS) -o $@ $^
+pkgconfig = $(foreach pkg,$(1),$(if $($(pkg)_$(3)),$($(pkg)_$(3)), \
+                                    $(shell $(PKG_CONFIG) --$(2) $(pkg))))
 
 include $(SUBDIRS:%=%/local.mk)
 
