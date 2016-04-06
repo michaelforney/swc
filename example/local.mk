@@ -2,7 +2,7 @@
 
 dir := example
 
-$(dir)_PACKAGES = wayland-server
+$(dir)_PACKAGES = wayland-server xkbcommon
 $(dir)_CFLAGS = -Ilibswc
 
 $(dir): $(dir)/wm
