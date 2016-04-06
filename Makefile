@@ -26,12 +26,13 @@ CLEAN_FILES     := $(TARGETS)
 include config.mk
 
 # Dependencies
-PACKAGES :=         \
-    libdrm          \
-    libevdev        \
-    pixman-1        \
-    wayland-server  \
-    wld             \
+PACKAGES :=           \
+    libdrm            \
+    libevdev          \
+    pixman-1          \
+    wayland-server    \
+    wayland-protocols \
+    wld               \
     xkbcommon
 
 ifeq ($(ENABLE_XWAYLAND),1)

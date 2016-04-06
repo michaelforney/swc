@@ -12,6 +12,7 @@ notable features include:
 Dependencies
 ------------
 * wayland
+* wayland-protocols
 * libdrm
 * libevdev
 * libxkbcommon

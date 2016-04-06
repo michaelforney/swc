@@ -26,7 +26,7 @@
 #include "surface.h"
 #include "util.h"
 #include "window.h"
-#include "protocol/xdg-shell-server-protocol.h"
+#include "protocol/xdg-shell-unstable-v5-server-protocol.h"
 
 #include <stdlib.h>
 

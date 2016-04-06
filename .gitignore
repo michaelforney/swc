@@ -6,8 +6,8 @@ protocol/swc-protocol.c
 protocol/swc-server-protocol.h
 protocol/wayland-drm-protocol.c
 protocol/wayland-drm-server-protocol.h
-protocol/xdg-shell-protocol.c
-protocol/xdg-shell-server-protocol.h
+protocol/xdg-shell-unstable-v5-protocol.c
+protocol/xdg-shell-unstable-v5-server-protocol.h
 
 /.deps/
 /swc.pc
