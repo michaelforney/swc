@@ -1,6 +1,6 @@
 /* swc: launch/launch.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013, 2014, 2016 Michael Forney
  *
  * Based in part upon weston-launch.c from weston which is:
  *
@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <spawn.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -405,14 +406,29 @@ error0:
 	exit(EXIT_FAILURE);
 }
 
+static void
+run(int fd) {
+	struct pollfd pollfd = { .fd = fd, .events = POLLIN };
+
+	for (;;) {
+		if (poll(&pollfd, 1, -1) < 0) {
+			if (errno == EINTR)
+				continue;
+			die("poll:");
+		}
+		handle_socket_data(pollfd.fd);
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
 	int option;
-	int sockets[2];
-	char *vt = NULL, vt_buf[64];
+	int sock[2];
+	char *vt = NULL, buf[64];
 	struct sigaction action = { 0 };
 	sigset_t set;
+	posix_spawnattr_t attr;
 
 	while ((option = getopt(argc, argv, "ns:t:")) != -1) {
 		switch (option) {
@@ -433,12 +449,12 @@ main(int argc, char *argv[])
 	if (argc - optind < 1)
 		usage(argv[0]);
 
-	if (socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, sockets) == -1)
+	if (socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, sock) == -1)
 		die("socketpair:");
 
-	launcher.socket = sockets[0];
+	launcher.socket = sock[0];
 
-	if (fcntl(sockets[0], F_SETFD, FD_CLOEXEC) == -1)
+	if (fcntl(sock[0], F_SETFD, FD_CLOEXEC) == -1)
 		die("failed set CLOEXEC on socket:");
 
 	action.sa_handler = &handle_chld;
@@ -468,68 +484,35 @@ main(int argc, char *argv[])
 	sigprocmask(SIG_SETMASK, &set, NULL);
 
 	if (!vt) {
-		find_vt(vt_buf, sizeof vt_buf);
-		vt = vt_buf;
+		find_vt(buf, sizeof(buf));
+		vt = buf;
 	}
 
 	fprintf(stderr, "running on %s\n", vt);
 	launcher.tty_fd = open_tty(vt);
 	setup_tty(launcher.tty_fd);
 
-	child_pid = fork();
+	sprintf(buf, "%d", sock[1]);
+	setenv(SWC_LAUNCH_SOCKET_ENV, buf, 1);
+	sprintf(buf, "%d", launcher.tty_fd);
+	setenv(SWC_LAUNCH_TTY_FD_ENV, buf, 1);
 
-	if (child_pid == 0) {
-		char string[64];
+	if (posix_spawnattr_setflags(&attr, POSIX_SPAWN_RESETIDS | POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK) < 0)
+		die("failed to set spawnattr flags:");
+	sigemptyset(&set);
+	if (posix_spawnattr_setsigmask(&attr, &set) < 0)
+		die("failed to set spawnattr sigmask:");
+	sigaddset(&set, SIGCHLD);
+	sigaddset(&set, SIGUSR1);
+	sigaddset(&set, SIGUSR2);
+	sigaddset(&set, SIGINT);
+	sigaddset(&set, SIGTERM);
+	if (posix_spawnattr_setsigdefault(&attr, &set) < 0)
+		die("failed to set spawnattr sigdefault:");
+	if (posix_spawnp(&child_pid, argv[optind], NULL, &attr, argv + optind, environ) < 0)
+		die("failed to spawn server:");
 
-		/* Reset signal handlers to defaults */
-		action.sa_handler = SIG_DFL;
-		if (sigaction(SIGCHLD, &action, NULL) == -1)
-			die("failed to set default signal handler for SIGCHLD:");
-		if (sigaction(SIGUSR1, &action, NULL) == -1)
-			die("failed to set default signal handler for SIGUSR1:");
-		if (sigaction(SIGUSR2, &action, NULL) == -1)
-			die("failed to set default signal handler for SIGUSR2:");
-		if (sigaction(SIGINT, &action, NULL) == -1)
-			die("failed to set default signal handler for SIGINT:");
-		if (sigaction(SIGTERM, &action, NULL) == -1)
-			die("failed to set default signal handler for SIGTERM:");
-
-		/* Set empty signal mask */
-		sigemptyset(&set);
-		sigprocmask(SIG_SETMASK, &set, NULL);
-
-		sprintf(string, "%d", sockets[1]);
-		setenv(SWC_LAUNCH_SOCKET_ENV, string, 1);
-
-		sprintf(string, "%d", launcher.tty_fd);
-		setenv(SWC_LAUNCH_TTY_FD_ENV, string, 1);
-
-		if (setuid(getuid()) < 0)
-			die("setuid:");
-		if (setgid(getgid()) < 0)
-			die("setgid:");
-
-		execvp(argv[optind], argv + optind);
-		die("exec %s:", argv[optind]);
-	} else {
-		struct pollfd pollfd;
-		int ret;
-
-		pollfd.fd = sockets[0];
-		pollfd.events = POLLIN;
-
-		while (true) {
-			ret = poll(&pollfd, 1, -1);
-
-			if (ret == -1) {
-				if (errno == EINTR)
-					continue;
-				die("poll:");
-			}
-
-			handle_socket_data(pollfd.fd);
-		}
-	}
+	run(sock[0]);
 
 	return EXIT_SUCCESS;
 }
