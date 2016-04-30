@@ -689,6 +689,10 @@ handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t fx, wl_
 	int32_t x = wl_fixed_to_int(fx), y = wl_fixed_to_int(fy);
 	struct swc_rectangle *geom;
 
+	/* If buttons are pressed, don't change pointer focus. */
+	if (swc.seat->pointer->buttons.size > 0)
+		return false;
+
 	wl_list_for_each (view, &compositor.views, link) {
 		if (!view->visible)
 			continue;
