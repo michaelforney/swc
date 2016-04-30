@@ -51,7 +51,7 @@
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
 
-pid_t child_pid = -1;
+pid_t child_pid;
 
 static struct {
 	int socket;
