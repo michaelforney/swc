@@ -320,21 +320,17 @@ static int
 open_tty(const char *tty_name)
 {
 	char *stdin_tty;
+	int fd;
 
-	/* Check if we are running on the desired VT */
+	/* Check if we are already running on the desired VT */
 	if ((stdin_tty = ttyname(STDIN_FILENO)) && strcmp(tty_name, stdin_tty) == 0)
 		return STDIN_FILENO;
-	else {
-		int fd;
 
-		/* Open the new TTY. */
-		fd = open(tty_name, O_RDWR | O_NOCTTY);
+	fd = open(tty_name, O_RDWR | O_NOCTTY);
+	if (fd < 0)
+		die("open %s:", tty_name);
 
-		if (fd < 0)
-			die("open %s:", tty_name);
-
-		return fd;
-	}
+	return fd;
 }
 
 static void
@@ -482,7 +478,6 @@ main(int argc, char *argv[])
 
 	child_pid = fork();
 
-	/* Child */
 	if (child_pid == 0) {
 		char string[64];
 
@@ -516,9 +511,7 @@ main(int argc, char *argv[])
 
 		execvp(argv[optind], argv + optind);
 		die("exec %s:", argv[optind]);
-	}
-	/* Parent */
-	else {
+	} else {
 		struct pollfd pollfd;
 		int ret;
 
@@ -531,8 +524,7 @@ main(int argc, char *argv[])
 			if (ret == -1) {
 				if (errno == EINTR)
 					continue;
-				else
-					die("poll:");
+				die("poll:");
 			}
 
 			handle_socket_data(pollfd.fd);

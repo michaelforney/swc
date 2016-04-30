@@ -40,13 +40,11 @@ struct swc_launch_request {
 	uint32_t serial;
 
 	union {
-		struct /* OPEN_DEVICE */
-		    {
+		struct /* OPEN_DEVICE */ {
 			int flags;
 			char path[];
 		};
-		struct /* ACTIVATE_VT */
-		    {
+		struct /* ACTIVATE_VT */ {
 			unsigned vt;
 		};
 	};
@@ -60,8 +58,7 @@ struct swc_launch_event {
 	} type;
 
 	union {
-		struct /* RESPONSE */
-		    {
+		struct /* RESPONSE */ {
 			uint32_t serial;
 			bool success;
 		};
@@ -69,8 +66,6 @@ struct swc_launch_event {
 };
 
 ssize_t send_fd(int socket, int fd, const void *buffer, ssize_t buffer_size);
-
-ssize_t receive_fd(int socket, int *fd, void *buffer,
-                   ssize_t buffer_size);
+ssize_t receive_fd(int socket, int *fd, void *buffer, ssize_t buffer_size);
 
 #endif
