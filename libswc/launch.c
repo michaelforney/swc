@@ -27,6 +27,7 @@
 #include "launch/protocol.h"
 #include "util.h"
 
+#include <fcntl.h>
 #include <unistd.h>
 #include <wayland-server.h>
 
@@ -72,12 +73,14 @@ launch_initialize(void)
 		return false;
 
 	launch.socket = strtol(socket_string, &end, 10);
-
 	if (*end != '\0')
 		return false;
 
-	launch.source = wl_event_loop_add_fd(swc.event_loop, launch.socket, WL_EVENT_READABLE, &handle_data, NULL);
+	unsetenv(SWC_LAUNCH_SOCKET_ENV);
+	if (fcntl(launch.socket, F_SETFD, FD_CLOEXEC) < 0)
+		return false;
 
+	launch.source = wl_event_loop_add_fd(swc.event_loop, launch.socket, WL_EVENT_READABLE, &handle_data, NULL);
 	if (!launch.source)
 		return false;
 
