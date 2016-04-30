@@ -77,9 +77,7 @@ die(const char *format, ...);
 
 static void __attribute__((noreturn)) usage(const char *name)
 {
-	fprintf(stderr, "Usage: %s [-n] [-s <server-socket>] [-t <tty-device>] "
-	                "[--] <server> [server arguments...]\n",
-	        name);
+	fprintf(stderr, "usage: %s [-n] [-s socket] [-t tty] [--] server [args...]\n", name);
 	exit(2);
 }
 
@@ -90,7 +88,7 @@ start_devices(void)
 
 	for (index = 0; index < launcher.num_drm_fds; ++index) {
 		if (drmSetMaster(launcher.drm_fds[index]) < 0)
-			die("Failed to set DRM master");
+			die("failed to set DRM master");
 	}
 }
 
@@ -101,15 +99,12 @@ stop_devices(bool fatal)
 
 	for (index = 0; index < launcher.num_drm_fds; ++index) {
 		if (drmDropMaster(launcher.drm_fds[index]) < 0 && fatal)
-			die("Failed to drop DRM master");
+			die("failed to drop DRM master");
 	}
 
 	for (index = 0; index < launcher.num_input_fds; ++index) {
-		if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) == -1 && errno != ENODEV && fatal)
-			die("FATAL: Your kernel does not support EVIOCREVOKE; "
-			    "input devices cannot be revoked: %s",
-			    strerror(errno));
-
+		if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) < 0 && errno != ENODEV && fatal)
+			die("failed to revoke input device:");
 		close(launcher.input_fds[index]);
 	}
 
@@ -125,7 +120,6 @@ cleanup(void)
 		return;
 
 	/* Cleanup VT */
-	fprintf(stderr, "Restoring VT to original state\n");
 	ioctl(launcher.tty_fd, VT_SETMODE, &mode);
 	ioctl(launcher.tty_fd, KDSETMODE, original_vt_state.console_mode);
 	ioctl(launcher.tty_fd, KDSKBMODE, original_vt_state.kb_mode);
@@ -143,13 +137,12 @@ die(const char *format, ...)
 {
 	va_list args;
 
-	fputs("FATAL: ", stderr);
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
 
-	if (errno != 0)
-		fprintf(stderr, ": %s", strerror(errno));
+	if (format[0] && format[strlen(format) - 1] == ':')
+		fprintf(stderr, " %s", strerror(errno));
 
 	fputc('\n', stderr);
 
@@ -185,7 +178,6 @@ handle_chld(int signal)
 	int status;
 
 	wait(&status);
-	fprintf(stderr, "Server exited with status %d\n", WEXITSTATUS(status));
 	cleanup();
 	exit(WEXITSTATUS(status));
 }
@@ -231,12 +223,12 @@ handle_socket_data(int socket)
 	switch (request->type) {
 	case SWC_LAUNCH_REQUEST_OPEN_DEVICE:
 		if (request->path[size - __builtin_offsetof(typeof(*request), path) - 1] != '\0') {
-			fprintf(stderr, "Path is not NULL terminated\n");
+			fprintf(stderr, "path is not NULL terminated\n");
 			goto fail;
 		}
 
 		if (stat(request->path, &st) == -1) {
-			fprintf(stderr, "Could not stat %s\n", request->path);
+			fprintf(stderr, "stat %s: %s\n", request->path, strerror(errno));
 			goto fail;
 		}
 
@@ -246,25 +238,25 @@ handle_socket_data(int socket)
 				goto fail;
 
 			if (launcher.num_input_fds == ARRAY_LENGTH(launcher.input_fds)) {
-				fprintf(stderr, "Too many input devices opened\n");
+				fprintf(stderr, "too many input devices opened\n");
 				goto fail;
 			}
 			break;
 		case DRM_MAJOR:
 			if (launcher.num_drm_fds == ARRAY_LENGTH(launcher.drm_fds)) {
-				fprintf(stderr, "Too many DRM devices opened\n");
+				fprintf(stderr, "too many DRM devices opened\n");
 				goto fail;
 			}
 			break;
 		default:
-			fprintf(stderr, "Device is not an input device\n");
+			fprintf(stderr, "device is not an input device\n");
 			goto fail;
 		}
 
 		fd = open(request->path, request->flags);
 
 		if (fd == -1) {
-			fprintf(stderr, "Could not open device %s\n", request->path);
+			fprintf(stderr, "open %s: %s\n", request->path, strerror(errno));
 			goto fail;
 		}
 
@@ -283,10 +275,10 @@ handle_socket_data(int socket)
 			goto fail;
 
 		if (ioctl(launcher.tty_fd, VT_ACTIVATE, request->vt) == -1)
-			fprintf(stderr, "Could not activate VT %d: %s\n", request->vt, strerror(errno));
+			fprintf(stderr, "failed to activate VT %d: %s\n", request->vt, strerror(errno));
 		break;
 	default:
-		fprintf(stderr, "Unknown request %u\n", request->type);
+		fprintf(stderr, "unknown request %u\n", request->type);
 		goto fail;
 	}
 
@@ -312,9 +304,9 @@ find_vt(char *vt, size_t size)
 
 		tty0_fd = open("/dev/tty0", O_RDWR);
 		if (tty0_fd == -1)
-			die("Could not open /dev/tty0 to find unused VT");
+			die("open /dev/tty0:");
 		if (ioctl(tty0_fd, VT_OPENQRY, &vt_num) != 0)
-			die("Could not find unused VT");
+			die("VT open query failed:");
 		close(tty0_fd);
 		if (snprintf(vt, size, "/dev/tty%d", vt_num) >= size)
 			die("VT number is too large");
@@ -339,7 +331,7 @@ open_tty(const char *tty_name)
 		fd = open(tty_name, O_RDWR | O_NOCTTY);
 
 		if (fd < 0)
-			die("Could not open %s", tty_name);
+			die("open %s:", tty_name);
 
 		return fd;
 	}
@@ -358,34 +350,34 @@ setup_tty(int fd)
 	};
 
 	if (fstat(fd, &st) == -1)
-		die("Could not stat TTY fd");
+		die("failed to stat TTY fd:");
 
 	vt = minor(st.st_rdev);
 
 	if (major(st.st_rdev) != TTY_MAJOR || vt == 0)
-		die("Not a valid VT");
+		die("not a valid VT");
 
 	if (ioctl(fd, VT_GETSTATE, &state) == -1)
-		die("Could not get the current VT state");
+		die("failed to get the current VT state:");
 
 	original_vt_state.vt = state.v_active;
 
 	if (ioctl(fd, KDGKBMODE, &original_vt_state.kb_mode))
-		die("Could not get keyboard mode");
+		die("failed to get keyboard mode:");
 
 	if (ioctl(fd, KDGETMODE, &original_vt_state.console_mode))
-		die("Could not get console mode");
+		die("failed to get console mode:");
 
 	if (ioctl(fd, KDSKBMODE, K_OFF) == -1)
-		die("Could not set keyboard mode to K_OFF");
+		die("failed to set keyboard mode to K_OFF:");
 
 	if (ioctl(fd, KDSETMODE, KD_GRAPHICS) == -1) {
-		perror("Could not set console mode to KD_GRAPHICS");
+		perror("failed to set console mode to KD_GRAPHICS");
 		goto error0;
 	}
 
 	if (ioctl(fd, VT_SETMODE, &mode) == -1) {
-		perror("Could not set VT mode");
+		perror("failed to set VT mode");
 		goto error1;
 	}
 
@@ -393,12 +385,12 @@ setup_tty(int fd)
 		activate();
 	else if (!nflag) {
 		if (ioctl(fd, VT_ACTIVATE, vt) == -1) {
-			perror("Could not activate VT");
+			perror("failed to activate VT");
 			goto error2;
 		}
 
 		if (ioctl(fd, VT_WAITACTIVE, vt) == -1) {
-			perror("Could not wait for VT to become active");
+			perror("failed to wait for VT to become active");
 			goto error2;
 		}
 	}
@@ -446,30 +438,30 @@ main(int argc, char *argv[])
 		usage(argv[0]);
 
 	if (socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, sockets) == -1)
-		die("Could not create socket pair");
+		die("socketpair:");
 
 	launcher.socket = sockets[0];
 
 	if (fcntl(sockets[0], F_SETFD, FD_CLOEXEC) == -1)
-		die("Could not set CLOEXEC on socket");
+		die("failed set CLOEXEC on socket:");
 
 	action.sa_handler = &handle_chld;
 	if (sigaction(SIGCHLD, &action, NULL) == -1)
-		die("Failed to register signal handler for SIGCHLD");
+		die("failed to register signal handler for SIGCHLD:");
 
 	action.sa_handler = &handle_usr1;
 	if (sigaction(SIGUSR1, &action, NULL) == -1)
-		die("Failed to register signal handler for SIGUSR1");
+		die("failed to register signal handler for SIGUSR1:");
 
 	action.sa_handler = &handle_usr2;
 	if (sigaction(SIGUSR2, &action, NULL) == -1)
-		die("Failed to register signal handler for SIGUSR2");
+		die("failed to register signal handler for SIGUSR2:");
 
 	action.sa_handler = &forward_signal;
 	if (sigaction(SIGINT, &action, NULL) == -1)
-		die("Failed to register signal handler for SIGINT");
+		die("failed to register signal handler for SIGINT:");
 	if (sigaction(SIGTERM, &action, NULL) == -1)
-		die("Failed to register signal handler for SIGTERM");
+		die("failed to register signal handler for SIGTERM:");
 
 	sigfillset(&set);
 	sigdelset(&set, SIGCHLD);
@@ -484,7 +476,7 @@ main(int argc, char *argv[])
 		vt = vt_buf;
 	}
 
-	fprintf(stderr, "Running on %s\n", vt);
+	fprintf(stderr, "running on %s\n", vt);
 	launcher.tty_fd = open_tty(vt);
 	setup_tty(launcher.tty_fd);
 
@@ -497,15 +489,15 @@ main(int argc, char *argv[])
 		/* Reset signal handlers to defaults */
 		action.sa_handler = SIG_DFL;
 		if (sigaction(SIGCHLD, &action, NULL) == -1)
-			die("Failed to set default signal handler for SIGCHLD");
+			die("failed to set default signal handler for SIGCHLD:");
 		if (sigaction(SIGUSR1, &action, NULL) == -1)
-			die("Failed to set default signal handler for SIGUSR1");
+			die("failed to set default signal handler for SIGUSR1:");
 		if (sigaction(SIGUSR2, &action, NULL) == -1)
-			die("Failed to set default signal handler for SIGUSR2");
+			die("failed to set default signal handler for SIGUSR2:");
 		if (sigaction(SIGINT, &action, NULL) == -1)
-			die("Failed to set default signal handler for SIGINT");
+			die("failed to set default signal handler for SIGINT:");
 		if (sigaction(SIGTERM, &action, NULL) == -1)
-			die("Failed to set default signal handler for SIGTERM");
+			die("failed to set default signal handler for SIGTERM:");
 
 		/* Set empty signal mask */
 		sigemptyset(&set);
@@ -517,11 +509,13 @@ main(int argc, char *argv[])
 		sprintf(string, "%d", launcher.tty_fd);
 		setenv(SWC_LAUNCH_TTY_FD_ENV, string, 1);
 
-		if (setuid(getuid()) != 0 || setgid(getgid()) != 0)
-			die("Failed to drop permission before executing display server");
+		if (setuid(getuid()) < 0)
+			die("setuid:");
+		if (setgid(getgid()) < 0)
+			die("setgid:");
 
 		execvp(argv[optind], argv + optind);
-		die("Could not exec %s", argv[optind]);
+		die("exec %s:", argv[optind]);
 	}
 	/* Parent */
 	else {
@@ -538,7 +532,7 @@ main(int argc, char *argv[])
 				if (errno == EINTR)
 					continue;
 				else
-					die("Error while polling on socket fd");
+					die("poll:");
 			}
 
 			handle_socket_data(pollfd.fd);
