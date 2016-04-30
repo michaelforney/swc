@@ -139,7 +139,9 @@ static void
 handle_swc_event(struct wl_listener *listener, void *data)
 {
 	struct event *ev = data;
+#ifndef ENABLE_LIBINPUT
 	struct evdev_device *device, *next;
+#endif
 
 	switch (ev->type) {
 	case SWC_EVENT_DEACTIVATED:
