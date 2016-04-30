@@ -39,6 +39,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <linux/input.h>
 #include <linux/kd.h>
 #include <linux/major.h>
 #include <linux/vt.h>
@@ -46,9 +47,6 @@
 
 #ifndef DRM_MAJOR
 #define DRM_MAJOR 226
-#endif
-#ifndef EVIOCREVOKE
-#define EVIOCREVOKE _IOW('E', 0x91, int)
 #endif
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
