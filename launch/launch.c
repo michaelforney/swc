@@ -494,8 +494,6 @@ main(int argc, char *argv[])
 
 	sprintf(buf, "%d", sock[1]);
 	setenv(SWC_LAUNCH_SOCKET_ENV, buf, 1);
-	sprintf(buf, "%d", launcher.tty_fd);
-	setenv(SWC_LAUNCH_TTY_FD_ENV, buf, 1);
 
 	if (posix_spawnattr_setflags(&attr, POSIX_SPAWN_RESETIDS | POSIX_SPAWN_SETSIGDEF | POSIX_SPAWN_SETSIGMASK) < 0)
 		die("failed to set spawnattr flags:");

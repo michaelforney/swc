@@ -29,7 +29,6 @@
 #include <sys/types.h>
 
 #define SWC_LAUNCH_SOCKET_ENV "SWC_LAUNCH_SOCKET"
-#define SWC_LAUNCH_TTY_FD_ENV "SWC_LAUNCH_TTY_FD"
 
 struct swc_launch_request {
 	enum {
