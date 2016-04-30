@@ -61,7 +61,7 @@ endef
 
 $(foreach pkg,$(PACKAGES),$(eval $(call check,$(pkg))))
 
-FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden -std=gnu11
+FINAL_CFLAGS = $(CFLAGS) -fvisibility=hidden -std=c11
 FINAL_CPPFLAGS = $(CPPFLAGS) -D_GNU_SOURCE # Required for mkostemp
 
 # Warning/error flags

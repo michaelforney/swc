@@ -59,7 +59,6 @@ static int
 open_socket(struct sockaddr_un *addr, size_t path_size)
 {
 	int fd;
-	socklen_t size = offsetof(typeof(*addr), sun_path) + path_size + 1;
 
 	if ((fd = socket(PF_LOCAL, SOCK_STREAM | SOCK_CLOEXEC, 0)) < 0)
 		goto error0;
@@ -68,7 +67,7 @@ open_socket(struct sockaddr_un *addr, size_t path_size)
 	 * left around a stale lockfile. */
 	unlink(addr->sun_path);
 
-	if (bind(fd, (struct sockaddr *)addr, size) < 0)
+	if (bind(fd, (struct sockaddr *)addr, sizeof(*addr)) < 0)
 		goto error1;
 
 	if (listen(fd, 1) < 0)
