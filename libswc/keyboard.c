@@ -110,8 +110,12 @@ client_handle_modifiers(struct keyboard *keyboard, const struct keyboard_modifie
 static bool
 update_keymap(struct xkb *xkb)
 {
-	const char *keymap_directory = getenv("XDG_RUNTIME_DIR") ?: "/tmp";
+	const char *keymap_directory;
 	char *keymap_string;
+
+	if (!(keymap_directory = getenv("XDG_RUNTIME_DIR")))
+		keymap_directory = "/tmp";
+
 	char keymap_path[strlen(keymap_directory) + 1 + sizeof keymap_file_template];
 
 	xkb->indices.ctrl = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_CTRL);
