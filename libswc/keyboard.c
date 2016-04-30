@@ -193,7 +193,7 @@ keyboard_initialize(struct keyboard *keyboard)
 	if (!input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
 		goto error3;
 
-	keyboard->modifier_state = (struct keyboard_modifier_state){};
+	keyboard->modifier_state = (struct keyboard_modifier_state){0};
 	keyboard->modifiers = 0;
 	keyboard->focus_handler.enter = &enter;
 	keyboard->focus_handler.leave = &leave;
@@ -251,7 +251,7 @@ keyboard_reset(struct keyboard *keyboard)
 	 * handler. */
 	assert(keyboard->client_keys.size == 0);
 	keyboard->keys.size = 0;
-	keyboard->modifier_state = (struct keyboard_modifier_state){};
+	keyboard->modifier_state = (struct keyboard_modifier_state){0};
 	keyboard->modifiers = 0;
 
 	if (!(state = xkb_state_new(keyboard->xkb.keymap.map))) {
