@@ -75,14 +75,27 @@ remove_state(struct xdg_surface *xdg_surface, uint32_t state)
 	return false;
 }
 
+static uint32_t
+send_configure(struct xdg_surface *xdg_surface, int32_t width, int32_t height) {
+	uint32_t serial = wl_display_next_serial(swc.display);
+
+	if (width < 0)
+		width = xdg_surface->window.configure.width;
+	if (height < 0)
+		height = xdg_surface->window.configure.height;
+
+	xdg_surface_send_configure(xdg_surface->resource, width, height, &xdg_surface->states, serial);
+
+	return serial;
+}
+
 static void
 configure(struct window *window, uint32_t width, uint32_t height)
 {
 	struct xdg_surface *xdg_surface = wl_container_of(window, xdg_surface, window);
 
 	window->configure.acknowledged = false;
-	xdg_surface->configure_serial = wl_display_next_serial(swc.display);
-	xdg_surface_send_configure(xdg_surface->resource, width, height, &xdg_surface->states, xdg_surface->configure_serial);
+	xdg_surface->configure_serial = send_configure(xdg_surface, width, height);
 }
 
 static void
@@ -91,7 +104,7 @@ focus(struct window *window)
 	struct xdg_surface *xdg_surface = wl_container_of(window, xdg_surface, window);
 
 	add_state(xdg_surface, XDG_SURFACE_STATE_ACTIVATED);
-	configure(window, window->configure.width, window->configure.height);
+	send_configure(xdg_surface, -1, -1);
 }
 
 static void
@@ -100,7 +113,7 @@ unfocus(struct window *window)
 	struct xdg_surface *xdg_surface = wl_container_of(window, xdg_surface, window);
 
 	remove_state(xdg_surface, XDG_SURFACE_STATE_ACTIVATED);
-	configure(window, window->configure.width, window->configure.height);
+	send_configure(xdg_surface, -1, -1);
 }
 
 static void
@@ -133,6 +146,8 @@ set_mode(struct window *window, unsigned mode)
 		add_state(xdg_surface, XDG_SURFACE_STATE_FULLSCREEN);
 		break;
 	}
+
+	send_configure(xdg_surface, -1, -1);
 }
 
 static const struct window_impl xdg_surface_window_impl = {
