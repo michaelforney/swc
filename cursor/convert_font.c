@@ -80,7 +80,7 @@ struct pcf_header {
 		int32_t format;
 		int32_t size;
 		int32_t offset;
-	} tables[0];
+	} tables[];
 };
 
 struct compressed_metrics {
@@ -105,11 +105,11 @@ struct metrics {
 	union {
 		struct {
 			int16_t count;
-			struct compressed_metrics compressed_metrics[0];
+			struct compressed_metrics compressed_metrics[];
 		} compressed;
 		struct {
 			int32_t count;
-			struct uncompressed_metrics uncompressed_metrics[0];
+			struct uncompressed_metrics uncompressed_metrics[];
 		} uncompressed;
 	};
 };
@@ -117,13 +117,13 @@ struct metrics {
 struct glyph_names {
 	int32_t format;
 	int32_t glyph_count;
-	int32_t offsets[0];
+	int32_t offsets[];
 };
 
 struct bitmaps {
 	int32_t format;
 	int32_t glyph_count;
-	int32_t offsets[0];
+	int32_t offsets[];
 };
 
 static void
