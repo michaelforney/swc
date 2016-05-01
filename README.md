@@ -99,6 +99,7 @@ TODO
 * DPMS support.
 * Floating window Z-ordering.
 * Full-screen composite bypass.
+* Atomic modesetting support.
 
 Contact
 -------
