@@ -39,7 +39,6 @@ struct mode {
 };
 
 bool mode_initialize(struct mode *mode, drmModeModeInfo *mode_info);
-void mode_finish(struct mode *mode);
 bool mode_equal(const struct mode *mode1, const struct mode *mode2);
 
 #endif

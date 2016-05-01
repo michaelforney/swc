@@ -105,12 +105,7 @@ error0:
 void
 output_destroy(struct output *output)
 {
-	struct mode *mode;
-
-	wl_array_for_each (mode, &output->modes)
-		mode_finish(mode);
 	wl_array_release(&output->modes);
-
 	wl_global_destroy(output->global);
 	free(output);
 }
