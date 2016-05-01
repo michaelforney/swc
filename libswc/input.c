@@ -126,10 +126,7 @@ input_focus_set(struct input_focus *input_focus, struct compositor_view *view)
 	data.old = input_focus->view;
 	data.new = view;
 
-	/* Unfocus previously focused view. */
 	unfocus(input_focus);
-
-	/* Focus new view, if given. */
 	focus(input_focus, view);
 
 	send_event(&input_focus->event_signal, INPUT_FOCUS_EVENT_CHANGED, &data);
