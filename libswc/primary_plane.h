@@ -1,6 +1,6 @@
-/* swc: libswc/framebuffer_plane.h
+/* swc: libswc/primary_plane.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013, 2016 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,8 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_FRAMEBUFFER_PLANE_H
-#define SWC_FRAMEBUFFER_PLANE_H
+#ifndef SWC_PRIMARY_PLANE_H
+#define SWC_PRIMARY_PLANE_H
 
 #include "drm.h"
 #include "mode.h"
@@ -32,7 +32,7 @@
 #include <stdbool.h>
 #include <wayland-server.h>
 
-struct framebuffer_plane {
+struct primary_plane {
 	uint32_t crtc;
 	drmModeCrtcPtr original_crtc_state;
 	struct mode mode;
@@ -43,7 +43,7 @@ struct framebuffer_plane {
 	struct wl_listener swc_listener;
 };
 
-bool framebuffer_plane_initialize(struct framebuffer_plane *plane, uint32_t crtc, struct mode *mode, uint32_t *connectors, uint32_t num_connectors);
-void framebuffer_plane_finalize(struct framebuffer_plane *plane);
+bool primary_plane_initialize(struct primary_plane *plane, uint32_t crtc, struct mode *mode, uint32_t *connectors, uint32_t num_connectors);
+void primary_plane_finalize(struct primary_plane *plane);
 
 #endif

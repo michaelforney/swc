@@ -117,8 +117,8 @@ screen_new(uint32_t crtc, struct output *output)
 		goto error1;
 	}
 
-	if (!framebuffer_plane_initialize(&screen->planes.framebuffer, crtc, output->preferred_mode, &output->connector, 1)) {
-		ERROR("Failed to initialize framebuffer plane\n");
+	if (!primary_plane_initialize(&screen->planes.primary, crtc, output->preferred_mode, &output->connector, 1)) {
+		ERROR("Failed to initialize primary plane\n");
 		goto error2;
 	}
 
@@ -134,8 +134,8 @@ screen_new(uint32_t crtc, struct output *output)
 	wl_list_insert(&screen->outputs, &output->link);
 	wl_list_init(&screen->modifiers);
 
-	view_move(&screen->planes.framebuffer.view, x, 0);
-	screen->base.geometry = screen->planes.framebuffer.view.geometry;
+	view_move(&screen->planes.primary.view, x, 0);
+	screen->base.geometry = screen->planes.primary.view.geometry;
 	screen->base.usable_geometry = screen->base.geometry;
 
 	swc.manager->new_screen(&screen->base);
@@ -143,7 +143,7 @@ screen_new(uint32_t crtc, struct output *output)
 	return screen;
 
 error3:
-	framebuffer_plane_finalize(&screen->planes.framebuffer);
+	primary_plane_finalize(&screen->planes.primary);
 error2:
 	wl_global_destroy(screen->global);
 error1:
@@ -164,7 +164,7 @@ screen_destroy(struct screen *screen)
 	wl_signal_emit(&screen->destroy_signal, NULL);
 	wl_list_for_each_safe (output, next, &screen->outputs, link)
 		output_destroy(output);
-	framebuffer_plane_finalize(&screen->planes.framebuffer);
+	primary_plane_finalize(&screen->planes.primary);
 	cursor_plane_finalize(&screen->planes.cursor);
 	free(screen);
 }

@@ -41,7 +41,7 @@ bind_output(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 		flags = 0;
 		if (mode->preferred)
 			flags |= WL_OUTPUT_MODE_PREFERRED;
-		if (mode_equal(&screen->planes.framebuffer.mode, mode))
+		if (mode_equal(&screen->planes.primary.mode, mode))
 			flags |= WL_OUTPUT_MODE_CURRENT;
 
 		wl_output_send_mode(resource, flags, mode->width, mode->height, mode->refresh);

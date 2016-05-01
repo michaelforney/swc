@@ -157,7 +157,7 @@ target_new(struct screen *screen)
 	if (!target->surface)
 		goto error1;
 
-	target->view = &screen->planes.framebuffer.view;
+	target->view = &screen->planes.primary.view;
 	target->view_handler.impl = &screen_view_handler;
 	wl_list_insert(&target->view->handlers, &target->view_handler.link);
 	target->current_buffer = NULL;

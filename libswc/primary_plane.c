@@ -1,6 +1,6 @@
-/* swc: framebuffer_plane.c
+/* swc: primary_plane.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013, 2014, 2016 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-#include "framebuffer_plane.h"
+#include "primary_plane.h"
 #include "drm.h"
 #include "event.h"
 #include "internal.h"
@@ -78,7 +78,7 @@ update(struct view *view)
 static void
 send_frame(void *data)
 {
-	struct framebuffer_plane *plane = data;
+	struct primary_plane *plane = data;
 
 	view_frame(&plane->view, get_time());
 }
@@ -86,7 +86,7 @@ send_frame(void *data)
 static int
 attach(struct view *view, struct wld_buffer *buffer)
 {
-	struct framebuffer_plane *plane = wl_container_of(view, plane, view);
+	struct primary_plane *plane = wl_container_of(view, plane, view);
 	union wld_object object;
 	int ret;
 
@@ -154,7 +154,7 @@ const static struct view_impl view_impl = {
 static void
 handle_page_flip(struct drm_handler *handler, uint32_t time)
 {
-	struct framebuffer_plane *plane = wl_container_of(handler, plane, drm_handler);
+	struct primary_plane *plane = wl_container_of(handler, plane, drm_handler);
 	view_frame(&plane->view, time);
 }
 
@@ -162,7 +162,7 @@ static void
 handle_swc_event(struct wl_listener *listener, void *data)
 {
 	struct event *event = data;
-	struct framebuffer_plane *plane = wl_container_of(listener, plane, swc_listener);
+	struct primary_plane *plane = wl_container_of(listener, plane, swc_listener);
 
 	switch (event->type) {
 	case SWC_EVENT_ACTIVATED:
@@ -172,7 +172,7 @@ handle_swc_event(struct wl_listener *listener, void *data)
 }
 
 bool
-framebuffer_plane_initialize(struct framebuffer_plane *plane, uint32_t crtc, struct mode *mode, uint32_t *connectors, uint32_t num_connectors)
+primary_plane_initialize(struct primary_plane *plane, uint32_t crtc, struct mode *mode, uint32_t *connectors, uint32_t num_connectors)
 {
 	uint32_t *plane_connectors;
 
@@ -209,7 +209,7 @@ error0:
 }
 
 void
-framebuffer_plane_finalize(struct framebuffer_plane *plane)
+primary_plane_finalize(struct primary_plane *plane)
 {
 	wl_array_release(&plane->connectors);
 	drmModeCrtcPtr crtc = plane->original_crtc_state;

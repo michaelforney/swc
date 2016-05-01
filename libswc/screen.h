@@ -26,7 +26,7 @@
 
 #include "swc.h"
 #include "cursor_plane.h"
-#include "framebuffer_plane.h"
+#include "primary_plane.h"
 
 #include <wayland-util.h>
 
@@ -52,7 +52,7 @@ struct screen {
 	uint8_t id;
 
 	struct {
-		struct framebuffer_plane framebuffer;
+		struct primary_plane primary;
 		struct cursor_plane cursor;
 	} planes;
 

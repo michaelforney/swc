@@ -28,7 +28,6 @@ SWC_SOURCES =                       \
     libswc/data_device.c            \
     libswc/data_device_manager.c    \
     libswc/drm.c                    \
-    libswc/framebuffer_plane.c      \
     libswc/input.c                  \
     libswc/keyboard.c               \
     libswc/launch.c                 \
@@ -37,6 +36,7 @@ SWC_SOURCES =                       \
     libswc/panel.c                  \
     libswc/panel_manager.c          \
     libswc/pointer.c                \
+    libswc/primary_plane.c          \
     libswc/region.c                 \
     libswc/screen.c                 \
     libswc/seat.c                   \
