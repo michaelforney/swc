@@ -72,6 +72,7 @@ output_new(drmModeConnectorPtr connector)
 
 	output->physical_width = connector->mmWidth;
 	output->physical_height = connector->mmHeight;
+	output->preferred_mode = NULL;
 
 	wl_list_init(&output->resources);
 	wl_array_init(&output->modes);
@@ -80,8 +81,10 @@ output_new(drmModeConnectorPtr connector)
 
 	output->connector = connector->connector_id;
 
-	modes = wl_array_add(&output->modes, connector->count_modes * sizeof *modes);
+	if (connector->count_modes == 0)
+		goto error2;
 
+	modes = wl_array_add(&output->modes, connector->count_modes * sizeof *modes);
 	if (!modes)
 		goto error2;
 
@@ -91,6 +94,9 @@ output_new(drmModeConnectorPtr connector)
 		if (modes[i].preferred)
 			output->preferred_mode = &modes[i];
 	}
+
+	if (!output->preferred_mode)
+		output->preferred_mode = &modes[0];
 
 	return output;
 
