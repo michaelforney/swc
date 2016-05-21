@@ -57,7 +57,7 @@ static struct {
 struct swc_xserver swc_xserver;
 
 static int
-open_socket(struct sockaddr_un *addr, size_t path_size)
+open_socket(struct sockaddr_un *addr)
 {
 	int fd;
 
@@ -91,7 +91,6 @@ open_display(void)
 	char lock_name[64], pid[12];
 	int lock_fd;
 	struct sockaddr_un addr = {.sun_family = AF_LOCAL};
-	size_t path_size;
 
 	xserver.display = 0;
 
@@ -149,14 +148,14 @@ begin:
 
 	/* Bind to abstract socket */
 	addr.sun_path[0] = '\0';
-	path_size = snprintf(addr.sun_path + 1, sizeof addr.sun_path - 1, SOCKET_FMT, xserver.display);
-	if ((xserver.abstract_fd = open_socket(&addr, path_size)) < 0)
+	snprintf(addr.sun_path + 1, sizeof(addr.sun_path) - 1, SOCKET_FMT, xserver.display);
+	if ((xserver.abstract_fd = open_socket(&addr)) < 0)
 		goto retry1;
 
 	/* Bind to unix socket */
 	mkdir(SOCKET_DIR, 0777);
-	path_size = snprintf(addr.sun_path, sizeof addr.sun_path, SOCKET_FMT, xserver.display);
-	if ((xserver.unix_fd = open_socket(&addr, path_size)) < 0)
+	snprintf(addr.sun_path, sizeof(addr.sun_path), SOCKET_FMT, xserver.display);
+	if ((xserver.unix_fd = open_socket(&addr)) < 0)
 		goto retry2;
 
 	snprintf(xserver.display_name, sizeof xserver.display_name, ":%d", xserver.display);
