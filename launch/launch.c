@@ -130,7 +130,8 @@ cleanup(void)
 	stop_devices(false);
 	ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
 
-	kill(child_pid, SIGTERM);
+	if (child_pid)
+		kill(child_pid, SIGTERM);
 }
 
 void __attribute__((noreturn, format(printf, 1, 2)))
@@ -144,12 +145,9 @@ die(const char *format, ...)
 
 	if (format[0] && format[strlen(format) - 1] == ':')
 		fprintf(stderr, " %s", strerror(errno));
-
 	fputc('\n', stderr);
 
-	if (child_pid)
-		cleanup();
-
+	cleanup();
 	exit(EXIT_FAILURE);
 }
 
@@ -178,6 +176,8 @@ handle_chld(int signal)
 {
 	int status;
 
+	if (!child_pid)
+		return;
 	wait(&status);
 	cleanup();
 	exit(WEXITSTATUS(status));
