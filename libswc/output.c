@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libdrm/drm.h>
+#include <drm.h>
 #include <xf86drm.h>
 
 static void

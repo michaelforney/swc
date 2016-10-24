@@ -37,7 +37,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <libdrm/drm.h>
+#include <drm.h>
 #include <xf86drm.h>
 #include <wld/wld.h>
 #include <wld/drm.h>
