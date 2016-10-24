@@ -42,7 +42,7 @@
 #include <wld/wld.h>
 #include <wld/drm.h>
 #include <wayland-server.h>
-#include "protocol/wayland-drm-server-protocol.h"
+#include "wayland-drm-server-protocol.h"
 
 struct swc_drm swc_drm;
 

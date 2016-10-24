@@ -26,9 +26,9 @@
 #include "surface.h"
 #include "util.h"
 #include "window.h"
-#include "protocol/xdg-shell-unstable-v5-server-protocol.h"
 
 #include <stdlib.h>
+#include "xdg-shell-unstable-v5-server-protocol.h"
 
 struct xdg_popup {
 	struct wl_resource *resource;

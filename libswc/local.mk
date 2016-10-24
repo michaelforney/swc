@@ -18,6 +18,7 @@ $(dir)_TARGETS +=                   \
 endif
 
 $(dir)_PACKAGES := libdrm libevdev pixman-1 wayland-server wld xkbcommon
+$(dir)_CFLAGS += -Iprotocol
 
 SWC_SOURCES =                       \
     launch/protocol.c               \

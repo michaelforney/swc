@@ -31,10 +31,10 @@
 #include "surface.h"
 #include "util.h"
 #include "view.h"
-#include "protocol/swc-server-protocol.h"
 
 #include <assert.h>
 #include <stdlib.h>
+#include "swc-server-protocol.h"
 
 struct panel {
 	struct wl_resource *resource;

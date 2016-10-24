@@ -28,7 +28,7 @@
 
 #include <assert.h>
 #include <wayland-server.h>
-#include "protocol/xdg-shell-unstable-v5-server-protocol.h"
+#include "xdg-shell-unstable-v5-server-protocol.h"
 
 #define XDG_SHELL_VERSION 5
 

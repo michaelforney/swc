@@ -26,7 +26,7 @@
 #include "panel.h"
 
 #include <wayland-server.h>
-#include "protocol/swc-server-protocol.h"
+#include "swc-server-protocol.h"
 
 static struct {
 	struct wl_global *global;
