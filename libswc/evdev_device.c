@@ -72,12 +72,12 @@ handle_rel_event(struct evdev_device *device, struct input_event *ev)
 
 	switch (ev->code) {
 	case REL_X:
-		device->motion.rel.dx += ev->value;
-		device->motion.rel.pending = true;
+		device->rel.dx += ev->value;
+		device->rel.pending = true;
 		return;
 	case REL_Y:
-		device->motion.rel.dy += ev->value;
-		device->motion.rel.pending = true;
+		device->rel.dy += ev->value;
+		device->rel.pending = true;
 		return;
 	case REL_WHEEL:
 		axis = WL_POINTER_AXIS_VERTICAL_SCROLL;
@@ -115,15 +115,14 @@ is_motion_event(struct input_event *ev)
 static void
 handle_motion_events(struct evdev_device *device, uint32_t time)
 {
-	if (device->motion.rel.pending) {
-		wl_fixed_t dx = wl_fixed_from_int(device->motion.rel.dx);
-		wl_fixed_t dy = wl_fixed_from_int(device->motion.rel.dy);
+	if (device->rel.pending) {
+		wl_fixed_t dx = wl_fixed_from_int(device->rel.dx);
+		wl_fixed_t dy = wl_fixed_from_int(device->rel.dy);
 
 		device->handler->relative_motion(time, dx, dy);
-
-		device->motion.rel.pending = false;
-		device->motion.rel.dx = 0;
-		device->motion.rel.dy = 0;
+		device->rel.pending = false;
+		device->rel.dx = 0;
+		device->rel.dy = 0;
 	}
 }
 
@@ -222,7 +221,7 @@ evdev_device_new(const char *path, const struct evdev_device_handler *handler)
 	device->needs_sync = false;
 	device->handler = handler;
 	device->capabilities = 0;
-	memset(&device->motion, 0, sizeof device->motion);
+	memset(&device->rel, 0, sizeof(device->rel));
 
 	if (libevdev_has_event_code(device->dev, EV_KEY, KEY_ENTER)) {
 		device->capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;

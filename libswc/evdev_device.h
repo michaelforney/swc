@@ -52,19 +52,17 @@ struct evdev_device {
 
 	struct {
 		struct {
-			struct {
-				struct input_absinfo x, y;
-			} info;
+			struct input_absinfo x, y;
+		} info;
 
-			int32_t x, y;
-			bool pending;
-		} abs;
+		int32_t x, y;
+		bool pending;
+	} abs;
 
-		struct {
-			int32_t dx, dy;
-			bool pending;
-		} rel;
-	} motion;
+	struct {
+		int32_t dx, dy;
+		bool pending;
+	} rel;
 
 	uint32_t capabilities;
 
