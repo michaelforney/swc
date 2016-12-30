@@ -70,6 +70,9 @@ handle_rel_event(struct evdev_device *device, struct input_event *ev)
 	uint32_t time = timeval_to_msec(&ev->time);
 	uint32_t axis, amount;
 
+	if (!(device->capabilities & WL_SEAT_CAPABILITY_POINTER))
+		return;
+
 	switch (ev->code) {
 	case REL_X:
 		device->rel.dx += ev->value;
@@ -97,6 +100,9 @@ handle_rel_event(struct evdev_device *device, struct input_event *ev)
 static void
 handle_abs_event(struct evdev_device *device, struct input_event *ev)
 {
+	if (!(device->capabilities & WL_SEAT_CAPABILITY_POINTER))
+		return;
+
 	switch (ev->code) {
 	case ABS_X:
 		device->abs.x = ev->value;
