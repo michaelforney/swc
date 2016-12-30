@@ -290,8 +290,10 @@ set_cursor(struct wl_client *client, struct wl_resource *resource,
 	if (!pointer->focus.resource || client != wl_resource_get_client(pointer->focus.resource))
 		return;
 
-	if (pointer->cursor.surface)
+	if (pointer->cursor.surface) {
+		surface_set_view(pointer->cursor.surface, NULL);
 		wl_list_remove(&pointer->cursor.destroy_listener.link);
+	}
 
 	surface = surface_resource ? wl_resource_get_user_data(surface_resource) : NULL;
 	pointer->cursor.surface = surface;
