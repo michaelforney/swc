@@ -77,6 +77,7 @@ attach(struct view *view, struct wld_buffer *buffer)
 {
 	struct pointer *pointer = wl_container_of(view, pointer, cursor.view);
 	struct surface *surface = pointer->cursor.surface;
+	struct screen *screen;
 
 	if (surface && !pixman_region32_not_empty(&surface->state.damage))
 		return 0;
@@ -96,6 +97,9 @@ attach(struct view *view, struct wld_buffer *buffer)
 
 	if (view_set_size_from_buffer(view, buffer))
 		view_update_screens(view);
+
+	wl_list_for_each (screen, &swc.screens, link)
+		view_attach(&screen->planes.cursor.view, buffer ? pointer->cursor.buffer : NULL);
 
 	return 0;
 }
