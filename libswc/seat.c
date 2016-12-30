@@ -30,6 +30,7 @@
 #include "keyboard.h"
 #include "launch.h"
 #include "pointer.h"
+#include "screen.h"
 #include "surface.h"
 #include "util.h"
 
@@ -94,6 +95,17 @@ static void
 handle_relative_motion(uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
 	pointer_handle_relative_motion(&seat.pointer, time, dx, dy);
+}
+
+static void
+handle_absolute_motion(uint32_t time, int32_t x, int32_t max_x, int32_t y, int32_t max_y)
+{
+	struct screen *screen = wl_container_of(swc.screens.next, screen, link);
+	struct swc_rectangle *rect = &screen->base.geometry;
+	wl_fixed_t fx = wl_fixed_from_int(x * rect->width / max_x + rect->x);
+	wl_fixed_t fy = wl_fixed_from_int(y * rect->height / max_y + rect->y);
+
+	pointer_handle_absolute_motion(&seat.pointer, time, fx, fy);
 }
 
 static void
@@ -390,6 +402,7 @@ const static struct evdev_device_handler evdev_handler = {
 	.button = handle_button,
 	.axis = handle_axis,
 	.relative_motion = handle_relative_motion,
+	.absolute_motion = handle_absolute_motion,
 };
 
 static void

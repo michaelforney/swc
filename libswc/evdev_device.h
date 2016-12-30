@@ -40,6 +40,7 @@ struct evdev_device_handler {
 	void (*button)(uint32_t time, uint32_t key, uint32_t state);
 	void (*axis)(uint32_t time, uint32_t axis, wl_fixed_t amount);
 	void (*relative_motion)(uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
+	void (*absolute_motion)(uint32_t time, int32_t x, int32_t y, int32_t max_x, int32_t max_y);
 };
 
 struct evdev_device {
@@ -52,7 +53,7 @@ struct evdev_device {
 
 	struct {
 		struct {
-			struct input_absinfo x, y;
+			const struct input_absinfo *x, *y;
 		} info;
 
 		int32_t x, y;

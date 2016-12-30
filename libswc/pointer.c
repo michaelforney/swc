@@ -404,9 +404,15 @@ pointer_handle_axis(struct pointer *pointer, uint32_t time, uint32_t axis, wl_fi
 void
 pointer_handle_relative_motion(struct pointer *pointer, uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
 {
+	pointer_handle_absolute_motion(pointer, time, pointer->x + dx, pointer->y + dy);
+}
+
+void
+pointer_handle_absolute_motion(struct pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y)
+{
 	struct pointer_handler *handler;
 
-	clip_position(pointer, pointer->x + dx, pointer->y + dy);
+	clip_position(pointer, x, y);
 
 	wl_list_for_each (handler, &pointer->handlers, link) {
 		if (handler->motion && handler->motion(handler, time, pointer->x, pointer->y))

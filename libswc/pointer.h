@@ -81,5 +81,6 @@ struct wl_resource *pointer_bind(struct pointer *pointer, struct wl_client *clie
 void pointer_handle_button(struct pointer *pointer, uint32_t time, uint32_t button, uint32_t state);
 void pointer_handle_axis(struct pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t amount);
 void pointer_handle_relative_motion(struct pointer *pointer, uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
+void pointer_handle_absolute_motion(struct pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y);
 
 #endif

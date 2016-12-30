@@ -95,8 +95,18 @@ handle_rel_event(struct evdev_device *device, struct input_event *ev)
 }
 
 static void
-handle_abs_event(struct evdev_device *device, struct input_event *input_event)
+handle_abs_event(struct evdev_device *device, struct input_event *ev)
 {
+	switch (ev->code) {
+	case ABS_X:
+		device->abs.x = ev->value;
+		device->abs.pending = true;
+		break;
+	case ABS_Y:
+		device->abs.y = ev->value;
+		device->abs.pending = true;
+		break;
+	}
 }
 
 static void (*event_handlers[])(struct evdev_device *device, struct input_event *ev) = {
@@ -115,6 +125,15 @@ is_motion_event(struct input_event *ev)
 static void
 handle_motion_events(struct evdev_device *device, uint32_t time)
 {
+	if (device->abs.pending) {
+		int32_t x = device->abs.x - device->abs.info.x->minimum;
+		int32_t max_x = device->abs.info.x->maximum - device->abs.info.x->minimum;
+		int32_t y = device->abs.y - device->abs.info.y->minimum;
+		int32_t max_y = device->abs.info.y->maximum - device->abs.info.y->minimum;
+
+		device->handler->absolute_motion(time, x, max_x, y, max_y);
+		device->abs.pending = false;
+	}
 	if (device->rel.pending) {
 		wl_fixed_t dx = wl_fixed_from_int(device->rel.dx);
 		wl_fixed_t dy = wl_fixed_from_int(device->rel.dy);
@@ -221,6 +240,9 @@ evdev_device_new(const char *path, const struct evdev_device_handler *handler)
 	device->needs_sync = false;
 	device->handler = handler;
 	device->capabilities = 0;
+	device->abs.info.x = libevdev_get_abs_info(device->dev, ABS_X);
+	device->abs.info.y = libevdev_get_abs_info(device->dev, ABS_Y);
+	device->abs.pending = false;
 	memset(&device->rel, 0, sizeof(device->rel));
 
 	if (libevdev_has_event_code(device->dev, EV_KEY, KEY_ENTER)) {
@@ -234,6 +256,14 @@ evdev_device_new(const char *path, const struct evdev_device_handler *handler)
 	{
 		device->capabilities |= WL_SEAT_CAPABILITY_POINTER;
 		DEBUG("\tThis device is a pointer\n");
+	}
+
+	if (libevdev_has_event_code(device->dev, EV_ABS, ABS_X)
+	 && libevdev_has_event_code(device->dev, EV_ABS, ABS_Y)
+	 && libevdev_has_event_code(device->dev, EV_KEY, BTN_MOUSE)
+	 && !libevdev_has_event_code(device->dev, EV_KEY, BTN_TOOL_FINGER))
+	{
+		device->capabilities |= WL_SEAT_CAPABILITY_POINTER;
 	}
 
 	/* XXX: touch devices */
