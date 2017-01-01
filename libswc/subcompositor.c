@@ -29,6 +29,12 @@
 static struct wl_global *global;
 
 static void
+destroy(struct wl_client *client, struct wl_resource *resource)
+{
+	wl_resource_destroy(resource);
+}
+
+static void
 get_subsurface(struct wl_client *client, struct wl_resource *resource,
                uint32_t id, struct wl_resource *surface_resource, struct wl_resource *parent_resource)
 {
@@ -43,6 +49,7 @@ get_subsurface(struct wl_client *client, struct wl_resource *resource,
 }
 
 static struct wl_subcompositor_interface subcompositor_implementation = {
+	.destroy = destroy,
 	.get_subsurface = get_subsurface,
 };
 
