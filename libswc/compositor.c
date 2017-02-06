@@ -174,6 +174,30 @@ error0:
 	return NULL;
 }
 
+static void
+update_pointer_focus(void)
+{
+	struct compositor_view *view;
+	bool found = false;
+	int32_t x = wl_fixed_to_int(swc.seat->pointer->x);
+	int32_t y = wl_fixed_to_int(swc.seat->pointer->y);
+	struct swc_rectangle *geom;
+
+	wl_list_for_each (view, &compositor.views, link) {
+		if (!view->visible)
+			continue;
+		geom = &view->base.geometry;
+		if (rectangle_contains_point(geom, x, y)) {
+			if (pixman_region32_contains_point(&view->surface->state.input, x - geom->x, y - geom->y, NULL)) {
+				found = true;
+				break;
+			}
+		}
+	}
+
+	pointer_set_focus(swc.seat->pointer, found ? view : NULL);
+}
+
 /* Rendering {{{ */
 
 static void
@@ -379,6 +403,7 @@ attach(struct view *base, struct wld_buffer *buffer)
 			view_update_screens(&view->base);
 			damage_below_view(view);
 			update(&view->base);
+			update_pointer_focus();
 		}
 	}
 
@@ -406,6 +431,7 @@ move(struct view *base, int32_t x, int32_t y)
 			view_update_screens(&view->base);
 			damage_below_view(view);
 			update(&view->base);
+			update_pointer_focus();
 		}
 	}
 
@@ -499,6 +525,8 @@ compositor_view_show(struct compositor_view *view)
 		if (other->parent == view)
 			compositor_view_show(other);
 	}
+
+	update_pointer_focus();
 }
 
 void
@@ -520,6 +548,8 @@ compositor_view_hide(struct compositor_view *view)
 		if (other->parent == view)
 			compositor_view_hide(other);
 	}
+
+	update_pointer_focus();
 }
 
 void
@@ -684,29 +714,9 @@ perform_update(void *data)
 bool
 handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t fx, wl_fixed_t fy)
 {
-	struct compositor_view *view;
-	bool found = false;
-	int32_t x = wl_fixed_to_int(fx), y = wl_fixed_to_int(fy);
-	struct swc_rectangle *geom;
-
-	/* If buttons are pressed, don't change pointer focus. */
-	if (swc.seat->pointer->buttons.size > 0)
-		return false;
-
-	wl_list_for_each (view, &compositor.views, link) {
-		if (!view->visible)
-			continue;
-		geom = &view->base.geometry;
-		if (rectangle_contains_point(geom, x, y)) {
-			if (pixman_region32_contains_point(&view->surface->state.input, x - geom->x, y - geom->y, NULL)) {
-				found = true;
-				break;
-			}
-		}
-	}
-
-	pointer_set_focus(swc.seat->pointer, found ? view : NULL);
-
+	/* Only change pointer focus if no buttons are pressed. */
+	if (swc.seat->pointer->buttons.size == 0)
+		update_pointer_focus();
 	return false;
 }
 
