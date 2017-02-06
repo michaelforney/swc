@@ -142,6 +142,11 @@ pointer_set_cursor(struct pointer *pointer, uint32_t id)
 
 	if (pointer->cursor.internal_buffer)
 		wld_buffer_unreference(pointer->cursor.internal_buffer);
+	if (pointer->cursor.surface) {
+		surface_set_view(pointer->cursor.surface, NULL);
+		wl_list_remove(&pointer->cursor.destroy_listener.link);
+		pointer->cursor.surface = NULL;
+	}
 
 	buffer = wld_import_buffer(swc.shm->context, WLD_OBJECT_DATA, object,
 	                           cursor->width, cursor->height, WLD_FORMAT_ARGB8888, cursor->width * 4);
