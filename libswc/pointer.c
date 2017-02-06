@@ -41,6 +41,10 @@ enter(struct input_focus_handler *handler, struct wl_resource *resource, struct 
 	uint32_t serial;
 	wl_fixed_t surface_x, surface_y;
 
+	if (!resource) {
+		pointer_set_cursor(pointer, cursor_left_ptr);
+		return;
+	}
 	serial = wl_display_next_serial(swc.display);
 	surface_x = pointer->x - wl_fixed_from_int(view->base.geometry.x);
 	surface_y = pointer->y - wl_fixed_from_int(view->base.geometry.y);
@@ -52,6 +56,8 @@ leave(struct input_focus_handler *handler, struct wl_resource *resource, struct 
 {
 	uint32_t serial;
 
+	if (!resource)
+		return;
 	serial = wl_display_next_serial(swc.display);
 	wl_pointer_send_leave(resource, serial, view->surface->resource);
 }

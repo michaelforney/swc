@@ -37,15 +37,12 @@ focus(struct input_focus *input_focus, struct compositor_view *view)
 
 		client = wl_resource_get_client(view->surface->resource);
 		resource = wl_resource_find_for_client(&input_focus->resources, client);
-
 		wl_signal_add(&view->destroy_signal, &input_focus->view_destroy_listener);
-
-		if (resource)
-			input_focus->handler->enter(input_focus->handler, resource, view);
 	}
 
 	input_focus->view = view;
 	input_focus->resource = resource;
+	input_focus->handler->enter(input_focus->handler, resource, view);
 }
 
 static inline void
@@ -53,9 +50,7 @@ unfocus(struct input_focus *input_focus)
 {
 	if (input_focus->view)
 		wl_list_remove(&input_focus->view_destroy_listener.link);
-
-	if (input_focus->resource)
-		input_focus->handler->leave(input_focus->handler, input_focus->resource, input_focus->view);
+	input_focus->handler->leave(input_focus->handler, input_focus->resource, input_focus->view);
 }
 
 static void
