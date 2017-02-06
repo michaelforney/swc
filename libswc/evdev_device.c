@@ -32,13 +32,14 @@
 #include "seat.h"
 #include "util.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <libevdev/libevdev.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #define AXIS_STEP_DISTANCE 10
 #define ARRAY_SIZE(array) (sizeof(array) / sizeof(array[0]))
@@ -232,6 +233,11 @@ evdev_device_new(const char *path, const struct evdev_device_handler *handler)
 	if (libevdev_new_from_fd(device->fd, &device->dev) != 0) {
 		ERROR("Failed to create libevdev device\n");
 		goto error3;
+	}
+
+	if (libevdev_set_clock_id(device->dev, CLOCK_MONOTONIC) != 0) {
+		ERROR("Failed to set libevdev device to monotonic clock\n");
+		goto error4;
 	}
 
 	device->source = wl_event_loop_add_fd(swc.event_loop, device->fd, WL_EVENT_READABLE, handle_data, device);
