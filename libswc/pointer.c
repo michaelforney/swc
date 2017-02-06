@@ -145,12 +145,8 @@ pointer_set_cursor(struct pointer *pointer, uint32_t id)
 
 	buffer = wld_import_buffer(swc.shm->context, WLD_OBJECT_DATA, object,
 	                           cursor->width, cursor->height, WLD_FORMAT_ARGB8888, cursor->width * 4);
-
-	if (!buffer) {
-		ERROR("Failed to create cursor buffer\n");
-		return;
-	}
-
+	if (!buffer)
+		WARNING("Failed to create cursor buffer\n");
 	pointer->cursor.internal_buffer = buffer;
 	pointer->cursor.hotspot.x = cursor->hotspot_x;
 	pointer->cursor.hotspot.y = cursor->hotspot_y;
