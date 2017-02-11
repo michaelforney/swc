@@ -59,6 +59,18 @@ handle_key_event(struct evdev_device *device, struct input_event *ev)
 	if ((ev->code >= BTN_MISC && ev->code <= BTN_GEAR_UP) || ev->code >= BTN_TRIGGER_HAPPY) {
 		state = ev->value ? WL_POINTER_BUTTON_STATE_PRESSED : WL_POINTER_BUTTON_STATE_RELEASED;
 		device->handler->button(time, ev->code, state);
+		if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+			/* qemu generates GEAR_UP/GEAR_DOWN events on scroll, so
+			 * pass those through as axis events. */
+			switch (ev->code) {
+			case BTN_GEAR_DOWN:
+				device->handler->axis(time, WL_POINTER_AXIS_VERTICAL_SCROLL, wl_fixed_from_int(AXIS_STEP_DISTANCE));
+				break;
+			case BTN_GEAR_UP:
+				device->handler->axis(time, WL_POINTER_AXIS_VERTICAL_SCROLL, wl_fixed_from_int(-AXIS_STEP_DISTANCE));
+				break;
+			}
+		}
 	} else {
 		state = ev->value ? WL_KEYBOARD_KEY_STATE_PRESSED : WL_KEYBOARD_KEY_STATE_RELEASED;
 		device->handler->key(time, ev->code, state);
