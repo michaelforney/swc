@@ -14,14 +14,14 @@ Dependencies
 * wayland
 * wayland-protocols
 * libdrm
-* libevdev
+* libinput (see my [libinput repository](https://github.com/michaelforney/libinput)
+  if you don't want the libudev dependency)
 * libxkbcommon
 * pixman
 * [wld](http://github.com/michaelforney/wld)
 * linux\[>=3.12\] (for EVIOCREVOKE)
 
-For input hotplugging and touchpad support, the following is also required:
-* libinput
+For input hotplugging, the following is also required:
 * libudev
 
 For XWayland support, the following are also required:

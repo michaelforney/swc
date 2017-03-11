@@ -24,7 +24,6 @@
 #include "seat.h"
 #include "compositor.h"
 #include "data_device.h"
-#include "evdev_device.h"
 #include "event.h"
 #include "internal.h"
 #include "keyboard.h"
@@ -34,27 +33,28 @@
 #include "surface.h"
 #include "util.h"
 
-#include <errno.h>
 #include <dirent.h>
-#include <stdlib.h>
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef ENABLE_LIBINPUT
+
+#include <libinput.h>
+#include <linux/input.h>
+#ifdef ENABLE_LIBUDEV
 # include <libudev.h>
-# include <libinput.h>
 #endif
 
 static struct {
 	char *name;
 	uint32_t capabilities;
 
-#ifdef ENABLE_LIBINPUT
-	struct udev *udev;
 	struct libinput *libinput;
 	struct wl_event_source *libinput_source;
-#else
-	struct wl_list devices;
+
+#ifdef ENABLE_LIBUDEV
+	struct udev *udev;
 #endif
 
 	struct wl_listener swc_listener;
@@ -72,41 +72,6 @@ const struct swc_seat swc_seat = {
 	.keyboard = &seat.keyboard,
 	.data_device = &seat.data_device,
 };
-
-static void
-handle_key(uint32_t time, uint32_t key, uint32_t state)
-{
-	keyboard_handle_key(&seat.keyboard, time, key, state);
-}
-
-static void
-handle_button(uint32_t time, uint32_t button, uint32_t state)
-{
-	pointer_handle_button(&seat.pointer, time, button, state);
-}
-
-static void
-handle_axis(uint32_t time, uint32_t axis, wl_fixed_t amount)
-{
-	pointer_handle_axis(&seat.pointer, time, axis, amount);
-}
-
-static void
-handle_relative_motion(uint32_t time, wl_fixed_t dx, wl_fixed_t dy)
-{
-	pointer_handle_relative_motion(&seat.pointer, time, dx, dy);
-}
-
-static void
-handle_absolute_motion(uint32_t time, int32_t x, int32_t max_x, int32_t y, int32_t max_y)
-{
-	struct screen *screen = wl_container_of(swc.screens.next, screen, link);
-	struct swc_rectangle *rect = &screen->base.geometry;
-	wl_fixed_t fx = wl_fixed_from_int(x * rect->width / max_x + rect->x);
-	wl_fixed_t fy = wl_fixed_from_int(y * rect->height / max_y + rect->y);
-
-	pointer_handle_absolute_motion(&seat.pointer, time, fx, fy);
-}
 
 static void
 handle_keyboard_focus_event(struct wl_listener *listener, void *data)
@@ -151,30 +116,15 @@ static void
 handle_swc_event(struct wl_listener *listener, void *data)
 {
 	struct event *ev = data;
-#ifndef ENABLE_LIBINPUT
-	struct evdev_device *device, *next;
-#endif
 
 	switch (ev->type) {
 	case SWC_EVENT_DEACTIVATED:
-#ifdef ENABLE_LIBINPUT
 		libinput_suspend(seat.libinput);
-#endif
 		keyboard_reset(&seat.keyboard);
 		break;
 	case SWC_EVENT_ACTIVATED:
-#ifdef ENABLE_LIBINPUT
 		if (libinput_resume(seat.libinput) != 0)
 			WARNING("Failed to resume libinput context\n");
-#else
-		/* Re-open all input devices */
-		wl_list_for_each_safe (device, next, &seat.devices, link) {
-			if (!evdev_device_reopen(device)) {
-				wl_list_remove(&device->link);
-				evdev_device_destroy(device);
-			}
-		}
-#endif
 		break;
 	}
 }
@@ -235,7 +185,6 @@ update_capabilities(uint32_t capabilities)
 		wl_seat_send_capabilities(resource, seat.capabilities);
 }
 
-#ifdef ENABLE_LIBINPUT
 static int
 open_restricted(const char *path, int flags, void *user_data)
 {
@@ -273,19 +222,28 @@ device_capabilities(struct libinput_device *device)
 static void
 handle_libinput_axis_event(struct libinput_event_pointer *event, enum libinput_pointer_axis axis)
 {
-	double amount;
+	wl_fixed_t amount;
 
 	if (!libinput_event_pointer_has_axis(event, axis))
 		return;
 
-	amount = libinput_event_pointer_get_axis_value(event, axis);
-	handle_axis(libinput_event_pointer_get_time(event), axis, wl_fixed_from_double(amount));
+	amount = wl_fixed_from_double(libinput_event_pointer_get_axis_value(event, axis));
+	pointer_handle_axis(&seat.pointer, libinput_event_pointer_get_time(event), axis, amount);
 }
 
 static int
 handle_libinput_data(int fd, uint32_t mask, void *data)
 {
+	struct screen *screen;
+	struct swc_rectangle *rect;
 	struct libinput_event *generic_event;
+	struct libinput_device *device;
+	union {
+		struct libinput_event_keyboard *k;
+		struct libinput_event_pointer *p;
+	} event;
+	wl_fixed_t x, y;
+	uint32_t time, key, state;
 
 	if (libinput_dispatch(seat.libinput) != 0) {
 		WARNING("libinput_dispatch failed: %s\n", strerror(errno));
@@ -294,49 +252,57 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 
 	while ((generic_event = libinput_get_event(seat.libinput))) {
 		switch (libinput_event_get_type(generic_event)) {
-		case LIBINPUT_EVENT_DEVICE_ADDED: {
-			struct libinput_device *device;
-
+		case LIBINPUT_EVENT_DEVICE_ADDED:
 			device = libinput_event_get_device(generic_event);
 			update_capabilities(device_capabilities(device));
 			break;
-		}
-		case LIBINPUT_EVENT_KEYBOARD_KEY: {
-			struct libinput_event_keyboard *event;
-
-			event = libinput_event_get_keyboard_event(generic_event);
-			handle_key(libinput_event_keyboard_get_time(event),
-			           libinput_event_keyboard_get_key(event),
-			           libinput_event_keyboard_get_key_state(event));
+		case LIBINPUT_EVENT_KEYBOARD_KEY:
+			event.k = libinput_event_get_keyboard_event(generic_event);
+			time = libinput_event_keyboard_get_time(event.k);
+			key = libinput_event_keyboard_get_key(event.k);
+			state = libinput_event_keyboard_get_key_state(event.k);
+			keyboard_handle_key(&seat.keyboard, time, key, state);
 			break;
-		}
-		case LIBINPUT_EVENT_POINTER_MOTION: {
-			struct libinput_event_pointer *event;
-			wl_fixed_t dx, dy;
-
-			event = libinput_event_get_pointer_event(generic_event);
-			dx = wl_fixed_from_double(libinput_event_pointer_get_dx(event));
-			dy = wl_fixed_from_double(libinput_event_pointer_get_dy(event));
-			handle_relative_motion(libinput_event_pointer_get_time(event), dx, dy);
+		case LIBINPUT_EVENT_POINTER_MOTION:
+			event.p = libinput_event_get_pointer_event(generic_event);
+			time = libinput_event_pointer_get_time(event.p);
+			x = wl_fixed_from_double(libinput_event_pointer_get_dx(event.p));
+			y = wl_fixed_from_double(libinput_event_pointer_get_dy(event.p));
+			pointer_handle_relative_motion(&seat.pointer, time, x, y);
 			break;
-		}
-		case LIBINPUT_EVENT_POINTER_BUTTON: {
-			struct libinput_event_pointer *event;
-
-			event = libinput_event_get_pointer_event(generic_event);
-			handle_button(libinput_event_pointer_get_time(event),
-			              libinput_event_pointer_get_button(event),
-			              libinput_event_pointer_get_button_state(event));
+		case LIBINPUT_EVENT_POINTER_MOTION_ABSOLUTE:
+			screen = wl_container_of(swc.screens.next, screen, link);
+			rect = &screen->base.geometry;
+			event.p = libinput_event_get_pointer_event(generic_event);
+			time = libinput_event_pointer_get_time(event.p);
+			x = wl_fixed_from_double(libinput_event_pointer_get_absolute_x_transformed(event.p, rect->width));
+			y = wl_fixed_from_double(libinput_event_pointer_get_absolute_y_transformed(event.p, rect->height));
+			pointer_handle_absolute_motion(&seat.pointer, time, x, y);
 			break;
-		}
-		case LIBINPUT_EVENT_POINTER_AXIS: {
-			struct libinput_event_pointer *event;
-
-			event = libinput_event_get_pointer_event(generic_event);
-			handle_libinput_axis_event(event, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL);
-			handle_libinput_axis_event(event, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL);
+		case LIBINPUT_EVENT_POINTER_BUTTON:
+			event.p = libinput_event_get_pointer_event(generic_event);
+			time = libinput_event_pointer_get_time(event.p);
+			key = libinput_event_pointer_get_button(event.p);
+			state = libinput_event_pointer_get_button_state(event.p);
+			pointer_handle_button(&seat.pointer, time, key, state);
+			if (state == LIBINPUT_BUTTON_STATE_PRESSED) {
+		                /* qemu generates GEAR_UP/GEAR_DOWN events on scroll, so pass
+				 * those through as axis events. */
+				switch (key) {
+				case BTN_GEAR_DOWN:
+					pointer_handle_axis(&seat.pointer, time, WL_POINTER_AXIS_VERTICAL_SCROLL, wl_fixed_from_int(10));
+					break;
+				case BTN_GEAR_UP:
+					pointer_handle_axis(&seat.pointer, time, WL_POINTER_AXIS_VERTICAL_SCROLL, wl_fixed_from_int(-10));
+					break;
+				}
+			}
 			break;
-		}
+		case LIBINPUT_EVENT_POINTER_AXIS:
+			event.p = libinput_event_get_pointer_event(generic_event);
+			handle_libinput_axis_event(event.p, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL);
+			handle_libinput_axis_event(event.p, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL);
+			break;
 		default:
 			break;
 		}
@@ -350,22 +316,28 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 bool
 initialize_libinput(const char *seat_name)
 {
+#ifdef ENABLE_LIBUDEV
 	if (!(seat.udev = udev_new())) {
 		ERROR("Could not create udev context\n");
 		goto error0;
 	}
 
 	seat.libinput = libinput_udev_create_context(&libinput_interface, NULL, seat.udev);
+#else
+	seat.libinput = libinput_path_create_context(&libinput_interface, NULL);
+#endif
 
 	if (!seat.libinput) {
 		ERROR("Could not create libinput context\n");
 		goto error1;
 	}
 
+#ifdef ENABLE_LIBUDEV
 	if (libinput_udev_assign_seat(seat.libinput, seat_name) != 0) {
 		ERROR("Failed to assign seat to libinput context\n");
 		goto error2;
 	}
+#endif
 
 	seat.libinput_source = wl_event_loop_add_fd
 		(swc.event_loop, libinput_get_fd(seat.libinput), WL_EVENT_READABLE,
@@ -384,41 +356,14 @@ initialize_libinput(const char *seat_name)
 error2:
 	libinput_unref(seat.libinput);
 error1:
+#ifdef ENABLE_LIBUDEV
 	udev_unref(seat.udev);
 error0:
+#endif
 	return false;
 }
 
-void
-finalize_libinput(void)
-{
-	wl_event_source_remove(seat.libinput_source);
-	libinput_unref(seat.libinput);
-	udev_unref(seat.udev);
-}
-#else
-const static struct evdev_device_handler evdev_handler = {
-	.key = handle_key,
-	.button = handle_button,
-	.axis = handle_axis,
-	.relative_motion = handle_relative_motion,
-	.absolute_motion = handle_absolute_motion,
-};
-
-static void
-add_device(const char *path)
-{
-	struct evdev_device *device;
-
-	if (!(device = evdev_device_new(path, &evdev_handler))) {
-		ERROR("Could not create evdev device\n");
-		return;
-	}
-
-	update_capabilities(device->capabilities);
-	wl_list_insert(&seat.devices, &device->link);
-}
-
+#ifndef ENABLE_LIBUDEV
 static int
 select_device(const struct dirent *entry)
 {
@@ -430,20 +375,23 @@ static bool
 add_devices(void)
 {
 	struct dirent **devices;
-	int i, num_devices;
+	int i, n;
 	char path[64];
+	struct libinput_device *device;
 
-	num_devices = scandir("/dev/input", &devices, &select_device, &alphasort);
+	n = scandir("/dev/input", &devices, &select_device, &alphasort);
 
-	if (num_devices == -1) {
+	if (n == -1) {
 		ERROR("Failed to scan /dev/input for event devices\n");
 		return false;
 	}
 
-	for (i = 0; i < num_devices; ++i) {
+	for (i = 0; i < n; ++i) {
 		snprintf(path, sizeof path, "/dev/input/%s", devices[i]->d_name);
 		free(devices[i]);
-		add_device(path);
+		device = libinput_path_add_device(seat.libinput, path);
+		if (device)
+			update_capabilities(device_capabilities(device));
 	}
 
 	free(devices);
@@ -489,12 +437,10 @@ seat_initialize(const char *seat_name)
 		goto error4;
 	}
 
-#ifdef ENABLE_LIBINPUT
 	if (!initialize_libinput(seat.name))
 		goto error5;
-#else
-	wl_list_init(&seat.devices);
 
+#ifndef ENABLE_LIBUDEV
 	if (!add_devices())
 		goto error5;
 #endif
@@ -518,12 +464,10 @@ error0:
 void
 seat_finalize(void)
 {
-#ifdef ENABLE_LIBINPUT
-	finalize_libinput();
-#else
-	struct evdev_device *device, *tmp;
-	wl_list_for_each_safe (device, tmp, &seat.devices, link)
-		evdev_device_destroy(device);
+	wl_event_source_remove(seat.libinput_source);
+	libinput_unref(seat.libinput);
+#ifdef ENABLE_LIBUDEV
+	udev_unref(seat.udev);
 #endif
 
 	pointer_finalize(&seat.pointer);

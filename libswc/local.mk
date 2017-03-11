@@ -17,7 +17,7 @@ $(dir)_TARGETS +=                   \
     $(dir)/$(LIBSWC_LINK)
 endif
 
-$(dir)_PACKAGES := libdrm libevdev pixman-1 wayland-server wld xkbcommon
+$(dir)_PACKAGES := libdrm libinput pixman-1 wayland-server wld xkbcommon
 $(dir)_CFLAGS += -Iprotocol
 
 SWC_SOURCES =                       \
@@ -59,11 +59,9 @@ SWC_SOURCES =                       \
     protocol/wayland-drm-protocol.c \
     protocol/xdg-shell-unstable-v5-protocol.c
 
-ifeq ($(ENABLE_LIBINPUT),1)
-$(dir)_CFLAGS += -DENABLE_LIBINPUT
-$(dir)_PACKAGES += libinput libudev
-else
-SWC_SOURCES += libswc/evdev_device.c
+ifeq ($(ENABLE_LIBUDEV),1)
+$(dir)_CFLAGS += -DENABLE_LIBUDEV
+$(dir)_PACKAGES += libudev
 endif
 
 ifeq ($(ENABLE_XWAYLAND),1)
@@ -121,4 +119,3 @@ install-$(dir): $($(dir)_TARGETS:$(dir)/%=install-%) | $(DESTDIR)$(INCLUDEDIR)
 CLEAN_FILES += $(SWC_SHARED_OBJECTS) $(SWC_STATIC_OBJECTS)
 
 include common.mk
-
