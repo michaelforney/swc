@@ -324,7 +324,7 @@ initialize_libinput(const char *seat_name)
 
 	seat.libinput = libinput_udev_create_context(&libinput_interface, NULL, seat.udev);
 #else
-	seat.libinput = libinput_path_create_context(&libinput_interface, NULL);
+	seat.libinput = libinput_netlink_create_context(&libinput_interface, NULL);
 #endif
 
 	if (!seat.libinput) {
@@ -334,6 +334,11 @@ initialize_libinput(const char *seat_name)
 
 #ifdef ENABLE_LIBUDEV
 	if (libinput_udev_assign_seat(seat.libinput, seat_name) != 0) {
+		ERROR("Failed to assign seat to libinput context\n");
+		goto error2;
+	}
+#else
+	if (libinput_netlink_assign_seat(seat.libinput, seat_name) != 0) {
 		ERROR("Failed to assign seat to libinput context\n");
 		goto error2;
 	}
@@ -362,43 +367,6 @@ error0:
 #endif
 	return false;
 }
-
-#ifndef ENABLE_LIBUDEV
-static int
-select_device(const struct dirent *entry)
-{
-	unsigned num;
-	return sscanf(entry->d_name, "event%u", &num) == 1;
-}
-
-static bool
-add_devices(void)
-{
-	struct dirent **devices;
-	int i, n;
-	char path[64];
-	struct libinput_device *device;
-
-	n = scandir("/dev/input", &devices, &select_device, &alphasort);
-
-	if (n == -1) {
-		ERROR("Failed to scan /dev/input for event devices\n");
-		return false;
-	}
-
-	for (i = 0; i < n; ++i) {
-		snprintf(path, sizeof path, "/dev/input/%s", devices[i]->d_name);
-		free(devices[i]);
-		device = libinput_path_add_device(seat.libinput, path);
-		if (device)
-			update_capabilities(device_capabilities(device));
-	}
-
-	free(devices);
-
-	return true;
-}
-#endif
 
 bool
 seat_initialize(const char *seat_name)
@@ -439,11 +407,6 @@ seat_initialize(const char *seat_name)
 
 	if (!initialize_libinput(seat.name))
 		goto error5;
-
-#ifndef ENABLE_LIBUDEV
-	if (!add_devices())
-		goto error5;
-#endif
 
 	return true;
 
