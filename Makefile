@@ -28,7 +28,7 @@ include config.mk
 # Dependencies
 PACKAGES :=           \
     libdrm            \
-    libevdev          \
+    libinput          \
     pixman-1          \
     wayland-server    \
     wayland-protocols \
@@ -43,8 +43,8 @@ PACKAGES +=         \
     xcb-icccm
 endif
 
-ifeq ($(ENABLE_LIBINPUT),1)
-PACKAGES += libinput libudev
+ifeq ($(ENABLE_LIBUDEV),1)
+PACKAGES += libudev
 endif
 
 libinput_CONSTRAINTS        := --atleast-version=0.4
