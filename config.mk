@@ -10,7 +10,7 @@
 # PKGCONFIGDIR    = $(LIBDIR)/pkgconfig
 
 CC              = gcc
-CFLAGS          = -pipe
+CFLAGS          = -pipe -O2 -march=native
 # OBJCOPY         = objcopy
 # PKG_CONFIG      = pkg-config
 # WAYLAND_SCANNER = wayland-scanner
