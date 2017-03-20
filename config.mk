@@ -2,7 +2,7 @@
 
 # The commented out options are defaults
 
-# PREFIX          = /usr/local
+# PREFIX          = /usr
 # BINDIR          = $(PREFIX)/bin
 # LIBDIR          = $(PREFIX)/lib
 # INCLUDEDIR      = $(PREFIX)/include
@@ -10,7 +10,7 @@
 # PKGCONFIGDIR    = $(LIBDIR)/pkgconfig
 
 CC              = gcc
-CFLAGS          = -pipe
+CFLAGS          = -march=native -O1 -pipe
 # OBJCOPY         = objcopy
 # PKG_CONFIG      = pkg-config
 # WAYLAND_SCANNER = wayland-scanner
@@ -20,4 +20,3 @@ ENABLE_STATIC   = 1
 ENABLE_SHARED   = 1
 ENABLE_LIBINPUT = 1
 ENABLE_XWAYLAND = 1
-
