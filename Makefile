@@ -4,7 +4,7 @@
 all: build
 
 # Defaults for config.mk
-PREFIX          ?= /usr/local
+PREFIX          ?= /usr
 BINDIR          ?= $(PREFIX)/bin
 LIBDIR          ?= $(PREFIX)/lib
 INCLUDEDIR      ?= $(PREFIX)/include
