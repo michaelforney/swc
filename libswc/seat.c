@@ -255,6 +255,8 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 		case LIBINPUT_EVENT_DEVICE_ADDED:
 			device = libinput_event_get_device(generic_event);
 			update_capabilities(device_capabilities(device));
+			if (swc.manager->new_device)
+				swc.manager->new_device(device);
 			break;
 		case LIBINPUT_EVENT_KEYBOARD_KEY:
 			event.k = libinput_event_get_keyboard_event(generic_event);

@@ -32,6 +32,8 @@
 extern "C" {
 #endif
 
+struct libinput_device;
+
 /* Rectangles {{{ */
 
 struct swc_rectangle {
@@ -293,7 +295,7 @@ int swc_add_binding(enum swc_binding_type type, uint32_t modifiers, uint32_t val
 
 /**
  * This is a user-provided structure that swc will use to notify the display
- * server of new windows and screens.
+ * server of new windows, screens and input devices.
  */
 struct swc_manager {
 	/**
@@ -305,6 +307,11 @@ struct swc_manager {
 	 * Called when a new window is created.
 	 */
 	void (*new_window)(struct swc_window *window);
+
+	/**
+	 * Called when a new input device is detected.
+	 */
+	void (*new_device)(struct libinput_device *device);
 
 	/**
 	 * Called when the session gets activated (for example, startup or VT switch).
