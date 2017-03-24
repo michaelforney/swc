@@ -9,8 +9,6 @@
 # DATADIR         = $(PREFIX)/share
 # PKGCONFIGDIR    = $(LIBDIR)/pkgconfig
 
-CC              = gcc
-CFLAGS          = -pipe
 # OBJCOPY         = objcopy
 # PKG_CONFIG      = pkg-config
 # WAYLAND_SCANNER = wayland-scanner
