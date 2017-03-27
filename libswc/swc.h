@@ -27,7 +27,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <wayland-server.h>
-#include <libinput.h>
+
+struct libinput_device;
 
 #ifdef __cplusplus
 extern "C" {
