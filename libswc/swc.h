@@ -28,6 +28,8 @@
 #include <stdint.h>
 #include <wayland-server.h>
 
+struct libinput_device;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
