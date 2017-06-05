@@ -58,7 +58,7 @@ output_new(drmModeConnectorPtr connector)
 	struct mode *modes;
 	uint32_t i;
 
-	if (!(output = malloc(sizeof *output))) {
+	if (!(output = malloc(sizeof(*output)))) {
 		ERROR("Failed to allocated output\n");
 		goto error0;
 	}
@@ -84,7 +84,7 @@ output_new(drmModeConnectorPtr connector)
 	if (connector->count_modes == 0)
 		goto error2;
 
-	modes = wl_array_add(&output->modes, connector->count_modes * sizeof *modes);
+	modes = wl_array_add(&output->modes, connector->count_modes * sizeof(*modes));
 	if (!modes)
 		goto error2;
 

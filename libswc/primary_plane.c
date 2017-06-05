@@ -98,7 +98,7 @@ attach(struct view *view, struct wld_buffer *buffer)
 			return -EINVAL;
 		}
 
-		if (!(framebuffer = malloc(sizeof *framebuffer)))
+		if (!(framebuffer = malloc(sizeof(*framebuffer))))
 			return -ENOMEM;
 
 		ret = drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32, buffer->pitch, object.u32, &framebuffer->id);
@@ -182,14 +182,14 @@ primary_plane_initialize(struct primary_plane *plane, uint32_t crtc, struct mode
 	}
 
 	wl_array_init(&plane->connectors);
-	plane_connectors = wl_array_add(&plane->connectors, num_connectors * sizeof connectors[0]);
+	plane_connectors = wl_array_add(&plane->connectors, num_connectors * sizeof(connectors[0]));
 
 	if (!plane_connectors) {
 		ERROR("Failed to allocate connector array\n");
 		goto error1;
 	}
 
-	memcpy(plane_connectors, connectors, num_connectors * sizeof connectors[0]);
+	memcpy(plane_connectors, connectors, num_connectors * sizeof(connectors[0]));
 	plane->crtc = crtc;
 	plane->need_modeset = true;
 	view_initialize(&plane->view, &view_impl);

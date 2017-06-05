@@ -46,7 +46,7 @@ region_new(struct wl_client *client, uint32_t version, uint32_t id)
 {
 	struct region *region;
 
-	region = malloc(sizeof *region);
+	region = malloc(sizeof(*region));
 
 	if (!region)
 		return NULL;

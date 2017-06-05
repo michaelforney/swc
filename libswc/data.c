@@ -78,7 +78,7 @@ source_offer(struct wl_client *client, struct wl_resource *source, const char *m
 	struct data *data = wl_resource_get_user_data(source);
 	char **destination;
 
-	destination = wl_array_add(&data->mime_types, sizeof *destination);
+	destination = wl_array_add(&data->mime_types, sizeof(*destination));
 	*destination = strdup(mime_type);
 }
 
@@ -125,7 +125,7 @@ data_new(void)
 {
 	struct data *data;
 
-	data = malloc(sizeof *data);
+	data = malloc(sizeof(*data));
 
 	if (!data)
 		return NULL;

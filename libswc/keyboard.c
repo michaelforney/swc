@@ -74,14 +74,14 @@ client_handle_key(struct keyboard *keyboard, uint32_t time, struct key *key, uin
 	uint32_t *value;
 
 	if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-		if (!(value = wl_array_add(&keyboard->client_keys, sizeof *value)))
+		if (!(value = wl_array_add(&keyboard->client_keys, sizeof(*value))))
 			return false;
 
 		*value = key->press.value;
 	} else {
 		wl_array_for_each (value, &keyboard->client_keys) {
 			if (*value == key->press.value) {
-				array_remove(&keyboard->client_keys, value, sizeof *value);
+				array_remove(&keyboard->client_keys, value, sizeof(*value));
 				break;
 			}
 		}
@@ -120,7 +120,7 @@ update_keymap(struct xkb *xkb)
 	if (!(keymap_directory = getenv("XDG_RUNTIME_DIR")))
 		keymap_directory = "/tmp";
 
-	char keymap_path[strlen(keymap_directory) + 1 + sizeof keymap_file_template];
+	char keymap_path[strlen(keymap_directory) + 1 + sizeof(keymap_file_template)];
 
 	xkb->indices.ctrl = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_CTRL);
 	xkb->indices.alt = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_ALT);
@@ -342,7 +342,7 @@ keyboard_handle_key(struct keyboard *keyboard, uint32_t time, uint32_t value, ui
 				key->handler->key(keyboard, time, key, state);
 			}
 
-			array_remove(&keyboard->keys, key, sizeof *key);
+			array_remove(&keyboard->keys, key, sizeof(*key));
 			goto update_xkb_state;
 		}
 	}
@@ -351,7 +351,7 @@ keyboard_handle_key(struct keyboard *keyboard, uint32_t time, uint32_t value, ui
 	if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
 		return;
 
-	if (!(key = wl_array_add(&keyboard->keys, sizeof *key)))
+	if (!(key = wl_array_add(&keyboard->keys, sizeof(*key))))
 		goto update_xkb_state;
 
 	key->press.value = value;

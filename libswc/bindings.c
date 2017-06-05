@@ -173,7 +173,7 @@ swc_add_binding(enum swc_binding_type type, uint32_t modifiers, uint32_t value, 
 		return -EINVAL;
 	}
 
-	if (!(binding = wl_array_add(bindings, sizeof *binding)))
+	if (!(binding = wl_array_add(bindings, sizeof(*binding))))
 		return -ENOMEM;
 
 	binding->value = value;

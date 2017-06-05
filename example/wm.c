@@ -191,7 +191,7 @@ new_screen(struct swc_screen *swc)
 {
 	struct screen *screen;
 
-	screen = malloc(sizeof *screen);
+	screen = malloc(sizeof(*screen));
 
 	if (!screen)
 		return;
@@ -208,7 +208,7 @@ new_window(struct swc_window *swc)
 {
 	struct window *window;
 
-	window = malloc(sizeof *window);
+	window = malloc(sizeof(*window));
 
 	if (!window)
 		return;

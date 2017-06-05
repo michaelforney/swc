@@ -119,7 +119,7 @@ create_buffer(struct wl_client *client, struct wl_resource *resource,
 	if (!buffer_resource)
 		goto error1;
 
-	if (!(reference = malloc(sizeof *reference)))
+	if (!(reference = malloc(sizeof(*reference))))
 		goto error2;
 
 	reference->pool = pool;
@@ -171,7 +171,7 @@ create_pool(struct wl_client *client, struct wl_resource *resource, uint32_t id,
 {
 	struct pool *pool;
 
-	if (!(pool = malloc(sizeof *pool))) {
+	if (!(pool = malloc(sizeof(*pool)))) {
 		wl_resource_post_no_memory(resource);
 		goto error0;
 	}

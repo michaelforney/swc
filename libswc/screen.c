@@ -107,7 +107,7 @@ screen_new(uint32_t crtc, struct output *output)
 	wl_list_for_each (screen, &swc.screens, link)
 		x = MAX(x, screen->base.geometry.x + screen->base.geometry.width);
 
-	if (!(screen = malloc(sizeof *screen)))
+	if (!(screen = malloc(sizeof(*screen))))
 		goto error0;
 
 	screen->global = wl_global_create(swc.display, &swc_screen_interface, 1, screen, &bind_screen);

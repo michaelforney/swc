@@ -254,7 +254,7 @@ drm_initialize(void)
 {
 	struct stat master, render;
 
-	if (!find_primary_drm_device(drm.path, sizeof drm.path)) {
+	if (!find_primary_drm_device(drm.path, sizeof(drm.path))) {
 		ERROR("Could not find DRM device\n");
 		goto error0;
 	}
@@ -272,7 +272,7 @@ drm_initialize(void)
 		goto error1;
 	}
 
-	if (snprintf(drm.path, sizeof drm.path, "/dev/dri/renderD%d", minor(master.st_rdev) + 0x80) >= sizeof drm.path) {
+	if (snprintf(drm.path, sizeof(drm.path), "/dev/dri/renderD%d", minor(master.st_rdev) + 0x80) >= sizeof(drm.path)) {
 		ERROR("Render node path is too long");
 		goto error1;
 	}

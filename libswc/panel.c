@@ -223,7 +223,7 @@ panel_new(struct wl_client *client, uint32_t version, uint32_t id, struct surfac
 {
 	struct panel *panel;
 
-	panel = malloc(sizeof *panel);
+	panel = malloc(sizeof(*panel));
 
 	if (!panel)
 		goto error0;

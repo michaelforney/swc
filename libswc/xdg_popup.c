@@ -73,7 +73,7 @@ xdg_popup_new(struct wl_client *client, uint32_t version,
 	if (!parent)
 		goto error0;
 
-	popup = malloc(sizeof *popup);
+	popup = malloc(sizeof(*popup));
 
 	if (!popup)
 		goto error0;

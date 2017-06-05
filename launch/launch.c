@@ -157,7 +157,7 @@ activate(void)
 	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_ACTIVATE };
 
 	start_devices();
-	send(launcher.socket, &event, sizeof event, 0);
+	send(launcher.socket, &event, sizeof(event), 0);
 	launcher.active = true;
 }
 
@@ -166,7 +166,7 @@ deactivate(void)
 {
 	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_DEACTIVATE };
 
-	send(launcher.socket, &event, sizeof event, 0);
+	send(launcher.socket, &event, sizeof(event), 0);
 	stop_devices(true);
 	launcher.active = false;
 }
@@ -213,7 +213,7 @@ handle_socket_data(int socket)
 	struct stat st;
 	ssize_t size;
 
-	size = receive_fd(socket, &fd, buffer, sizeof buffer);
+	size = receive_fd(socket, &fd, buffer, sizeof(buffer));
 
 	if (size == -1 || size == 0)
 		return;
@@ -290,7 +290,7 @@ fail:
 	response.success = false;
 	fd = -1;
 done:
-	send_fd(socket, fd, &response, sizeof response);
+	send_fd(socket, fd, &response, sizeof(response));
 }
 
 static void

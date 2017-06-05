@@ -51,7 +51,7 @@ add_state(struct xdg_surface *xdg_surface, uint32_t state)
 			return false;
 	}
 
-	if (!(current_state = wl_array_add(&xdg_surface->states, sizeof state))) {
+	if (!(current_state = wl_array_add(&xdg_surface->states, sizeof(state)))) {
 		WARNING("xdg_surface: Failed to allocate new state\n");
 		return false;
 	}
@@ -67,7 +67,7 @@ remove_state(struct xdg_surface *xdg_surface, uint32_t state)
 
 	wl_array_for_each (current_state, &xdg_surface->states) {
 		if (*current_state == state) {
-			array_remove(&xdg_surface->states, current_state, sizeof state);
+			array_remove(&xdg_surface->states, current_state, sizeof(state));
 			return true;
 		}
 	}
@@ -308,7 +308,7 @@ xdg_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struct 
 {
 	struct xdg_surface *xdg_surface;
 
-	xdg_surface = malloc(sizeof *xdg_surface);
+	xdg_surface = malloc(sizeof(*xdg_surface));
 
 	if (!xdg_surface)
 		goto error0;

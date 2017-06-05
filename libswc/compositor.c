@@ -149,7 +149,7 @@ target_new(struct screen *screen)
 	struct target *target;
 	struct swc_rectangle *geom = &screen->base.geometry;
 
-	if (!(target = malloc(sizeof *target)))
+	if (!(target = malloc(sizeof(*target))))
 		goto error0;
 
 	target->surface = wld_create_surface(swc.drm->context, geom->width, geom->height, WLD_FORMAT_XRGB8888, WLD_DRM_FLAG_SCANOUT);
@@ -449,7 +449,7 @@ compositor_create_view(struct surface *surface)
 {
 	struct compositor_view *view;
 
-	view = malloc(sizeof *view);
+	view = malloc(sizeof(*view));
 
 	if (!view)
 		return NULL;

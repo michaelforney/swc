@@ -108,7 +108,7 @@ retry0:
 	}
 
 begin:
-	snprintf(lock_name, sizeof lock_name, LOCK_FMT, xserver.display);
+	snprintf(lock_name, sizeof(lock_name), LOCK_FMT, xserver.display);
 	lock_fd = open(lock_name, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0444);
 
 	if (lock_fd == -1) {
@@ -119,7 +119,7 @@ begin:
 		if ((lock_fd = open(lock_name, O_RDONLY)) == -1)
 			goto retry0;
 
-		if (read(lock_fd, pid, sizeof pid - 1) != sizeof pid - 1)
+		if (read(lock_fd, pid, sizeof(pid) - 1) != sizeof(pid) - 1)
 			goto retry0;
 
 		owner = strtol(pid, &end, 10);
@@ -136,8 +136,8 @@ begin:
 		goto begin;
 	}
 
-	snprintf(pid, sizeof pid, "%10d\n", getpid());
-	if (write(lock_fd, pid, sizeof pid - 1) != sizeof pid - 1) {
+	snprintf(pid, sizeof(pid), "%10d\n", getpid());
+	if (write(lock_fd, pid, sizeof(pid) - 1) != sizeof(pid) - 1) {
 		ERROR("Failed to write PID file\n");
 		unlink(lock_name);
 		close(lock_fd);
@@ -158,7 +158,7 @@ begin:
 	if ((xserver.unix_fd = open_socket(&addr)) < 0)
 		goto retry2;
 
-	snprintf(xserver.display_name, sizeof xserver.display_name, ":%d", xserver.display);
+	snprintf(xserver.display_name, sizeof(xserver.display_name), ":%d", xserver.display);
 	setenv("DISPLAY", xserver.display_name, true);
 
 	return true;
@@ -172,9 +172,9 @@ close_display(void)
 	close(xserver.abstract_fd);
 	close(xserver.unix_fd);
 
-	snprintf(path, sizeof path, SOCKET_FMT, xserver.display);
+	snprintf(path, sizeof(path), SOCKET_FMT, xserver.display);
 	unlink(path);
-	snprintf(path, sizeof path, LOCK_FMT, xserver.display);
+	snprintf(path, sizeof(path), LOCK_FMT, xserver.display);
 	unlink(path);
 
 	unsetenv("DISPLAY");
@@ -255,7 +255,7 @@ xserver_initialize(void)
 				goto fail;
 			}
 
-			if (snprintf(strings[index], sizeof strings[index], "%d", fds[index]) >= sizeof strings[index]) {
+			if (snprintf(strings[index], sizeof(strings[index]), "%d", fds[index]) >= sizeof(strings[index])) {
 				ERROR("FD is too large\n");
 				goto fail;
 			}

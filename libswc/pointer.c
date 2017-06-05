@@ -378,12 +378,12 @@ pointer_handle_button(struct pointer *pointer, uint32_t time, uint32_t value, ui
 					button->handler->button(button->handler, time, button, state);
 				}
 
-				array_remove(&pointer->buttons, button, sizeof *button);
+				array_remove(&pointer->buttons, button, sizeof(*button));
 				break;
 			}
 		}
 	} else {
-		button = wl_array_add(&pointer->buttons, sizeof *button);
+		button = wl_array_add(&pointer->buttons, sizeof(*button));
 
 		if (!button)
 			return;

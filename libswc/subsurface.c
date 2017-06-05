@@ -83,7 +83,7 @@ subsurface_new(struct wl_client *client, uint32_t version, uint32_t id)
 {
 	struct subsurface *subsurface;
 
-	if (!(subsurface = malloc(sizeof *subsurface)))
+	if (!(subsurface = malloc(sizeof(*subsurface))))
 		goto error0;
 
 	subsurface->resource = wl_resource_create(client, &wl_subsurface_interface, version, id);

@@ -317,7 +317,7 @@ surface_new(struct wl_client *client, uint32_t version, uint32_t id)
 {
 	struct surface *surface;
 
-	if (!(surface = malloc(sizeof *surface)))
+	if (!(surface = malloc(sizeof(*surface))))
 		return NULL;
 
 	/* Initialize the surface. */

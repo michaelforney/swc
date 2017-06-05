@@ -59,7 +59,7 @@ handle_data(int fd, uint32_t mask, void *data)
 {
 	struct swc_launch_event event;
 
-	if (receive_fd(fd, NULL, &event, sizeof event) != -1)
+	if (receive_fd(fd, NULL, &event, sizeof(event)) != -1)
 		handle_event(&event);
 	return 1;
 }
@@ -102,7 +102,7 @@ send_request(struct swc_launch_request *request, size_t size, struct swc_launch_
 	if (send_fd(launch.socket, out_fd, request, size) == -1)
 		return false;
 
-	while (receive_fd(launch.socket, in_fd, event, sizeof *event) != -1) {
+	while (receive_fd(launch.socket, in_fd, event, sizeof(*event)) != -1) {
 		if (event->type == SWC_LAUNCH_EVENT_RESPONSE && event->serial == request->serial)
 			return true;
 		handle_event(event);
@@ -124,7 +124,7 @@ launch_open_device(const char *path, int flags)
 	request->flags = flags;
 	strcpy(request->path, path);
 
-	if (!send_request(request, sizeof buffer, &response, -1, &fd))
+	if (!send_request(request, sizeof(buffer), &response, -1, &fd))
 		return -1;
 
 	return fd;
@@ -139,7 +139,7 @@ launch_activate_vt(unsigned vt)
 	request.type = SWC_LAUNCH_REQUEST_ACTIVATE_VT;
 	request.vt = vt;
 
-	if (!send_request(&request, sizeof request, &response, -1, NULL))
+	if (!send_request(&request, sizeof(request), &response, -1, NULL))
 		return false;
 
 	return response.success;

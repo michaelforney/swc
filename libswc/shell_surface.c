@@ -217,7 +217,7 @@ shell_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struc
 {
 	struct shell_surface *shell_surface;
 
-	shell_surface = malloc(sizeof *shell_surface);
+	shell_surface = malloc(sizeof(*shell_surface));
 
 	if (!shell_surface)
 		goto error0;
