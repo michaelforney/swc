@@ -223,7 +223,7 @@ handle_socket_data(int socket)
 
 	switch (request->type) {
 	case SWC_LAUNCH_REQUEST_OPEN_DEVICE:
-		if (buffer[size] != '\0') {
+		if (buffer[size - 1] != '\0') {
 			fprintf(stderr, "path is not NULL terminated\n");
 			goto fail;
 		}
