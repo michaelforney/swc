@@ -7,7 +7,7 @@
 ssize_t
 send_fd(int socket, int fd, const void *buffer, ssize_t buffer_size)
 {
-	char control[CMSG_SPACE(sizeof(int))];
+	char control[CMSG_SPACE(sizeof(fd))];
 	struct iovec iov = {
 		.iov_base = (void *)buffer,
 		.iov_len = buffer_size,
@@ -22,14 +22,14 @@ send_fd(int socket, int fd, const void *buffer, ssize_t buffer_size)
 
 	if (fd != -1) {
 		message.msg_control = control,
-		message.msg_controllen = sizeof control;
+		message.msg_controllen = sizeof(control);
 
 		cmsg = CMSG_FIRSTHDR(&message);
-		cmsg->cmsg_len = CMSG_LEN(sizeof fd);
+		cmsg->cmsg_len = CMSG_LEN(sizeof(fd));
 		cmsg->cmsg_level = SOL_SOCKET;
 		cmsg->cmsg_type = SCM_RIGHTS;
 
-		memcpy(CMSG_DATA(cmsg), &fd, sizeof fd);
+		memcpy(CMSG_DATA(cmsg), &fd, sizeof(fd));
 	} else {
 		message.msg_control = NULL;
 		message.msg_controllen = 0;
@@ -45,7 +45,7 @@ receive_fd(int socket, int *fd, void *buffer, ssize_t buffer_size)
 		return recv(socket, buffer, buffer_size, 0);
 
 	ssize_t size;
-	char control[CMSG_SPACE(sizeof(int))];
+	char control[CMSG_SPACE(sizeof(*fd))];
 	struct iovec iov = {
 		.iov_base = buffer,
 		.iov_len = buffer_size,
@@ -67,10 +67,10 @@ receive_fd(int socket, int *fd, void *buffer, ssize_t buffer_size)
 
 	cmsg = CMSG_FIRSTHDR(&message);
 
-	if (cmsg && cmsg->cmsg_len == CMSG_LEN(sizeof(int)) &&
+	if (cmsg && cmsg->cmsg_len == CMSG_LEN(sizeof(*fd)) &&
 	    cmsg->cmsg_level == SOL_SOCKET &&
 	    cmsg->cmsg_type == SCM_RIGHTS) {
-		memcpy(fd, CMSG_DATA(cmsg), sizeof *fd);
+		memcpy(fd, CMSG_DATA(cmsg), sizeof(*fd));
 	}
 
 	return size;
