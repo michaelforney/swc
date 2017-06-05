@@ -64,7 +64,7 @@ struct swc_launch_event {
 	};
 };
 
-ssize_t send_fd(int socket, int fd, const void *buffer, ssize_t buffer_size);
-ssize_t receive_fd(int socket, int *fd, void *buffer, ssize_t buffer_size);
+ssize_t send_fd(int socket, int fd, const void *buffer, size_t buffer_size);
+ssize_t receive_fd(int socket, int *fd, void *buffer, size_t buffer_size);
 
 #endif

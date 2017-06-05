@@ -5,7 +5,7 @@
 #include <string.h>
 
 ssize_t
-send_fd(int socket, int fd, const void *buffer, ssize_t buffer_size)
+send_fd(int socket, int fd, const void *buffer, size_t buffer_size)
 {
 	char control[CMSG_SPACE(sizeof(fd))];
 	struct iovec iov = {
@@ -39,7 +39,7 @@ send_fd(int socket, int fd, const void *buffer, ssize_t buffer_size)
 }
 
 ssize_t
-receive_fd(int socket, int *fd, void *buffer, ssize_t buffer_size)
+receive_fd(int socket, int *fd, void *buffer, size_t buffer_size)
 {
 	if (!fd)
 		return recv(socket, buffer, buffer_size, 0);
