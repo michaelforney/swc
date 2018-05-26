@@ -6,7 +6,7 @@ wayland_protocols := $(call pkgconfig,wayland-protocols,variable=pkgdatadir,DATA
 PROTOCOL_EXTENSIONS =           \
     $(dir)/swc.xml              \
     $(dir)/wayland-drm.xml      \
-    $(wayland_protocols)/unstable/xdg-shell/xdg-shell-unstable-v5.xml
+    $(wayland_protocols)/stable/xdg-shell/xdg-shell.xml
 
 $(dir)_PACKAGES := wayland-server
 
