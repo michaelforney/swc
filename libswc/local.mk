@@ -62,15 +62,6 @@ $(dir)_CFLAGS += -DENABLE_LIBUDEV
 $(dir)_PACKAGES += libudev
 endif
 
-ifeq ($(ENABLE_XWAYLAND),1)
-$(dir)_CFLAGS += -DENABLE_XWAYLAND
-$(dir)_PACKAGES += xcb xcb-composite xcb-ewmh xcb-icccm
-
-SWC_SOURCES +=                      \
-    libswc/xserver.c                \
-    libswc/xwm.c
-endif
-
 SWC_STATIC_OBJECTS = $(SWC_SOURCES:%.c=%.o)
 SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 

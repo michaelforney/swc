@@ -40,9 +40,6 @@
 #include "util.h"
 #include "window.h"
 #include "xdg_shell.h"
-#ifdef ENABLE_XWAYLAND
-# include "xserver.h"
-#endif
 
 extern struct swc_launch swc_launch;
 extern const struct swc_seat swc_seat;
@@ -50,9 +47,6 @@ extern const struct swc_bindings swc_bindings;
 extern struct swc_compositor swc_compositor;
 extern struct swc_drm swc_drm;
 extern struct swc_shm swc_shm;
-#ifdef ENABLE_XWAYLAND
-extern struct swc_xserver swc_xserver;
-#endif
 
 extern struct pointer_handler screens_pointer_handler;
 
@@ -62,9 +56,6 @@ struct swc swc = {
 	.compositor = &swc_compositor,
 	.drm = &swc_drm,
 	.shm = &swc_shm,
-#ifdef ENABLE_XWAYLAND
-	.xserver = &swc_xserver,
-#endif
 };
 
 static void
@@ -179,21 +170,10 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error11;
 	}
 
-#ifdef ENABLE_XWAYLAND
-	if (!xserver_initialize()) {
-		ERROR("Could not initialize xwayland\n");
-		goto error12;
-	}
-#endif
-
 	setup_compositor();
 
 	return true;
 
-#ifdef ENABLE_XWAYLAND
-error12:
-	panel_manager_finalize();
-#endif
 error11:
 	xdg_shell_finalize();
 error10:
@@ -223,9 +203,6 @@ error0:
 EXPORT void
 swc_finalize(void)
 {
-#ifdef ENABLE_XWAYLAND
-	xserver_finalize();
-#endif
 	panel_manager_finalize();
 	shell_finalize();
 	seat_finalize();

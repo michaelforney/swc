@@ -35,14 +35,6 @@ PACKAGES :=           \
     wld               \
     xkbcommon
 
-ifeq ($(ENABLE_XWAYLAND),1)
-PACKAGES +=         \
-    xcb             \
-    xcb-composite   \
-    xcb-ewmh        \
-    xcb-icccm
-endif
-
 ifeq ($(ENABLE_LIBUDEV),1)
 PACKAGES += libudev
 endif
