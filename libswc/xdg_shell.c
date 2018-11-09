@@ -36,7 +36,7 @@
 struct xdg_surface {
 	struct wl_resource *resource, *role;
 	struct surface *surface;
-	struct wl_listener surface_destroy_listener;
+	struct wl_listener surface_destroy_listener, role_destroy_listener;
 	uint32_t configure_serial;
 };
 
@@ -375,6 +375,7 @@ get_toplevel(struct wl_client *client, struct wl_resource *resource, uint32_t id
 		return;
 	}
 	xdg_surface->role = toplevel->resource;
+	wl_resource_add_destroy_listener(xdg_surface->role, &xdg_surface->role_destroy_listener);
 }
 
 static void
@@ -417,12 +418,21 @@ handle_surface_destroy(struct wl_listener *listener, void *data)
 }
 
 static void
+handle_role_destroy(struct wl_listener *listener, void *data)
+{
+	struct xdg_surface *xdg_surface = wl_container_of(listener, xdg_surface, role_destroy_listener);
+
+	xdg_surface->role = NULL;
+}
+
+static void
 destroy_xdg_surface(struct wl_resource *resource)
 {
 	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource);
 
 	wl_list_remove(&xdg_surface->surface_destroy_listener.link);
-	wl_resource_destroy(xdg_surface->role);
+	if (xdg_surface->role)
+		wl_resource_destroy(xdg_surface->role);
 	free(xdg_surface);
 }
 
@@ -439,6 +449,7 @@ xdg_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struct 
 		goto error1;
 	xdg_surface->surface = surface;
 	xdg_surface->surface_destroy_listener.notify = &handle_surface_destroy;
+	xdg_surface->role_destroy_listener.notify = &handle_role_destroy;
 	wl_resource_add_destroy_listener(surface->resource, &xdg_surface->surface_destroy_listener);
 	wl_resource_set_implementation(xdg_surface->resource, &xdg_surface_impl, xdg_surface, destroy_xdg_surface);
 
