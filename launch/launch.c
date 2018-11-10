@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/sysmacros.h>
 #include <linux/input.h>
 #include <linux/kd.h>
 #include <linux/major.h>
