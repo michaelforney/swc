@@ -249,13 +249,16 @@ quit(void *data, uint32_t time, uint32_t value, uint32_t state)
 int
 main(int argc, char *argv[])
 {
-	display = wl_display_create();
+	const char *socket;
 
+	display = wl_display_create();
 	if (!display)
 		return EXIT_FAILURE;
 
-	if (wl_display_add_socket(display, NULL) != 0)
+	socket = wl_display_add_socket_auto(display);
+	if (!socket)
 		return EXIT_FAILURE;
+	setenv("WAYLAND_DISPLAY", socket, 1);
 
 	if (!swc_initialize(display, NULL, &manager))
 		return EXIT_FAILURE;

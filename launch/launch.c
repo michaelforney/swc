@@ -79,7 +79,7 @@ die(const char *format, ...);
 
 static void __attribute__((noreturn)) usage(const char *name)
 {
-	fprintf(stderr, "usage: %s [-n] [-s socket] [-t tty] [--] server [args...]\n", name);
+	fprintf(stderr, "usage: %s [-n] [-t tty] [--] server [args...]\n", name);
 	exit(2);
 }
 
@@ -431,13 +431,10 @@ main(int argc, char *argv[])
 	sigset_t set;
 	posix_spawnattr_t attr;
 
-	while ((option = getopt(argc, argv, "ns:t:")) != -1) {
+	while ((option = getopt(argc, argv, "nt:")) != -1) {
 		switch (option) {
 		case 'n':
 			nflag = true;
-			break;
-		case 's':
-			setenv("WAYLAND_DISPLAY", optarg, true);
 			break;
 		case 't':
 			vt = optarg;
