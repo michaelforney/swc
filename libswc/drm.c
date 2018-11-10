@@ -47,7 +47,7 @@
 struct swc_drm swc_drm;
 
 static struct {
-	char path[128];
+	char *path;
 
 	uint32_t taken_ids;
 
@@ -252,38 +252,23 @@ bind_drm(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 bool
 drm_initialize(void)
 {
-	struct stat master, render;
+	char primary[128];
 
-	if (!find_primary_drm_device(drm.path, sizeof(drm.path))) {
+	if (!find_primary_drm_device(primary, sizeof(primary))) {
 		ERROR("Could not find DRM device\n");
 		goto error0;
 	}
 
 	drm.taken_ids = 0;
-	swc.drm->fd = launch_open_device(drm.path, O_RDWR | O_CLOEXEC);
-
+	swc.drm->fd = launch_open_device(primary, O_RDWR | O_CLOEXEC);
 	if (swc.drm->fd == -1) {
 		ERROR("Could not open DRM device at %s\n", drm.path);
 		goto error0;
 	}
 
-	if (fstat(swc.drm->fd, &master) != 0) {
-		ERROR("Could not fstat DRM FD: %s\n", strerror(errno));
-		goto error1;
-	}
-
-	if (snprintf(drm.path, sizeof(drm.path), "/dev/dri/renderD%d", minor(master.st_rdev) + 0x80) >= sizeof(drm.path)) {
-		ERROR("Render node path is too long");
-		goto error1;
-	}
-
-	if (stat(drm.path, &render) != 0) {
-		ERROR("stat %s failed (does your kernel support render nodes?): %s\n", drm.path, strerror(errno));
-		goto error1;
-	}
-
-	if (master.st_mode != render.st_mode || minor(master.st_rdev) + 0x80 != minor(render.st_rdev)) {
-		ERROR("Render node does not have expected mode or minor number\n");
+	drm.path = drmGetRenderDeviceNameFromFd(swc.drm->fd);
+	if (!drm.path) {
+		ERROR("Could not determine render node path\n");
 		goto error1;
 	}
 
@@ -335,6 +320,7 @@ drm_finalize(void)
 	wl_event_source_remove(drm.event_source);
 	wld_destroy_renderer(swc.drm->renderer);
 	wld_destroy_context(swc.drm->context);
+	free(drm.path);
 	close(swc.drm->fd);
 }
 
