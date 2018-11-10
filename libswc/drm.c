@@ -262,7 +262,7 @@ drm_initialize(void)
 	drm.taken_ids = 0;
 	swc.drm->fd = launch_open_device(primary, O_RDWR | O_CLOEXEC);
 	if (swc.drm->fd == -1) {
-		ERROR("Could not open DRM device at %s\n", drm.path);
+		ERROR("Could not open DRM device at %s\n", primary);
 		goto error0;
 	}
 
