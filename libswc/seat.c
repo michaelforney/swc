@@ -102,10 +102,8 @@ handle_data_device_event(struct wl_listener *listener, void *data)
 	if (ev->type != DATA_DEVICE_EVENT_SELECTION_CHANGED)
 		return;
 
-	if (seat.keyboard.focus.resource) {
-		struct wl_client *client = wl_resource_get_client(seat.keyboard.focus.resource);
-		data_device_offer_selection(&seat.data_device, client);
-	}
+	if (seat.keyboard.focus.client)
+		data_device_offer_selection(&seat.data_device, seat.keyboard.focus.client);
 }
 
 static struct wl_listener data_device_listener = {

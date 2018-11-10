@@ -35,31 +35,33 @@
 #include <wld/wld.h>
 
 static void
-enter(struct input_focus_handler *handler, struct wl_resource *resource, struct compositor_view *view)
+enter(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view)
 {
 	struct pointer *pointer = wl_container_of(handler, pointer, focus_handler);
+	struct wl_resource *resource;
 	uint32_t serial;
 	wl_fixed_t surface_x, surface_y;
 
-	if (!resource) {
+	if (wl_list_empty(resources)) {
 		pointer_set_cursor(pointer, cursor_left_ptr);
 		return;
 	}
 	serial = wl_display_next_serial(swc.display);
 	surface_x = pointer->x - wl_fixed_from_int(view->base.geometry.x);
 	surface_y = pointer->y - wl_fixed_from_int(view->base.geometry.y);
-	wl_pointer_send_enter(resource, serial, view->surface->resource, surface_x, surface_y);
+	wl_resource_for_each (resource, resources)
+		wl_pointer_send_enter(resource, serial, view->surface->resource, surface_x, surface_y);
 }
 
 static void
-leave(struct input_focus_handler *handler, struct wl_resource *resource, struct compositor_view *view)
+leave(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view)
 {
+	struct wl_resource *resource;
 	uint32_t serial;
 
-	if (!resource)
-		return;
 	serial = wl_display_next_serial(swc.display);
-	wl_pointer_send_leave(resource, serial, view->surface->resource);
+	wl_resource_for_each (resource, resources)
+		wl_pointer_send_leave(resource, serial, view->surface->resource);
 }
 
 static void
@@ -169,11 +171,13 @@ static bool
 client_handle_button(struct pointer_handler *handler, uint32_t time, struct button *button, uint32_t state)
 {
 	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
+	struct wl_resource *resource;
 
-	if (!pointer->focus.resource)
+	if (wl_list_empty(&pointer->focus.active))
 		return false;
 
-	wl_pointer_send_button(pointer->focus.resource, button->press.serial, time, button->press.value, state);
+	wl_resource_for_each (resource, &pointer->focus.active)
+		wl_pointer_send_button(resource, button->press.serial, time, button->press.value, state);
 	return true;
 }
 
@@ -181,11 +185,13 @@ static bool
 client_handle_axis(struct pointer_handler *handler, uint32_t time, uint32_t axis, wl_fixed_t amount)
 {
 	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
+	struct wl_resource *resource;
 
-	if (!pointer->focus.resource)
+	if (wl_list_empty(&pointer->focus.active))
 		return false;
 
-	wl_pointer_send_axis(pointer->focus.resource, time, axis, amount);
+	wl_resource_for_each (resource, &pointer->focus.active)
+		wl_pointer_send_axis(resource, time, axis, amount);
 	return true;
 }
 
@@ -193,14 +199,16 @@ static bool
 client_handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t x, wl_fixed_t y)
 {
 	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
+	struct wl_resource *resource;
 	wl_fixed_t sx, sy;
 
-	if (!pointer->focus.resource)
+	if (wl_list_empty(&pointer->focus.active))
 		return false;
 
 	sx = x - wl_fixed_from_int(pointer->focus.view->base.geometry.x);
 	sy = y - wl_fixed_from_int(pointer->focus.view->base.geometry.y);
-	wl_pointer_send_motion(pointer->focus.resource, time, sx, sy);
+	wl_resource_for_each (resource, &pointer->focus.active)
+		wl_pointer_send_motion(resource, time, sx, sy);
 	return true;
 }
 
@@ -298,7 +306,7 @@ set_cursor(struct wl_client *client, struct wl_resource *resource,
 	struct pointer *pointer = wl_resource_get_user_data(resource);
 	struct surface *surface;
 
-	if (!pointer->focus.resource || client != wl_resource_get_client(pointer->focus.resource))
+	if (client != pointer->focus.client)
 		return;
 
 	if (pointer->cursor.surface) {

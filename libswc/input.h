@@ -38,17 +38,17 @@ struct input_focus_event_data {
 };
 
 struct input_focus_handler {
-	void (*enter)(struct input_focus_handler *handler, struct wl_resource *resource, struct compositor_view *view);
-	void (*leave)(struct input_focus_handler *handler, struct wl_resource *resource, struct compositor_view *view);
+	void (*enter)(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view);
+	void (*leave)(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view);
 };
 
 struct input_focus {
-	struct wl_resource *resource;
+	struct wl_client *client;
 	struct compositor_view *view;
 	struct wl_listener view_destroy_listener;
 
 	struct input_focus_handler *handler;
-	struct wl_list resources;
+	struct wl_list active, inactive;
 
 	struct wl_signal event_signal;
 };

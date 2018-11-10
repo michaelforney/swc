@@ -44,34 +44,36 @@ static const int repeat_delay = 500, repeat_rate = 40;
 static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
 
 static void
-enter(struct input_focus_handler *handler, struct wl_resource *resource, struct compositor_view *view)
+enter(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view)
 {
 	struct keyboard *keyboard = wl_container_of(handler, keyboard, focus_handler);
 	struct keyboard_modifier_state *state = &keyboard->modifier_state;
+	struct wl_resource *resource;
 	uint32_t serial;
 
-	if (!resource)
-		return;
 	serial = wl_display_next_serial(swc.display);
-	wl_keyboard_send_modifiers(resource, serial, state->depressed, state->locked, state->latched, state->group);
-	wl_keyboard_send_enter(resource, serial, view->surface->resource, &keyboard->client_keys);
+	wl_resource_for_each (resource, resources) {
+		wl_keyboard_send_modifiers(resource, serial, state->depressed, state->locked, state->latched, state->group);
+		wl_keyboard_send_enter(resource, serial, view->surface->resource, &keyboard->client_keys);
+	}
 }
 
 static void
-leave(struct input_focus_handler *handler, struct wl_resource *resource, struct compositor_view *view)
+leave(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view)
 {
+	struct wl_resource *resource;
 	uint32_t serial;
 
-	if (!resource)
-		return;
 	serial = wl_display_next_serial(swc.display);
-	wl_keyboard_send_leave(resource, serial, view->surface->resource);
+	wl_resource_for_each (resource, resources)
+		wl_keyboard_send_leave(resource, serial, view->surface->resource);
 }
 
 static bool
 client_handle_key(struct keyboard *keyboard, uint32_t time, struct key *key, uint32_t state)
 {
 	uint32_t *value;
+	struct wl_resource *resource;
 
 	if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
 		if (!(value = wl_array_add(&keyboard->client_keys, sizeof(*value))))
@@ -87,27 +89,23 @@ client_handle_key(struct keyboard *keyboard, uint32_t time, struct key *key, uin
 		}
 	}
 
-	if (keyboard->focus.resource)
-		wl_keyboard_send_key(keyboard->focus.resource, key->press.serial, time, key->press.value, state);
-
+	wl_resource_for_each (resource, &keyboard->focus.active)
+		wl_keyboard_send_key(resource, key->press.serial, time, key->press.value, state);
 	return true;
 }
 
 static bool
 client_handle_modifiers(struct keyboard *keyboard, const struct keyboard_modifier_state *state)
 {
-	struct wl_client *client;
-	struct wl_display *display;
+	struct wl_resource *resource;
 	uint32_t serial;
 
-	if (!keyboard->focus.resource)
+	if (wl_list_empty(&keyboard->focus.active))
 		return false;
 
-	client = wl_resource_get_client(keyboard->focus.resource);
-	display = wl_client_get_display(client);
-	serial = wl_display_next_serial(display);
-	wl_keyboard_send_modifiers(keyboard->focus.resource, serial, state->depressed, state->locked, state->latched, state->group);
-
+	serial = wl_display_next_serial(swc.display);
+	wl_resource_for_each (resource, &keyboard->focus.active)
+		wl_keyboard_send_modifiers(resource, serial, state->depressed, state->locked, state->latched, state->group);
 	return true;
 }
 
