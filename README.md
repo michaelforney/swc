@@ -109,7 +109,7 @@ Related projects
 Since swc's creation, several other projects with similar goals have been
 created.
 
-- [wlc](http://github.com/Cloudef/wlc) and
-  [loliwm](http://github.com/Cloudef/loliwm)
-- [waysome](http://github.com/waysome/waysome)
-
+- [wlc](https://github.com/Cloudef/wlc) and
+  [orbment](https://github.com/Cloudef/orbment)
+- [waysome](https://github.com/waysome/waysome)
+- [wlroots](https://github.com/swaywm/wlroots)
