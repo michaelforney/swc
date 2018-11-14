@@ -55,13 +55,12 @@
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
 
-static struct {
-	int socket;
-	int input_fds[128], num_input_fds;
-	int drm_fds[16], num_drm_fds;
-	int tty_fd;
-	bool active;
-} launcher;
+static bool nflag;
+static int sigfd[2], sock[2];
+static int input_fds[128], num_input_fds;
+static int drm_fds[16], num_drm_fds;
+static int tty_fd;
+static bool active;
 
 static struct {
 	bool altered;
@@ -69,9 +68,6 @@ static struct {
 	long kb_mode;
 	long console_mode;
 } original_vt_state;
-
-static bool nflag;
-static int sigfd[2];
 
 static void cleanup(void);
 
@@ -103,8 +99,8 @@ start_devices(void)
 {
 	int i;
 
-	for (i = 0; i < launcher.num_drm_fds; ++i) {
-		if (drmSetMaster(launcher.drm_fds[i]) < 0)
+	for (i = 0; i < num_drm_fds; ++i) {
+		if (drmSetMaster(drm_fds[i]) < 0)
 			die("failed to set DRM master");
 	}
 }
@@ -114,16 +110,16 @@ stop_devices(bool fatal)
 {
 	int i;
 
-	for (i = 0; i < launcher.num_drm_fds; ++i) {
-		if (drmDropMaster(launcher.drm_fds[i]) < 0 && fatal)
+	for (i = 0; i < num_drm_fds; ++i) {
+		if (drmDropMaster(drm_fds[i]) < 0 && fatal)
 			die("drmDropMaster:");
 	}
-	for (i = 0; i < launcher.num_input_fds; ++i) {
-		if (ioctl(launcher.input_fds[i], EVIOCREVOKE, 0) < 0 && errno != ENODEV && fatal)
+	for (i = 0; i < num_input_fds; ++i) {
+		if (ioctl(input_fds[i], EVIOCREVOKE, 0) < 0 && errno != ENODEV && fatal)
 			die("ioctl EVIOCREVOKE:");
-		close(launcher.input_fds[i]);
+		close(input_fds[i]);
 	}
-	launcher.num_input_fds = 0;
+	num_input_fds = 0;
 }
 
 static void
@@ -135,14 +131,14 @@ cleanup(void)
 		return;
 
 	/* Cleanup VT */
-	ioctl(launcher.tty_fd, VT_SETMODE, &mode);
-	ioctl(launcher.tty_fd, KDSETMODE, original_vt_state.console_mode);
-	ioctl(launcher.tty_fd, KDSKBMODE, original_vt_state.kb_mode);
+	ioctl(tty_fd, VT_SETMODE, &mode);
+	ioctl(tty_fd, KDSETMODE, original_vt_state.console_mode);
+	ioctl(tty_fd, KDSKBMODE, original_vt_state.kb_mode);
 
 	/* Stop devices before switching the VT to make sure we have released the DRM
 	 * device before the next session tries to claim it. */
 	stop_devices(false);
-	ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
+	ioctl(tty_fd, VT_ACTIVATE, original_vt_state.vt);
 
 	kill(0, SIGTERM);
 }
@@ -153,8 +149,8 @@ activate(void)
 	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_ACTIVATE};
 
 	start_devices();
-	send(launcher.socket, &event, sizeof(event), 0);
-	launcher.active = true;
+	send(sock[0], &event, sizeof(event), 0);
+	active = true;
 }
 
 static void
@@ -162,9 +158,9 @@ deactivate(void)
 {
 	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_DEACTIVATE};
 
-	send(launcher.socket, &event, sizeof(event), 0);
+	send(sock[0], &event, sizeof(event), 0);
 	stop_devices(true);
-	launcher.active = false;
+	active = false;
 }
 
 static void
@@ -205,15 +201,15 @@ handle_socket_data(int socket)
 
 		switch (major(st.st_rdev)) {
 		case INPUT_MAJOR:
-			if (!launcher.active)
+			if (!active)
 				goto fail;
-			if (launcher.num_input_fds == ARRAY_LENGTH(launcher.input_fds)) {
+			if (num_input_fds == ARRAY_LENGTH(input_fds)) {
 				fprintf(stderr, "too many input devices opened\n");
 				goto fail;
 			}
 			break;
 		case DRM_MAJOR:
-			if (launcher.num_drm_fds == ARRAY_LENGTH(launcher.drm_fds)) {
+			if (num_drm_fds == ARRAY_LENGTH(drm_fds)) {
 				fprintf(stderr, "too many DRM devices opened\n");
 				goto fail;
 			}
@@ -232,19 +228,19 @@ handle_socket_data(int socket)
 
 		switch (major(st.st_rdev)) {
 		case INPUT_MAJOR:
-			launcher.input_fds[launcher.num_input_fds++] = fd;
+			input_fds[num_input_fds++] = fd;
 			break;
 		case DRM_MAJOR:
-			launcher.drm_fds[launcher.num_drm_fds++] = fd;
+			drm_fds[num_drm_fds++] = fd;
 			break;
 		}
 
 		break;
 	case SWC_LAUNCH_REQUEST_ACTIVATE_VT:
-		if (!launcher.active)
+		if (!active)
 			goto fail;
 
-		if (ioctl(launcher.tty_fd, VT_ACTIVATE, request->vt) == -1)
+		if (ioctl(tty_fd, VT_ACTIVATE, request->vt) == -1)
 			fprintf(stderr, "failed to activate VT %d: %s\n", request->vt, strerror(errno));
 		break;
 	default:
@@ -394,10 +390,10 @@ run(int fd) {
 				exit(WEXITSTATUS(status));
 			case SIGUSR1:
 				deactivate();
-				ioctl(launcher.tty_fd, VT_RELDISP, 1);
+				ioctl(tty_fd, VT_RELDISP, 1);
 				break;
 			case SIGUSR2:
-				ioctl(launcher.tty_fd, VT_RELDISP, VT_ACKACQ);
+				ioctl(tty_fd, VT_RELDISP, VT_ACKACQ);
 				activate();
 				break;
 			}
@@ -409,7 +405,6 @@ int
 main(int argc, char *argv[])
 {
 	int option;
-	int sock[2];
 	char *vt = NULL, buf[64];
 	struct sigaction action = {
 		.sa_handler = handle_signal,
@@ -437,9 +432,6 @@ main(int argc, char *argv[])
 
 	if (socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, sock) == -1)
 		die("socketpair:");
-
-	launcher.socket = sock[0];
-
 	if (fcntl(sock[0], F_SETFD, FD_CLOEXEC) == -1)
 		die("failed set CLOEXEC on socket:");
 
@@ -464,8 +456,8 @@ main(int argc, char *argv[])
 	}
 
 	fprintf(stderr, "running on %s\n", vt);
-	launcher.tty_fd = open_tty(vt);
-	setup_tty(launcher.tty_fd);
+	tty_fd = open_tty(vt);
+	setup_tty(tty_fd);
 
 	sprintf(buf, "%d", sock[1]);
 	setenv(SWC_LAUNCH_SOCKET_ENV, buf, 1);
