@@ -199,12 +199,6 @@ handle_usr2(int signal)
 }
 
 static void
-forward_signal(int signal)
-{
-	kill(child_pid, signal);
-}
-
-static void
 handle_socket_data(int socket)
 {
 	char buffer[BUFSIZ];
@@ -467,18 +461,10 @@ main(int argc, char *argv[])
 	if (sigaction(SIGUSR2, &action, NULL) == -1)
 		die("failed to register signal handler for SIGUSR2:");
 
-	action.sa_handler = &forward_signal;
-	if (sigaction(SIGINT, &action, NULL) == -1)
-		die("failed to register signal handler for SIGINT:");
-	if (sigaction(SIGTERM, &action, NULL) == -1)
-		die("failed to register signal handler for SIGTERM:");
-
 	sigfillset(&set);
 	sigdelset(&set, SIGCHLD);
 	sigdelset(&set, SIGUSR1);
 	sigdelset(&set, SIGUSR2);
-	sigdelset(&set, SIGINT);
-	sigdelset(&set, SIGTERM);
 	sigprocmask(SIG_SETMASK, &set, NULL);
 
 	if (!vt) {
