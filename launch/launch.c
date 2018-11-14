@@ -428,7 +428,10 @@ main(int argc, char *argv[])
 	int option;
 	int sock[2];
 	char *vt = NULL, buf[64];
-	struct sigaction action = {.sa_handler = handle_signal};
+	struct sigaction action = {
+		.sa_handler = handle_signal,
+		.sa_flags = SA_RESTART,
+	};
 	sigset_t set;
 	posix_spawnattr_t attr;
 
