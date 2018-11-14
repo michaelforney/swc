@@ -73,6 +73,7 @@ static struct {
 } original_vt_state;
 
 static bool nflag;
+static int sigfd[2];
 
 static void __attribute__((noreturn, format(printf, 1, 2)))
 die(const char *format, ...);
@@ -173,29 +174,9 @@ deactivate(void)
 }
 
 static void
-handle_chld(int signal)
+handle_signal(int sig)
 {
-	int status;
-
-	if (!child_pid)
-		return;
-	wait(&status);
-	cleanup();
-	exit(WEXITSTATUS(status));
-}
-
-static void
-handle_usr1(int signal)
-{
-	deactivate();
-	ioctl(launcher.tty_fd, VT_RELDISP, 1);
-}
-
-static void
-handle_usr2(int signal)
-{
-	ioctl(launcher.tty_fd, VT_RELDISP, VT_ACKACQ);
-	activate();
+	write(sigfd[1], (char[]){sig}, 1);
 }
 
 static void
@@ -403,15 +384,41 @@ error0:
 
 static void
 run(int fd) {
-	struct pollfd pollfd = { .fd = fd, .events = POLLIN };
+	struct pollfd fds[] = {
+		{.fd = fd, .events = POLLIN},
+		{.fd = sigfd[0], .events = POLLIN},
+	};
+	int status;
+	char sig;
 
 	for (;;) {
-		if (poll(&pollfd, 1, -1) < 0) {
+		if (poll(fds, ARRAY_LENGTH(fds), -1) < 0) {
 			if (errno == EINTR)
 				continue;
 			die("poll:");
 		}
-		handle_socket_data(pollfd.fd);
+		if (fds[0].revents)
+			handle_socket_data(fd);
+		if (fds[1].revents) {
+			if (read(sigfd[0], &sig, 1) <= 0)
+				continue;
+			switch (sig) {
+			case SIGCHLD:
+				if (!child_pid)
+					break;
+				wait(&status);
+				cleanup();
+				exit(WEXITSTATUS(status));
+			case SIGUSR1:
+				deactivate();
+				ioctl(launcher.tty_fd, VT_RELDISP, 1);
+				break;
+			case SIGUSR2:
+				ioctl(launcher.tty_fd, VT_RELDISP, VT_ACKACQ);
+				activate();
+				break;
+			}
+		}
 	}
 }
 
@@ -421,7 +428,7 @@ main(int argc, char *argv[])
 	int option;
 	int sock[2];
 	char *vt = NULL, buf[64];
-	struct sigaction action = { 0 };
+	struct sigaction action = {.sa_handler = handle_signal};
 	sigset_t set;
 	posix_spawnattr_t attr;
 
@@ -449,17 +456,14 @@ main(int argc, char *argv[])
 	if (fcntl(sock[0], F_SETFD, FD_CLOEXEC) == -1)
 		die("failed set CLOEXEC on socket:");
 
-	action.sa_handler = &handle_chld;
+	if (pipe2(sigfd, O_CLOEXEC) == -1)
+		die("pipe:");
 	if (sigaction(SIGCHLD, &action, NULL) == -1)
-		die("failed to register signal handler for SIGCHLD:");
-
-	action.sa_handler = &handle_usr1;
+		die("sigaction SIGCHLD:");
 	if (sigaction(SIGUSR1, &action, NULL) == -1)
-		die("failed to register signal handler for SIGUSR1:");
-
-	action.sa_handler = &handle_usr2;
+		die("sigaction SIGUSR1:");
 	if (sigaction(SIGUSR2, &action, NULL) == -1)
-		die("failed to register signal handler for SIGUSR2:");
+		die("sigaction SIGUSR2:");
 
 	sigfillset(&set);
 	sigdelset(&set, SIGCHLD);
