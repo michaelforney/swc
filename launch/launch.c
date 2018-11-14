@@ -59,10 +59,8 @@ pid_t child_pid;
 
 static struct {
 	int socket;
-	int input_fds[128];
-	unsigned num_input_fds;
-	int drm_fds[16];
-	unsigned num_drm_fds;
+	int input_fds[128], num_input_fds;
+	int drm_fds[16], num_drm_fds;
 	int tty_fd;
 	bool active;
 } launcher;
@@ -77,8 +75,7 @@ static struct {
 static bool nflag;
 static int sigfd[2];
 
-static noreturn void __attribute__((format(printf, 1, 2)))
-die(const char *format, ...);
+static void cleanup(void);
 
 static noreturn void usage(const char *name)
 {
@@ -86,13 +83,30 @@ static noreturn void usage(const char *name)
 	exit(2);
 }
 
+static noreturn void __attribute__((format(printf, 1, 2)))
+die(const char *format, ...)
+{
+	va_list args;
+
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	if (format[0] && format[strlen(format) - 1] == ':')
+		fprintf(stderr, " %s", strerror(errno));
+	fputc('\n', stderr);
+
+	cleanup();
+	exit(EXIT_FAILURE);
+}
+
 static void
 start_devices(void)
 {
-	unsigned index;
+	int i;
 
-	for (index = 0; index < launcher.num_drm_fds; ++index) {
-		if (drmSetMaster(launcher.drm_fds[index]) < 0)
+	for (i = 0; i < launcher.num_drm_fds; ++i) {
+		if (drmSetMaster(launcher.drm_fds[i]) < 0)
 			die("failed to set DRM master");
 	}
 }
@@ -100,26 +114,24 @@ start_devices(void)
 static void
 stop_devices(bool fatal)
 {
-	unsigned index;
+	int i;
 
-	for (index = 0; index < launcher.num_drm_fds; ++index) {
-		if (drmDropMaster(launcher.drm_fds[index]) < 0 && fatal)
-			die("failed to drop DRM master");
+	for (i = 0; i < launcher.num_drm_fds; ++i) {
+		if (drmDropMaster(launcher.drm_fds[i]) < 0 && fatal)
+			die("drmDropMaster:");
 	}
-
-	for (index = 0; index < launcher.num_input_fds; ++index) {
-		if (ioctl(launcher.input_fds[index], EVIOCREVOKE, 0) < 0 && errno != ENODEV && fatal)
-			die("failed to revoke input device:");
-		close(launcher.input_fds[index]);
+	for (i = 0; i < launcher.num_input_fds; ++i) {
+		if (ioctl(launcher.input_fds[i], EVIOCREVOKE, 0) < 0 && errno != ENODEV && fatal)
+			die("ioctl EVIOCREVOKE:");
+		close(launcher.input_fds[i]);
 	}
-
 	launcher.num_input_fds = 0;
 }
 
 static void
 cleanup(void)
 {
-	struct vt_mode mode = {.mode = VT_AUTO };
+	struct vt_mode mode = {.mode = VT_AUTO};
 
 	if (!original_vt_state.altered)
 		return;
@@ -138,27 +150,10 @@ cleanup(void)
 		kill(child_pid, SIGTERM);
 }
 
-noreturn void __attribute__((format(printf, 1, 2)))
-die(const char *format, ...)
-{
-	va_list args;
-
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
-
-	if (format[0] && format[strlen(format) - 1] == ':')
-		fprintf(stderr, " %s", strerror(errno));
-	fputc('\n', stderr);
-
-	cleanup();
-	exit(EXIT_FAILURE);
-}
-
 static void
 activate(void)
 {
-	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_ACTIVATE };
+	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_ACTIVATE};
 
 	start_devices();
 	send(launcher.socket, &event, sizeof(event), 0);
@@ -168,7 +163,7 @@ activate(void)
 static void
 deactivate(void)
 {
-	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_DEACTIVATE };
+	struct swc_launch_event event = {.type = SWC_LAUNCH_EVENT_DEACTIVATE};
 
 	send(launcher.socket, &event, sizeof(event), 0);
 	stop_devices(true);
@@ -215,7 +210,6 @@ handle_socket_data(int socket)
 		case INPUT_MAJOR:
 			if (!launcher.active)
 				goto fail;
-
 			if (launcher.num_input_fds == ARRAY_LENGTH(launcher.input_fds)) {
 				fprintf(stderr, "too many input devices opened\n");
 				goto fail;
@@ -275,12 +269,11 @@ static void
 find_vt(char *vt, size_t size)
 {
 	char *vtnr;
+	int tty0_fd, vt_num;
 
 	/* If we are running from an existing X or wayland session, always open a new
 	 * VT instead of using the current one. */
 	if (getenv("DISPLAY") || getenv("WAYLAND_DISPLAY") || !(vtnr = getenv("XDG_VTNR"))) {
-		int tty0_fd, vt_num;
-
 		tty0_fd = open("/dev/tty0", O_RDWR);
 		if (tty0_fd == -1)
 			die("open /dev/tty0:");
@@ -326,39 +319,32 @@ setup_tty(int fd)
 
 	if (fstat(fd, &st) == -1)
 		die("failed to stat TTY fd:");
-
 	vt = minor(st.st_rdev);
-
 	if (major(st.st_rdev) != TTY_MAJOR || vt == 0)
 		die("not a valid VT");
 
 	if (ioctl(fd, VT_GETSTATE, &state) == -1)
 		die("failed to get the current VT state:");
-
 	original_vt_state.vt = state.v_active;
-
 	if (ioctl(fd, KDGKBMODE, &original_vt_state.kb_mode))
 		die("failed to get keyboard mode:");
-
 	if (ioctl(fd, KDGETMODE, &original_vt_state.console_mode))
 		die("failed to get console mode:");
 
 	if (ioctl(fd, KDSKBMODE, K_OFF) == -1)
 		die("failed to set keyboard mode to K_OFF:");
-
 	if (ioctl(fd, KDSETMODE, KD_GRAPHICS) == -1) {
 		perror("failed to set console mode to KD_GRAPHICS");
 		goto error0;
 	}
-
 	if (ioctl(fd, VT_SETMODE, &mode) == -1) {
 		perror("failed to set VT mode");
 		goto error1;
 	}
 
-	if (vt == original_vt_state.vt)
+	if (vt == original_vt_state.vt) {
 		activate();
-	else if (!nflag) {
+	} else if (!nflag) {
 		if (ioctl(fd, VT_ACTIVATE, vt) == -1) {
 			perror("failed to activate VT");
 			goto error2;
