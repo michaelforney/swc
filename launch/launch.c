@@ -55,8 +55,6 @@
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
 
-pid_t child_pid;
-
 static struct {
 	int socket;
 	int input_fds[128], num_input_fds;
@@ -146,8 +144,7 @@ cleanup(void)
 	stop_devices(false);
 	ioctl(launcher.tty_fd, VT_ACTIVATE, original_vt_state.vt);
 
-	if (child_pid)
-		kill(child_pid, SIGTERM);
+	kill(0, SIGTERM);
 }
 
 static void
@@ -392,8 +389,6 @@ run(int fd) {
 				continue;
 			switch (sig) {
 			case SIGCHLD:
-				if (!child_pid)
-					break;
 				wait(&status);
 				cleanup();
 				exit(WEXITSTATUS(status));
@@ -421,6 +416,7 @@ main(int argc, char *argv[])
 		.sa_flags = SA_RESTART,
 	};
 	sigset_t set;
+	pid_t pid;
 	posix_spawnattr_t attr;
 
 	while ((option = getopt(argc, argv, "nt:")) != -1) {
@@ -479,7 +475,7 @@ main(int argc, char *argv[])
 	sigemptyset(&set);
 	if (posix_spawnattr_setsigmask(&attr, &set) != 0)
 		die("failed to set spawnattr sigmask:");
-	if (posix_spawnp(&child_pid, argv[optind], NULL, &attr, argv + optind, environ) != 0)
+	if (posix_spawnp(&pid, argv[optind], NULL, &attr, argv + optind, environ) != 0)
 		die("failed to spawn server:");
 
 	run(sock[0]);
