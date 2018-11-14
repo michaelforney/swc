@@ -27,15 +27,17 @@
 
 #include "protocol.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <spawn.h>
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <spawn.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdnoreturn.h>
+#include <string.h>
+#include <unistd.h>
+
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -75,10 +77,10 @@ static struct {
 static bool nflag;
 static int sigfd[2];
 
-static void __attribute__((noreturn, format(printf, 1, 2)))
+static noreturn void __attribute__((format(printf, 1, 2)))
 die(const char *format, ...);
 
-static void __attribute__((noreturn)) usage(const char *name)
+static noreturn void usage(const char *name)
 {
 	fprintf(stderr, "usage: %s [-n] [-t tty] [--] server [args...]\n", name);
 	exit(2);
@@ -136,7 +138,7 @@ cleanup(void)
 		kill(child_pid, SIGTERM);
 }
 
-void __attribute__((noreturn, format(printf, 1, 2)))
+noreturn void __attribute__((format(printf, 1, 2)))
 die(const char *format, ...)
 {
 	va_list args;
