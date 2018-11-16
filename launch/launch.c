@@ -473,6 +473,7 @@ main(int argc, char *argv[])
 		die("posix_spawnp %s:", argv[optind]);
 	posix_spawnattr_destroy(&attr);
 
+	close(sock[1]);
 	run(sock[0]);
 
 	return EXIT_SUCCESS;
