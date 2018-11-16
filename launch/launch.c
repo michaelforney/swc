@@ -462,13 +462,16 @@ main(int argc, char *argv[])
 	sprintf(buf, "%d", sock[1]);
 	setenv(SWC_LAUNCH_SOCKET_ENV, buf, 1);
 
-	if (posix_spawnattr_setflags(&attr, POSIX_SPAWN_RESETIDS|POSIX_SPAWN_SETSIGMASK) != 0)
-		die("failed to set spawnattr flags:");
+	if ((errno = posix_spawnattr_init(&attr)))
+		die("posix_spawnattr_init:");
+	if ((errno = posix_spawnattr_setflags(&attr, POSIX_SPAWN_RESETIDS|POSIX_SPAWN_SETSIGMASK)))
+		die("posix_spawnattr_setflags:");
 	sigemptyset(&set);
-	if (posix_spawnattr_setsigmask(&attr, &set) != 0)
-		die("failed to set spawnattr sigmask:");
-	if (posix_spawnp(&pid, argv[optind], NULL, &attr, argv + optind, environ) != 0)
-		die("failed to spawn server:");
+	if ((errno = posix_spawnattr_setsigmask(&attr, &set)))
+		die("posix_spawnattr_setsigmask:");
+	if ((errno = posix_spawnp(&pid, argv[optind], NULL, &attr, argv + optind, environ)))
+		die("posix_spawnp %s:", argv[optind]);
+	posix_spawnattr_destroy(&attr);
 
 	run(sock[0]);
 
