@@ -91,7 +91,7 @@ attach(struct view *view, struct wld_buffer *buffer)
 		return 0;
 
 	wld_set_target_buffer(swc.shm->renderer, pointer->cursor.buffer);
-	wld_fill_rectangle(swc.shm->renderer, 0x00000000, 0, 0, 64, 64);
+	wld_fill_rectangle(swc.shm->renderer, 0x00000000, 0, 0, pointer->cursor.buffer->width, pointer->cursor.buffer->height);
 
 	if (buffer)
 		wld_copy_rectangle(swc.shm->renderer, buffer, 0, 0, 0, 0, buffer->width, buffer->height);
@@ -234,7 +234,7 @@ pointer_initialize(struct pointer *pointer)
 	view_initialize(&pointer->cursor.view, &view_impl);
 	pointer->cursor.surface = NULL;
 	pointer->cursor.destroy_listener.notify = &handle_cursor_surface_destroy;
-	pointer->cursor.buffer = wld_create_buffer(swc.drm->context, 64, 64, WLD_FORMAT_ARGB8888, WLD_FLAG_MAP);
+	pointer->cursor.buffer = wld_create_buffer(swc.drm->context, swc.drm->cursor_w, swc.drm->cursor_h, WLD_FORMAT_ARGB8888, WLD_FLAG_MAP);
 	pointer->cursor.internal_buffer = NULL;
 
 	if (!pointer->cursor.buffer)

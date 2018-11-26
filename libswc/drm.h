@@ -12,6 +12,7 @@ struct drm_handler {
 
 struct swc_drm {
 	int fd;
+	uint32_t cursor_w, cursor_h;
 	struct wld_context *context;
 	struct wld_renderer *renderer;
 };

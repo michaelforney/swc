@@ -252,6 +252,7 @@ bind_drm(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 bool
 drm_initialize(void)
 {
+	uint64_t val;
 	char primary[128];
 
 	if (!find_primary_drm_device(primary, sizeof(primary))) {
@@ -265,6 +266,12 @@ drm_initialize(void)
 		ERROR("Could not open DRM device at %s\n", primary);
 		goto error0;
 	}
+	if (drmGetCap(swc.drm->fd, DRM_CAP_CURSOR_WIDTH, &val) < 0)
+		val = 64;
+	swc.drm->cursor_w = val;
+	if (drmGetCap(swc.drm->fd, DRM_CAP_CURSOR_HEIGHT, &val) < 0)
+		val = 64;
+	swc.drm->cursor_h = val;
 
 	drm.path = drmGetRenderDeviceNameFromFd(swc.drm->fd);
 	if (!drm.path) {
