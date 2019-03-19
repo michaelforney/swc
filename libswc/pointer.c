@@ -234,7 +234,7 @@ pointer_initialize(struct pointer *pointer)
 	view_initialize(&pointer->cursor.view, &view_impl);
 	pointer->cursor.surface = NULL;
 	pointer->cursor.destroy_listener.notify = &handle_cursor_surface_destroy;
-	pointer->cursor.buffer = wld_create_buffer(swc.drm->context, swc.drm->cursor_w, swc.drm->cursor_h, WLD_FORMAT_ARGB8888, WLD_FLAG_MAP);
+	pointer->cursor.buffer = wld_create_buffer(swc.drm->context, swc.drm->cursor_w, swc.drm->cursor_h, WLD_FORMAT_ARGB8888, WLD_FLAG_MAP | WLD_FLAG_CURSOR);
 	pointer->cursor.internal_buffer = NULL;
 
 	if (!pointer->cursor.buffer)
