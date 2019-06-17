@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -41,7 +42,6 @@
 #include <xkbcommon/xkbcommon.h>
 
 static const int repeat_delay = 500, repeat_rate = 40;
-static const char keymap_file_template[] = "swc-xkb-keymap-XXXXXX";
 
 static void
 enter(struct input_focus_handler *handler, struct wl_list *resources, struct compositor_view *view)
@@ -112,13 +112,13 @@ client_handle_modifiers(struct keyboard *keyboard, const struct keyboard_modifie
 static bool
 update_keymap(struct xkb *xkb)
 {
+	char keymap_path[PATH_MAX];
 	const char *keymap_directory;
 	char *keymap_string;
+	int ret;
 
 	if (!(keymap_directory = getenv("XDG_RUNTIME_DIR")))
 		keymap_directory = "/tmp";
-
-	char keymap_path[strlen(keymap_directory) + 1 + sizeof(keymap_file_template)];
 
 	xkb->indices.ctrl = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_CTRL);
 	xkb->indices.alt = xkb_keymap_mod_get_index(xkb->keymap.map, XKB_MOD_NAME_ALT);
@@ -134,7 +134,11 @@ update_keymap(struct xkb *xkb)
 		goto error0;
 	}
 
-	sprintf(keymap_path, "%s/%s", keymap_directory, keymap_file_template);
+	ret = snprintf(keymap_path, sizeof(keymap_path), "%s/swc-xkb-keymap-XXXXXX", keymap_directory);
+	if (ret < 0 || (size_t)ret >= sizeof(keymap_path)) {
+		WARNING("Could not determine XKB keymap path\n");
+		goto error1;
+	}
 
 	xkb->keymap.size = strlen(keymap_string) + 1;
 	xkb->keymap.fd = mkostemp(keymap_path, O_CLOEXEC);
