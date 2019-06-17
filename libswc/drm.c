@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <drm.h>
@@ -195,7 +196,7 @@ find_available_crtc(drmModeRes *resources, drmModeConnector *connector, uint32_t
 static bool
 find_available_id(uint32_t *id)
 {
-	uint32_t index = __builtin_ffsl(~drm.taken_ids);
+	int index = ffsl(~drm.taken_ids);
 
 	if (index == 0)
 		return false;
