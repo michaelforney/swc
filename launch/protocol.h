@@ -30,6 +30,8 @@
 
 #define SWC_LAUNCH_SOCKET_ENV "SWC_LAUNCH_SOCKET"
 
+struct iovec;
+
 struct swc_launch_request {
 	enum {
 		SWC_LAUNCH_REQUEST_OPEN_DEVICE,
@@ -41,7 +43,6 @@ struct swc_launch_request {
 	union {
 		struct /* OPEN_DEVICE */ {
 			int flags;
-			char path[];
 		};
 		struct /* ACTIVATE_VT */ {
 			unsigned vt;
@@ -64,7 +65,7 @@ struct swc_launch_event {
 	};
 };
 
-ssize_t send_fd(int socket, int fd, const void *buffer, size_t buffer_size);
-ssize_t receive_fd(int socket, int *fd, void *buffer, size_t buffer_size);
+ssize_t send_fd(int socket, int fd, struct iovec *iov, int iovlen);
+ssize_t receive_fd(int socket, int *fd, struct iovec *iov, int iovlen);
 
 #endif

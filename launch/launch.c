@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <poll.h>
 #include <spawn.h>
 #include <stdbool.h>
@@ -172,30 +173,37 @@ handle_signal(int sig)
 static void
 handle_socket_data(int socket)
 {
-	char buffer[BUFSIZ];
-	struct swc_launch_request *request = (void *)&buffer;
+	struct swc_launch_request request;
 	struct swc_launch_event response;
+	char path[PATH_MAX];
+	struct iovec request_iov[2] = {
+		{.iov_base = &request, .iov_len = sizeof(request)},
+		{.iov_base = path, .iov_len = sizeof(path)},
+	};
+	struct iovec response_iov[1] = {
+		{.iov_base = &response, .iov_len = sizeof(response)},
+	};
 	int fd = -1;
 	struct stat st;
 	ssize_t size;
 
-	size = receive_fd(socket, &fd, buffer, sizeof(buffer));
-
-	if (size == -1 || size == 0)
+	size = receive_fd(socket, &fd, request_iov, 2);
+	if (size == -1 || size == 0 || size < sizeof(request))
 		return;
+	size -= sizeof(request);
 
 	response.type = SWC_LAUNCH_EVENT_RESPONSE;
-	response.serial = request->serial;
+	response.serial = request.serial;
 
-	switch (request->type) {
+	switch (request.type) {
 	case SWC_LAUNCH_REQUEST_OPEN_DEVICE:
-		if (buffer[size - 1] != '\0') {
+		if (size == 0 || path[size - 1] != '\0') {
 			fprintf(stderr, "path is not NULL terminated\n");
 			goto fail;
 		}
 
-		if (stat(request->path, &st) == -1) {
-			fprintf(stderr, "stat %s: %s\n", request->path, strerror(errno));
+		if (stat(path, &st) == -1) {
+			fprintf(stderr, "stat %s: %s\n", path, strerror(errno));
 			goto fail;
 		}
 
@@ -219,10 +227,10 @@ handle_socket_data(int socket)
 			goto fail;
 		}
 
-		fd = open(request->path, request->flags);
+		fd = open(path, request.flags);
 
 		if (fd == -1) {
-			fprintf(stderr, "open %s: %s\n", request->path, strerror(errno));
+			fprintf(stderr, "open %s: %s\n", path, strerror(errno));
 			goto fail;
 		}
 
@@ -240,11 +248,11 @@ handle_socket_data(int socket)
 		if (!active)
 			goto fail;
 
-		if (ioctl(tty_fd, VT_ACTIVATE, request->vt) == -1)
-			fprintf(stderr, "failed to activate VT %d: %s\n", request->vt, strerror(errno));
+		if (ioctl(tty_fd, VT_ACTIVATE, request.vt) == -1)
+			fprintf(stderr, "failed to activate VT %d: %s\n", request.vt, strerror(errno));
 		break;
 	default:
-		fprintf(stderr, "unknown request %u\n", request->type);
+		fprintf(stderr, "unknown request %u\n", request.type);
 		goto fail;
 	}
 
@@ -255,7 +263,7 @@ fail:
 	response.success = false;
 	fd = -1;
 done:
-	send_fd(socket, fd, &response, sizeof(response));
+	send_fd(socket, fd, response_iov, 1);
 }
 
 static void
