@@ -202,7 +202,12 @@ handle_socket_data(int socket)
 			goto fail;
 		}
 
-		if (stat(path, &st) == -1) {
+		fd = open(path, request.flags);
+		if (fd == -1) {
+			fprintf(stderr, "open %s: %s\n", path, strerror(errno));
+			goto fail;
+		}
+		if (fstat(fd, &st) == -1) {
 			fprintf(stderr, "stat %s: %s\n", path, strerror(errno));
 			goto fail;
 		}
@@ -215,34 +220,19 @@ handle_socket_data(int socket)
 				fprintf(stderr, "too many input devices opened\n");
 				goto fail;
 			}
+			input_fds[num_input_fds++] = fd;
 			break;
 		case DRM_MAJOR:
 			if (num_drm_fds == ARRAY_LENGTH(drm_fds)) {
 				fprintf(stderr, "too many DRM devices opened\n");
 				goto fail;
 			}
+			drm_fds[num_drm_fds++] = fd;
 			break;
 		default:
 			fprintf(stderr, "device is not an input device\n");
 			goto fail;
 		}
-
-		fd = open(path, request.flags);
-
-		if (fd == -1) {
-			fprintf(stderr, "open %s: %s\n", path, strerror(errno));
-			goto fail;
-		}
-
-		switch (major(st.st_rdev)) {
-		case INPUT_MAJOR:
-			input_fds[num_input_fds++] = fd;
-			break;
-		case DRM_MAJOR:
-			drm_fds[num_drm_fds++] = fd;
-			break;
-		}
-
 		break;
 	case SWC_LAUNCH_REQUEST_ACTIVATE_VT:
 		if (!active)
@@ -261,6 +251,8 @@ handle_socket_data(int socket)
 
 fail:
 	response.success = false;
+	if (fd != -1)
+		close(fd);
 	fd = -1;
 done:
 	send_fd(socket, fd, response_iov, 1);
