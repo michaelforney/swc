@@ -201,6 +201,10 @@ handle_socket_data(int socket)
 			fprintf(stderr, "path is not NULL terminated\n");
 			goto fail;
 		}
+		if (request.flags & (O_ACCMODE|O_NONBLOCK|O_CLOEXEC) != request.flags) {
+			fprintf(stderr, "invalid open flags\n");
+			goto fail;
+		}
 
 		fd = open(path, request.flags);
 		if (fd == -1) {
