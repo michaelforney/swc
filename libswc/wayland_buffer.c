@@ -61,13 +61,7 @@ wayland_buffer_create_resource(struct wl_client *client, uint32_t version, uint3
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &wl_buffer_interface, version, id);
-
-	if (!resource) {
-		wl_client_post_no_memory(client);
-		return NULL;
-	}
-
-	wl_resource_set_implementation(resource, &buffer_implementation, buffer, &destroy_buffer);
-
+	if (resource)
+		wl_resource_set_implementation(resource, &buffer_implementation, buffer, &destroy_buffer);
 	return resource;
 }
