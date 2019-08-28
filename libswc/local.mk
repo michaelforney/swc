@@ -28,6 +28,7 @@ SWC_SOURCES =                       \
     libswc/data.c                   \
     libswc/data_device.c            \
     libswc/data_device_manager.c    \
+    libswc/dmabuf.c                 \
     libswc/drm.c                    \
     libswc/input.c                  \
     libswc/keyboard.c               \
@@ -55,7 +56,8 @@ SWC_SOURCES =                       \
     libswc/xdg_shell.c              \
     protocol/swc-protocol.c         \
     protocol/wayland-drm-protocol.c \
-    protocol/xdg-shell-protocol.c
+    protocol/xdg-shell-protocol.c   \
+    protocol/linux-dmabuf-unstable-v1-protocol.c
 
 ifeq ($(ENABLE_LIBUDEV),1)
 $(dir)_CFLAGS += -DENABLE_LIBUDEV
@@ -68,6 +70,7 @@ SWC_SHARED_OBJECTS = $(SWC_SOURCES:%.c=%.lo)
 # Explicitly state dependencies on generated files
 objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
 $(call objects,compositor panel_manager panel screen): protocol/swc-server-protocol.h
+$(call objects,dmabuf): protocol/linux-dmabuf-unstable-v1-server-protocol.h
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,xdg_shell): protocol/xdg-shell-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h

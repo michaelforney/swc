@@ -22,6 +22,7 @@
  */
 
 #include "drm.h"
+#include "dmabuf.h"
 #include "event.h"
 #include "internal.h"
 #include "launch.h"
@@ -53,6 +54,7 @@ static struct {
 	uint32_t taken_ids;
 
 	struct wl_global *global;
+	struct wl_global *dmabuf;
 	struct wl_event_source *event_source;
 } drm;
 
@@ -299,10 +301,14 @@ drm_initialize(void)
 
 	if (!wld_drm_is_dumb(swc.drm->context)) {
 		drm.global = wl_global_create(swc.display, &wl_drm_interface, 2, NULL, &bind_drm);
-
 		if (!drm.global) {
 			ERROR("Could not create wl_drm global\n");
 			goto error4;
+		}
+
+		drm.dmabuf = swc_dmabuf_create(swc.display);
+		if (!drm.dmabuf) {
+			WARNING("Could not create wp_linux_dmabuf global\n");
 		}
 	}
 
