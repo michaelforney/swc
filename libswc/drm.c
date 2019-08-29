@@ -1,6 +1,6 @@
 /* swc: drm.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -213,7 +213,7 @@ handle_vblank(int fd, unsigned int sequence, unsigned int sec, unsigned int usec
 }
 
 static void
-handle_page_flip(int fd, unsigned int sequence, unsigned int sec, unsigned int usec, void *data)
+handle_page_flip(int fd, unsigned int sequence, unsigned int sec, unsigned int usec, unsigned int crtc_id, void *data)
 {
 	struct drm_handler *handler = data;
 
@@ -223,7 +223,7 @@ handle_page_flip(int fd, unsigned int sequence, unsigned int sec, unsigned int u
 static drmEventContext event_context = {
 	.version = DRM_EVENT_CONTEXT_VERSION,
 	.vblank_handler = handle_vblank,
-	.page_flip_handler = handle_page_flip,
+	.page_flip_handler2 = handle_page_flip,
 };
 
 static int
