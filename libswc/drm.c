@@ -441,7 +441,9 @@ drm_get_framebuffer(struct wld_buffer *buffer)
 	if (!(framebuffer = malloc(sizeof(*framebuffer))))
 		return 0;
 
-	ret = drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32, buffer->pitch, object.u32, &framebuffer->id);
+	ret = drmModeAddFB2(swc.drm->fd, buffer->width, buffer->height, buffer->format,
+	                    (uint32_t[4]){object.u32}, (uint32_t[4]){buffer->pitch}, (uint32_t[4]){0},
+	                    &framebuffer->id, 0);
 	if (ret < 0) {
 		free(framebuffer);
 		return 0;
