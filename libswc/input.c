@@ -27,7 +27,7 @@
 #include "surface.h"
 #include "util.h"
 
-static inline void
+static void
 focus(struct input_focus *input_focus, struct compositor_view *view)
 {
 	struct wl_client *client = NULL;
@@ -49,7 +49,7 @@ focus(struct input_focus *input_focus, struct compositor_view *view)
 	input_focus->handler->enter(input_focus->handler, &input_focus->active, view);
 }
 
-static inline void
+static void
 unfocus(struct input_focus *input_focus)
 {
 	if (input_focus->view)
