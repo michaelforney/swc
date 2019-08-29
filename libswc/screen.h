@@ -25,7 +25,6 @@
 #define SWC_SCREEN_H
 
 #include "swc.h"
-#include "cursor_plane.h"
 #include "primary_plane.h"
 
 #include <wayland-util.h>
@@ -50,10 +49,11 @@ struct screen {
 
 	struct wl_signal destroy_signal;
 	uint8_t id;
+	uint32_t crtc;
 
 	struct {
 		struct primary_plane primary;
-		struct cursor_plane cursor;
+		struct plane *cursor;
 	} planes;
 
 	struct wl_global *global;
@@ -67,7 +67,7 @@ struct screen {
 bool screens_initialize(void);
 void screens_finalize(void);
 
-struct screen *screen_new(uint32_t crtc, struct output *output);
+struct screen *screen_new(uint32_t crtc, struct output *output, struct plane *cursor_plane);
 void screen_destroy(struct screen *screen);
 
 static inline uint32_t

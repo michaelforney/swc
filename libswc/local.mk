@@ -24,7 +24,6 @@ SWC_SOURCES =                       \
     launch/protocol.c               \
     libswc/bindings.c               \
     libswc/compositor.c             \
-    libswc/cursor_plane.c           \
     libswc/data.c                   \
     libswc/data_device.c            \
     libswc/data_device_manager.c    \
@@ -37,6 +36,7 @@ SWC_SOURCES =                       \
     libswc/output.c                 \
     libswc/panel.c                  \
     libswc/panel_manager.c          \
+    libswc/plane.c                  \
     libswc/pointer.c                \
     libswc/primary_plane.c          \
     libswc/region.c                 \

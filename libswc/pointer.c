@@ -25,6 +25,7 @@
 #include "compositor.h"
 #include "event.h"
 #include "internal.h"
+#include "plane.h"
 #include "screen.h"
 #include "shm.h"
 #include "surface.h"
@@ -106,8 +107,10 @@ attach(struct view *view, struct wld_buffer *buffer)
 	if (view_set_size_from_buffer(view, buffer))
 		view_update_screens(view);
 
-	wl_list_for_each (screen, &swc.screens, link)
-		view_attach(&screen->planes.cursor.view, buffer ? pointer->cursor.buffer : NULL);
+	wl_list_for_each (screen, &swc.screens, link) {
+		view_attach(&screen->planes.cursor->view, buffer ? pointer->cursor.buffer : NULL);
+		view_update(&screen->planes.cursor->view);
+	}
 
 	return 0;
 }
@@ -120,8 +123,10 @@ move(struct view *view, int32_t x, int32_t y)
 	if (view_set_position(view, x, y))
 		view_update_screens(view);
 
-	wl_list_for_each (screen, &swc.screens, link)
-		view_move(&screen->planes.cursor.view, view->geometry.x, view->geometry.y);
+	wl_list_for_each (screen, &swc.screens, link) {
+		view_move(&screen->planes.cursor->view, view->geometry.x, view->geometry.y);
+		view_update(&screen->planes.cursor->view);
+	}
 
 	return true;
 }
@@ -243,7 +248,7 @@ pointer_initialize(struct pointer *pointer)
 	pointer_set_cursor(pointer, cursor_left_ptr);
 
 	wl_list_for_each (screen, &swc.screens, link)
-		view_attach(&screen->planes.cursor.view, pointer->cursor.buffer);
+		view_attach(&screen->planes.cursor->view, pointer->cursor.buffer);
 
 	input_focus_initialize(&pointer->focus, &pointer->focus_handler);
 	pixman_region32_init(&pointer->region);

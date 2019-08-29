@@ -27,6 +27,7 @@
 #include "internal.h"
 #include "launch.h"
 #include "output.h"
+#include "plane.h"
 #include "screen.h"
 #include "util.h"
 #include "wayland_buffer.h"
@@ -269,6 +270,10 @@ drm_initialize(void)
 		ERROR("Could not open DRM device at %s\n", primary);
 		goto error0;
 	}
+	if (drmSetClientCap(swc.drm->fd, DRM_CLIENT_CAP_UNIVERSAL_PLANES, 1) < 0) {
+		ERROR("Could not enable DRM universal planes\n");
+		goto error1;
+	}
 	if (drmGetCap(swc.drm->fd, DRM_CAP_CURSOR_WIDTH, &val) < 0)
 		val = 64;
 	swc.drm->cursor_w = val;
@@ -341,17 +346,32 @@ drm_finalize(void)
 bool
 drm_create_screens(struct wl_list *screens)
 {
+	drmModePlaneRes *plane_ids;
 	drmModeRes *resources;
 	drmModeConnector *connector;
-	int i;
+	struct plane *plane, *cursor_plane;
 	struct output *output;
-	uint32_t taken_crtcs = 0;
+	uint32_t i, taken_crtcs = 0;
+	struct wl_list planes;
 
-	if (!(resources = drmModeGetResources(swc.drm->fd))) {
+	plane_ids = drmModeGetPlaneResources(swc.drm->fd);
+	if (!plane_ids) {
+		ERROR("Could not get DRM plane resources\n");
+		return false;
+	}
+	wl_list_init(&planes);
+	for (i = 0; i < plane_ids->count_planes; ++i) {
+		plane = plane_new(plane_ids->planes[i]);
+		if (plane)
+			wl_list_insert(&planes, &plane->link);
+	}
+	drmModeFreePlaneResources(plane_ids);
+
+	resources = drmModeGetResources(swc.drm->fd);
+	if (!resources) {
 		ERROR("Could not get DRM resources\n");
 		return false;
 	}
-
 	for (i = 0; i < resources->count_connectors; ++i, drmModeFreeConnector(connector)) {
 		connector = drmModeGetConnector(swc.drm->fd, resources->connectors[i]);
 
@@ -364,6 +384,18 @@ drm_create_screens(struct wl_list *screens)
 				continue;
 			}
 
+			cursor_plane = NULL;
+			wl_list_for_each (plane, &planes, link) {
+				if (plane->type == DRM_PLANE_TYPE_CURSOR && plane->possible_crtcs & 1 << crtc_index) {
+					wl_list_remove(&plane->link);
+					cursor_plane = plane;
+					break;
+				}
+			}
+			if (!cursor_plane) {
+				WARNING("Could not find cursor plane for CRTC %d\n", crtc_index);
+			}
+
 			if (!find_available_id(&id)) {
 				WARNING("No more available output IDs\n");
 				drmModeFreeConnector(connector);
@@ -373,7 +405,7 @@ drm_create_screens(struct wl_list *screens)
 			if (!(output = output_new(connector)))
 				continue;
 
-			output->screen = screen_new(resources->crtcs[crtc_index], output);
+			output->screen = screen_new(resources->crtcs[crtc_index], output, cursor_plane);
 			output->screen->id = id;
 
 			taken_crtcs |= 1 << crtc_index;
@@ -382,7 +414,6 @@ drm_create_screens(struct wl_list *screens)
 			wl_list_insert(screens, &output->screen->link);
 		}
 	}
-
 	drmModeFreeResources(resources);
 
 	return true;
@@ -429,6 +460,9 @@ drm_get_framebuffer(struct wld_buffer *buffer)
 	struct framebuffer *framebuffer;
 	union wld_object object;
 	int ret;
+
+	if (!buffer)
+		return 0;
 
 	if (wld_export(buffer, WLD_USER_OBJECT_FRAMEBUFFER, &object))
 		return object.u32;

@@ -27,6 +27,7 @@
 #include "internal.h"
 #include "mode.h"
 #include "output.h"
+#include "plane.h"
 #include "pointer.h"
 #include "util.h"
 
@@ -98,7 +99,7 @@ bind_screen(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 }
 
 struct screen *
-screen_new(uint32_t crtc, struct output *output)
+screen_new(uint32_t crtc, struct output *output, struct plane *cursor_plane)
 {
 	struct screen *screen;
 	int32_t x = 0;
@@ -117,15 +118,15 @@ screen_new(uint32_t crtc, struct output *output)
 		goto error1;
 	}
 
+	screen->crtc = crtc;
+
 	if (!primary_plane_initialize(&screen->planes.primary, crtc, output->preferred_mode, &output->connector, 1)) {
 		ERROR("Failed to initialize primary plane\n");
 		goto error2;
 	}
 
-	if (!cursor_plane_initialize(&screen->planes.cursor, crtc, &screen->base.geometry)) {
-		ERROR("Failed to initialize cursor plane\n");
-		goto error3;
-	}
+	cursor_plane->screen = screen;
+	screen->planes.cursor = cursor_plane;
 
 	screen->handler = &null_handler;
 	wl_signal_init(&screen->destroy_signal);
@@ -142,8 +143,6 @@ screen_new(uint32_t crtc, struct output *output)
 
 	return screen;
 
-error3:
-	primary_plane_finalize(&screen->planes.primary);
 error2:
 	wl_global_destroy(screen->global);
 error1:
@@ -165,7 +164,7 @@ screen_destroy(struct screen *screen)
 	wl_list_for_each_safe (output, next, &screen->outputs, link)
 		output_destroy(output);
 	primary_plane_finalize(&screen->planes.primary);
-	cursor_plane_finalize(&screen->planes.cursor);
+	plane_destroy(screen->planes.cursor);
 	free(screen);
 }
 

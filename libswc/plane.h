@@ -1,6 +1,6 @@
-/* swc: libswc/cursor_plane.h
+/* swc: libswc/plane.h
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,19 +21,25 @@
  * SOFTWARE.
  */
 
-#ifndef SWC_CURSOR_PLANE_H
-#define SWC_CURSOR_PLANE_H
+#ifndef SWC_PLANE_H
+#define SWC_PLANE_H
 
+#include "plane.h"
 #include "view.h"
 
-struct cursor_plane {
+#include <wayland-util.h>
+
+struct plane {
 	struct view view;
-	const struct swc_rectangle *origin;
-	uint32_t crtc;
+	struct screen *screen;
+	uint32_t id, fb;
+	int type;
+	uint32_t possible_crtcs;
 	struct wl_listener swc_listener;
+	struct wl_list link;
 };
 
-bool cursor_plane_initialize(struct cursor_plane *plane, uint32_t crtc, const struct swc_rectangle *origin);
-void cursor_plane_finalize(struct cursor_plane *plane);
+struct plane *plane_new(uint32_t id);
+void plane_destroy(struct plane *plane);
 
 #endif
