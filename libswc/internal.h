@@ -1,6 +1,6 @@
 /* swc: swc/internal.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,6 +45,7 @@ struct swc {
 	struct swc_compositor *const compositor;
 	struct swc_shm *const shm;
 	struct swc_drm *const drm;
+	struct wl_global *data_device_manager;
 };
 
 extern struct swc swc;

@@ -1,6 +1,6 @@
 /* swc: libswc/swc.c
  *
- * Copyright (c) 2013, 2014, 2018 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -145,7 +145,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error6;
 	}
 
-	if (!data_device_manager_initialize()) {
+	swc.data_device_manager = data_device_manager_create(display);
+	if (!swc.data_device_manager) {
 		ERROR("Could not initialize data device manager\n");
 		goto error7;
 	}
@@ -181,7 +182,7 @@ error10:
 error9:
 	seat_finalize();
 error8:
-	data_device_manager_finalize();
+	wl_global_destroy(swc.data_device_manager);
 error7:
 	subcompositor_finalize();
 error6:
@@ -206,7 +207,7 @@ swc_finalize(void)
 	panel_manager_finalize();
 	shell_finalize();
 	seat_finalize();
-	data_device_manager_finalize();
+	wl_global_destroy(swc.data_device_manager);
 	compositor_finalize();
 	screens_finalize();
 	bindings_finalize();

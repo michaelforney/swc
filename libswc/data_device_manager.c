@@ -1,6 +1,6 @@
 /* swc: data_device_manager.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,6 @@
 #include "data_device.h"
 #include "internal.h"
 #include "seat.h"
-
-static struct {
-	struct wl_global *global;
-} data_device_manager;
 
 static void
 create_data_source(struct wl_client *client, struct wl_resource *resource, uint32_t id)
@@ -65,17 +61,8 @@ bind_data_device_manager(struct wl_client *client, void *data, uint32_t version,
 	wl_resource_set_implementation(resource, &data_device_manager_implementation, NULL, NULL);
 }
 
-bool
-data_device_manager_initialize(void)
+struct wl_global *
+data_device_manager_create(struct wl_display *display)
 {
-	data_device_manager.global = wl_global_create(swc.display, &wl_data_device_manager_interface, 1,
-	                                              NULL, &bind_data_device_manager);
-
-	return data_device_manager.global != NULL;
-}
-
-void
-data_device_manager_finalize(void)
-{
-	wl_global_destroy(data_device_manager.global);
+	return wl_global_create(display, &wl_data_device_manager_interface, 1, NULL, &bind_data_device_manager);
 }
