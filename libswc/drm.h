@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 struct wl_list;
+struct wld_buffer;
 
 struct drm_handler {
 	void (*page_flip)(struct drm_handler *handler, uint32_t time);
@@ -21,5 +22,6 @@ bool drm_initialize(void);
 void drm_finalize(void);
 
 bool drm_create_screens(struct wl_list *screens);
+uint32_t drm_get_framebuffer(struct wld_buffer *buffer);
 
 #endif

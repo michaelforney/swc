@@ -34,41 +34,6 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
-enum {
-	WLD_USER_OBJECT_FRAMEBUFFER = WLD_USER_ID
-};
-
-struct framebuffer {
-	struct wld_exporter exporter;
-	struct wld_destructor destructor;
-	uint32_t id;
-};
-
-static bool
-framebuffer_export(struct wld_exporter *exporter, struct wld_buffer *buffer, uint32_t type, union wld_object *object)
-{
-	struct framebuffer *framebuffer = wl_container_of(exporter, framebuffer, exporter);
-
-	switch (type) {
-	case WLD_USER_OBJECT_FRAMEBUFFER:
-		object->u32 = framebuffer->id;
-		break;
-	default:
-		return false;
-	}
-
-	return true;
-}
-
-static void
-framebuffer_destroy(struct wld_destructor *destructor)
-{
-	struct framebuffer *framebuffer = wl_container_of(destructor, framebuffer, destructor);
-
-	drmModeRmFB(swc.drm->fd, framebuffer->id);
-	free(framebuffer);
-}
-
 static bool
 update(struct view *view)
 {
@@ -87,37 +52,12 @@ static int
 attach(struct view *view, struct wld_buffer *buffer)
 {
 	struct primary_plane *plane = wl_container_of(view, plane, view);
-	union wld_object object;
+	uint32_t fb;
 	int ret;
 
-	if (!wld_export(buffer, WLD_USER_OBJECT_FRAMEBUFFER, &object)) {
-		struct framebuffer *framebuffer;
-
-		if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object)) {
-			ERROR("Could not get buffer handle\n");
-			return -EINVAL;
-		}
-
-		if (!(framebuffer = malloc(sizeof(*framebuffer))))
-			return -ENOMEM;
-
-		ret = drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32, buffer->pitch, object.u32, &framebuffer->id);
-
-		if (ret < 0) {
-			free(framebuffer);
-			return ret;
-		}
-
-		framebuffer->exporter.export = &framebuffer_export;
-		wld_buffer_add_exporter(buffer, &framebuffer->exporter);
-		framebuffer->destructor.destroy = &framebuffer_destroy;
-		wld_buffer_add_destructor(buffer, &framebuffer->destructor);
-
-		object.u32 = framebuffer->id;
-	}
-
+	fb = drm_get_framebuffer(buffer);
 	if (plane->need_modeset) {
-		ret = drmModeSetCrtc(swc.drm->fd, plane->crtc, object.u32, 0, 0, plane->connectors.data, plane->connectors.size / 4, &plane->mode.info);
+		ret = drmModeSetCrtc(swc.drm->fd, plane->crtc, fb, 0, 0, plane->connectors.data, plane->connectors.size / 4, &plane->mode.info);
 
 		if (ret == 0) {
 			wl_event_loop_add_idle(swc.event_loop, &send_frame, plane);
@@ -127,7 +67,7 @@ attach(struct view *view, struct wld_buffer *buffer)
 			return ret;
 		}
 	} else {
-		ret = drmModePageFlip(swc.drm->fd, plane->crtc, object.u32, DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler);
+		ret = drmModePageFlip(swc.drm->fd, plane->crtc, fb, DRM_MODE_PAGE_FLIP_EVENT, &plane->drm_handler);
 
 		if (ret < 0) {
 			ERROR("Page flip failed: %s\n", strerror(errno));

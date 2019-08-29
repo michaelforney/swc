@@ -387,3 +387,70 @@ drm_create_screens(struct wl_list *screens)
 
 	return true;
 }
+
+enum {
+	WLD_USER_OBJECT_FRAMEBUFFER = WLD_USER_ID
+};
+
+struct framebuffer {
+	struct wld_exporter exporter;
+	struct wld_destructor destructor;
+	uint32_t id;
+};
+
+static bool
+framebuffer_export(struct wld_exporter *exporter, struct wld_buffer *buffer, uint32_t type, union wld_object *object)
+{
+	struct framebuffer *framebuffer = wl_container_of(exporter, framebuffer, exporter);
+
+	switch (type) {
+	case WLD_USER_OBJECT_FRAMEBUFFER:
+		object->u32 = framebuffer->id;
+		break;
+	default:
+		return false;
+	}
+
+	return true;
+}
+
+static void
+framebuffer_destroy(struct wld_destructor *destructor)
+{
+	struct framebuffer *framebuffer = wl_container_of(destructor, framebuffer, destructor);
+
+	drmModeRmFB(swc.drm->fd, framebuffer->id);
+	free(framebuffer);
+}
+
+uint32_t
+drm_get_framebuffer(struct wld_buffer *buffer)
+{
+	struct framebuffer *framebuffer;
+	union wld_object object;
+	int ret;
+
+	if (wld_export(buffer, WLD_USER_OBJECT_FRAMEBUFFER, &object))
+		return object.u32;
+
+	if (!wld_export(buffer, WLD_DRM_OBJECT_HANDLE, &object)) {
+		ERROR("Could not get buffer handle\n");
+		return 0;
+	}
+
+	if (!(framebuffer = malloc(sizeof(*framebuffer))))
+		return 0;
+
+	ret = drmModeAddFB(swc.drm->fd, buffer->width, buffer->height, 24, 32, buffer->pitch, object.u32, &framebuffer->id);
+	if (ret < 0) {
+		free(framebuffer);
+		return 0;
+	}
+
+	framebuffer->exporter.export = &framebuffer_export;
+	wld_buffer_add_exporter(buffer, &framebuffer->exporter);
+	framebuffer->destructor.destroy = &framebuffer_destroy;
+	wld_buffer_add_destructor(buffer, &framebuffer->destructor);
+
+	return framebuffer->id;
+}
