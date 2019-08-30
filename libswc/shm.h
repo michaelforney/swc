@@ -1,6 +1,6 @@
 /* swc: libswc/shm.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,15 @@
 #ifndef SWC_SHM_H
 #define SWC_SHM_H
 
-#include <stdbool.h>
+struct wl_display;
 
 struct swc_shm {
+	struct wl_global *global;
 	struct wld_context *context;
 	struct wld_renderer *renderer;
 };
 
-bool shm_initialize(void);
-void shm_finalize(void);
+struct swc_shm *shm_create(struct wl_display *display);
+void shm_destroy(struct swc_shm *shm);
 
 #endif

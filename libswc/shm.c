@@ -1,6 +1,6 @@
 /* swc: libswc/shm.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Based in part upon wayland-shm.c from wayland, which is:
  *
@@ -38,14 +38,9 @@
 #include <wld/pixman.h>
 #include <wld/wld.h>
 
-struct swc_shm swc_shm;
-
-static struct {
-	struct wl_global *global;
-} shm;
-
 struct pool {
 	struct wl_resource *resource;
+	struct swc_shm *shm;
 	void *data;
 	uint32_t size;
 	unsigned references;
@@ -109,7 +104,7 @@ create_buffer(struct wl_client *client, struct wl_resource *resource,
 	}
 
 	object.ptr = (void *)((uintptr_t)pool->data + offset);
-	buffer = wld_import_buffer(swc.shm->context, WLD_OBJECT_DATA, object, width, height, format_shm_to_wld(format), stride);
+	buffer = wld_import_buffer(pool->shm->context, WLD_OBJECT_DATA, object, width, height, format_shm_to_wld(format), stride);
 
 	if (!buffer)
 		goto error0;
@@ -150,12 +145,10 @@ resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 	void *data;
 
 	data = mremap(pool->data, pool->size, size, MREMAP_MAYMOVE);
-
 	if (data == MAP_FAILED) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD, "mremap failed: %s", strerror(errno));
 		return;
 	}
-
 	pool->data = data;
 	pool->size = size;
 }
@@ -169,27 +162,26 @@ static struct wl_shm_pool_interface shm_pool_implementation = {
 static void
 create_pool(struct wl_client *client, struct wl_resource *resource, uint32_t id, int32_t fd, int32_t size)
 {
+	struct swc_shm *shm = wl_resource_get_user_data(resource);
 	struct pool *pool;
 
-	if (!(pool = malloc(sizeof(*pool)))) {
+	pool = malloc(sizeof(*pool));
+	if (!pool) {
 		wl_resource_post_no_memory(resource);
 		goto error0;
 	}
-
+	pool->shm = shm;
 	pool->resource = wl_resource_create(client, &wl_shm_pool_interface, wl_resource_get_version(resource), id);
-
 	if (!pool->resource) {
 		wl_resource_post_no_memory(resource);
 		goto error1;
 	}
-
 	wl_resource_set_implementation(pool->resource, &shm_pool_implementation, pool, &destroy_pool_resource);
 	pool->data = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
 	if (pool->data == MAP_FAILED) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD, "mmap failed: %s", strerror(errno));
 		goto error2;
 	}
-
 	close(fd);
 	pool->size = size;
 	pool->references = 1;
@@ -210,46 +202,53 @@ static struct wl_shm_interface shm_implementation = {
 static void
 bind_shm(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
+	struct swc_shm *shm = data;
 	struct wl_resource *resource;
 
 	if (version > 1)
 		version = 1;
 
 	resource = wl_resource_create(client, &wl_shm_interface, version, id);
-	wl_resource_set_implementation(resource, &shm_implementation, NULL, NULL);
+	wl_resource_set_implementation(resource, &shm_implementation, shm, NULL);
 
 	wl_shm_send_format(resource, WL_SHM_FORMAT_XRGB8888);
 	wl_shm_send_format(resource, WL_SHM_FORMAT_ARGB8888);
 }
 
-bool
-shm_initialize(void)
+struct swc_shm *
+shm_create(struct wl_display *display)
 {
-	if (!(swc.shm->context = wld_pixman_create_context()))
+	struct swc_shm *shm;
+
+	shm = malloc(sizeof(*shm));
+	if (!shm)
 		goto error0;
-
-	if (!(swc.shm->renderer = wld_create_renderer(swc.shm->context)))
+	shm->context = wld_pixman_create_context();
+	if (!shm->context)
 		goto error1;
-
-	shm.global = wl_global_create(swc.display, &wl_shm_interface, 1, NULL, &bind_shm);
-
-	if (!shm.global)
+	shm->renderer = wld_create_renderer(shm->context);
+	if (!shm->renderer)
 		goto error2;
+	shm->global = wl_global_create(display, &wl_shm_interface, 1, shm, &bind_shm);
+	if (!shm->global)
+		goto error3;
 
-	return true;
+	return shm;
 
+error3:
+	wld_destroy_renderer(shm->renderer);
 error2:
-	wld_destroy_renderer(swc.shm->renderer);
+	wld_destroy_context(shm->context);
 error1:
-	wld_destroy_context(swc.shm->context);
+	free(shm);
 error0:
-	return false;
+	return NULL;
 }
 
 void
-shm_finalize(void)
+shm_destroy(struct swc_shm *shm)
 {
-	wl_global_destroy(shm.global);
-	wld_destroy_renderer(swc.shm->renderer);
-	wld_destroy_context(swc.shm->context);
+	wl_global_destroy(shm->global);
+	wld_destroy_renderer(shm->renderer);
+	wld_destroy_context(shm->context);
 }

@@ -43,7 +43,7 @@ struct swc {
 	const struct swc_bindings *const bindings;
 	struct wl_list screens;
 	struct swc_compositor *const compositor;
-	struct swc_shm *const shm;
+	struct swc_shm *shm;
 	struct swc_drm *const drm;
 	struct wl_global *data_device_manager;
 };

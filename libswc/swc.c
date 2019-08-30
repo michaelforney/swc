@@ -46,7 +46,6 @@ extern const struct swc_seat swc_seat;
 extern const struct swc_bindings swc_bindings;
 extern struct swc_compositor swc_compositor;
 extern struct swc_drm swc_drm;
-extern struct swc_shm swc_shm;
 
 extern struct pointer_handler screens_pointer_handler;
 
@@ -55,7 +54,6 @@ struct swc swc = {
 	.bindings = &swc_bindings,
 	.compositor = &swc_compositor,
 	.drm = &swc_drm,
-	.shm = &swc_shm,
 };
 
 static void
@@ -120,7 +118,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error1;
 	}
 
-	if (!shm_initialize()) {
+	swc.shm = shm_create(display);
+	if (!swc.shm) {
 		ERROR("Could not initialize SHM\n");
 		goto error2;
 	}
@@ -192,7 +191,7 @@ error5:
 error4:
 	bindings_finalize();
 error3:
-	shm_finalize();
+	shm_destroy(swc.shm);
 error2:
 	drm_finalize();
 error1:
@@ -211,7 +210,7 @@ swc_finalize(void)
 	compositor_finalize();
 	screens_finalize();
 	bindings_finalize();
-	shm_finalize();
+	shm_destroy(swc.shm);
 	drm_finalize();
 	launch_finalize();
 }
