@@ -203,6 +203,7 @@ EXPORT void
 swc_finalize(void)
 {
 	panel_manager_finalize();
+	xdg_shell_finalize();
 	shell_finalize();
 	seat_destroy(swc.seat);
 	wl_global_destroy(swc.data_device_manager);
