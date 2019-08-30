@@ -96,7 +96,7 @@ set_offset(struct wl_client *client, struct wl_resource *resource, int32_t x, in
 {
 }
 
-static const struct xdg_positioner_interface positioner_implementation = {
+static const struct xdg_positioner_interface positioner_impl = {
 	.destroy = destroy,
 	.set_size = set_size,
 	.set_anchor_rect = set_anchor_rect,
@@ -475,7 +475,7 @@ create_positioner(struct wl_client *client, struct wl_resource *resource, uint32
 	positioner->resource = wl_resource_create(client, &xdg_positioner_interface, version, id);
 	if (!positioner->resource)
 		goto error1;
-	wl_resource_set_implementation(positioner->resource, &positioner_implementation, positioner, &destroy_positioner);
+	wl_resource_set_implementation(positioner->resource, &positioner_impl, positioner, &destroy_positioner);
 	return;
 
 error1:

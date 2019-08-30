@@ -62,7 +62,7 @@ set_desync(struct wl_client *client, struct wl_resource *resource)
 	/* TODO: Implement. */
 }
 
-static struct wl_subsurface_interface subsurface_implementation = {
+static struct wl_subsurface_interface subsurface_impl = {
 	.destroy = destroy,
 	.set_position = set_position,
 	.place_above = place_above,
@@ -91,7 +91,7 @@ subsurface_new(struct wl_client *client, uint32_t version, uint32_t id)
 	if (!subsurface->resource)
 		goto error1;
 
-	wl_resource_set_implementation(subsurface->resource, &subsurface_implementation, subsurface, &subsurface_destroy);
+	wl_resource_set_implementation(subsurface->resource, &subsurface_impl, subsurface, &subsurface_destroy);
 
 	return subsurface;
 

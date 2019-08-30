@@ -112,7 +112,7 @@ error0:
 	wl_resource_post_no_memory(resource);
 }
 
-static const struct wl_drm_interface drm_implementation = {
+static const struct wl_drm_interface drm_impl = {
 	.authenticate = authenticate,
 	.create_buffer = create_buffer,
 	.create_planar_buffer = create_planar_buffer,
@@ -243,7 +243,7 @@ bind_drm(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 		version = 2;
 
 	resource = wl_resource_create(client, &wl_drm_interface, version, id);
-	wl_resource_set_implementation(resource, &drm_implementation, NULL, NULL);
+	wl_resource_set_implementation(resource, &drm_impl, NULL, NULL);
 
 	if (version >= 2)
 		wl_drm_send_capabilities(resource, WL_DRM_CAPABILITY_PRIME);

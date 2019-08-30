@@ -56,7 +56,7 @@ set_selection(struct wl_client *client, struct wl_resource *resource, struct wl_
 	send_event(&data_device->event_signal, DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
-static struct wl_data_device_interface data_device_implementation = {
+static struct wl_data_device_interface data_device_impl = {
 	.start_drag = start_drag,
 	.set_selection = set_selection,
 };
@@ -102,7 +102,7 @@ data_device_bind(struct data_device *data_device, struct wl_client *client, uint
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &wl_data_device_interface, version, id);
-	wl_resource_set_implementation(resource, &data_device_implementation, data_device, &remove_resource);
+	wl_resource_set_implementation(resource, &data_device_impl, data_device, &remove_resource);
 	wl_list_insert(&data_device->resources, &resource->link);
 }
 

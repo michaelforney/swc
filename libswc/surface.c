@@ -279,7 +279,7 @@ set_buffer_scale(struct wl_client *client, struct wl_resource *surface, int32_t 
 	/* TODO: Implement */
 }
 
-static struct wl_surface_interface surface_implementation = {
+static struct wl_surface_interface surface_impl = {
 	.destroy = destroy,
 	.attach = attach,
 	.damage = damage,
@@ -330,7 +330,7 @@ surface_new(struct wl_client *client, uint32_t version, uint32_t id)
 
 	/* Add the surface to the client. */
 	surface->resource = wl_resource_create(client, &wl_surface_interface, version, id);
-	wl_resource_set_implementation(surface->resource, &surface_implementation, surface, &surface_destroy);
+	wl_resource_set_implementation(surface->resource, &surface_impl, surface, &surface_destroy);
 
 	return surface;
 }

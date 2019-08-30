@@ -66,7 +66,7 @@ offer_destroy(struct wl_client *client, struct wl_resource *offer)
 	wl_resource_destroy(offer);
 }
 
-static struct wl_data_offer_interface data_offer_implementation = {
+static struct wl_data_offer_interface data_offer_impl = {
 	.accept = offer_accept,
 	.receive = offer_receive,
 	.destroy = offer_destroy,
@@ -88,7 +88,7 @@ source_destroy(struct wl_client *client, struct wl_resource *source)
 	wl_resource_destroy(source);
 }
 
-static struct wl_data_source_interface data_source_implementation = {
+static struct wl_data_source_interface data_source_impl = {
 	.offer = source_offer,
 	.destroy = source_destroy,
 };
@@ -150,7 +150,7 @@ data_source_new(struct wl_client *client, uint32_t version, uint32_t id)
 	data->source = wl_resource_create(client, &wl_data_source_interface, version, id);
 
 	/* Destroy the data object when the source disappears. */
-	wl_resource_set_implementation(data->source, &data_source_implementation, data, &data_destroy);
+	wl_resource_set_implementation(data->source, &data_source_impl, data, &data_destroy);
 
 	return data->source;
 }
@@ -162,7 +162,7 @@ data_offer_new(struct wl_client *client, struct wl_resource *source, uint32_t ve
 	struct wl_resource *offer;
 
 	offer = wl_resource_create(client, &wl_data_offer_interface, version, 0);
-	wl_resource_set_implementation(offer, &data_offer_implementation, data, &remove_resource);
+	wl_resource_set_implementation(offer, &data_offer_impl, data, &remove_resource);
 	wl_list_insert(&data->offers, wl_resource_get_link(offer));
 
 	return offer;

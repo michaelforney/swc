@@ -41,7 +41,7 @@ create_panel(struct wl_client *client, struct wl_resource *resource, uint32_t id
 		wl_client_post_no_memory(client);
 }
 
-static const struct swc_panel_manager_interface panel_manager_implementation = {
+static const struct swc_panel_manager_interface panel_manager_impl = {
 	.create_panel = create_panel,
 };
 
@@ -54,7 +54,7 @@ bind_panel_manager(struct wl_client *client, void *data, uint32_t version, uint3
 		version = 1;
 
 	resource = wl_resource_create(client, &swc_panel_manager_interface, version, id);
-	wl_resource_set_implementation(resource, &panel_manager_implementation, NULL, NULL);
+	wl_resource_set_implementation(resource, &panel_manager_impl, NULL, NULL);
 }
 
 bool

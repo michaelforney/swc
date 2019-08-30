@@ -48,7 +48,7 @@ get_subsurface(struct wl_client *client, struct wl_resource *resource,
 	}
 }
 
-static struct wl_subcompositor_interface subcompositor_implementation = {
+static struct wl_subcompositor_interface subcompositor_impl = {
 	.destroy = destroy,
 	.get_subsurface = get_subsurface,
 };
@@ -62,7 +62,7 @@ bind_subcompositor(struct wl_client *client, void *data, uint32_t version, uint3
 		version = 1;
 
 	resource = wl_resource_create(client, &wl_subcompositor_interface, version, id);
-	wl_resource_set_implementation(resource, &subcompositor_implementation, NULL, NULL);
+	wl_resource_set_implementation(resource, &subcompositor_impl, NULL, NULL);
 }
 
 bool

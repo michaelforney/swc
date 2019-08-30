@@ -143,7 +143,7 @@ set_strut(struct wl_client *client, struct wl_resource *resource, uint32_t size,
 		screen_update_usable_geometry(panel->screen);
 }
 
-static const struct swc_panel_interface panel_implementation = {
+static const struct swc_panel_interface panel_impl = {
 	.dock = dock,
 	.set_offset = set_offset,
 	.set_strut = set_strut,
@@ -236,7 +236,7 @@ panel_new(struct wl_client *client, uint32_t version, uint32_t id, struct surfac
 	if (!(panel->view = compositor_create_view(surface)))
 		goto error2;
 
-	wl_resource_set_implementation(panel->resource, &panel_implementation, panel, &destroy_panel);
+	wl_resource_set_implementation(panel->resource, &panel_impl, panel, &destroy_panel);
 	panel->surface_destroy_listener.notify = &handle_surface_destroy;
 	panel->view_handler.impl = &view_handler_impl;
 	panel->modifier.modify = &modify;

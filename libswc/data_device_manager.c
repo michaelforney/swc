@@ -46,7 +46,7 @@ get_data_device(struct wl_client *client, struct wl_resource *resource, uint32_t
 	data_device_bind(seat->data_device, client, wl_resource_get_version(resource), id);
 }
 
-static struct wl_data_device_manager_interface data_device_manager_implementation = {
+static struct wl_data_device_manager_interface data_device_manager_impl = {
 	.create_data_source = create_data_source,
 	.get_data_device = get_data_device,
 };
@@ -60,7 +60,7 @@ bind_data_device_manager(struct wl_client *client, void *data, uint32_t version,
 		version = 1;
 
 	resource = wl_resource_create(client, &wl_data_device_manager_interface, version, id);
-	wl_resource_set_implementation(resource, &data_device_manager_implementation, NULL, NULL);
+	wl_resource_set_implementation(resource, &data_device_manager_impl, NULL, NULL);
 }
 
 struct wl_global *

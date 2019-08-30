@@ -26,7 +26,7 @@ subtract(struct wl_client *client, struct wl_resource *resource, int32_t x, int3
 	pixman_region32_subtract(&region->region, &region->region, &operand);
 }
 
-static const struct wl_region_interface region_implementation = {
+static const struct wl_region_interface region_impl = {
 	.destroy = destroy,
 	.add = add,
 	.subtract = subtract,
@@ -53,7 +53,7 @@ region_new(struct wl_client *client, uint32_t version, uint32_t id)
 
 	pixman_region32_init(&region->region);
 	region->resource = wl_resource_create(client, &wl_region_interface, version, id);
-	wl_resource_set_implementation(region->resource, &region_implementation, region, &region_destroy);
+	wl_resource_set_implementation(region->resource, &region_impl, region, &region_destroy);
 
 	return region;
 }

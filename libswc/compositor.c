@@ -766,7 +766,7 @@ create_region(struct wl_client *client, struct wl_resource *resource, uint32_t i
 		wl_resource_post_no_memory(resource);
 }
 
-static struct wl_compositor_interface compositor_implementation = {
+static struct wl_compositor_interface compositor_impl = {
 	.create_surface = create_surface,
 	.create_region = create_region,
 };
@@ -780,7 +780,7 @@ bind_compositor(struct wl_client *client, void *data, uint32_t version, uint32_t
 		version = 3;
 
 	resource = wl_resource_create(client, &wl_compositor_interface, version, id);
-	wl_resource_set_implementation(resource, &compositor_implementation, NULL, NULL);
+	wl_resource_set_implementation(resource, &compositor_impl, NULL, NULL);
 }
 
 bool

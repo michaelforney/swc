@@ -299,7 +299,7 @@ release(struct wl_client *client, struct wl_resource *resource)
 	wl_resource_destroy(resource);
 }
 
-static struct wl_keyboard_interface keyboard_implementation = {
+static struct wl_keyboard_interface keyboard_impl = {
 	.release = release,
 };
 
@@ -316,7 +316,7 @@ keyboard_bind(struct keyboard *keyboard, struct wl_client *client, uint32_t vers
 	struct wl_resource *client_resource;
 
 	client_resource = wl_resource_create(client, &wl_keyboard_interface, version, id);
-	wl_resource_set_implementation(client_resource, &keyboard_implementation, keyboard, &unbind);
+	wl_resource_set_implementation(client_resource, &keyboard_impl, keyboard, &unbind);
 
 	/* Subtract one to remove terminating NULL character. */
 	wl_keyboard_send_keymap(client_resource, WL_KEYBOARD_KEYMAP_FORMAT_XKB_V1, keyboard->xkb.keymap.fd, keyboard->xkb.keymap.size - 1);

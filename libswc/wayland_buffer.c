@@ -35,14 +35,14 @@ destroy(struct wl_client *client, struct wl_resource *resource)
 	wl_resource_destroy(resource);
 }
 
-static const struct wl_buffer_interface buffer_implementation = {
+static const struct wl_buffer_interface buffer_impl = {
 	.destroy = destroy,
 };
 
 struct wld_buffer *
 wayland_buffer_get(struct wl_resource *resource)
 {
-	if (wl_resource_instance_of(resource, &wl_buffer_interface, &buffer_implementation))
+	if (wl_resource_instance_of(resource, &wl_buffer_interface, &buffer_impl))
 		return wl_resource_get_user_data(resource);
 
 	return NULL;
@@ -62,6 +62,6 @@ wayland_buffer_create_resource(struct wl_client *client, uint32_t version, uint3
 
 	resource = wl_resource_create(client, &wl_buffer_interface, version, id);
 	if (resource)
-		wl_resource_set_implementation(resource, &buffer_implementation, buffer, &destroy_buffer);
+		wl_resource_set_implementation(resource, &buffer_impl, buffer, &destroy_buffer);
 	return resource;
 }
