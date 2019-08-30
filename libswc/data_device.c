@@ -56,7 +56,7 @@ set_selection(struct wl_client *client, struct wl_resource *resource, struct wl_
 	send_event(&data_device->event_signal, DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
-static struct wl_data_device_interface data_device_impl = {
+static const struct wl_data_device_interface data_device_impl = {
 	.start_drag = start_drag,
 	.set_selection = set_selection,
 };

@@ -412,7 +412,7 @@ move(struct view *base, int32_t x, int32_t y)
 	return true;
 }
 
-const static struct view_impl view_impl = {
+static const struct view_impl view_impl = {
 	.update = update,
 	.attach = attach,
 	.move = move,
@@ -766,7 +766,7 @@ create_region(struct wl_client *client, struct wl_resource *resource, uint32_t i
 		wl_resource_post_no_memory(resource);
 }
 
-static struct wl_compositor_interface compositor_impl = {
+static const struct wl_compositor_interface compositor_impl = {
 	.create_surface = create_surface,
 	.create_region = create_region,
 };

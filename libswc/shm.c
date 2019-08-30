@@ -153,7 +153,7 @@ resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 	pool->size = size;
 }
 
-static struct wl_shm_pool_interface shm_pool_impl = {
+static const struct wl_shm_pool_interface shm_pool_impl = {
 	.create_buffer = create_buffer,
 	.destroy = destroy,
 	.resize = resize,
@@ -195,7 +195,7 @@ error0:
 	close(fd);
 }
 
-static struct wl_shm_interface shm_impl = {
+static const struct wl_shm_interface shm_impl = {
 	.create_pool = &create_pool
 };
 

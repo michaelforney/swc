@@ -46,7 +46,7 @@ get_data_device(struct wl_client *client, struct wl_resource *resource, uint32_t
 	data_device_bind(seat->data_device, client, wl_resource_get_version(resource), id);
 }
 
-static struct wl_data_device_manager_interface data_device_manager_impl = {
+static const struct wl_data_device_manager_interface data_device_manager_impl = {
 	.create_data_source = create_data_source,
 	.get_data_device = get_data_device,
 };

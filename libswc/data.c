@@ -66,7 +66,7 @@ offer_destroy(struct wl_client *client, struct wl_resource *offer)
 	wl_resource_destroy(offer);
 }
 
-static struct wl_data_offer_interface data_offer_impl = {
+static const struct wl_data_offer_interface data_offer_impl = {
 	.accept = offer_accept,
 	.receive = offer_receive,
 	.destroy = offer_destroy,
@@ -88,7 +88,7 @@ source_destroy(struct wl_client *client, struct wl_resource *source)
 	wl_resource_destroy(source);
 }
 
-static struct wl_data_source_interface data_source_impl = {
+static const struct wl_data_source_interface data_source_impl = {
 	.offer = source_offer,
 	.destroy = source_destroy,
 };

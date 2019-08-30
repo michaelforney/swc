@@ -141,7 +141,7 @@ get_touch(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 	/* XXX: Implement */
 }
 
-static struct wl_seat_interface seat_impl = {
+static const struct wl_seat_interface seat_impl = {
 	.get_pointer = get_pointer,
 	.get_keyboard = get_keyboard,
 	.get_touch = get_touch,

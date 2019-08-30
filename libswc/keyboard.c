@@ -299,7 +299,7 @@ release(struct wl_client *client, struct wl_resource *resource)
 	wl_resource_destroy(resource);
 }
 
-static struct wl_keyboard_interface keyboard_impl = {
+static const struct wl_keyboard_interface keyboard_impl = {
 	.release = release,
 };
 

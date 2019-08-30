@@ -48,7 +48,7 @@ get_subsurface(struct wl_client *client, struct wl_resource *resource,
 	}
 }
 
-static struct wl_subcompositor_interface subcompositor_impl = {
+static const struct wl_subcompositor_interface subcompositor_impl = {
 	.destroy = destroy,
 	.get_subsurface = get_subsurface,
 };

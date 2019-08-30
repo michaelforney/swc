@@ -62,7 +62,7 @@ set_desync(struct wl_client *client, struct wl_resource *resource)
 	/* TODO: Implement. */
 }
 
-static struct wl_subsurface_interface subsurface_impl = {
+static const struct wl_subsurface_interface subsurface_impl = {
 	.destroy = destroy,
 	.set_position = set_position,
 	.place_above = place_above,
