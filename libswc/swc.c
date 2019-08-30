@@ -159,7 +159,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error9;
 	}
 
-	if (!xdg_shell_initialize()) {
+	swc.xdg_shell = xdg_shell_create(display);
+	if (!swc.xdg_shell) {
 		ERROR("Could not initialize XDG shell\n");
 		goto error10;
 	}
@@ -174,7 +175,7 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 	return true;
 
 error11:
-	xdg_shell_finalize();
+	wl_global_destroy(swc.xdg_shell);
 error10:
 	shell_finalize();
 error9:
@@ -203,7 +204,7 @@ EXPORT void
 swc_finalize(void)
 {
 	panel_manager_finalize();
-	xdg_shell_finalize();
+	wl_global_destroy(swc.xdg_shell);
 	shell_finalize();
 	seat_destroy(swc.seat);
 	wl_global_destroy(swc.data_device_manager);

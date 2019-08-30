@@ -462,10 +462,6 @@ error0:
 }
 
 /* xdg_shell */
-static struct {
-	struct wl_global *global;
-} shell;
-
 static void
 create_positioner(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
@@ -527,15 +523,8 @@ bind_wm_base(struct wl_client *client, void *data, uint32_t version, uint32_t id
 	wl_resource_set_implementation(resource, &wm_base_impl, NULL, NULL);
 }
 
-bool
-xdg_shell_initialize(void)
+struct wl_global *
+xdg_shell_create(struct wl_display *display)
 {
-	shell.global = wl_global_create(swc.display, &xdg_wm_base_interface, 1, NULL, &bind_wm_base);
-	return shell.global;
-}
-
-void
-xdg_shell_finalize(void)
-{
-	wl_global_destroy(shell.global);
+	return wl_global_create(display, &xdg_wm_base_interface, 1, NULL, &bind_wm_base);
 }

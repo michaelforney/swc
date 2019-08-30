@@ -46,6 +46,7 @@ struct swc {
 	struct swc_shm *shm;
 	struct swc_drm *const drm;
 	struct wl_global *data_device_manager;
+	struct wl_global *xdg_shell;
 };
 
 extern struct swc swc;

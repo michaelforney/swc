@@ -1,6 +1,6 @@
 /* swc: libswc/xdg_shell.h
  *
- * Copyright (c) 2018 Michael Forney
+ * Copyright (c) 2018-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,8 @@
 #ifndef SWC_XDG_SHELL_H
 #define SWC_XDG_SHELL_H
 
-#include <stdbool.h>
+struct wl_display;
 
-bool xdg_shell_initialize(void);
-void xdg_shell_finalize(void);
+struct wl_global *xdg_shell_create(struct wl_display *display);
 
 #endif
