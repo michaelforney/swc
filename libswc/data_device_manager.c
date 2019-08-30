@@ -41,7 +41,9 @@ create_data_source(struct wl_client *client, struct wl_resource *resource, uint3
 static void
 get_data_device(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *seat_resource)
 {
-	data_device_bind(swc.seat->data_device, client, wl_resource_get_version(resource), id);
+	struct swc_seat *seat = wl_resource_get_user_data(seat_resource);
+
+	data_device_bind(seat->data_device, client, wl_resource_get_version(resource), id);
 }
 
 static struct wl_data_device_manager_interface data_device_manager_implementation = {

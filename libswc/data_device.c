@@ -73,6 +73,7 @@ handle_selection_destroy(struct wl_listener *listener, void *data)
 bool
 data_device_initialize(struct data_device *data_device)
 {
+	data_device->selection = NULL;
 	data_device->selection_destroy_listener.notify = &handle_selection_destroy;
 	wl_signal_init(&data_device->event_signal);
 	wl_list_init(&data_device->resources);

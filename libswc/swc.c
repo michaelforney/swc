@@ -42,7 +42,6 @@
 #include "xdg_shell.h"
 
 extern struct swc_launch swc_launch;
-extern const struct swc_seat swc_seat;
 extern const struct swc_bindings swc_bindings;
 extern struct swc_compositor swc_compositor;
 extern struct swc_drm swc_drm;
@@ -50,7 +49,6 @@ extern struct swc_drm swc_drm;
 extern struct pointer_handler screens_pointer_handler;
 
 struct swc swc = {
-	.seat = &swc_seat,
 	.bindings = &swc_bindings,
 	.compositor = &swc_compositor,
 	.drm = &swc_drm,
@@ -150,7 +148,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error7;
 	}
 
-	if (!seat_initialize(default_seat)) {
+	swc.seat = seat_create(display, default_seat);
+	if (!swc.seat) {
 		ERROR("Could not initialize seat\n");
 		goto error8;
 	}
@@ -179,7 +178,7 @@ error11:
 error10:
 	shell_finalize();
 error9:
-	seat_finalize();
+	seat_destroy(swc.seat);
 error8:
 	wl_global_destroy(swc.data_device_manager);
 error7:
@@ -205,7 +204,7 @@ swc_finalize(void)
 {
 	panel_manager_finalize();
 	shell_finalize();
-	seat_finalize();
+	seat_destroy(swc.seat);
 	wl_global_destroy(swc.data_device_manager);
 	compositor_finalize();
 	screens_finalize();

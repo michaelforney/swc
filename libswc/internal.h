@@ -39,7 +39,7 @@ struct swc {
 	struct wl_signal event_signal;
 	bool active;
 
-	const struct swc_seat *const seat;
+	struct swc_seat *seat;
 	const struct swc_bindings *const bindings;
 	struct wl_list screens;
 	struct swc_compositor *const compositor;

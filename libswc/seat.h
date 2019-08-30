@@ -1,6 +1,6 @@
 /* swc: libswc/seat.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 #ifndef SWC_SEAT_H
 #define SWC_SEAT_H
 
-#include <stdbool.h>
+struct wl_display;
 
 struct swc_seat {
 	struct pointer *pointer;
@@ -32,7 +32,7 @@ struct swc_seat {
 	struct data_device *data_device;
 };
 
-bool seat_initialize(const char *seat_name);
-void seat_finalize(void);
+struct swc_seat *seat_create(struct wl_display *display, const char *name);
+void seat_destroy(struct swc_seat *seat);
 
 #endif
