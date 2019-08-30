@@ -175,33 +175,39 @@ error0:
 	return false;
 }
 
-bool
-keyboard_initialize(struct keyboard *keyboard)
+struct keyboard *
+keyboard_create(void)
 {
-	struct xkb *xkb = &keyboard->xkb;
+	struct keyboard *keyboard;
+	struct xkb *xkb;
 
+	keyboard = malloc(sizeof(*keyboard));
+	if (!keyboard)
+		goto error0;
+
+	xkb = &keyboard->xkb;
 	if (!(xkb->context = xkb_context_new(0))) {
 		ERROR("Could not create XKB context\n");
-		goto error0;
+		goto error1;
 	}
 
 	if (!(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, NULL, 0))) {
 		ERROR("Could not create XKB keymap\n");
-		goto error1;
+		goto error2;
 	}
 
 	if (!(xkb->state = xkb_state_new(xkb->keymap.map))) {
 		ERROR("Could not create XKB state\n");
-		goto error2;
+		goto error3;
 	}
 
 	if (!update_keymap(xkb)) {
 		ERROR("Could not update XKB keymap\n");
-		goto error3;
+		goto error4;
 	}
 
 	if (!input_focus_initialize(&keyboard->focus, &keyboard->focus_handler))
-		goto error3;
+		goto error4;
 
 	keyboard->modifier_state = (struct keyboard_modifier_state){0};
 	keyboard->modifiers = 0;
@@ -214,20 +220,22 @@ keyboard_initialize(struct keyboard *keyboard)
 	wl_list_init(&keyboard->handlers);
 	wl_list_insert(&keyboard->handlers, &keyboard->client_handler.link);
 
-	return true;
+	return keyboard;
 
-error3:
+error4:
 	xkb_state_unref(keyboard->xkb.state);
-error2:
+error3:
 	xkb_keymap_unref(keyboard->xkb.keymap.map);
-error1:
+error2:
 	xkb_context_unref(keyboard->xkb.context);
+error1:
+	free(keyboard);
 error0:
 	return false;
 }
 
 void
-keyboard_finalize(struct keyboard *keyboard)
+keyboard_destroy(struct keyboard *keyboard)
 {
 	wl_array_release(&keyboard->client_keys);
 	wl_array_release(&keyboard->keys);
@@ -237,6 +245,7 @@ keyboard_finalize(struct keyboard *keyboard)
 	xkb_state_unref(keyboard->xkb.state);
 	xkb_keymap_unref(keyboard->xkb.keymap.map);
 	xkb_context_unref(keyboard->xkb.context);
+	free(keyboard);
 }
 
 bool

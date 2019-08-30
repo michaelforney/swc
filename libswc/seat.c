@@ -61,7 +61,6 @@ struct seat {
 
 	struct wl_listener swc_listener;
 
-	struct keyboard keyboard;
 	struct wl_listener keyboard_focus_listener;
 	struct pointer pointer;
 	struct data_device data_device;
@@ -98,8 +97,8 @@ handle_data_device_event(struct wl_listener *listener, void *data)
 	if (ev->type != DATA_DEVICE_EVENT_SELECTION_CHANGED)
 		return;
 
-	if (seat->keyboard.focus.client)
-		data_device_offer_selection(&seat->data_device, seat->keyboard.focus.client);
+	if (seat->base.keyboard->focus.client)
+		data_device_offer_selection(&seat->data_device, seat->base.keyboard->focus.client);
 }
 
 static void
@@ -111,7 +110,7 @@ handle_swc_event(struct wl_listener *listener, void *data)
 	switch (ev->type) {
 	case SWC_EVENT_DEACTIVATED:
 		libinput_suspend(seat->libinput);
-		keyboard_reset(&seat->keyboard);
+		keyboard_reset(seat->base.keyboard);
 		break;
 	case SWC_EVENT_ACTIVATED:
 		if (libinput_resume(seat->libinput) != 0)
@@ -134,7 +133,7 @@ get_keyboard(struct wl_client *client, struct wl_resource *resource, uint32_t id
 {
 	struct seat *seat = wl_resource_get_user_data(resource);
 
-	keyboard_bind(&seat->keyboard, client, wl_resource_get_version(resource), id);
+	keyboard_bind(seat->base.keyboard, client, wl_resource_get_version(resource), id);
 }
 
 static void
@@ -260,7 +259,7 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 			time = libinput_event_keyboard_get_time(event.k);
 			key = libinput_event_keyboard_get_key(event.k);
 			state = libinput_event_keyboard_get_key_state(event.k);
-			keyboard_handle_key(&seat->keyboard, time, key, state);
+			keyboard_handle_key(seat->base.keyboard, time, key, state);
 			break;
 		case LIBINPUT_EVENT_POINTER_MOTION:
 			event.p = libinput_event_get_pointer_event(generic_event);
@@ -394,13 +393,13 @@ seat_create(struct wl_display *display, const char *seat_name)
 	seat->data_device_listener.notify = &handle_data_device_event;
 	wl_signal_add(&seat->data_device.event_signal, &seat->data_device_listener);
 
-	if (!keyboard_initialize(&seat->keyboard)) {
+	seat->base.keyboard = keyboard_create();
+	if (!seat->base.keyboard) {
 		ERROR("Could not initialize keyboard\n");
 		goto error4;
 	}
-	seat->base.keyboard = &seat->keyboard;
 	seat->keyboard_focus_listener.notify = handle_keyboard_focus_event;
-	wl_signal_add(&seat->keyboard.focus.event_signal, &seat->keyboard_focus_listener);
+	wl_signal_add(&seat->base.keyboard->focus.event_signal, &seat->keyboard_focus_listener);
 
 	if (!pointer_initialize(&seat->pointer)) {
 		ERROR("Could not initialize pointer\n");
@@ -416,7 +415,7 @@ seat_create(struct wl_display *display, const char *seat_name)
 error6:
 	pointer_finalize(&seat->pointer);
 error5:
-	keyboard_finalize(&seat->keyboard);
+	keyboard_destroy(seat->base.keyboard);
 error4:
 	data_device_finalize(&seat->data_device);
 error3:
@@ -441,7 +440,7 @@ seat_destroy(struct swc_seat *seat_base)
 #endif
 
 	pointer_finalize(&seat->pointer);
-	keyboard_finalize(&seat->keyboard);
+	keyboard_destroy(seat->base.keyboard);
 	data_device_finalize(&seat->data_device);
 
 	wl_global_destroy(seat->global);

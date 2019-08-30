@@ -83,8 +83,8 @@ struct keyboard {
 	uint32_t modifiers;
 };
 
-bool keyboard_initialize(struct keyboard *keyboard);
-void keyboard_finalize(struct keyboard *keyboard);
+struct keyboard *keyboard_create(void);
+void keyboard_destroy(struct keyboard *keyboard);
 bool keyboard_reset(struct keyboard *keyboard);
 void keyboard_set_focus(struct keyboard *keyboard, struct compositor_view *view);
 struct wl_resource *keyboard_bind(struct keyboard *keyboard, struct wl_client *client, uint32_t version, uint32_t id);
