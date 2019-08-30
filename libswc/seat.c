@@ -63,7 +63,6 @@ struct seat {
 
 	struct wl_listener keyboard_focus_listener;
 	struct pointer pointer;
-	struct data_device data_device;
 	struct wl_listener data_device_listener;
 
 	struct wl_global *global;
@@ -84,7 +83,7 @@ handle_keyboard_focus_event(struct wl_listener *listener, void *data)
 		struct wl_client *client = wl_resource_get_client(event_data->new->surface->resource);
 
 		/* Offer the selection to the new focus. */
-		data_device_offer_selection(&seat->data_device, client);
+		data_device_offer_selection(seat->base.data_device, client);
 	}
 }
 
@@ -98,7 +97,7 @@ handle_data_device_event(struct wl_listener *listener, void *data)
 		return;
 
 	if (seat->base.keyboard->focus.client)
-		data_device_offer_selection(&seat->data_device, seat->base.keyboard->focus.client);
+		data_device_offer_selection(seat->base.data_device, seat->base.keyboard->focus.client);
 }
 
 static void
@@ -385,13 +384,13 @@ seat_create(struct wl_display *display, const char *seat_name)
 	seat->swc_listener.notify = &handle_swc_event;
 	wl_signal_add(&swc.event_signal, &seat->swc_listener);
 
-	if (!data_device_initialize(&seat->data_device)) {
+	seat->base.data_device = data_device_create();
+	if (!seat->base.data_device) {
 		ERROR("Could not initialize data device\n");
 		goto error3;
 	}
-	seat->base.data_device = &seat->data_device;
 	seat->data_device_listener.notify = &handle_data_device_event;
-	wl_signal_add(&seat->data_device.event_signal, &seat->data_device_listener);
+	wl_signal_add(&seat->base.data_device->event_signal, &seat->data_device_listener);
 
 	seat->base.keyboard = keyboard_create();
 	if (!seat->base.keyboard) {
@@ -417,7 +416,7 @@ error6:
 error5:
 	keyboard_destroy(seat->base.keyboard);
 error4:
-	data_device_finalize(&seat->data_device);
+	data_device_destroy(seat->base.data_device);
 error3:
 	wl_global_destroy(seat->global);
 error2:
@@ -441,7 +440,7 @@ seat_destroy(struct swc_seat *seat_base)
 
 	pointer_finalize(&seat->pointer);
 	keyboard_destroy(seat->base.keyboard);
-	data_device_finalize(&seat->data_device);
+	data_device_destroy(seat->base.data_device);
 
 	wl_global_destroy(seat->global);
 	free(seat->name);

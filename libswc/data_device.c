@@ -70,24 +70,30 @@ handle_selection_destroy(struct wl_listener *listener, void *data)
 	send_event(&data_device->event_signal, DATA_DEVICE_EVENT_SELECTION_CHANGED, NULL);
 }
 
-bool
-data_device_initialize(struct data_device *data_device)
+struct data_device *
+data_device_create(void)
 {
+	struct data_device *data_device;
+
+	data_device = malloc(sizeof(*data_device));
+	if (!data_device)
+		return NULL;
 	data_device->selection = NULL;
 	data_device->selection_destroy_listener.notify = &handle_selection_destroy;
 	wl_signal_init(&data_device->event_signal);
 	wl_list_init(&data_device->resources);
 
-	return true;
+	return data_device;
 }
 
 void
-data_device_finalize(struct data_device *data_device)
+data_device_destroy(struct data_device *data_device)
 {
 	struct wl_resource *resource, *tmp;
 
 	wl_list_for_each_safe (resource, tmp, &data_device->resources, link)
 		wl_resource_destroy(resource);
+	free(data_device);
 }
 
 void
