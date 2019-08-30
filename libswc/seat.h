@@ -34,6 +34,5 @@ struct swc_seat {
 
 bool seat_initialize(const char *seat_name);
 void seat_finalize(void);
-void seat_reopen_devices(void);
 
 #endif
