@@ -31,15 +31,6 @@
 
 struct swc_compositor {
 	struct pointer_handler *const pointer_handler;
-	struct {
-		/**
-		 * Emitted when a new surface is created.
-		 *
-		 * The data argument of the signal refers to the surface that has been
-		 * created.
-		 */
-		struct wl_signal new_surface;
-	} signal;
 };
 
 bool compositor_initialize(void);
