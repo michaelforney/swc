@@ -1,6 +1,6 @@
 /* swc: libswc/panel_manager.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,6 @@
 #include <wayland-server.h>
 #include "swc-server-protocol.h"
 
-static struct {
-	struct wl_global *global;
-} panel_manager;
-
 static void
 create_panel(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface_resource)
 {
@@ -57,19 +53,8 @@ bind_panel_manager(struct wl_client *client, void *data, uint32_t version, uint3
 	wl_resource_set_implementation(resource, &panel_manager_impl, NULL, NULL);
 }
 
-bool
-panel_manager_initialize(void)
+struct wl_global *
+panel_manager_create(struct wl_display *display)
 {
-	panel_manager.global = wl_global_create(swc.display, &swc_panel_manager_interface, 1, NULL, &bind_panel_manager);
-
-	if (!panel_manager.global)
-		return false;
-
-	return true;
-}
-
-void
-panel_manager_finalize(void)
-{
-	wl_global_destroy(panel_manager.global);
+	return wl_global_create(display, &swc_panel_manager_interface, 1, NULL, &bind_panel_manager);
 }

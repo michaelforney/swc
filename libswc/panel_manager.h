@@ -1,6 +1,6 @@
 /* swc: libswc/panel_manager.h
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,8 @@
 #ifndef SWC_PANEL_MANAGER_H
 #define SWC_PANEL_MANAGER_H
 
-#include <stdbool.h>
+struct wl_display;
 
-bool panel_manager_initialize(void);
-void panel_manager_finalize(void);
+struct wl_global *panel_manager_create(struct wl_display *display);
 
 #endif

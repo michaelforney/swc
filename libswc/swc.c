@@ -165,7 +165,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error10;
 	}
 
-	if (!panel_manager_initialize()) {
+	swc.panel_manager = panel_manager_create(display);
+	if (!swc.panel_manager) {
 		ERROR("Could not initialize panel manager\n");
 		goto error11;
 	}
@@ -203,7 +204,7 @@ error0:
 EXPORT void
 swc_finalize(void)
 {
-	panel_manager_finalize();
+	wl_global_destroy(swc.panel_manager);
 	wl_global_destroy(swc.xdg_shell);
 	shell_finalize();
 	seat_destroy(swc.seat);
