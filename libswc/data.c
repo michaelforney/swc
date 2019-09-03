@@ -60,16 +60,10 @@ offer_receive(struct wl_client *client, struct wl_resource *offer, const char *m
 	close(fd);
 }
 
-static void
-offer_destroy(struct wl_client *client, struct wl_resource *offer)
-{
-	wl_resource_destroy(offer);
-}
-
 static const struct wl_data_offer_interface data_offer_impl = {
 	.accept = offer_accept,
 	.receive = offer_receive,
-	.destroy = offer_destroy,
+	.destroy = destroy_resource,
 };
 
 static void
@@ -82,15 +76,9 @@ source_offer(struct wl_client *client, struct wl_resource *source, const char *m
 	*destination = strdup(mime_type);
 }
 
-static void
-source_destroy(struct wl_client *client, struct wl_resource *source)
-{
-	wl_resource_destroy(source);
-}
-
 static const struct wl_data_source_interface data_source_impl = {
 	.offer = source_offer,
-	.destroy = source_destroy,
+	.destroy = destroy_resource,
 };
 
 static void

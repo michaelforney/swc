@@ -144,12 +144,6 @@ static const struct view_handler_impl view_handler_impl = {
 };
 
 static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
-
-static void
 attach(struct wl_client *client, struct wl_resource *resource,
        struct wl_resource *buffer_resource, int32_t x, int32_t y)
 {
@@ -280,7 +274,7 @@ set_buffer_scale(struct wl_client *client, struct wl_resource *surface, int32_t 
 }
 
 static struct wl_surface_interface surface_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.attach = attach,
 	.damage = damage,
 	.frame = frame,

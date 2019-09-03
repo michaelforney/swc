@@ -51,12 +51,6 @@ struct xdg_toplevel {
 	struct xdg_surface *xdg_surface;
 };
 
-static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
-
 /* xdg_positioner */
 static void
 destroy_positioner(struct wl_resource *resource)
@@ -97,7 +91,7 @@ set_offset(struct wl_client *client, struct wl_resource *resource, int32_t x, in
 }
 
 static const struct xdg_positioner_interface positioner_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.set_size = set_size,
 	.set_anchor_rect = set_anchor_rect,
 	.set_anchor = set_anchor,
@@ -321,7 +315,7 @@ set_minimized(struct wl_client *client, struct wl_resource *resource)
 }
 
 static const struct xdg_toplevel_interface toplevel_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.set_parent = set_parent,
 	.set_title = set_title,
 	.set_app_id = set_app_id,
@@ -402,7 +396,7 @@ set_window_geometry(struct wl_client *client, struct wl_resource *resource, int3
 }
 
 static const struct xdg_surface_interface xdg_surface_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.get_toplevel = get_toplevel,
 	.get_popup = get_popup,
 	.ack_configure = ack_configure,
@@ -501,7 +495,7 @@ pong(struct wl_client *client, struct wl_resource *resource, uint32_t serial)
 }
 
 static const struct xdg_wm_base_interface wm_base_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.create_positioner = create_positioner,
 	.get_xdg_surface = get_xdg_surface,
 	.pong = pong,

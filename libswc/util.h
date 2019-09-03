@@ -64,6 +64,7 @@
 struct wl_resource;
 
 void remove_resource(struct wl_resource *resource);
+void destroy_resource(struct wl_client *client, struct wl_resource *resource);
 
 static inline uint32_t
 get_time(void)

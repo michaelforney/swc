@@ -29,14 +29,8 @@
 #include <wld/wld.h>
 #include <wld/pixman.h>
 
-static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
-
 static const struct wl_buffer_interface buffer_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 };
 
 struct wld_buffer *

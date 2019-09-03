@@ -293,14 +293,8 @@ keyboard_set_focus(struct keyboard *keyboard, struct compositor_view *view)
 	input_focus_set(&keyboard->focus, view);
 }
 
-static void
-release(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
-
 static const struct wl_keyboard_interface keyboard_impl = {
-	.release = release,
+	.release = destroy_resource,
 };
 
 static void

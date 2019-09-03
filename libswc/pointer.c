@@ -331,15 +331,9 @@ set_cursor(struct wl_client *client, struct wl_resource *resource,
 	}
 }
 
-static void
-release(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
-
 static const struct wl_pointer_interface pointer_impl = {
 	.set_cursor = set_cursor,
-	.release = release,
+	.release = destroy_resource,
 };
 
 static void

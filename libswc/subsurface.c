@@ -1,6 +1,6 @@
 /* swc: libswc/subsurface.c
  *
- * Copyright (c) 2015 Michael Forney
+ * Copyright (c) 2015-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +22,10 @@
  */
 
 #include "subsurface.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <wayland-server.h>
-
-static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
 
 static void
 set_position(struct wl_client *client, struct wl_resource *resource, int32_t x, int32_t y)
@@ -63,7 +58,7 @@ set_desync(struct wl_client *client, struct wl_resource *resource)
 }
 
 static const struct wl_subsurface_interface subsurface_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.set_position = set_position,
 	.place_above = place_above,
 	.place_below = place_below,

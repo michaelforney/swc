@@ -45,12 +45,6 @@ struct params {
 };
 
 static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
-
-static void
 add(struct wl_client *client, struct wl_resource *resource, int32_t fd, uint32_t i, uint32_t offset, uint32_t stride, uint32_t modifier_hi, uint32_t modifier_lo)
 {
 	struct params *params = wl_resource_get_user_data(resource);
@@ -133,7 +127,7 @@ create(struct wl_client *client, struct wl_resource *resource,
 }
 
 static const struct zwp_linux_buffer_params_v1_interface params_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.add = add,
 	.create = create,
 	.create_immed = create_immed,
@@ -174,7 +168,7 @@ error0:
 }
 
 static const struct zwp_linux_dmabuf_v1_interface dmabuf_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.create_params = create_params,
 };
 

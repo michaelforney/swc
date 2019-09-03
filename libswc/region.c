@@ -1,13 +1,8 @@
 #include "region.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <wayland-server.h>
-
-static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
 
 static void
 add(struct wl_client *client, struct wl_resource *resource, int32_t x, int32_t y, int32_t width, int32_t height)
@@ -27,7 +22,7 @@ subtract(struct wl_client *client, struct wl_resource *resource, int32_t x, int3
 }
 
 static const struct wl_region_interface region_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.add = add,
 	.subtract = subtract,
 };

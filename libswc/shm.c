@@ -133,12 +133,6 @@ error0:
 }
 
 static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
-
-static void
 resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 {
 	struct pool *pool = wl_resource_get_user_data(resource);
@@ -155,7 +149,7 @@ resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 
 static const struct wl_shm_pool_interface shm_pool_impl = {
 	.create_buffer = create_buffer,
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.resize = resize,
 };
 

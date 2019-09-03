@@ -1,6 +1,6 @@
 /* swc: libswc/subcompositor.c
  *
- * Copyright (c) 2015 Michael Forney
+ * Copyright (c) 2015-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,14 +25,9 @@
 #include "internal.h"
 #include "subcompositor.h"
 #include "subsurface.h"
+#include "util.h"
 
 static struct wl_global *global;
-
-static void
-destroy(struct wl_client *client, struct wl_resource *resource)
-{
-	wl_resource_destroy(resource);
-}
 
 static void
 get_subsurface(struct wl_client *client, struct wl_resource *resource,
@@ -49,7 +44,7 @@ get_subsurface(struct wl_client *client, struct wl_resource *resource,
 }
 
 static const struct wl_subcompositor_interface subcompositor_impl = {
-	.destroy = destroy,
+	.destroy = destroy_resource,
 	.get_subsurface = get_subsurface,
 };
 
