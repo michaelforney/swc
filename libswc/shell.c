@@ -1,6 +1,6 @@
 /* swc: libswc/shell.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2019 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,6 @@
 #include "shell_surface.h"
 
 #include <wayland-server.h>
-
-static struct {
-	struct wl_global *global;
-} shell;
 
 static void
 get_shell_surface(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *surface_resource)
@@ -59,15 +55,8 @@ bind_shell(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 	wl_resource_set_implementation(resource, &shell_implementation, NULL, NULL);
 }
 
-bool
-shell_initialize(void)
+struct wl_global *
+shell_create(struct wl_display *display)
 {
-	shell.global = wl_global_create(swc.display, &wl_shell_interface, 1, NULL, &bind_shell);
-	return shell.global;
-}
-
-void
-shell_finalize(void)
-{
-	wl_global_destroy(shell.global);
+	return wl_global_create(display, &wl_shell_interface, 1, NULL, &bind_shell);
 }

@@ -154,7 +154,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error8;
 	}
 
-	if (!shell_initialize()) {
+	swc.shell = shell_create(display);
+	if (!swc.shell) {
 		ERROR("Could not initialize shell\n");
 		goto error9;
 	}
@@ -178,7 +179,7 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 error11:
 	wl_global_destroy(swc.xdg_shell);
 error10:
-	shell_finalize();
+	wl_global_destroy(swc.shell);
 error9:
 	seat_destroy(swc.seat);
 error8:
@@ -206,7 +207,7 @@ swc_finalize(void)
 {
 	wl_global_destroy(swc.panel_manager);
 	wl_global_destroy(swc.xdg_shell);
-	shell_finalize();
+	wl_global_destroy(swc.shell);
 	seat_destroy(swc.seat);
 	wl_global_destroy(swc.data_device_manager);
 	compositor_finalize();
