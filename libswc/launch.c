@@ -27,6 +27,7 @@
 #include "launch/protocol.h"
 #include "util.h"
 
+#include <sys/uio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <wayland-server.h>
