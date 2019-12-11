@@ -26,6 +26,7 @@
  */
 
 #include "protocol.h"
+#include "devmajor.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -38,21 +39,25 @@
 #include <stdnoreturn.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#ifndef minor
 #include <sys/sysmacros.h>
+#endif
+#ifdef __NetBSD__
+#include <dev/wscons/wsdisplay_usl_io.h>
+extern char **environ;
+#else
 #include <linux/input.h>
 #include <linux/kd.h>
-#include <linux/major.h>
 #include <linux/vt.h>
-#include <xf86drm.h>
-
-#ifndef DRM_MAJOR
-#define DRM_MAJOR 226
 #endif
+#include <xf86drm.h>
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
 
@@ -116,8 +121,10 @@ stop_devices(bool fatal)
 			die("drmDropMaster:");
 	}
 	for (i = 0; i < num_input_fds; ++i) {
+#ifdef EVIOCREVOKE
 		if (ioctl(input_fds[i], EVIOCREVOKE, 0) < 0 && errno != ENODEV && fatal)
 			die("ioctl EVIOCREVOKE:");
+#endif
 		close(input_fds[i]);
 	}
 	num_input_fds = 0;
@@ -216,8 +223,7 @@ handle_socket_data(int socket)
 			goto fail;
 		}
 
-		switch (major(st.st_rdev)) {
-		case INPUT_MAJOR:
+		if (device_is_input(st.st_rdev)) {
 			if (!active)
 				goto fail;
 			if (num_input_fds == ARRAY_LENGTH(input_fds)) {
@@ -225,16 +231,14 @@ handle_socket_data(int socket)
 				goto fail;
 			}
 			input_fds[num_input_fds++] = fd;
-			break;
-		case DRM_MAJOR:
+		} else if (device_is_drm(st.st_rdev)) {
 			if (num_drm_fds == ARRAY_LENGTH(drm_fds)) {
 				fprintf(stderr, "too many DRM devices opened\n");
 				goto fail;
 			}
 			drm_fds[num_drm_fds++] = fd;
-			break;
-		default:
-			fprintf(stderr, "device is not an input device\n");
+		} else {
+			fprintf(stderr, "requested fd is not a DRM or input device\n");
 			goto fail;
 		}
 		break;
@@ -265,6 +269,10 @@ done:
 static void
 find_vt(char *vt, size_t size)
 {
+#ifdef __NetBSD__
+	if (snprintf(vt, size, "/dev/ttyE1") >= size)
+		die("VT number is too large");
+#else
 	char *vtnr;
 	int tty0_fd, vt_num;
 
@@ -283,6 +291,7 @@ find_vt(char *vt, size_t size)
 		if (snprintf(vt, size, "/dev/tty%s", vtnr) >= size)
 			die("XDG_VTNR is too long");
 	}
+#endif
 }
 
 static int
@@ -317,19 +326,27 @@ setup_tty(int fd)
 	if (fstat(fd, &st) == -1)
 		die("failed to stat TTY fd:");
 	vt = minor(st.st_rdev);
-	if (major(st.st_rdev) != TTY_MAJOR || vt == 0)
+
+	if (!device_is_tty(st.st_rdev) || vt == 0)
 		die("not a valid VT");
 
 	if (ioctl(fd, VT_GETSTATE, &state) == -1)
 		die("failed to get the current VT state:");
 	original_vt_state.vt = state.v_active;
+#ifdef KDGETMODE
 	if (ioctl(fd, KDGKBMODE, &original_vt_state.kb_mode))
 		die("failed to get keyboard mode:");
 	if (ioctl(fd, KDGETMODE, &original_vt_state.console_mode))
 		die("failed to get console mode:");
+#else
+	original_vt_state.kb_mode = K_XLATE;
+	original_vt_state.console_mode = KD_TEXT;
+#endif
 
+#ifdef K_OFF
 	if (ioctl(fd, KDSKBMODE, K_OFF) == -1)
 		die("failed to set keyboard mode to K_OFF:");
+#endif
 	if (ioctl(fd, KDSETMODE, KD_GRAPHICS) == -1) {
 		perror("failed to set console mode to KD_GRAPHICS");
 		goto error0;

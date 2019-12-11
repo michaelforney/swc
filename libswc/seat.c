@@ -395,7 +395,7 @@ seat_create(struct wl_display *display, const char *seat_name)
 	seat->data_device_listener.notify = &handle_data_device_event;
 	wl_signal_add(&seat->base.data_device->event_signal, &seat->data_device_listener);
 
-	seat->base.keyboard = keyboard_create();
+	seat->base.keyboard = keyboard_create(NULL);
 	if (!seat->base.keyboard) {
 		ERROR("Could not initialize keyboard\n");
 		goto error4;

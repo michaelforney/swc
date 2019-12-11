@@ -51,6 +51,16 @@ struct pool_reference {
 	struct pool *pool;
 };
 
+static void *
+swc_mremap(void *oldp, size_t oldsize, size_t newsize)
+{
+#ifdef __NetBSD__
+	return mremap(oldp, oldsize, NULL, newsize, 0);
+#else /* Linux-style mremap */
+	return mremap(oldp, oldsize, newsize, MREMAP_MAYMOVE);
+#endif
+}
+
 static void
 unref_pool(struct pool *pool)
 {
@@ -138,7 +148,7 @@ resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 	struct pool *pool = wl_resource_get_user_data(resource);
 	void *data;
 
-	data = mremap(pool->data, pool->size, size, MREMAP_MAYMOVE);
+	data = swc_mremap(pool->data, pool->size, size);
 	if (data == MAP_FAILED) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD, "mremap failed: %s", strerror(errno));
 		return;

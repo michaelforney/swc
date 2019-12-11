@@ -17,7 +17,7 @@ $(dir)_TARGETS +=                   \
     $(dir)/$(LIBSWC_LINK)
 endif
 
-$(dir)_PACKAGES := libdrm libinput pixman-1 wayland-server wld xkbcommon
+$(dir)_PACKAGES := libdrm pixman-1 wayland-server wld xkbcommon
 $(dir)_CFLAGS += -Iprotocol
 
 SWC_SOURCES =                       \
@@ -42,7 +42,6 @@ SWC_SOURCES =                       \
     libswc/primary_plane.c          \
     libswc/region.c                 \
     libswc/screen.c                 \
-    libswc/seat.c                   \
     libswc/shell.c                  \
     libswc/shell_surface.c          \
     libswc/shm.c                    \
@@ -63,9 +62,15 @@ SWC_SOURCES =                       \
     protocol/xdg-decoration-unstable-v1-protocol.c \
     protocol/xdg-shell-protocol.c
 
-ifeq ($(ENABLE_LIBUDEV),1)
-$(dir)_CFLAGS += -DENABLE_LIBUDEV
-$(dir)_PACKAGES += libudev
+ifeq ($(shell uname),NetBSD)
+    SWC_SOURCES += libswc/seat-ws.c
+else
+    SWC_SOURCES += libswc/seat.c
+    $(dir)_PACKAGES += libinput
+    ifeq ($(ENABLE_LIBUDEV),1)
+        $(dir)_CFLAGS += -DENABLE_LIBUDEV
+        $(dir)_PACKAGES += libudev
+    endif
 endif
 
 SWC_STATIC_OBJECTS = $(SWC_SOURCES:%.c=%.o)

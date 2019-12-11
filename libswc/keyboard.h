@@ -26,6 +26,7 @@
 
 #include "input.h"
 
+#include <xkbcommon/xkbcommon.h>
 #include <wayland-util.h>
 
 /* Keycodes are offset by 8 in XKB. */
@@ -83,7 +84,7 @@ struct keyboard {
 	uint32_t modifiers;
 };
 
-struct keyboard *keyboard_create(void);
+struct keyboard *keyboard_create(struct xkb_rule_names *names);
 void keyboard_destroy(struct keyboard *keyboard);
 bool keyboard_reset(struct keyboard *keyboard);
 void keyboard_set_focus(struct keyboard *keyboard, struct compositor_view *view);
