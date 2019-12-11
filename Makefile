@@ -28,15 +28,17 @@ include config.mk
 # Dependencies
 PACKAGES :=           \
     libdrm            \
-    libinput          \
     pixman-1          \
     wayland-server    \
     wayland-protocols \
     wld               \
     xkbcommon
 
-ifeq ($(ENABLE_LIBUDEV),1)
-PACKAGES += libudev
+ifneq ($(shell uname),NetBSD)
+    PACKAGES += libinput
+    ifeq ($(ENABLE_LIBUDEV),1)
+        PACKAGES += libudev
+    endif
 endif
 
 libinput_CONSTRAINTS        := --atleast-version=0.4

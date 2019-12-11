@@ -150,7 +150,8 @@ update_keymap(struct xkb *xkb)
 
 	unlink(keymap_path);
 
-	if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0) {
+	if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0 &&
+	    ftruncate(xkb->keymap.fd, xkb->keymap.size) != 0) {
 		WARNING("Could not resize XKB keymap file\n");
 		goto error2;
 	}
@@ -176,7 +177,7 @@ error0:
 }
 
 struct keyboard *
-keyboard_create(void)
+keyboard_create(struct xkb_rule_names *names)
 {
 	struct keyboard *keyboard;
 	struct xkb *xkb;
@@ -191,7 +192,8 @@ keyboard_create(void)
 		goto error1;
 	}
 
-	if (!(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, NULL, 0))) {
+	if (!(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, names, 0)) &&
+	    !(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, NULL, 0))) {
 		ERROR("Could not create XKB keymap\n");
 		goto error2;
 	}

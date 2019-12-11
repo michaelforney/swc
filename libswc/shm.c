@@ -138,7 +138,11 @@ resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 	struct pool *pool = wl_resource_get_user_data(resource);
 	void *data;
 
+#ifdef __NetBSD__
+	data = mremap(pool->data, pool->size, NULL, size, 0);
+#else
 	data = mremap(pool->data, pool->size, size, MREMAP_MAYMOVE);
+#endif
 	if (data == MAP_FAILED) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD, "mremap failed: %s", strerror(errno));
 		return;
