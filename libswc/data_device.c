@@ -27,14 +27,6 @@
 #include "util.h"
 
 static void
-release(struct wl_client *client, struct wl_resource *resource)
-{
-	struct data_device *data_device = wl_resource_get_user_data(resource);
-
-	data_device_destroy(data_device);
-}
-
-static void
 start_drag(struct wl_client *client, struct wl_resource *resource,
            struct wl_resource *source_resource, struct wl_resource *origin_resource,
            struct wl_resource *icon_resource, uint32_t serial)
@@ -67,7 +59,7 @@ set_selection(struct wl_client *client, struct wl_resource *resource, struct wl_
 static const struct wl_data_device_interface data_device_impl = {
 	.start_drag = start_drag,
 	.set_selection = set_selection,
-	.release = release
+	.release = destroy_resource
 };
 
 static void
