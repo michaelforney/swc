@@ -28,6 +28,7 @@
 
 #include <stdbool.h>
 #include <pixman.h>
+#include <wayland-server.h>
 
 struct swc_compositor {
 	struct pointer_handler *const pointer_handler;

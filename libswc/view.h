@@ -26,6 +26,8 @@
 
 #include "swc.h"
 
+#include <wayland-util.h>
+
 /**
  * A view represents a component that can display buffers to the user.
  *

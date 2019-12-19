@@ -62,6 +62,7 @@
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
 
 struct wl_resource;
+struct wl_client;
 
 void remove_resource(struct wl_resource *resource);
 void destroy_resource(struct wl_client *client, struct wl_resource *resource);

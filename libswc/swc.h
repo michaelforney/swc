@@ -26,13 +26,14 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <wayland-server.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct libinput_device;
+struct wl_display;
+struct wl_event_loop;
 
 /* Rectangles {{{ */
 

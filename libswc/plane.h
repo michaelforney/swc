@@ -27,7 +27,7 @@
 #include "plane.h"
 #include "view.h"
 
-#include <wayland-util.h>
+#include <wayland-server.h>
 
 struct plane {
 	struct view view;
