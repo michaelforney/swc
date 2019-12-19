@@ -316,12 +316,12 @@ struct swc_manager {
 	/**
 	 * Called when the session gets activated (for example, startup or VT switch).
 	 */
-	void (*activate)();
+	void (*activate)(void);
 
 	/**
 	 * Called when the session gets deactivated.
 	 */
-	void (*deactivate)();
+	void (*deactivate)(void);
 };
 
 /**
