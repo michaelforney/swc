@@ -264,13 +264,13 @@ commit(struct wl_client *client, struct wl_resource *resource)
 static void
 set_buffer_transform(struct wl_client *client, struct wl_resource *surface, int32_t transform)
 {
-	/* TODO: Implement */
+	wl_resource_post_error(surface, WL_SURFACE_ERROR_INVALID_TRANSFORM, "buffer transform not supported");
 }
 
 static void
 set_buffer_scale(struct wl_client *client, struct wl_resource *surface, int32_t scale)
 {
-	/* TODO: Implement */
+	wl_resource_post_error(surface, WL_SURFACE_ERROR_INVALID_SCALE, "buffer scale not supported");
 }
 
 static void
