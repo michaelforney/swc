@@ -776,8 +776,8 @@ bind_compositor(struct wl_client *client, void *data, uint32_t version, uint32_t
 {
 	struct wl_resource *resource;
 
-	if (version > 3)
-		version = 3;
+	if (version > 4)
+		version = 4;
 
 	resource = wl_resource_create(client, &wl_compositor_interface, version, id);
 	wl_resource_set_implementation(resource, &compositor_impl, NULL, NULL);
@@ -789,7 +789,7 @@ compositor_initialize(void)
 	struct screen *screen;
 	uint32_t keysym;
 
-	compositor.global = wl_global_create(swc.display, &wl_compositor_interface, 3, NULL, &bind_compositor);
+	compositor.global = wl_global_create(swc.display, &wl_compositor_interface, 4, NULL, &bind_compositor);
 
 	if (!compositor.global)
 		return false;

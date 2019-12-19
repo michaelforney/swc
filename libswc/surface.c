@@ -273,6 +273,12 @@ set_buffer_scale(struct wl_client *client, struct wl_resource *surface, int32_t 
 	/* TODO: Implement */
 }
 
+static void
+damage_buffer(struct wl_client *client, struct wl_resource *surface, int32_t x, int32_t y, int32_t w, int32_t h)
+{
+	damage(client, surface, x, y, w, h);
+}
+
 static struct wl_surface_interface surface_impl = {
 	.destroy = destroy_resource,
 	.attach = attach,
@@ -283,6 +289,7 @@ static struct wl_surface_interface surface_impl = {
 	.commit = commit,
 	.set_buffer_transform = set_buffer_transform,
 	.set_buffer_scale = set_buffer_scale,
+	.damage_buffer = damage_buffer,
 };
 
 static void
