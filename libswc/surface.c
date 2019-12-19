@@ -261,13 +261,13 @@ commit(struct wl_client *client, struct wl_resource *resource)
 	surface->pending.commit = 0;
 }
 
-void
+static void
 set_buffer_transform(struct wl_client *client, struct wl_resource *surface, int32_t transform)
 {
 	/* TODO: Implement */
 }
 
-void
+static void
 set_buffer_scale(struct wl_client *client, struct wl_resource *surface, int32_t scale)
 {
 	/* TODO: Implement */
