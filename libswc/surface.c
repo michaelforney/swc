@@ -270,7 +270,8 @@ set_buffer_transform(struct wl_client *client, struct wl_resource *surface, int3
 static void
 set_buffer_scale(struct wl_client *client, struct wl_resource *surface, int32_t scale)
 {
-	wl_resource_post_error(surface, WL_SURFACE_ERROR_INVALID_SCALE, "buffer scale not supported");
+	if (scale != 1)
+		wl_resource_post_error(surface, WL_SURFACE_ERROR_INVALID_SCALE, "buffer scale not supported");
 }
 
 static void
