@@ -776,9 +776,6 @@ bind_compositor(struct wl_client *client, void *data, uint32_t version, uint32_t
 {
 	struct wl_resource *resource;
 
-	if (version > 4)
-		version = 4;
-
 	resource = wl_resource_create(client, &wl_compositor_interface, version, id);
 	wl_resource_set_implementation(resource, &compositor_impl, NULL, NULL);
 }

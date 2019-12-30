@@ -46,9 +46,6 @@ bind_panel_manager(struct wl_client *client, void *data, uint32_t version, uint3
 {
 	struct wl_resource *resource;
 
-	if (version > 1)
-		version = 1;
-
 	resource = wl_resource_create(client, &swc_panel_manager_interface, version, id);
 	wl_resource_set_implementation(resource, &panel_manager_impl, NULL, NULL);
 }

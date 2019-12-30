@@ -183,8 +183,6 @@ bind_dmabuf(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 	struct wl_resource *resource;
 	size_t i;
 
-	if (version > 3)
-		version = 3;
 	resource = wl_resource_create(client, &zwp_linux_dmabuf_v1_interface, version, id);
 	if (!resource) {
 		wl_client_post_no_memory(client);

@@ -48,9 +48,6 @@ bind_shell(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
 	struct wl_resource *resource;
 
-	if (version > 1)
-		version = 1;
-
 	resource = wl_resource_create(client, &wl_shell_interface, version, id);
 	wl_resource_set_implementation(resource, &shell_implementation, NULL, NULL);
 }

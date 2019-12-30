@@ -84,9 +84,6 @@ bind_screen(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 	struct screen *screen = data;
 	struct wl_resource *resource;
 
-	if (version > 1)
-		version = 1;
-
 	resource = wl_resource_create(client, &swc_screen_interface, version, id);
 
 	if (!resource) {

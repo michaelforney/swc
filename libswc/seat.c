@@ -153,9 +153,6 @@ bind_seat(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 	struct seat *seat = data;
 	struct wl_resource *resource;
 
-	if (version > 4)
-		version = 4;
-
 	resource = wl_resource_create(client, &wl_seat_interface, version, id);
 	wl_resource_set_implementation(resource, &seat_impl, seat, &remove_resource);
 	wl_list_insert(&seat->resources, wl_resource_get_link(resource));

@@ -506,9 +506,6 @@ bind_wm_base(struct wl_client *client, void *data, uint32_t version, uint32_t id
 {
 	struct wl_resource *resource;
 
-	if (version > 1)
-		version = 1;
-
 	resource = wl_resource_create(client, &xdg_wm_base_interface, version, id);
 	if (!resource) {
 		wl_client_post_no_memory(client);
