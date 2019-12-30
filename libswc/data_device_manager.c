@@ -63,5 +63,5 @@ bind_data_device_manager(struct wl_client *client, void *data, uint32_t version,
 struct wl_global *
 data_device_manager_create(struct wl_display *display)
 {
-	return wl_global_create(display, &wl_data_device_manager_interface, 1, NULL, &bind_data_device_manager);
+	return wl_global_create(display, &wl_data_device_manager_interface, 2, NULL, &bind_data_device_manager);
 }
