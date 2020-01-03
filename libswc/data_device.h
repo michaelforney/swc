@@ -1,6 +1,6 @@
 /* swc: data_device.h
  *
- * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +42,7 @@ struct data_device {
 
 struct data_device *data_device_create(void);
 void data_device_destroy(struct data_device *data_device);
-void data_device_bind(struct data_device *data_device, struct wl_client *client, uint32_t version, uint32_t id);
+struct wl_resource *data_device_bind(struct data_device *data_device, struct wl_client *client, uint32_t version, uint32_t id);
 void data_device_offer_selection(struct data_device *data_device, struct wl_client *client);
 
 #endif

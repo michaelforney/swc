@@ -1,6 +1,6 @@
 /* swc: data.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -70,10 +70,21 @@ static void
 source_offer(struct wl_client *client, struct wl_resource *source, const char *mime_type)
 {
 	struct data *data = wl_resource_get_user_data(source);
-	char **destination;
+	char *s, **dst;
 
-	destination = wl_array_add(&data->mime_types, sizeof(*destination));
-	*destination = strdup(mime_type);
+	s = strdup(mime_type);
+	if (!s)
+		goto error0;
+	dst = wl_array_add(&data->mime_types, sizeof(*dst));
+	if (!dst)
+		goto error1;
+	*dst = s;
+	return;
+
+error1:
+	free(s);
+error0:
+	wl_resource_post_no_memory(source);
 }
 
 static const struct wl_data_source_interface data_source_impl = {
@@ -108,39 +119,28 @@ data_destroy(struct wl_resource *source)
 	free(data);
 }
 
-static struct data *
-data_new(void)
-{
-	struct data *data;
-
-	data = malloc(sizeof(*data));
-
-	if (!data)
-		return NULL;
-
-	wl_array_init(&data->mime_types);
-	wl_list_init(&data->offers);
-
-	return data;
-}
-
 struct wl_resource *
 data_source_new(struct wl_client *client, uint32_t version, uint32_t id)
 {
 	struct data *data;
 
-	data = data_new();
-
+	data = malloc(sizeof(*data));
 	if (!data)
-		return NULL;
+		goto error0;
+	wl_array_init(&data->mime_types);
+	wl_list_init(&data->offers);
 
-	/* Add the data source to the client. */
 	data->source = wl_resource_create(client, &wl_data_source_interface, version, id);
-
-	/* Destroy the data object when the source disappears. */
+	if (!data->source)
+		goto error1;
 	wl_resource_set_implementation(data->source, &data_source_impl, data, &data_destroy);
 
 	return data->source;
+
+error1:
+	free(data);
+error0:
+	return NULL;
 }
 
 struct wl_resource *
@@ -150,6 +150,8 @@ data_offer_new(struct wl_client *client, struct wl_resource *source, uint32_t ve
 	struct wl_resource *offer;
 
 	offer = wl_resource_create(client, &wl_data_offer_interface, version, 0);
+	if (!offer)
+		return NULL;
 	wl_resource_set_implementation(offer, &data_offer_impl, data, &remove_resource);
 	wl_list_insert(&data->offers, wl_resource_get_link(offer));
 

@@ -1,6 +1,6 @@
 /* swc: data_device_manager.c
  *
- * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,11 +30,7 @@
 static void
 create_data_source(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
-	struct wl_resource *data_source;
-
-	data_source = data_source_new(client, wl_resource_get_version(resource), id);
-
-	if (!data_source)
+	if (!data_source_new(client, wl_resource_get_version(resource), id))
 		wl_resource_post_no_memory(resource);
 }
 
@@ -43,7 +39,8 @@ get_data_device(struct wl_client *client, struct wl_resource *resource, uint32_t
 {
 	struct swc_seat *seat = wl_resource_get_user_data(seat_resource);
 
-	data_device_bind(seat->data_device, client, wl_resource_get_version(resource), id);
+	if (!data_device_bind(seat->data_device, client, wl_resource_get_version(resource), id))
+		wl_resource_post_no_memory(resource);
 }
 
 static const struct wl_data_device_manager_interface data_device_manager_impl = {
@@ -57,6 +54,10 @@ bind_data_device_manager(struct wl_client *client, void *data, uint32_t version,
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &wl_data_device_manager_interface, version, id);
+	if (!resource) {
+		wl_client_post_no_memory(client);
+		return;
+	}
 	wl_resource_set_implementation(resource, &data_device_manager_impl, NULL, NULL);
 }
 

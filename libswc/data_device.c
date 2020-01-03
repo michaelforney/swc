@@ -1,6 +1,6 @@
 /* swc: data_device.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -97,14 +97,18 @@ data_device_destroy(struct data_device *data_device)
 	free(data_device);
 }
 
-void
+struct wl_resource *
 data_device_bind(struct data_device *data_device, struct wl_client *client, uint32_t version, uint32_t id)
 {
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &wl_data_device_interface, version, id);
+	if (!resource)
+		return NULL;
 	wl_resource_set_implementation(resource, &data_device_impl, data_device, &remove_resource);
 	wl_list_insert(&data_device->resources, &resource->link);
+
+	return resource;
 }
 
 static struct wl_resource *
@@ -113,6 +117,8 @@ new_offer(struct wl_resource *resource, struct wl_client *client, struct wl_reso
 	struct wl_resource *offer;
 
 	offer = data_offer_new(client, source, wl_resource_get_version(resource));
+	if (!offer)
+		return NULL;
 	wl_data_device_send_data_offer(resource, offer);
 	data_send_mime_types(source, offer);
 
@@ -123,7 +129,7 @@ void
 data_device_offer_selection(struct data_device *data_device, struct wl_client *client)
 {
 	struct wl_resource *resource;
-	struct wl_resource *offer;
+	struct wl_resource *offer = NULL;
 
 	/* Look for the client's data_device resource. */
 	resource = wl_resource_find_for_client(&data_device->resources, client);
@@ -132,8 +138,9 @@ data_device_offer_selection(struct data_device *data_device, struct wl_client *c
 	if (!resource)
 		return;
 
-	/* If we don't have a selection, send NULL to the client. */
-	offer = data_device->selection ? new_offer(resource, client, data_device->selection) : NULL;
+	/* If we have a selection, create a new offer for the client. */
+	if (data_device->selection)
+		offer = new_offer(resource, client, data_device->selection);
 
 	wl_data_device_send_selection(resource, offer);
 }
