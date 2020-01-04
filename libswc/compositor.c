@@ -1,6 +1,6 @@
 /* swc: libswc/compositor.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Based in part upon compositor.c from weston, which is:
  *
@@ -292,8 +292,8 @@ renderer_flush_view(struct compositor_view *view)
 /* Surface Views {{{ */
 
 /**
- * Adds damage from the region below a view, taking into account it's clip
- * region, to the region specified by `damage'.
+ * Adds the region below a view to the compositor's damaged region,
+ * taking into account its clip region.
  */
 static void
 damage_below_view(struct compositor_view *view)
@@ -362,22 +362,38 @@ static int
 attach(struct view *base, struct wld_buffer *buffer)
 {
 	struct compositor_view *view = (void *)base;
+	pixman_box32_t old_extents;
+	pixman_region32_t old, new, both;
 	int ret;
 
 	if ((ret = renderer_attach(view, buffer)) < 0)
 		return ret;
 
-	if (view->visible && view->base.buffer) {
-		damage_below_view(view);
-		update(&view->base);
-	}
+	/* Schedule updates on the screens the view was previously
+	 * visible on. */
+	update(&view->base);
 
 	if (view_set_size_from_buffer(&view->base, buffer)) {
+		/* The view was resized. */
+		old_extents = view->extents;
 		update_extents(view);
 
-		if (view->visible && buffer) {
+		if (view->visible) {
+			/* Damage the region that was newly uncovered
+			 * or covered, minus the clip region. */
+			pixman_region32_init_with_extents(&old, &old_extents);
+			pixman_region32_init_with_extents(&new, &view->extents);
+			pixman_region32_init(&both);
+			pixman_region32_intersect(&both, &old, &new);
+			pixman_region32_union(&new, &old, &new);
+			pixman_region32_subtract(&new, &new, &both);
+			pixman_region32_subtract(&new, &new, &view->clip);
+			pixman_region32_union(&compositor.damage, &compositor.damage, &new);
+			pixman_region32_fini(&old);
+			pixman_region32_fini(&new);
+			pixman_region32_fini(&both);
+
 			view_update_screens(&view->base);
-			damage_below_view(view);
 			update(&view->base);
 		}
 	}
