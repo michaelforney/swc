@@ -774,11 +774,7 @@ create_surface(struct wl_client *client, struct wl_resource *resource, uint32_t 
 static void
 create_region(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
-	struct region *region;
-
-	region = region_new(client, wl_resource_get_version(resource), id);
-
-	if (!region)
+	if (!region_new(client, wl_resource_get_version(resource), id))
 		wl_resource_post_no_memory(resource);
 }
 

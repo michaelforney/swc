@@ -189,8 +189,8 @@ set_opaque_region(struct wl_client *client, struct wl_resource *resource, struct
 	surface->pending.commit |= SURFACE_COMMIT_OPAQUE;
 
 	if (region_resource) {
-		struct region *region = wl_resource_get_user_data(region_resource);
-		pixman_region32_copy(&surface->pending.state.opaque, &region->region);
+		pixman_region32_t *region = wl_resource_get_user_data(region_resource);
+		pixman_region32_copy(&surface->pending.state.opaque, region);
 	} else {
 		pixman_region32_clear(&surface->pending.state.opaque);
 	}
@@ -204,8 +204,8 @@ set_input_region(struct wl_client *client, struct wl_resource *resource, struct 
 	surface->pending.commit |= SURFACE_COMMIT_INPUT;
 
 	if (region_resource) {
-		struct region *region = wl_resource_get_user_data(region_resource);
-		pixman_region32_copy(&surface->pending.state.input, &region->region);
+		pixman_region32_t *region = wl_resource_get_user_data(region_resource);
+		pixman_region32_copy(&surface->pending.state.input, region);
 	} else {
 		pixman_region32_reset(&surface->pending.state.input, &infinite_extents);
 	}
