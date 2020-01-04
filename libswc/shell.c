@@ -1,6 +1,6 @@
 /* swc: libswc/shell.c
  *
- * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -49,6 +49,10 @@ bind_shell(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &wl_shell_interface, version, id);
+	if (!resource) {
+		wl_client_post_no_memory(client);
+		return;
+	}
 	wl_resource_set_implementation(resource, &shell_implementation, NULL, NULL);
 }
 

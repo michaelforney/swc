@@ -1,6 +1,6 @@
 /* swc: libswc/pointer.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -349,6 +349,8 @@ pointer_bind(struct pointer *pointer, struct wl_client *client, uint32_t version
 	struct wl_resource *client_resource;
 
 	client_resource = wl_resource_create(client, &wl_pointer_interface, version, id);
+	if (!client_resource)
+		return NULL;
 	wl_resource_set_implementation(client_resource, &pointer_impl, pointer, &unbind);
 	input_focus_add_resource(&pointer->focus, client_resource);
 

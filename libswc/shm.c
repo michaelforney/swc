@@ -1,6 +1,6 @@
 /* swc: libswc/shm.c
  *
- * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Based in part upon wayland-shm.c from wayland, which is:
  *
@@ -200,6 +200,10 @@ bind_shm(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &wl_shm_interface, version, id);
+	if (!resource) {
+		wl_client_post_no_memory(client);
+		return;
+	}
 	wl_resource_set_implementation(resource, &shm_impl, shm, NULL);
 
 	wl_shm_send_format(resource, WL_SHM_FORMAT_XRGB8888);

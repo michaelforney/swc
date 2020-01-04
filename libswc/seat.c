@@ -1,6 +1,6 @@
 /* swc: libswc/seat.c
  *
- * Copyright (c) 2013, 2014 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -124,7 +124,8 @@ get_pointer(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
 	struct seat *seat = wl_resource_get_user_data(resource);
 
-	pointer_bind(&seat->pointer, client, wl_resource_get_version(resource), id);
+	if (!pointer_bind(&seat->pointer, client, wl_resource_get_version(resource), id))
+		wl_resource_post_no_memory(resource);
 }
 
 static void
@@ -132,7 +133,8 @@ get_keyboard(struct wl_client *client, struct wl_resource *resource, uint32_t id
 {
 	struct seat *seat = wl_resource_get_user_data(resource);
 
-	keyboard_bind(seat->base.keyboard, client, wl_resource_get_version(resource), id);
+	if (!keyboard_bind(seat->base.keyboard, client, wl_resource_get_version(resource), id))
+		wl_resource_post_no_memory(resource);
 }
 
 static void
@@ -154,6 +156,10 @@ bind_seat(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &wl_seat_interface, version, id);
+	if (!resource) {
+		wl_client_post_no_memory(client);
+		return;
+	}
 	wl_resource_set_implementation(resource, &seat_impl, seat, &remove_resource);
 	wl_list_insert(&seat->resources, wl_resource_get_link(resource));
 

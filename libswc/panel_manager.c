@@ -1,6 +1,6 @@
 /* swc: libswc/panel_manager.c
  *
- * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,10 @@ bind_panel_manager(struct wl_client *client, void *data, uint32_t version, uint3
 	struct wl_resource *resource;
 
 	resource = wl_resource_create(client, &swc_panel_manager_interface, version, id);
+	if (!resource) {
+		wl_client_post_no_memory(client);
+		return;
+	}
 	wl_resource_set_implementation(resource, &panel_manager_impl, NULL, NULL);
 }
 

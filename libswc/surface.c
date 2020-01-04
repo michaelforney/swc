@@ -1,6 +1,6 @@
 /* swc: surface.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -171,8 +171,12 @@ frame(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 	struct surface *surface = wl_resource_get_user_data(resource);
 	struct wl_resource *callback_resource;
 
-	surface->pending.commit |= SURFACE_COMMIT_FRAME;
 	callback_resource = wl_resource_create(client, &wl_callback_interface, 1, id);
+	if (!callback_resource) {
+		wl_resource_post_no_memory(resource);
+		return;
+	}
+	surface->pending.commit |= SURFACE_COMMIT_FRAME;
 	wl_resource_set_implementation(callback_resource, NULL, NULL, &remove_resource);
 	wl_list_insert(surface->pending.state.frame_callbacks.prev, wl_resource_get_link(callback_resource));
 }
@@ -310,7 +314,7 @@ surface_destroy(struct wl_resource *resource)
 /**
  * Construct a new surface, adding it to the given client as id.
  *
- * The surface will be free'd automatically when it's resource is destroyed.
+ * The surface will be free'd automatically when its resource is destroyed.
  *
  * @return The newly allocated surface.
  */
@@ -319,8 +323,14 @@ surface_new(struct wl_client *client, uint32_t version, uint32_t id)
 {
 	struct surface *surface;
 
-	if (!(surface = malloc(sizeof(*surface))))
-		return NULL;
+	surface = malloc(sizeof(*surface));
+	if (!surface)
+		goto error0;
+
+	surface->resource = wl_resource_create(client, &wl_surface_interface, version, id);
+	if (!surface->resource)
+		goto error1;
+	wl_resource_set_implementation(surface->resource, &surface_impl, surface, &surface_destroy);
 
 	/* Initialize the surface. */
 	surface->pending.commit = 0;
@@ -330,11 +340,12 @@ surface_new(struct wl_client *client, uint32_t version, uint32_t id)
 	state_initialize(&surface->state);
 	state_initialize(&surface->pending.state);
 
-	/* Add the surface to the client. */
-	surface->resource = wl_resource_create(client, &wl_surface_interface, version, id);
-	wl_resource_set_implementation(surface->resource, &surface_impl, surface, &surface_destroy);
-
 	return surface;
+
+error1:
+	free(surface);
+error0:
+	return NULL;
 }
 
 void

@@ -1,6 +1,6 @@
 /* swc: libswc/keyboard.c
  *
- * Copyright (c) 2013 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Based in part upon input.c from weston, which is:
  *
@@ -310,6 +310,8 @@ keyboard_bind(struct keyboard *keyboard, struct wl_client *client, uint32_t vers
 	struct wl_resource *client_resource;
 
 	client_resource = wl_resource_create(client, &wl_keyboard_interface, version, id);
+	if (!client_resource)
+		return NULL;
 	wl_resource_set_implementation(client_resource, &keyboard_impl, keyboard, &unbind);
 
 	/* Subtract one to remove terminating NULL character. */
