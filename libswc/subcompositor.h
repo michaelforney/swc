@@ -1,6 +1,6 @@
 /* swc: libswc/subcompositor.h
  *
- * Copyright (c) 2015 Michael Forney
+ * Copyright (c) 2015-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,8 @@
 #ifndef SWC_SUBCOMPOSITOR_H
 #define SWC_SUBCOMPOSITOR_H
 
-#include <stdbool.h>
+struct wl_display;
 
-bool subcompositor_initialize(void);
-void subcompositor_finalize(void);
+struct wl_global *subcompositor_create(struct wl_display *display);
 
 #endif

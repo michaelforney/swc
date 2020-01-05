@@ -27,8 +27,6 @@
 #include "subsurface.h"
 #include "util.h"
 
-static struct wl_global *global;
-
 static void
 get_subsurface(struct wl_client *client, struct wl_resource *resource,
                uint32_t id, struct wl_resource *surface_resource, struct wl_resource *parent_resource)
@@ -61,19 +59,8 @@ bind_subcompositor(struct wl_client *client, void *data, uint32_t version, uint3
 	wl_resource_set_implementation(resource, &subcompositor_impl, NULL, NULL);
 }
 
-bool
-subcompositor_initialize(void)
+struct wl_global *
+subcompositor_create(struct wl_display *display)
 {
-	global = wl_global_create(swc.display, &wl_subcompositor_interface, 1, NULL, &bind_subcompositor);
-
-	if (!global)
-		return false;
-
-	return true;
-}
-
-void
-subcompositor_finalize(void)
-{
-	wl_global_destroy(global);
+	return wl_global_create(display, &wl_subcompositor_interface, 1, NULL, &bind_subcompositor);
 }

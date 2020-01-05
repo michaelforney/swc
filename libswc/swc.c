@@ -1,6 +1,6 @@
 /* swc: libswc/swc.c
  *
- * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2013-2020 Michael Forney
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -127,7 +127,8 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error3;
 	}
 
-	if (!subcompositor_initialize()) {
+	swc.subcompositor = subcompositor_create(display);
+	if (!swc.subcompositor) {
 		ERROR("Could not initialize subcompositor\n");
 		goto error4;
 	}
@@ -185,7 +186,7 @@ error9:
 error8:
 	wl_global_destroy(swc.data_device_manager);
 error7:
-	subcompositor_finalize();
+	wl_global_destroy(swc.subcompositor);
 error6:
 	compositor_finalize();
 error5:
