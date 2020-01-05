@@ -284,7 +284,7 @@ damage_buffer(struct wl_client *client, struct wl_resource *surface, int32_t x, 
 	damage(client, surface, x, y, w, h);
 }
 
-static struct wl_surface_interface surface_impl = {
+static const struct wl_surface_interface surface_impl = {
 	.destroy = destroy_resource,
 	.attach = attach,
 	.damage = damage,

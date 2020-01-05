@@ -85,7 +85,7 @@ move(struct view *view, int32_t x, int32_t y)
 	return true;
 }
 
-const static struct view_impl view_impl = {
+static const struct view_impl view_impl = {
 	.update = update,
 	.attach = attach,
 	.move = move,
