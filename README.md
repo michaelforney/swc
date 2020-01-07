@@ -14,7 +14,7 @@ Dependencies
 * wayland
 * wayland-protocols
 * libdrm
-* libinput (see my [libinput repository](https://github.com/michaelforney/libinput)
+* libinput (see my [libinput repository](https://github.com/oasislinux/libinput)
   if you don't want the libudev dependency)
 * libxkbcommon
 * pixman
