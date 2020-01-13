@@ -443,6 +443,7 @@ xdg_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struct 
 		goto error1;
 	xdg_surface->surface = surface;
 	xdg_surface->surface_destroy_listener.notify = &handle_surface_destroy;
+	xdg_surface->role = NULL;
 	xdg_surface->role_destroy_listener.notify = &handle_role_destroy;
 	wl_resource_add_destroy_listener(surface->resource, &xdg_surface->surface_destroy_listener);
 	wl_resource_set_implementation(xdg_surface->resource, &xdg_surface_impl, xdg_surface, destroy_xdg_surface);
