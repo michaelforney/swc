@@ -363,6 +363,10 @@ get_toplevel(struct wl_client *client, struct wl_resource *resource, uint32_t id
 	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource);
 	struct xdg_toplevel *toplevel;
 
+	if (xdg_surface->role) {
+		wl_resource_post_error(resource, XDG_WM_BASE_ERROR_ROLE, "surface already has a role");
+		return;
+	}
 	toplevel = xdg_toplevel_new(client, wl_resource_get_version(resource), id, xdg_surface);
 	if (!toplevel) {
 		wl_client_post_no_memory(client);
