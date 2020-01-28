@@ -28,6 +28,21 @@
 #include "xdg-decoration-unstable-v1-server-protocol.h"
 
 static void
+set_mode(struct wl_client *client, struct wl_resource *resource, uint32_t mode)
+{
+}
+
+static void
+unset_mode(struct wl_client *client, struct wl_resource *resource)
+{
+}
+
+static const struct zxdg_toplevel_decoration_v1_interface decoration_impl = {
+	.set_mode = set_mode,
+	.unset_mode = unset_mode,
+};
+
+static void
 get_toplevel_decoration(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *toplevel_resource)
 {
 	struct wl_resource *decoration;
@@ -37,6 +52,7 @@ get_toplevel_decoration(struct wl_client *client, struct wl_resource *resource, 
 		wl_resource_post_no_memory(resource);
 		return;
 	}
+	wl_resource_set_implementation(decoration, &decoration_impl, NULL, NULL);
 	zxdg_toplevel_decoration_v1_send_configure(decoration, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 }
 
