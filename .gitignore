@@ -2,6 +2,8 @@
 *.lo
 .*.sw*
 
+protocol/server-decoration-protocol.c
+protocol/server-decoration-server-protocol.h
 protocol/swc-protocol.c
 protocol/swc-server-protocol.h
 protocol/wayland-drm-protocol.c

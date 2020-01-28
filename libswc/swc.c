@@ -29,6 +29,7 @@
 #include "event.h"
 #include "internal.h"
 #include "launch.h"
+#include "kde_decoration.h"
 #include "keyboard.h"
 #include "panel_manager.h"
 #include "pointer.h"
@@ -174,16 +175,24 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error11;
 	}
 
+	swc.kde_decoration_manager = kde_decoration_manager_create(display);
+	if (!swc.kde_decoration_manager) {
+		ERROR("Could not initialize KDE decoration manager\n");
+		goto error12;
+	}
+
 	swc.panel_manager = panel_manager_create(display);
 	if (!swc.panel_manager) {
 		ERROR("Could not initialize panel manager\n");
-		goto error12;
+		goto error13;
 	}
 
 	setup_compositor();
 
 	return true;
 
+error13:
+	wl_global_destroy(swc.kde_decoration_manager);
 error12:
 	wl_global_destroy(swc.xdg_decoration_manager);
 error11:

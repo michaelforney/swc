@@ -4,6 +4,7 @@ dir := protocol
 wayland_protocols := $(call pkgconfig,wayland-protocols,variable=pkgdatadir,DATADIR)
 
 PROTOCOL_EXTENSIONS =           \
+    $(dir)/server-decoration.xml\
     $(dir)/swc.xml              \
     $(dir)/wayland-drm.xml      \
     $(wayland_protocols)/stable/xdg-shell/xdg-shell.xml \
