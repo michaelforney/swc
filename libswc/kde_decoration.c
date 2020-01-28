@@ -44,8 +44,10 @@ create(struct wl_client *client, struct wl_resource *resource, uint32_t id, stru
 	struct wl_resource *decoration;
 
 	decoration = wl_resource_create(client, &org_kde_kwin_server_decoration_interface, wl_resource_get_version(resource), id);
-	if (!decoration)
+	if (!decoration) {
 		wl_resource_post_no_memory(resource);
+		return;
+	}
 	wl_resource_set_implementation(decoration, &decoration_impl, NULL, NULL);
 	org_kde_kwin_server_decoration_send_mode(decoration, ORG_KDE_KWIN_SERVER_DECORATION_MANAGER_MODE_SERVER);
 }

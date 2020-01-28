@@ -33,8 +33,10 @@ get_toplevel_decoration(struct wl_client *client, struct wl_resource *resource, 
 	struct wl_resource *decoration;
 
 	decoration = wl_resource_create(client, &zxdg_toplevel_decoration_v1_interface, wl_resource_get_version(resource), id);
-	if (!decoration)
+	if (!decoration) {
 		wl_resource_post_no_memory(resource);
+		return;
+	}
 	zxdg_toplevel_decoration_v1_send_configure(decoration, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 }
 
