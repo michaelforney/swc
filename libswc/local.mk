@@ -53,11 +53,13 @@ SWC_SOURCES =                       \
     libswc/view.c                   \
     libswc/wayland_buffer.c         \
     libswc/window.c                 \
+    libswc/xdg_decoration.c         \
     libswc/xdg_shell.c              \
+    protocol/linux-dmabuf-unstable-v1-protocol.c \
     protocol/swc-protocol.c         \
     protocol/wayland-drm-protocol.c \
-    protocol/xdg-shell-protocol.c   \
-    protocol/linux-dmabuf-unstable-v1-protocol.c
+    protocol/xdg-decoration-unstable-v1-protocol.c \
+    protocol/xdg-shell-protocol.c
 
 ifeq ($(ENABLE_LIBUDEV),1)
 $(dir)_CFLAGS += -DENABLE_LIBUDEV
@@ -72,6 +74,7 @@ objects = $(foreach obj,$(1),$(dir)/$(obj).o $(dir)/$(obj).lo)
 $(call objects,compositor panel_manager panel screen): protocol/swc-server-protocol.h
 $(call objects,dmabuf): protocol/linux-dmabuf-unstable-v1-server-protocol.h
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
+$(call objects,xdg_decoration): protocol/xdg-decoration-unstable-v1-server-protocol.h
 $(call objects,xdg_shell): protocol/xdg-shell-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 

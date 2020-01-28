@@ -39,6 +39,7 @@
 #include "subcompositor.h"
 #include "util.h"
 #include "window.h"
+#include "xdg_decoration.h"
 #include "xdg_shell.h"
 
 extern struct swc_launch swc_launch;
@@ -167,16 +168,24 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error10;
 	}
 
+	swc.xdg_decoration_manager = xdg_decoration_manager_create(display);
+	if (!swc.xdg_decoration_manager) {
+		ERROR("Could not initialize XDG decoration manager\n");
+		goto error11;
+	}
+
 	swc.panel_manager = panel_manager_create(display);
 	if (!swc.panel_manager) {
 		ERROR("Could not initialize panel manager\n");
-		goto error11;
+		goto error12;
 	}
 
 	setup_compositor();
 
 	return true;
 
+error12:
+	wl_global_destroy(swc.xdg_decoration_manager);
 error11:
 	wl_global_destroy(swc.xdg_shell);
 error10:
@@ -207,6 +216,7 @@ EXPORT void
 swc_finalize(void)
 {
 	wl_global_destroy(swc.panel_manager);
+	wl_global_destroy(swc.xdg_decoration_manager);
 	wl_global_destroy(swc.xdg_shell);
 	wl_global_destroy(swc.shell);
 	seat_destroy(swc.seat);
