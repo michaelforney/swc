@@ -36,7 +36,7 @@ sysctl_devmajor(const char *devname)
 	int major;
 
 	if (sysctl(name, 2, NULL, &len, NULL, 0)) {
-		perror("sysctlbyname");
+		perror("sysctl");
 		goto fail;
 	}
 	if ((drivers = calloc(sizeof(struct kinfo_drivers), len)) == NULL) {
@@ -45,7 +45,7 @@ sysctl_devmajor(const char *devname)
 	}
 	newlen = len;
 	if (sysctl(name, 2, drivers, &newlen, NULL, 0)) {
-		perror("sysctlbyname");
+		perror("sysctl");
 		goto fail;
 	}
 	for (i = 0; i < len; ++i) {
