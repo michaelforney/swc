@@ -40,7 +40,6 @@ sysctl_devmajor(const char *devname)
 		goto fail;
 	}
 	if ((drivers = calloc(sizeof(struct kinfo_drivers), len)) == NULL) {
-		free(drivers);
 		goto fail;
 	}
 	newlen = len;
