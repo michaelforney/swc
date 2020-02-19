@@ -26,7 +26,6 @@
 
 #include <sys/stat.h>
 #include <stdbool.h>
-#include "devmajor.h"
 
 bool device_is_input(const struct stat *);
 
