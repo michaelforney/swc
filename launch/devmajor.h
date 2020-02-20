@@ -27,10 +27,10 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 
-bool device_is_input(const struct stat *);
+bool device_is_input(dev_t);
 
-bool device_is_tty(const struct stat *);
+bool device_is_tty(dev_t);
 
-bool device_is_drm(const struct stat *);
+bool device_is_drm(dev_t);
 
 #endif

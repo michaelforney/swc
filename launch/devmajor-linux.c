@@ -34,19 +34,19 @@
 #endif
 
 bool
-device_is_input(const struct stat *st)
+device_is_input(dev_t rdev)
 {
-	return major(st->st_rdev) == INPUT_MAJOR;
+	return major(rdev) == INPUT_MAJOR;
 }
 
 bool
-device_is_tty(const struct stat *st)
+device_is_tty(dev_t rdev)
 {
-	return major(st->st_rdev) == TTY_MAJOR;
+	return major(rdev) == TTY_MAJOR;
 }
 
 bool
-device_is_drm(const struct stat *st)
+device_is_drm(dev_t rdev)
 {
-	return major(st->st_rdev) == DRM_MAJOR;
+	return major(rdev) == DRM_MAJOR;
 }

@@ -219,7 +219,7 @@ handle_socket_data(int socket)
 			goto fail;
 		}
 
-		if (device_is_input(&st)) {
+		if (device_is_input(st.st_rdev)) {
 			if (!active)
 				goto fail;
 			if (num_input_fds == ARRAY_LENGTH(input_fds)) {
@@ -227,7 +227,7 @@ handle_socket_data(int socket)
 				goto fail;
 			}
 			input_fds[num_input_fds++] = fd;
-		} else if (device_is_drm(&st)) {
+		} else if (device_is_drm(st.st_rdev)) {
 			if (num_drm_fds == ARRAY_LENGTH(drm_fds)) {
 				fprintf(stderr, "too many DRM devices opened\n");
 				goto fail;
@@ -323,7 +323,7 @@ setup_tty(int fd)
 		die("failed to stat TTY fd:");
 	vt = minor(st.st_rdev);
 
-	if (!device_is_tty(&st) || vt == 0)
+	if (!device_is_tty(st.st_rdev) || vt == 0)
 		die("not a valid VT");
 
 	if (ioctl(fd, VT_GETSTATE, &state) == -1)

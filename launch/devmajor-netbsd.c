@@ -61,26 +61,26 @@ fail:
 }
 
 bool
-device_is_input(const struct stat *st)
+device_is_input(dev_t rdev)
 {
-	if (major(st->st_rdev) == sysctl_devmajor("wskbd"))
+	if (major(rdev) == sysctl_devmajor("wskbd"))
 		return true;
-	if (major(st->st_rdev) == sysctl_devmajor("wsmouse"))
+	if (major(rdev) == sysctl_devmajor("wsmouse"))
 		return true;
-	if (major(st->st_rdev) == sysctl_devmajor("wsmux"))
+	if (major(rdev) == sysctl_devmajor("wsmux"))
 		return true;
 	return false;
 }
 
 bool
-device_is_tty(const struct stat *st)
+device_is_tty(dev_t rdev)
 {
-	return major(st->st_rdev) == sysctl_devmajor("wsdisplay");
+	return major(rdev) == sysctl_devmajor("wsdisplay");
 }
 
 bool
-device_is_drm(const struct stat *st)
+device_is_drm(dev_t rdev)
 {
-	return major(st->st_rdev) == sysctl_devmajor("drm");
+	return major(rdev) == sysctl_devmajor("drm");
 }
 
