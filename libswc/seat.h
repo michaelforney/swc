@@ -24,15 +24,23 @@
 #ifndef SWC_SEAT_H
 #define SWC_SEAT_H
 
+#include <wayland-server.h>
+
 struct wl_display;
 
 struct swc_seat {
 	struct pointer *pointer;
 	struct keyboard *keyboard;
 	struct data_device *data_device;
+	struct wl_listener keyboard_focus_listener;
+	struct wl_listener data_device_listener;
 };
 
 struct swc_seat *seat_create(struct wl_display *display, const char *name);
 void seat_destroy(struct swc_seat *seat);
+void seat_handle_keyboard_focus_event(struct wl_listener *listener, void *data);
+void seat_handle_data_device_event(struct wl_listener *listener, void *data);
+
+struct wl_seat_interface seat_impl;
 
 #endif
