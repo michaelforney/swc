@@ -38,6 +38,14 @@
 #include <wld/pixman.h>
 #include <wld/wld.h>
 
+#ifdef __NetBSD__
+	#define swc_mremap(oldp, oldsize, newsize) \
+		mremap((oldp), (oldsize), NULL, (newsize), 0)
+#else /* Linux-style mremap */
+	#define swc_mremap(oldp, oldsize, newsize) \
+		mremap((oldp), (oldsize), (newsize), MREMAP_MAYMOVE)
+#endif
+
 struct pool {
 	struct wl_resource *resource;
 	struct swc_shm *shm;
@@ -138,11 +146,7 @@ resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 	struct pool *pool = wl_resource_get_user_data(resource);
 	void *data;
 
-#ifdef __NetBSD__
-	data = mremap(pool->data, pool->size, NULL, size, 0);
-#else
-	data = mremap(pool->data, pool->size, size, MREMAP_MAYMOVE);
-#endif
+	data = swc_mremap(pool->data, pool->size, size);
 	if (data == MAP_FAILED) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_FD, "mremap failed: %s", strerror(errno));
 		return;
