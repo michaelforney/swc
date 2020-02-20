@@ -209,15 +209,6 @@ ws_to_xkb(unsigned type, int key)
 	case WSKBD_TYPE_USB:
 	case WSKBD_TYPE_MAPLE:
 		return wsUsbMap[key];
-#if 0
-	case WSKBD_TYPE_ADB:
-		return wsAdbMap[key];
-	case WSKBD_TYPE_LK201:
-		return wsLk201Map[key];
-	case WSKBD_TYPE_SUN5:
-	case WSKBD_TYPE_SUN:
-		return wsSunMap[key];
-#endif
 	default:
 		fprintf(stderr, "Unknown wskbd type %d\n", type);
 		return key;
