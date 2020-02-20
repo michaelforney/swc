@@ -38,14 +38,6 @@
 #include <wld/pixman.h>
 #include <wld/wld.h>
 
-#ifdef __NetBSD__
-	#define swc_mremap(oldp, oldsize, newsize) \
-		mremap((oldp), (oldsize), NULL, (newsize), 0)
-#else /* Linux-style mremap */
-	#define swc_mremap(oldp, oldsize, newsize) \
-		mremap((oldp), (oldsize), (newsize), MREMAP_MAYMOVE)
-#endif
-
 struct pool {
 	struct wl_resource *resource;
 	struct swc_shm *shm;
@@ -58,6 +50,16 @@ struct pool_reference {
 	struct wld_destructor destructor;
 	struct pool *pool;
 };
+
+static void *
+swc_mremap(void *oldp, size_t oldsize, size_t newsize)
+{
+#ifdef __NetBSD__
+	return mremap(oldp, oldsize, NULL, newsize, 0);
+#else /* Linux-style mremap */
+	return mremap(oldp, oldsize, newsize, MREMAP_MAYMOVE);
+#endif
+}
 
 static void
 unref_pool(struct pool *pool)
