@@ -27,6 +27,11 @@
 #include <wayland-server.h>
 #include "xdg-decoration-unstable-v1-server-protocol.h"
 
+struct xdg_toplevel_decoration {
+	struct wl_resource *resource;
+	struct wl_listener toplevel_destroy_listener;
+};
+
 static void
 set_mode(struct wl_client *client, struct wl_resource *resource, uint32_t mode)
 {
@@ -43,17 +48,34 @@ static const struct zxdg_toplevel_decoration_v1_interface decoration_impl = {
 };
 
 static void
+handle_toplevel_destroy(struct wl_listener *listener, void *data)
+{
+	struct xdg_toplevel_decoration *decoration = wl_container_of(listener, decoration, toplevel_destroy_listener);
+
+	wl_resource_destroy(decoration->resource);
+}
+
+static void
 get_toplevel_decoration(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *toplevel_resource)
 {
-	struct wl_resource *decoration;
+	struct xdg_toplevel_decoration *decoration;
 
-	decoration = wl_resource_create(client, &zxdg_toplevel_decoration_v1_interface, wl_resource_get_version(resource), id);
-	if (!decoration) {
-		wl_resource_post_no_memory(resource);
-		return;
-	}
-	wl_resource_set_implementation(decoration, &decoration_impl, NULL, NULL);
-	zxdg_toplevel_decoration_v1_send_configure(decoration, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+	decoration = malloc(sizeof(*decoration));
+	if (!decoration)
+		goto error0;
+	decoration->resource = wl_resource_create(client, &zxdg_toplevel_decoration_v1_interface, wl_resource_get_version(resource), id);
+	if (!decoration->resource)
+		goto error1;
+	decoration->toplevel_destroy_listener.notify = &handle_toplevel_destroy;
+	wl_resource_add_destroy_listener(decoration->resource, &decoration->toplevel_destroy_listener);
+	wl_resource_set_implementation(decoration->resource, &decoration_impl, NULL, NULL);
+	zxdg_toplevel_decoration_v1_send_configure(decoration->resource, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+	return;
+
+error1:
+	free(decoration);
+error0:
+	wl_resource_post_no_memory(resource);
 }
 
 static const struct zxdg_decoration_manager_v1_interface decoration_manager_impl = {

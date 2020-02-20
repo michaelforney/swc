@@ -52,8 +52,6 @@ struct swc_drm swc_drm;
 static struct {
 	char *path;
 
-	uint32_t taken_ids;
-
 	struct wl_global *global;
 	struct wl_global *dmabuf;
 	struct wl_event_source *event_source;
@@ -196,18 +194,6 @@ find_available_crtc(drmModeRes *resources, drmModeConnector *connector, uint32_t
 	return false;
 }
 
-static bool
-find_available_id(uint32_t *id)
-{
-	int index = __builtin_ffsl(~drm.taken_ids);
-
-	if (index == 0)
-		return false;
-
-	*id = index - 1;
-	return true;
-}
-
 static void
 handle_vblank(int fd, unsigned int sequence, unsigned int sec, unsigned int usec, void *data)
 {
@@ -265,7 +251,6 @@ drm_initialize(void)
 		goto error0;
 	}
 
-	drm.taken_ids = 0;
 	swc.drm->fd = launch_open_device(primary, O_RDWR | O_CLOEXEC);
 	if (swc.drm->fd == -1) {
 		ERROR("Could not open DRM device at %s\n", primary);
@@ -378,7 +363,6 @@ drm_create_screens(struct wl_list *screens)
 
 		if (connector->connection == DRM_MODE_CONNECTED) {
 			int crtc_index;
-			uint32_t id;
 
 			if (!find_available_crtc(resources, connector, taken_crtcs, &crtc_index)) {
 				WARNING("Could not find CRTC for connector %d\n", i);
@@ -397,20 +381,12 @@ drm_create_screens(struct wl_list *screens)
 				WARNING("Could not find cursor plane for CRTC %d\n", crtc_index);
 			}
 
-			if (!find_available_id(&id)) {
-				WARNING("No more available output IDs\n");
-				drmModeFreeConnector(connector);
-				break;
-			}
-
 			if (!(output = output_new(connector)))
 				continue;
 
 			output->screen = screen_new(resources->crtcs[crtc_index], output, cursor_plane);
-			output->screen->id = id;
-
+			output->screen->id = crtc_index;
 			taken_crtcs |= 1 << crtc_index;
-			drm.taken_ids |= 1 << id;
 
 			wl_list_insert(screens, &output->screen->link);
 		}
