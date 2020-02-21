@@ -192,8 +192,7 @@ keyboard_create(struct xkb_rule_names *names)
 		goto error1;
 	}
 
-	if (!(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, names, 0)) &&
-	    !(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, NULL, 0))) {
+	if (!(xkb->keymap.map = xkb_keymap_new_from_names(xkb->context, names, 0))) {
 		ERROR("Could not create XKB keymap\n");
 		goto error2;
 	}
