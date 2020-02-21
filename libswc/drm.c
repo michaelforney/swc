@@ -34,6 +34,7 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -244,7 +245,7 @@ bool
 drm_initialize(void)
 {
 	uint64_t val;
-	char primary[128];
+	char primary[PATH_MAX];
 
 	if (!find_primary_drm_device(primary, sizeof(primary))) {
 		ERROR("Could not find DRM device\n");
