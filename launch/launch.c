@@ -45,6 +45,10 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#ifndef minor
+#include <sys/sysmacros.h>
+#endif
 #ifdef __NetBSD__
 #include <dev/wscons/wsdisplay_usl_io.h>
 extern char **environ;
