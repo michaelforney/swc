@@ -51,7 +51,6 @@
 #endif
 #ifdef __NetBSD__
 #include <dev/wscons/wsdisplay_usl_io.h>
-extern char **environ;
 #else
 #include <linux/input.h>
 #include <linux/kd.h>
@@ -425,6 +424,7 @@ run(int fd) {
 int
 main(int argc, char *argv[])
 {
+	extern char **environ;
 	int option;
 	char *vt = NULL, buf[64];
 	struct sigaction action = {
