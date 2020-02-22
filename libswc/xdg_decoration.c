@@ -56,6 +56,15 @@ handle_toplevel_destroy(struct wl_listener *listener, void *data)
 }
 
 static void
+decoration_destroy(struct wl_resource *resource)
+{
+	struct xdg_toplevel_decoration *decoration = wl_resource_get_user_data(resource);
+
+	wl_list_remove(&decoration->toplevel_destroy_listener.link);
+	free(decoration);
+}
+
+static void
 get_toplevel_decoration(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *toplevel_resource)
 {
 	struct xdg_toplevel_decoration *decoration;
@@ -68,7 +77,7 @@ get_toplevel_decoration(struct wl_client *client, struct wl_resource *resource, 
 		goto error1;
 	decoration->toplevel_destroy_listener.notify = &handle_toplevel_destroy;
 	wl_resource_add_destroy_listener(toplevel_resource, &decoration->toplevel_destroy_listener);
-	wl_resource_set_implementation(decoration->resource, &decoration_impl, NULL, NULL);
+	wl_resource_set_implementation(decoration->resource, &decoration_impl, decoration, decoration_destroy);
 	zxdg_toplevel_decoration_v1_send_configure(decoration->resource, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 	return;
 
