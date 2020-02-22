@@ -67,7 +67,7 @@ get_toplevel_decoration(struct wl_client *client, struct wl_resource *resource, 
 	if (!decoration->resource)
 		goto error1;
 	decoration->toplevel_destroy_listener.notify = &handle_toplevel_destroy;
-	wl_resource_add_destroy_listener(decoration->resource, &decoration->toplevel_destroy_listener);
+	wl_resource_add_destroy_listener(toplevel_resource, &decoration->toplevel_destroy_listener);
 	wl_resource_set_implementation(decoration->resource, &decoration_impl, NULL, NULL);
 	zxdg_toplevel_decoration_v1_send_configure(decoration->resource, ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
 	return;
