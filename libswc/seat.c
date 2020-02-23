@@ -67,7 +67,8 @@ get_pointer(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
 	struct swc_seat *seat = wl_resource_get_user_data(resource);
 
-	pointer_bind(seat->pointer, client, wl_resource_get_version(resource), id);
+	if (!pointer_bind(seat->pointer, client, wl_resource_get_version(resource), id))
+		wl_resource_post_no_memory(resource);
 }
 
 static void
@@ -75,7 +76,8 @@ get_keyboard(struct wl_client *client, struct wl_resource *resource, uint32_t id
 {
 	struct swc_seat *seat = wl_resource_get_user_data(resource);
 
-	keyboard_bind(seat->keyboard, client, wl_resource_get_version(resource), id);
+	if (!keyboard_bind(seat->keyboard, client, wl_resource_get_version(resource), id))
+		wl_resource_post_no_memory(resource);
 }
 
 static void
