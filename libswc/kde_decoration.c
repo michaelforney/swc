@@ -22,6 +22,7 @@
  */
 
 #include "kde_decoration.h"
+#include "util.h"
 
 #include <wayland-server.h>
 #include "server-decoration-server-protocol.h"
@@ -35,6 +36,7 @@ request_mode(struct wl_client *client, struct wl_resource *resource, uint32_t mo
 }
 
 static const struct org_kde_kwin_server_decoration_interface decoration_impl = {
+	.release = destroy_resource,
 	.request_mode = request_mode,
 };
 
