@@ -268,7 +268,10 @@ commit(struct wl_client *client, struct wl_resource *resource)
 static void
 set_buffer_transform(struct wl_client *client, struct wl_resource *surface, int32_t transform)
 {
-	wl_resource_post_error(surface, WL_SURFACE_ERROR_INVALID_TRANSFORM, "buffer transform not supported");
+	if (transform != WL_OUTPUT_TRANSFORM_NORMAL) {
+		wl_resource_post_error(surface, WL_SURFACE_ERROR_INVALID_TRANSFORM,
+					"buffer transform %" PRId32 " not supported", transform);
+	}
 }
 
 static void
