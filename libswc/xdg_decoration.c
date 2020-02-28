@@ -43,6 +43,7 @@ unset_mode(struct wl_client *client, struct wl_resource *resource)
 }
 
 static const struct zxdg_toplevel_decoration_v1_interface decoration_impl = {
+	.destroy = destroy_resource,
 	.set_mode = set_mode,
 	.unset_mode = unset_mode,
 };
