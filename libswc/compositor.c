@@ -836,3 +836,28 @@ compositor_finalize(void)
 	pixman_region32_fini(&compositor.opaque);
 	wl_global_destroy(compositor.global);
 }
+
+void compositor_view_restack_above(struct compositor_view *view, struct wl_list *link)
+{
+    wl_list_remove(&view->link);
+    wl_list_insert(link, &view->link);
+    damage_view(view);
+    update(&view->base);
+}
+
+void compositor_view_restack_below(struct compositor_view* view, struct wl_list *link)
+{
+    compositor_view_restack_above(view, link->next);
+}
+
+void
+compositor_view_restack_at_head(struct compositor_view* view)
+{
+    compositor_view_restack_above(view, &compositor.views);
+}
+
+void
+compositor_view_restack_at_tail(struct compositor_view* view)
+{
+    compositor_view_restack_above(view, compositor.views.prev);
+}

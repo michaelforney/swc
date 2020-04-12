@@ -174,6 +174,8 @@ swc_window_set_stacked(struct swc_window *base)
 	if (window->impl->set_mode)
 		window->impl->set_mode(window, WINDOW_MODE_STACKED);
 	window->mode = WINDOW_MODE_STACKED;
+
+    window_raise(window);
 }
 
 EXPORT void
@@ -186,6 +188,8 @@ swc_window_set_tiled(struct swc_window *base)
 	if (window->impl->set_mode)
 		window->impl->set_mode(window, WINDOW_MODE_TILED);
 	window->mode = WINDOW_MODE_TILED;
+
+    window_drop(window);
 }
 
 EXPORT void
@@ -479,6 +483,8 @@ window_begin_move(struct window *window, struct button *button)
 	begin_interaction(&window->move.interaction, button);
 	window->move.offset.x = geometry->x - px;
 	window->move.offset.y = geometry->y - py;
+
+    window_raise(window);
 }
 
 void
@@ -505,3 +511,18 @@ window_begin_resize(struct window *window, uint32_t edges, struct button *button
 	window->resize.offset.y = geometry->y - py + ((edges & SWC_WINDOW_EDGE_BOTTOM) ? geometry->height : 0);
 	window->resize.edges = edges;
 }
+
+void
+window_raise(struct window *window)
+{
+    /* TODO: recursively raise other windows in the same tree */
+    compositor_view_restack_at_head(window->view);
+}
+
+void
+window_drop(struct window *window)
+{
+    /* TODO: recursively drop other windows in the same tree */
+    compositor_view_restack_at_tail(window->view);
+}
+

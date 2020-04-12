@@ -81,4 +81,9 @@ void compositor_view_hide(struct compositor_view *view);
 void compositor_view_set_border_color(struct compositor_view *view, uint32_t color);
 void compositor_view_set_border_width(struct compositor_view *view, uint32_t width);
 
+void compositor_view_restack_above(struct compositor_view *view, struct wl_list *link);
+void compositor_view_restack_below(struct compositor_view *view, struct wl_list *link);
+void compositor_view_restack_at_head(struct compositor_view *view);
+void compositor_view_restack_at_tail(struct compositor_view *view);
+
 #endif

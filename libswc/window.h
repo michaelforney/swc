@@ -97,5 +97,7 @@ void window_set_app_id(struct window *window, const char *app_id);
 void window_set_parent(struct window *window, struct window *parent);
 void window_begin_move(struct window *window, struct button *button);
 void window_begin_resize(struct window *window, uint32_t edges, struct button *button);
+void window_raise(struct window *window);
+void window_drop(struct window *window);
 
 #endif
