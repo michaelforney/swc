@@ -24,14 +24,32 @@
 #ifndef SWC_SUBSURFACE_H
 #define SWC_SUBSURFACE_H
 
+#include "surface.h"
+
+#include <stdbool.h>
 #include <stdint.h>
 
 struct wl_client;
 
 struct subsurface {
 	struct wl_resource *resource;
+
+    struct surface *surface;
+    struct wl_listener surface_destroy_listener;
+
+    struct surface *parent;
+    struct wl_listener parent_destroy_listener;
+    struct wl_list parent_link;
+
+	struct {
+		int32_t x;
+		int32_t y;
+		bool set;
+	} position;
+
+	bool synchronized;
 };
 
-struct subsurface *subsurface_new(struct wl_client *client, uint32_t version, uint32_t id);
+struct subsurface *subsurface_new(struct wl_client *client, uint32_t version, uint32_t id, struct surface *surface, struct surface *parent);
 
 #endif

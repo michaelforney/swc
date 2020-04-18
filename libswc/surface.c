@@ -305,6 +305,8 @@ surface_destroy(struct wl_resource *resource)
 {
 	struct surface *surface = wl_resource_get_user_data(resource);
 
+    wl_signal_emit(&surface->destroy_signal, surface);
+
 	state_finalize(&surface->state);
 	state_finalize(&surface->pending.state);
 
@@ -339,9 +341,12 @@ surface_new(struct wl_client *client, uint32_t version, uint32_t id)
 	surface->pending.commit = 0;
 	surface->view = NULL;
 	surface->view_handler.impl = &view_handler_impl;
+	wl_list_init(&surface->subsurface_list);
 
 	state_initialize(&surface->state);
 	state_initialize(&surface->pending.state);
+
+    wl_signal_init(&surface->destroy_signal);
 
 	return surface;
 
@@ -361,7 +366,6 @@ surface_set_view(struct surface *surface, struct view *view)
 		wl_list_remove(&surface->view_handler.link);
 
 	surface->view = view;
-
 	if (view) {
 		wl_list_insert(&view->handlers, &surface->view_handler.link);
 		view_attach(view, surface->state.buffer);
