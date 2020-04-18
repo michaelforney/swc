@@ -22,6 +22,7 @@
  */
 
 #include "surface.h"
+#include "subsurface.h"
 #include "event.h"
 #include "internal.h"
 #include "output.h"
@@ -263,6 +264,11 @@ commit(struct wl_client *client, struct wl_resource *resource)
 	}
 
 	surface->pending.commit = 0;
+
+    struct subsurface *sub;
+    wl_list_for_each(sub, &surface->subsurface_list, parent_link) {
+        subsurface_parent_commit(sub, false);
+    }
 }
 
 static void

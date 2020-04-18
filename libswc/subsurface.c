@@ -37,13 +37,6 @@ set_position(struct wl_client *client, struct wl_resource *resource, int32_t x, 
     subsurface->position.x = x;
     subsurface->position.y = y;
     subsurface->position.set = true;
-
-    view_move(subsurface->surface->view, subsurface->parent->view->geometry.x + x, subsurface->parent->view->geometry.y + y);
-    view_update(subsurface->surface->view);
-
-	struct compositor_view *comp_view = compositor_view(subsurface->surface->view);
-	if (comp_view)
-		compositor_view_show(comp_view);
 }
 
 static void
@@ -160,12 +153,31 @@ subsurface_new(struct wl_client *client, uint32_t version, uint32_t id, struct s
 
     subsurface->synchronized = true;
 
-    compositor_create_view(subsurface->surface);
+    struct compositor_view *comp_view = compositor_create_view(subsurface->surface);
+    compositor_view_show(comp_view);
 
-	return subsurface;
+    return subsurface;
 
 error1:
 	free(subsurface);
 error0:
 	return NULL;
+}
+
+void
+subsurface_parent_commit(struct subsurface *subsurface, bool is_parent_synchronized)
+{
+	if (subsurface->position.set) {
+        int32_t oldx = subsurface->parent->view->geometry.x;
+        int32_t oldy = subsurface->parent->view->geometry.y;
+        int32_t newx = oldx + subsurface->position.x;
+        int32_t newy = oldy + subsurface->position.y;
+    	view_move(subsurface->surface->view, newx, newy);
+
+		subsurface->position.set = false;
+	}
+
+    if (is_parent_synchronized || subsurface->synchronized) {
+        // TODO: handle this
+    }
 }
