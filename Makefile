@@ -34,6 +34,14 @@ PACKAGES :=           \
     wld               \
     xkbcommon
 
+ifeq ($(ENABLE_XWAYLAND),1)
+PACKAGES +=         \
+    xcb             \
+    xcb-composite   \
+    xcb-ewmh        \
+    xcb-icccm
+endif
+
 ifneq ($(shell uname),NetBSD)
     PACKAGES += libinput
     ifeq ($(ENABLE_LIBUDEV),1)

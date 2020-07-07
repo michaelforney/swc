@@ -42,11 +42,17 @@
 #include "window.h"
 #include "xdg_decoration.h"
 #include "xdg_shell.h"
+#ifdef ENABLE_XWAYLAND
+# include "xserver.h"
+#endif
 
 extern struct swc_launch swc_launch;
 extern const struct swc_bindings swc_bindings;
 extern struct swc_compositor swc_compositor;
 extern struct swc_drm swc_drm;
+#ifdef ENABLE_XWAYLAND
+extern struct swc_xserver swc_xserver;
+#endif
 
 extern struct pointer_handler screens_pointer_handler;
 
@@ -54,6 +60,9 @@ struct swc swc = {
 	.bindings = &swc_bindings,
 	.compositor = &swc_compositor,
 	.drm = &swc_drm,
+#ifdef ENABLE_XWAYLAND
+	.xserver = &swc_xserver,
+#endif
 };
 
 static void
@@ -187,10 +196,21 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 		goto error13;
 	}
 
+#ifdef ENABLE_XWAYLAND
+	if (!xserver_initialize()) {
+		ERROR("Could not initialize xwayland\n");
+		goto error14;
+	}
+#endif
+
 	setup_compositor();
 
 	return true;
 
+#ifdef ENABLE_XWAYLAND
+error14:
+	wl_global_destroy(swc.panel_manager);
+#endif
 error13:
 	wl_global_destroy(swc.kde_decoration_manager);
 error12:
@@ -224,6 +244,9 @@ error0:
 EXPORT void
 swc_finalize(void)
 {
+#ifdef ENABLE_XWAYLAND
+	xserver_finalize();
+#endif
 	wl_global_destroy(swc.panel_manager);
 	wl_global_destroy(swc.xdg_decoration_manager);
 	wl_global_destroy(swc.xdg_shell);

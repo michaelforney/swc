@@ -25,6 +25,10 @@ Dependencies
 For input hotplugging on Linux, the following is also required:
 * libudev
 
+For XWayland support, the following are also required:
+* libxcb
+* xcb-util-wm
+
 Implementing a window manager using swc
 ---------------------------------------
 You must implement two callback functions, `new_window` and `new_screen`, which
