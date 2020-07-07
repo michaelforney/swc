@@ -14,14 +14,15 @@ Dependencies
 * wayland
 * wayland-protocols
 * libdrm
-* libinput (see my [libinput repository](https://github.com/oasislinux/libinput)
-  if you don't want the libudev dependency)
+* libinput (on Linux only; see my
+  [libinput repository](https://github.com/oasislinux/libinput) if you don't
+  want the libudev dependency)
 * libxkbcommon
 * pixman
 * [wld](http://github.com/michaelforney/wld)
-* linux\[>=3.12\] (for EVIOCREVOKE)
+* linux\[>=3.12\] (for EVIOCREVOKE) or NetBSD\[>=9.0\]
 
-For input hotplugging, the following is also required:
+For input hotplugging on Linux, the following is also required:
 * libudev
 
 Implementing a window manager using swc
