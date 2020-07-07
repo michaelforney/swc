@@ -769,6 +769,8 @@ create_surface(struct wl_client *client, struct wl_resource *resource, uint32_t 
 		wl_resource_post_no_memory(resource);
 		return;
 	}
+
+	wl_signal_emit(&swc_compositor.signal.new_surface, surface);
 }
 
 static void
@@ -813,6 +815,7 @@ compositor_initialize(void)
 	pixman_region32_init(&compositor.damage);
 	pixman_region32_init(&compositor.opaque);
 	wl_list_init(&compositor.views);
+	wl_signal_init(&swc_compositor.signal.new_surface);
 	compositor.swc_listener.notify = &handle_swc_event;
 	wl_signal_add(&swc.event_signal, &compositor.swc_listener);
 
