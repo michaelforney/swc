@@ -34,12 +34,22 @@ PACKAGES :=           \
     wld               \
     xkbcommon
 
+
 ifneq ($(shell uname),NetBSD)
     PACKAGES += libinput
     ifeq ($(ENABLE_LIBUDEV),1)
         PACKAGES += libudev
     endif
 endif
+
+ifeq ($(ENABLE_XWAYLAND),1)
+PACKAGES +=         \
+    xcb             \
+    xcb-composite   \
+    xcb-ewmh        \
+    xcb-icccm
+endif
+
 
 libinput_CONSTRAINTS        := --atleast-version=0.4
 wayland-server_CONSTRAINTS  := --atleast-version=1.6.0
