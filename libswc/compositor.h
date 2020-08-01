@@ -86,6 +86,8 @@ void compositor_view_set_parent(struct compositor_view *view, struct compositor_
 
 void compositor_view_show(struct compositor_view *view);
 void compositor_view_hide(struct compositor_view *view);
+void compositor_view_raise(struct compositor_view *view);
+void compositor_view_lower(struct compositor_view *view);
 
 void compositor_view_set_border_color(struct compositor_view *view, uint32_t color);
 void compositor_view_set_border_width(struct compositor_view *view, uint32_t width);

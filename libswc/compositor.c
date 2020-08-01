@@ -539,6 +539,20 @@ compositor_view_hide(struct compositor_view *view)
 }
 
 void
+compositor_view_raise(struct compositor_view *view)
+{
+	wl_list_remove(&view->link);
+	wl_list_insert(&compositor.views, &view->link);
+}
+
+void
+compositor_view_lower(struct compositor_view *view)
+{
+	wl_list_remove(&view->link);
+	wl_list_insert(compositor.views.prev, &view->link);
+}
+
+void
 compositor_view_set_border_width(struct compositor_view *view, uint32_t width)
 {
 	if (view->border.width == width)
