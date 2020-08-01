@@ -256,4 +256,5 @@ shm_destroy(struct swc_shm *shm)
 	wl_global_destroy(shm->global);
 	wld_destroy_renderer(shm->renderer);
 	wld_destroy_context(shm->context);
+	free(shm);
 }
