@@ -41,6 +41,7 @@ SWC_SOURCES =                       \
     libswc/pointer.c                \
     libswc/primary_plane.c          \
     libswc/region.c                 \
+    libswc/seat.c                   \
     libswc/screen.c                 \
     libswc/shell.c                  \
     libswc/shell_surface.c          \
@@ -65,7 +66,7 @@ SWC_SOURCES =                       \
 ifeq ($(shell uname),NetBSD)
     SWC_SOURCES += libswc/seat-ws.c
 else
-    SWC_SOURCES += libswc/seat.c
+    SWC_SOURCES += libswc/seat-linux.c
     $(dir)_PACKAGES += libinput
     ifeq ($(ENABLE_LIBUDEV),1)
         $(dir)_CFLAGS += -DENABLE_LIBUDEV

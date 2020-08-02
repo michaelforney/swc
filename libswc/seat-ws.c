@@ -1,7 +1,7 @@
 /* swc: libswc/seat-ws.c
  *
  * Copyright (c) 2013, 2014 Michael Forney
- * Copyright (c) 2019 Nia Alarie
+ * Copyright (c) 2019, 2020 Nia Alarie
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -95,44 +95,11 @@ struct seat {
 
 	struct wl_listener swc_listener;
 
-	struct wl_listener keyboard_focus_listener;
 	struct pointer pointer;
-	struct wl_listener data_device_listener;
 
 	struct wl_global *global;
 	struct wl_list resources;
 };
-
-static void
-handle_keyboard_focus_event(struct wl_listener *listener, void *data)
-{
-	struct seat *seat = wl_container_of(listener, seat, keyboard_focus_listener);
-	struct event *ev = data;
-	struct input_focus_event_data *event_data = ev->data;
-
-	if (ev->type != INPUT_FOCUS_EVENT_CHANGED)
-		return;
-
-	if (event_data->new) {
-		struct wl_client *client = wl_resource_get_client(event_data->new->surface->resource);
-
-		/* Offer the selection to the new focus. */
-		data_device_offer_selection(seat->base.data_device, client);
-	}
-}
-
-static void
-handle_data_device_event(struct wl_listener *listener, void *data)
-{
-	struct seat *seat = wl_container_of(listener, seat, data_device_listener);
-	struct event *ev = data;
-
-	if (ev->type != DATA_DEVICE_EVENT_SELECTION_CHANGED)
-		return;
-
-	if (seat->base.keyboard->focus.client)
-		data_device_offer_selection(seat->base.data_device, seat->base.keyboard->focus.client);
-}
 
 static void
 handle_swc_event(struct wl_listener *listener, void *data)
@@ -150,35 +117,6 @@ handle_swc_event(struct wl_listener *listener, void *data)
 		break;
 	}
 }
-
-/* Wayland Seat Interface */
-static void
-get_pointer(struct wl_client *client, struct wl_resource *resource, uint32_t id)
-{
-	struct seat *seat = wl_resource_get_user_data(resource);
-
-	pointer_bind(&seat->pointer, client, wl_resource_get_version(resource), id);
-}
-
-static void
-get_keyboard(struct wl_client *client, struct wl_resource *resource, uint32_t id)
-{
-	struct seat *seat = wl_resource_get_user_data(resource);
-
-	keyboard_bind(seat->base.keyboard, client, wl_resource_get_version(resource), id);
-}
-
-static void
-get_touch(struct wl_client *client, struct wl_resource *resource, uint32_t id)
-{
-	/* XXX: Implement */
-}
-
-static struct wl_seat_interface seat_impl = {
-	.get_pointer = get_pointer,
-	.get_keyboard = get_keyboard,
-	.get_touch = get_touch,
-};
 
 static void
 bind_seat(struct wl_client *client, void *data, uint32_t version, uint32_t id)
@@ -389,16 +327,16 @@ seat_create(struct wl_display *display, const char *seat_name)
 		ERROR("Could not initialize data device\n");
 		goto error3;
 	}
-	seat->data_device_listener.notify = &handle_data_device_event;
-	wl_signal_add(&seat->base.data_device->event_signal, &seat->data_device_listener);
+	seat->base.data_device_listener.notify = &seat_handle_data_device_event;
+	wl_signal_add(&seat->base.data_device->event_signal, &seat->base.data_device_listener);
 
 	seat->base.keyboard = keyboard_create(&seat->names);
 	if (!seat->base.keyboard) {
 		ERROR("Could not initialize keyboard\n");
 		goto error4;
 	}
-	seat->keyboard_focus_listener.notify = handle_keyboard_focus_event;
-	wl_signal_add(&seat->base.keyboard->focus.event_signal, &seat->keyboard_focus_listener);
+	seat->base.keyboard_focus_listener.notify = &seat_handle_keyboard_focus_event;
+	wl_signal_add(&seat->base.keyboard->focus.event_signal, &seat->base.keyboard_focus_listener);
 
 	if (!pointer_initialize(&seat->pointer)) {
 		ERROR("Could not initialize pointer\n");
