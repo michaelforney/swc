@@ -46,6 +46,10 @@
 # include <libudev.h>
 #endif
 
+#ifndef NETLINK_MASK
+# define NETLINK_MASK 4
+#endif
+
 struct seat {
 	struct swc_seat base;
 
@@ -324,7 +328,7 @@ initialize_libinput(struct seat *seat)
 
 	seat->libinput = libinput_udev_create_context(&libinput_interface, NULL, seat->udev);
 #else
-	seat->libinput = libinput_netlink_create_context(&libinput_interface, NULL);
+	seat->libinput = libinput_netlink_create_context(&libinput_interface, NULL, NETLINK_MASK);
 #endif
 
 	if (!seat->libinput) {
