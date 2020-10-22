@@ -23,6 +23,7 @@
 
 #include "xdg_shell.h"
 #include "internal.h"
+#include "compositor.h"
 #include "seat.h"
 #include "surface.h"
 #include "util.h"
@@ -55,6 +56,13 @@ struct xdg_toplevel {
 	struct wl_resource *resource;
 	struct wl_array states;
 	struct xdg_surface *xdg_surface;
+};
+
+struct xdg_popup {
+	struct wl_resource *resource;
+	struct xdg_surface *xdg_surface;
+	struct xdg_positioner positioner;
+	struct compositor_view *view;
 };
 
 /* xdg_positioner */
@@ -136,6 +144,75 @@ static const struct xdg_positioner_interface positioner_impl = {
 	.set_constraint_adjustment = set_constraint_adjustment,
 	.set_offset = set_offset,
 };
+
+static struct swc_rectangle
+calculate_position(struct xdg_positioner *positioner)
+{
+	struct swc_rectangle r = {
+		.x = positioner->offset_x,
+		.y = positioner->offset_y,
+		.width = positioner->width,
+		.height = positioner->height,
+	};
+
+	switch (positioner->anchor) {
+	case XDG_POSITIONER_ANCHOR_TOP:
+	case XDG_POSITIONER_ANCHOR_TOP_LEFT:
+	case XDG_POSITIONER_ANCHOR_TOP_RIGHT:
+		r.y += positioner->anchor_y;
+		break;
+	case XDG_POSITIONER_ANCHOR_BOTTOM:
+	case XDG_POSITIONER_ANCHOR_BOTTOM_LEFT:
+	case XDG_POSITIONER_ANCHOR_BOTTOM_RIGHT:
+		r.y += positioner->anchor_y + positioner->anchor_height;
+		break;
+	default:
+		r.y += positioner->anchor_y + positioner->anchor_height / 2;
+	}
+	switch (positioner->anchor) {
+	case XDG_POSITIONER_ANCHOR_LEFT:
+	case XDG_POSITIONER_ANCHOR_TOP_LEFT:
+	case XDG_POSITIONER_ANCHOR_BOTTOM_LEFT:
+		r.x += positioner->anchor_x;
+		break;
+	case XDG_POSITIONER_ANCHOR_RIGHT:
+	case XDG_POSITIONER_ANCHOR_TOP_RIGHT:
+	case XDG_POSITIONER_ANCHOR_BOTTOM_RIGHT:
+		r.x += positioner->anchor_x + positioner->anchor_width;
+		break;
+	default:
+		r.x += positioner->anchor_x + positioner->anchor_width / 2;
+	}
+
+	switch (positioner->gravity) {
+	case XDG_POSITIONER_GRAVITY_TOP:
+	case XDG_POSITIONER_GRAVITY_TOP_LEFT:
+	case XDG_POSITIONER_GRAVITY_TOP_RIGHT:
+		r.y -= r.height;
+		break;
+	case XDG_POSITIONER_GRAVITY_BOTTOM:
+	case XDG_POSITIONER_GRAVITY_BOTTOM_LEFT:
+	case XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT:
+		break;
+	default:
+		r.y -= r.height / 2;
+	}
+	switch (positioner->gravity) {
+	case XDG_POSITIONER_GRAVITY_LEFT:
+	case XDG_POSITIONER_GRAVITY_TOP_LEFT:
+	case XDG_POSITIONER_GRAVITY_BOTTOM_LEFT:
+		r.x -= r.width;
+		break;
+	case XDG_POSITIONER_GRAVITY_RIGHT:
+	case XDG_POSITIONER_GRAVITY_TOP_RIGHT:
+	case XDG_POSITIONER_GRAVITY_BOTTOM_RIGHT:
+		break;
+	default:
+		r.x -= r.width / 2;
+	}
+
+	return r;
+}
 
 /* xdg_toplevel */
 static void
@@ -393,6 +470,65 @@ error0:
 	return NULL;
 }
 
+/* xdg_popup */
+static void
+destroy_popup(struct wl_resource *resource)
+{
+	struct xdg_popup *popup = wl_resource_get_user_data(resource);
+
+	compositor_view_destroy(popup->view);
+	free(popup);
+}
+
+static void
+grab(struct wl_client *client, struct wl_resource *resource, struct wl_resource *seat, uint32_t serial)
+{
+}
+
+static const struct xdg_popup_interface popup_impl = {
+	.destroy = destroy_resource,
+	.grab = grab,
+};
+
+static struct xdg_popup *
+xdg_popup_new(struct wl_client *client, uint32_t version, uint32_t id, struct xdg_surface *xdg_surface, struct xdg_surface *parent, struct xdg_positioner *positioner)
+{
+	struct xdg_popup *popup;
+	struct compositor_view *parent_view = compositor_view(parent->surface->view);
+	uint32_t serial = wl_display_next_serial(swc.display);
+	struct swc_rectangle rect;
+
+	if (!parent_view)
+		goto error0;
+	popup = malloc(sizeof(*popup));
+	if (!popup)
+		goto error0;
+	popup->xdg_surface = xdg_surface;
+	popup->positioner = *positioner;
+	popup->resource = wl_resource_create(client, &xdg_popup_interface, version, id);
+	if (!popup->resource)
+		goto error1;
+	wl_resource_set_implementation(popup->resource, &popup_impl, popup, &destroy_popup);
+	popup->view = compositor_create_view(xdg_surface->surface);
+	if (!popup->view)
+		goto error2;
+
+	rect = calculate_position(positioner);
+	compositor_view_set_parent(popup->view, parent_view);
+	view_move(&popup->view->base, parent_view->base.geometry.x + rect.x, parent_view->base.geometry.y + rect.y);
+	xdg_popup_send_configure(popup->resource, rect.x, rect.y, rect.width, rect.height);
+	xdg_surface_send_configure(xdg_surface->resource, serial);
+
+	return popup;
+
+error2:
+	wl_resource_destroy(popup->resource);
+error1:
+	free(popup);
+error0:
+	return NULL;
+}
+
 /* xdg_surface */
 static void
 get_toplevel(struct wl_client *client, struct wl_resource *resource, uint32_t id)
@@ -414,8 +550,24 @@ get_toplevel(struct wl_client *client, struct wl_resource *resource, uint32_t id
 }
 
 static void
-get_popup(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *parent, struct wl_resource *positioner)
+get_popup(struct wl_client *client, struct wl_resource *resource, uint32_t id, struct wl_resource *parent_resource, struct wl_resource *positioner_resource)
 {
+	struct xdg_surface *xdg_surface = wl_resource_get_user_data(resource);
+	struct xdg_surface *parent = wl_resource_get_user_data(parent_resource);
+	struct xdg_positioner *positioner = wl_resource_get_user_data(positioner_resource);
+	struct xdg_popup *popup;
+
+	if (xdg_surface->role) {
+		wl_resource_post_error(resource, XDG_WM_BASE_ERROR_ROLE, "surface already has a role");
+		return;
+	}
+	popup = xdg_popup_new(client, wl_resource_get_version(resource), id, xdg_surface, parent, positioner);
+	if (!popup) {
+		wl_client_post_no_memory(client);
+		return;
+	}
+	xdg_surface->role = popup->resource;
+	wl_resource_add_destroy_listener(xdg_surface->role, &xdg_surface->role_destroy_listener);
 }
 
 static void
