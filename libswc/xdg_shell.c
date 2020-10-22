@@ -41,7 +41,13 @@ struct xdg_surface {
 };
 
 struct xdg_positioner {
-	struct wl_resource *resource;
+	int32_t width, height;
+	int32_t anchor_x, anchor_y;
+	int32_t anchor_width, anchor_height;
+	enum xdg_positioner_anchor anchor;
+	enum xdg_positioner_gravity gravity;
+	enum xdg_positioner_constraint_adjustment constraint;
+	int32_t offset_x, offset_y;
 };
 
 struct xdg_toplevel {
@@ -63,31 +69,62 @@ destroy_positioner(struct wl_resource *resource)
 static void
 set_size(struct wl_client *client, struct wl_resource *resource, int32_t width, int32_t height)
 {
+	struct xdg_positioner *positioner = wl_resource_get_user_data(resource);
+
+	if (width <= 0 || height <= 0) {
+		wl_resource_post_error(resource, XDG_POSITIONER_ERROR_INVALID_INPUT, "invalid size");
+		return;
+	}
+	positioner->width = width;
+	positioner->height = height;
 }
 
 static void
 set_anchor_rect(struct wl_client *client, struct wl_resource *resource, int32_t x, int32_t y, int32_t width, int32_t height)
 {
+	struct xdg_positioner *positioner = wl_resource_get_user_data(resource);
+
+	if (width <= 0 || height <= 0) {
+		wl_resource_post_error(resource, XDG_POSITIONER_ERROR_INVALID_INPUT, "invalid anchor size");
+		return;
+	}
+	positioner->anchor_x = x;
+	positioner->anchor_y = y;
+	positioner->anchor_width = width;
+	positioner->anchor_height = height;
 }
 
 static void
 set_anchor(struct wl_client *client, struct wl_resource *resource, uint32_t anchor)
 {
+	struct xdg_positioner *positioner = wl_resource_get_user_data(resource);
+
+	positioner->anchor = anchor;
 }
 
 static void
 set_gravity(struct wl_client *client, struct wl_resource *resource, uint32_t gravity)
 {
+	struct xdg_positioner *positioner = wl_resource_get_user_data(resource);
+
+	positioner->gravity = gravity;
 }
 
 static void
-set_constraint_adjustment(struct wl_client *client, struct wl_resource *resource, uint32_t adjustment)
+set_constraint_adjustment(struct wl_client *client, struct wl_resource *resource, uint32_t constraint)
 {
+	struct xdg_positioner *positioner = wl_resource_get_user_data(resource);
+
+	positioner->constraint = constraint;
 }
 
 static void
 set_offset(struct wl_client *client, struct wl_resource *resource, int32_t x, int32_t y)
 {
+	struct xdg_positioner *positioner = wl_resource_get_user_data(resource);
+
+	positioner->offset_x = x;
+	positioner->offset_y = y;
 }
 
 static const struct xdg_positioner_interface positioner_impl = {
@@ -465,16 +502,18 @@ static void
 create_positioner(struct wl_client *client, struct wl_resource *resource, uint32_t id)
 {
 	struct xdg_positioner *positioner;
+	struct wl_resource *positioner_resource;
 	uint32_t version;
 
-	positioner = malloc(sizeof(*positioner));
+	positioner = calloc(1, sizeof(*positioner));
 	if (!positioner)
 		goto error0;
+
 	version = wl_resource_get_version(resource);
-	positioner->resource = wl_resource_create(client, &xdg_positioner_interface, version, id);
-	if (!positioner->resource)
+	positioner_resource = wl_resource_create(client, &xdg_positioner_interface, version, id);
+	if (!positioner_resource)
 		goto error1;
-	wl_resource_set_implementation(positioner->resource, &positioner_impl, positioner, &destroy_positioner);
+	wl_resource_set_implementation(positioner_resource, &positioner_impl, positioner, &destroy_positioner);
 	return;
 
 error1:
