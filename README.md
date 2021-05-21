@@ -106,7 +106,7 @@ Contact
 -------
 
 If you have questions or want to discuss swc feel free to join #swc on
-freenode.
+[libera.chat](ircs://irc.libera.chat:6697).
 
 Related projects
 ----------------
