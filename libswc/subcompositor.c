@@ -31,10 +31,11 @@ static void
 get_subsurface(struct wl_client *client, struct wl_resource *resource,
                uint32_t id, struct wl_resource *surface_resource, struct wl_resource *parent_resource)
 {
-	struct subsurface *subsurface;
+    struct surface *surface = wl_resource_get_user_data(surface_resource);
+    struct surface *parent = wl_resource_get_user_data(parent_resource);
+    struct subsurface *subsurface;
 
-	subsurface = subsurface_new(client, wl_resource_get_version(resource), id);
-
+	subsurface = subsurface_new(client, wl_resource_get_version(resource), id, surface, parent);
 	if (!subsurface) {
 		wl_resource_post_no_memory(resource);
 		return;
