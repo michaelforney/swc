@@ -289,12 +289,12 @@ clip_position(struct pointer *pointer, wl_fixed_t fx, wl_fixed_t fy)
 		}
 
 		/* Do some clipping. */
-		x = MAX(MIN(x, box.x2 - 1), box.x1);
-		y = MAX(MIN(y, box.y2 - 1), box.y1);
+		fx = wl_fixed_from_int(MAX(MIN(x, box.x2 - 1), box.x1));
+		fy = wl_fixed_from_int(MAX(MIN(y, box.y2 - 1), box.y1));
 	}
 
-	pointer->x = wl_fixed_from_int(x);
-	pointer->y = wl_fixed_from_int(y);
+	pointer->x = fx;
+	pointer->y = fy;
 }
 
 void
