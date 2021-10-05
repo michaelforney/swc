@@ -20,54 +20,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include <sys/types.h>
-#include <sys/sysctl.h>
-#include <stdio.h>
+#include <sys/stat.h>
 #include <stdlib.h>
-#include <string.h>
 #include "devmajor.h"
-
-static int
-sysctl_devmajor(const char *devname)
-{
-	static int name[] = { CTL_KERN, KERN_DRIVERS };
-	struct kinfo_drivers *drivers = NULL;
-	size_t i, len, newlen;
-	int major;
-
-	if (sysctl(name, 2, NULL, &len, NULL, 0)) {
-		perror("sysctl");
-		goto fail;
-	}
-	if ((drivers = calloc(sizeof(struct kinfo_drivers), len)) == NULL) {
-		perror("calloc");
-		goto fail;
-	}
-	newlen = len;
-	if (sysctl(name, 2, drivers, &newlen, NULL, 0)) {
-		perror("sysctl");
-		goto fail;
-	}
-	for (i = 0; i < len; ++i) {
-		if (strcmp(devname, drivers[i].d_name) == 0) {
-			major = drivers[i].d_cmajor;
-			free(drivers);
-			return major;
-		}
-	}
-fail:
-	free(drivers);
-	return -1;
-}
 
 bool
 device_is_input(dev_t rdev)
 {
-	if (major(rdev) == sysctl_devmajor("wskbd"))
+	if (major(rdev) == getdevmajor("wskbd", S_IFCHR))
 		return true;
-	if (major(rdev) == sysctl_devmajor("wsmouse"))
+	if (major(rdev) == getdevmajor("wsmouse", S_IFCHR))
 		return true;
-	if (major(rdev) == sysctl_devmajor("wsmux"))
+	if (major(rdev) == getdevmajor("wsmux", S_IFCHR))
 		return true;
 	return false;
 }
@@ -75,12 +39,12 @@ device_is_input(dev_t rdev)
 bool
 device_is_tty(dev_t rdev)
 {
-	return major(rdev) == sysctl_devmajor("wsdisplay");
+	return major(rdev) == getdevmajor("wsdisplay", S_IFCHR);
 }
 
 bool
 device_is_drm(dev_t rdev)
 {
-	return major(rdev) == sysctl_devmajor("drm");
+	return major(rdev) == getdevmajor("drm", S_IFCHR);
 }
 
