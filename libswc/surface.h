@@ -67,6 +67,9 @@ struct surface {
 
 	struct view *view;
 	struct view_handler view_handler;
+
+    struct wl_signal destroy_signal;
+    struct wl_list subsurface_list;
 };
 
 struct surface *surface_new(struct wl_client *client, uint32_t version, uint32_t id);
