@@ -53,7 +53,7 @@ receive_fd(int socket, int *fd, struct iovec *iov, int iovlen)
 		message.msg_controllen = sizeof(control);
 	}
 
-	size = recvmsg(socket, &message, 0);
+	size = recvmsg(socket, &message, MSG_CMSG_CLOEXEC);
 	if (size < 0)
 		return -1;
 
