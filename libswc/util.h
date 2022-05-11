@@ -31,7 +31,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/time.h>
-#include <sys/param.h>
 #include <pixman.h>
 #include <wayland-util.h>
 
@@ -60,6 +59,9 @@
 #endif
 
 #define ARRAY_LENGTH(array) (sizeof(array) / sizeof(array)[0])
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 struct wl_resource;
 struct wl_client;

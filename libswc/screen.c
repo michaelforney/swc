@@ -32,7 +32,6 @@
 #include "util.h"
 
 #include <stdlib.h>
-#include <sys/param.h>
 #include "swc-server-protocol.h"
 
 #define INTERNAL(s) ((struct screen *)(s))
