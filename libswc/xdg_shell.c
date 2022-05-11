@@ -301,7 +301,7 @@ unfocus(struct window *window)
 }
 
 static void
-close(struct window *window)
+close_(struct window *window)
 {
 	struct xdg_toplevel *toplevel = wl_container_of(window, toplevel, window);
 
@@ -338,7 +338,7 @@ static const struct window_impl toplevel_window_impl = {
 	.configure = configure,
 	.focus = focus,
 	.unfocus = unfocus,
-	.close = close,
+	.close = close_,
 	.set_mode = set_mode,
 };
 

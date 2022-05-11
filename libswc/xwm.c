@@ -196,7 +196,7 @@ unfocus(struct window *window)
 }
 
 static void
-close(struct window *window)
+close_(struct window *window)
 {
 	struct xwl_window *xwl_window = wl_container_of(window, xwl_window, window);
 
@@ -225,7 +225,7 @@ static const struct window_impl xwl_window_handler = {
 	.configure = configure,
 	.focus = focus,
 	.unfocus = unfocus,
-	.close = close,
+	.close = close_,
 };
 
 static void

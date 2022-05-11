@@ -55,7 +55,7 @@ configure(struct window *window, uint32_t width, uint32_t height)
 }
 
 static void
-close(struct window *window)
+close_(struct window *window)
 {
 	struct shell_surface *shell_surface = wl_container_of(window, shell_surface, window);
 	struct wl_client *client;
@@ -68,7 +68,7 @@ close(struct window *window)
 
 static const struct window_impl window_impl = {
 	.configure = configure,
-	.close = close,
+	.close = close_,
 };
 
 static void
