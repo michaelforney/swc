@@ -11,6 +11,10 @@
 #include <drm.h>
 #include <xf86drm.h>
 
+static const struct wl_output_interface output_impl = {
+	.release = destroy_resource,
+};
+
 static void
 bind_output(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 {
@@ -27,7 +31,7 @@ bind_output(struct wl_client *client, void *data, uint32_t version, uint32_t id)
 		return;
 	}
 
-	wl_resource_set_implementation(resource, NULL, output, &remove_resource);
+	wl_resource_set_implementation(resource, &output_impl, output, &remove_resource);
 	wl_list_insert(&output->resources, wl_resource_get_link(resource));
 
 	wl_output_send_geometry(resource, screen->base.geometry.x, screen->base.geometry.y,
@@ -60,7 +64,7 @@ output_new(drmModeConnectorPtr connector)
 		goto error0;
 	}
 
-	output->global = wl_global_create(swc.display, &wl_output_interface, 2, output, &bind_output);
+	output->global = wl_global_create(swc.display, &wl_output_interface, 3, output, &bind_output);
 
 	if (!output->global) {
 		ERROR("Failed to create output global\n");
