@@ -71,10 +71,10 @@ static struct {
 	} atoms[4];
 } xwm = {
 	.atoms = {
-		[ATOM_WL_SURFACE_ID] = "WL_SURFACE_ID",
-		[ATOM_WM_DELETE_WINDOW] = "WM_DELETE_WINDOW",
-		[ATOM_WM_PROTOCOLS] = "WM_PROTOCOLS",
-		[ATOM_WM_S0] = "WM_S0",
+		[ATOM_WL_SURFACE_ID] = {"WL_SURFACE_ID"},
+		[ATOM_WM_DELETE_WINDOW] = {"WM_DELETE_WINDOW"},
+		[ATOM_WM_PROTOCOLS] = {"WM_PROTOCOLS"},
+		[ATOM_WM_S0] = {"WM_S0"},
 	}
 };
 
