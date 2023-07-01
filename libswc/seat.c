@@ -220,18 +220,6 @@ device_capabilities(struct libinput_device *device)
 	return capabilities;
 }
 
-static void
-handle_libinput_axis_event(struct seat *seat, struct libinput_event_pointer *event, enum libinput_pointer_axis axis)
-{
-	wl_fixed_t amount;
-
-	if (!libinput_event_pointer_has_axis(event, axis))
-		return;
-
-	amount = wl_fixed_from_double(libinput_event_pointer_get_axis_value(event, axis));
-	pointer_handle_axis(&seat->pointer, libinput_event_pointer_get_time(event), axis, amount);
-}
-
 static int
 handle_libinput_data(int fd, uint32_t mask, void *data)
 {
@@ -244,8 +232,10 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 		struct libinput_event_keyboard *k;
 		struct libinput_event_pointer *p;
 	} event;
-	wl_fixed_t x, y;
+	wl_fixed_t x, y, value;
 	uint32_t time, key, state;
+	enum wl_pointer_axis_source source;
+	int value120;
 
 	if (libinput_dispatch(seat->libinput) != 0) {
 		WARNING("libinput_dispatch failed: %s\n", strerror(errno));
@@ -273,6 +263,7 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 			x = wl_fixed_from_double(libinput_event_pointer_get_dx(event.p));
 			y = wl_fixed_from_double(libinput_event_pointer_get_dy(event.p));
 			pointer_handle_relative_motion(&seat->pointer, time, x, y);
+			pointer_handle_frame(&seat->pointer);
 			break;
 		case LIBINPUT_EVENT_POINTER_MOTION_ABSOLUTE:
 			screen = wl_container_of(swc.screens.next, screen, link);
@@ -282,6 +273,7 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 			x = wl_fixed_from_double(libinput_event_pointer_get_absolute_x_transformed(event.p, rect->width));
 			y = wl_fixed_from_double(libinput_event_pointer_get_absolute_y_transformed(event.p, rect->height));
 			pointer_handle_absolute_motion(&seat->pointer, time, x, y);
+			pointer_handle_frame(&seat->pointer);
 			break;
 		case LIBINPUT_EVENT_POINTER_BUTTON:
 			event.p = libinput_event_get_pointer_event(generic_event);
@@ -292,20 +284,44 @@ handle_libinput_data(int fd, uint32_t mask, void *data)
 			if (state == LIBINPUT_BUTTON_STATE_PRESSED) {
 		                /* qemu generates GEAR_UP/GEAR_DOWN events on scroll, so pass
 				 * those through as axis events. */
+				source = WL_POINTER_AXIS_SOURCE_WHEEL;
 				switch (key) {
 				case BTN_GEAR_DOWN:
-					pointer_handle_axis(&seat->pointer, time, WL_POINTER_AXIS_VERTICAL_SCROLL, wl_fixed_from_int(10));
+					pointer_handle_axis(&seat->pointer, time, WL_POINTER_AXIS_VERTICAL_SCROLL, source, wl_fixed_from_int(10), 120);
 					break;
 				case BTN_GEAR_UP:
-					pointer_handle_axis(&seat->pointer, time, WL_POINTER_AXIS_VERTICAL_SCROLL, wl_fixed_from_int(-10));
+					pointer_handle_axis(&seat->pointer, time, WL_POINTER_AXIS_VERTICAL_SCROLL, source, wl_fixed_from_int(-10), -120);
 					break;
 				}
 			}
+			pointer_handle_frame(&seat->pointer);
 			break;
-		case LIBINPUT_EVENT_POINTER_AXIS:
+		case LIBINPUT_EVENT_POINTER_SCROLL_WHEEL:
+			source = WL_POINTER_AXIS_SOURCE_WHEEL;
+			goto scroll;
+		case LIBINPUT_EVENT_POINTER_SCROLL_FINGER:
+			source = WL_POINTER_AXIS_SOURCE_FINGER;
+			goto scroll;
+		case LIBINPUT_EVENT_POINTER_SCROLL_CONTINUOUS:
+			source = WL_POINTER_AXIS_SOURCE_CONTINUOUS;
+			goto scroll;
+		scroll:
 			event.p = libinput_event_get_pointer_event(generic_event);
-			handle_libinput_axis_event(seat, event.p, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL);
-			handle_libinput_axis_event(seat, event.p, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL);
+			time = libinput_event_pointer_get_time(event.p);
+			value120 = 0;
+			if (libinput_event_pointer_has_axis(event.p, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL)) {
+				value = wl_fixed_from_double(libinput_event_pointer_get_scroll_value(event.p, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL));
+				if (source == WL_POINTER_AXIS_SOURCE_WHEEL)
+					value120 = libinput_event_pointer_get_scroll_value_v120(event.p, LIBINPUT_POINTER_AXIS_SCROLL_VERTICAL);
+				pointer_handle_axis(&seat->pointer, time, WL_POINTER_AXIS_VERTICAL_SCROLL, source, value, value120);
+			}
+			if (libinput_event_pointer_has_axis(event.p, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL)) {
+				value = wl_fixed_from_double(libinput_event_pointer_get_scroll_value(event.p, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL));
+				if (source == WL_POINTER_AXIS_SOURCE_WHEEL)
+					value120 = libinput_event_pointer_get_scroll_value_v120(event.p, LIBINPUT_POINTER_AXIS_SCROLL_HORIZONTAL);
+				pointer_handle_axis(&seat->pointer, time, WL_POINTER_AXIS_HORIZONTAL_SCROLL, source, value, value120);
+			}
+			pointer_handle_frame(&seat->pointer);
 			break;
 		default:
 			break;
@@ -382,7 +398,7 @@ seat_create(struct wl_display *display, const char *seat_name)
 		ERROR("Could not allocate seat name string\n");
 		goto error1;
 	}
-	seat->global = wl_global_create(display, &wl_seat_interface, 4, seat, &bind_seat);
+	seat->global = wl_global_create(display, &wl_seat_interface, 8, seat, &bind_seat);
 	if (!seat->global)
 		goto error2;
 	seat->capabilities = 0;

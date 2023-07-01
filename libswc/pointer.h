@@ -38,8 +38,10 @@ struct button {
 struct pointer_handler {
 	bool (*motion)(struct pointer_handler *handler, uint32_t time, wl_fixed_t x, wl_fixed_t y);
 	bool (*button)(struct pointer_handler *handler, uint32_t time, struct button *button, uint32_t state);
-	bool (*axis)(struct pointer_handler *handler, uint32_t time, enum wl_pointer_axis axis, wl_fixed_t amount);
+	bool (*axis)(struct pointer_handler *handler, uint32_t time, enum wl_pointer_axis axis, enum wl_pointer_axis_source source, wl_fixed_t value, int value120);
+	void (*frame)(struct pointer_handler *handler);
 
+	int pending;
 	struct wl_list link;
 };
 
@@ -64,6 +66,7 @@ struct pointer {
 	struct wl_array buttons;
 	struct wl_list handlers;
 	struct pointer_handler client_handler;
+	enum wl_pointer_axis_source client_axis_source;
 
 	wl_fixed_t x, y;
 	pixman_region32_t region;
@@ -79,8 +82,9 @@ struct button *pointer_get_button(struct pointer *pointer, uint32_t serial);
 
 struct wl_resource *pointer_bind(struct pointer *pointer, struct wl_client *client, uint32_t version, uint32_t id);
 void pointer_handle_button(struct pointer *pointer, uint32_t time, uint32_t button, uint32_t state);
-void pointer_handle_axis(struct pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t amount);
+void pointer_handle_axis(struct pointer *pointer, uint32_t time, enum wl_pointer_axis axis, enum wl_pointer_axis_source source, wl_fixed_t value, int value120);
 void pointer_handle_relative_motion(struct pointer *pointer, uint32_t time, wl_fixed_t dx, wl_fixed_t dy);
 void pointer_handle_absolute_motion(struct pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y);
+void pointer_handle_frame(struct pointer *pointer);
 
 #endif

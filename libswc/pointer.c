@@ -32,6 +32,7 @@
 #include "util.h"
 #include "cursor/cursor_data.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <wld/wld.h>
 
@@ -204,17 +205,51 @@ client_handle_button(struct pointer_handler *handler, uint32_t time, struct butt
 }
 
 static bool
-client_handle_axis(struct pointer_handler *handler, uint32_t time, uint32_t axis, wl_fixed_t amount)
+client_handle_axis(struct pointer_handler *handler, uint32_t time, enum wl_pointer_axis axis, enum wl_pointer_axis_source source, wl_fixed_t value, int value120)
 {
 	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
 	struct wl_resource *resource;
+	int ver;
 
 	if (wl_list_empty(&pointer->focus.active))
 		return false;
 
-	wl_resource_for_each (resource, &pointer->focus.active)
-		wl_pointer_send_axis(resource, time, axis, amount);
+	if (pointer->client_axis_source != -1) {
+		assert(pointer->client_axis_source == source);
+		source = -1;
+	} else {
+		pointer->client_axis_source = source;
+	}
+
+	wl_resource_for_each (resource, &pointer->focus.active) {
+		ver = wl_resource_get_version(resource);
+		if (source != -1 && ver >= WL_POINTER_AXIS_SOURCE_SINCE_VERSION)
+			wl_pointer_send_axis_source(resource, source);
+		if (value120) {
+			if (ver >= WL_POINTER_AXIS_VALUE120_SINCE_VERSION)
+				wl_pointer_send_axis_value120(resource, axis, value120);
+			else if (ver >= WL_POINTER_AXIS_DISCRETE_SINCE_VERSION)
+				wl_pointer_send_axis_discrete(resource, axis, value120 / 120);
+		}
+		if (value)
+			wl_pointer_send_axis(resource, time, axis, value);
+		else if (ver >= WL_POINTER_AXIS_STOP_SINCE_VERSION)
+			wl_pointer_send_axis_stop(resource, time, axis);
+	}
 	return true;
+}
+
+static void
+client_handle_frame(struct pointer_handler *handler)
+{
+	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
+	struct wl_resource *resource;
+
+	wl_resource_for_each (resource, &pointer->focus.active) {
+		if (wl_resource_get_version(resource) >= WL_POINTER_FRAME_SINCE_VERSION)
+			wl_pointer_send_frame(resource);
+	}
+	pointer->client_axis_source = -1;
 }
 
 bool
@@ -232,6 +267,9 @@ pointer_initialize(struct pointer *pointer)
 	pointer->client_handler.motion = client_handle_motion;
 	pointer->client_handler.button = client_handle_button;
 	pointer->client_handler.axis = client_handle_axis;
+	pointer->client_handler.frame = client_handle_frame;
+	pointer->client_handler.pending = false;
+	pointer->client_axis_source = -1;
 	wl_list_init(&pointer->handlers);
 	wl_list_insert(&pointer->handlers, &pointer->client_handler.link);
 	wl_array_init(&pointer->buttons);
@@ -385,6 +423,7 @@ pointer_handle_button(struct pointer *pointer, uint32_t time, uint32_t value, ui
 				if (button->handler) {
 					button->press.serial = serial;
 					button->handler->button(button->handler, time, button, state);
+					button->handler->pending = true;
 				}
 
 				array_remove(&pointer->buttons, button, sizeof(*button));
@@ -404,6 +443,7 @@ pointer_handle_button(struct pointer *pointer, uint32_t time, uint32_t value, ui
 		wl_list_for_each (handler, &pointer->handlers, link) {
 			if (handler->button && handler->button(handler, time, button, state)) {
 				button->handler = handler;
+				handler->pending = true;
 				break;
 			}
 		}
@@ -411,13 +451,15 @@ pointer_handle_button(struct pointer *pointer, uint32_t time, uint32_t value, ui
 }
 
 void
-pointer_handle_axis(struct pointer *pointer, uint32_t time, uint32_t axis, wl_fixed_t amount)
+pointer_handle_axis(struct pointer *pointer, uint32_t time, enum wl_pointer_axis axis, enum wl_pointer_axis_source source, wl_fixed_t value, int value120)
 {
 	struct pointer_handler *handler;
 
 	wl_list_for_each (handler, &pointer->handlers, link) {
-		if (handler->axis && handler->axis(handler, time, axis, amount))
+		if (handler->axis && handler->axis(handler, time, axis, source, value, value120)) {
+			handler->pending = true;
 			break;
+		}
 	}
 }
 
@@ -435,8 +477,25 @@ pointer_handle_absolute_motion(struct pointer *pointer, uint32_t time, wl_fixed_
 	clip_position(pointer, x, y);
 
 	wl_list_for_each (handler, &pointer->handlers, link) {
-		if (handler->motion && handler->motion(handler, time, pointer->x, pointer->y))
+		if (handler->motion && handler->motion(handler, time, pointer->x, pointer->y)) {
+			handler->pending = true;
 			break;
+		}
+	}
+
+	update_cursor(pointer);
+}
+
+void
+pointer_handle_frame(struct pointer *pointer)
+{
+	struct pointer_handler *handler;
+
+	wl_list_for_each (handler, &pointer->handlers, link) {
+		if (handler->pending && handler->frame) {
+			handler->frame(handler);
+			handler->pending = false;
+		}
 	}
 
 	update_cursor(pointer);
