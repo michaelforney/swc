@@ -173,6 +173,23 @@ pointer_set_cursor(struct pointer *pointer, uint32_t id)
 }
 
 static bool
+client_handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t x, wl_fixed_t y)
+{
+	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
+	struct wl_resource *resource;
+	wl_fixed_t sx, sy;
+
+	if (wl_list_empty(&pointer->focus.active))
+		return false;
+
+	sx = x - wl_fixed_from_int(pointer->focus.view->base.geometry.x);
+	sy = y - wl_fixed_from_int(pointer->focus.view->base.geometry.y);
+	wl_resource_for_each (resource, &pointer->focus.active)
+		wl_pointer_send_motion(resource, time, sx, sy);
+	return true;
+}
+
+static bool
 client_handle_button(struct pointer_handler *handler, uint32_t time, struct button *button, uint32_t state)
 {
 	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
@@ -200,23 +217,6 @@ client_handle_axis(struct pointer_handler *handler, uint32_t time, uint32_t axis
 	return true;
 }
 
-static bool
-client_handle_motion(struct pointer_handler *handler, uint32_t time, wl_fixed_t x, wl_fixed_t y)
-{
-	struct pointer *pointer = wl_container_of(handler, pointer, client_handler);
-	struct wl_resource *resource;
-	wl_fixed_t sx, sy;
-
-	if (wl_list_empty(&pointer->focus.active))
-		return false;
-
-	sx = x - wl_fixed_from_int(pointer->focus.view->base.geometry.x);
-	sy = y - wl_fixed_from_int(pointer->focus.view->base.geometry.y);
-	wl_resource_for_each (resource, &pointer->focus.active)
-		wl_pointer_send_motion(resource, time, sx, sy);
-	return true;
-}
-
 bool
 pointer_initialize(struct pointer *pointer)
 {
@@ -229,9 +229,9 @@ pointer_initialize(struct pointer *pointer)
 	pointer->y = wl_fixed_from_int(geom->y + geom->height / 2);
 	pointer->focus_handler.enter = enter;
 	pointer->focus_handler.leave = leave;
+	pointer->client_handler.motion = client_handle_motion;
 	pointer->client_handler.button = client_handle_button;
 	pointer->client_handler.axis = client_handle_axis;
-	pointer->client_handler.motion = client_handle_motion;
 	wl_list_init(&pointer->handlers);
 	wl_list_insert(&pointer->handlers, &pointer->client_handler.link);
 	wl_array_init(&pointer->buttons);
