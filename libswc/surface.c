@@ -92,8 +92,7 @@ state_set_buffer(struct surface_state *state, struct wl_resource *resource)
 	if (buffer)
 		wl_resource_add_destroy_listener(resource, &state->buffer_destroy_listener);
 
-	state->buffer = buffer;
-	state->buffer_resource = resource;
+	state->buffer = resource;
 }
 
 static void
@@ -145,13 +144,13 @@ static const struct view_handler_impl view_handler_impl = {
 
 static void
 attach(struct wl_client *client, struct wl_resource *resource,
-       struct wl_resource *buffer_resource, int32_t x, int32_t y)
+       struct wl_resource *buffer, int32_t x, int32_t y)
 {
 	struct surface *surface = wl_resource_get_user_data(resource);
 
 	surface->pending.commit |= SURFACE_COMMIT_ATTACH;
 
-	state_set_buffer(&surface->pending.state, buffer_resource);
+	state_set_buffer(&surface->pending.state, buffer);
 	surface->pending.x = x;
 	surface->pending.y = y;
 }
@@ -212,8 +211,11 @@ set_input_region(struct wl_client *client, struct wl_resource *resource, struct 
 }
 
 static inline void
-trim_region(pixman_region32_t *region, struct wld_buffer *buffer)
+trim_region(pixman_region32_t *region, struct wl_resource *resource)
 {
+	struct wld_buffer *buffer;
+
+	buffer = resource ? wl_resource_get_user_data(resource) : NULL;
 	pixman_region32_intersect_rect(region, region, 0, 0, buffer ? buffer->width : 0, buffer ? buffer->height : 0);
 }
 
@@ -221,14 +223,14 @@ static void
 commit(struct wl_client *client, struct wl_resource *resource)
 {
 	struct surface *surface = wl_resource_get_user_data(resource);
-	struct wld_buffer *buffer;
+	struct wl_resource *buffer;
 
 	/* Attach */
 	if (surface->pending.commit & SURFACE_COMMIT_ATTACH) {
 		if (surface->state.buffer && surface->state.buffer != surface->pending.state.buffer)
-			wl_buffer_send_release(surface->state.buffer_resource);
+			wl_buffer_send_release(surface->state.buffer);
 
-		state_set_buffer(&surface->state, surface->pending.state.buffer_resource);
+		state_set_buffer(&surface->state, surface->pending.state.buffer);
 	}
 
 	buffer = surface->state.buffer;
@@ -258,7 +260,7 @@ commit(struct wl_client *client, struct wl_resource *resource)
 
 	if (surface->view) {
 		if (surface->pending.commit & SURFACE_COMMIT_ATTACH)
-			view_attach(surface->view, buffer);
+			view_attach(surface->view, buffer ? wl_resource_get_user_data(buffer) : NULL);
 		view_update(surface->view);
 	}
 
@@ -364,7 +366,7 @@ surface_set_view(struct surface *surface, struct view *view)
 
 	if (view) {
 		wl_list_insert(&view->handlers, &surface->view_handler.link);
-		view_attach(view, surface->state.buffer);
+		view_attach(view, surface->state.buffer ? wl_resource_get_user_data(surface->state.buffer) : NULL);
 		view_update(view);
 	}
 }
