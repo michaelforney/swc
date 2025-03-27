@@ -41,14 +41,22 @@
 struct pool {
 	struct wl_resource *resource;
 	struct swc_shm *shm;
-	void *data;
+	unsigned char *data;
 	uint32_t size;
-	unsigned references;
+	struct wl_list buffers;
 };
 
-struct pool_reference {
+struct shm_buffer {
+	struct wl_resource *resource;
 	struct wld_destructor destructor;
+	struct wl_list link;
 	struct pool *pool;
+
+	int32_t width;
+	int32_t height;
+	int32_t stride;
+	uint32_t offset;
+	uint32_t format;
 };
 
 static void *
@@ -64,25 +72,29 @@ swc_mremap(void *oldp, size_t oldsize, size_t newsize)
 static void
 unref_pool(struct pool *pool)
 {
-	if (--pool->references > 0)
-		return;
-
-	munmap(pool->data, pool->size);
-	free(pool);
+	if (wl_list_empty(&pool->buffers) && !pool->resource) {
+		munmap(pool->data, pool->size);
+		free(pool);
+	}
 }
 
 static void
 destroy_pool_resource(struct wl_resource *resource)
 {
 	struct pool *pool = wl_resource_get_user_data(resource);
+
+	pool->resource = NULL;
 	unref_pool(pool);
 }
 
 static void
 handle_buffer_destroy(struct wld_destructor *destructor)
 {
-	struct pool_reference *reference = wl_container_of(destructor, reference, destructor);
-	unref_pool(reference->pool);
+	struct shm_buffer *shm_buffer = wl_container_of(destructor, shm_buffer, destructor);
+
+	wl_list_remove(&shm_buffer->link);
+	unref_pool(shm_buffer->pool);
+	free(shm_buffer);
 }
 
 static inline uint32_t
@@ -98,46 +110,56 @@ format_shm_to_wld(uint32_t format)
 	}
 }
 
+static struct wld_buffer *
+new_wld_buffer(struct shm_buffer *shm_buffer)
+{
+	union wld_object object;
+
+	object.ptr = shm_buffer->pool->data + shm_buffer->offset;
+	return wld_import_buffer(shm_buffer->pool->shm->context, WLD_OBJECT_DATA, object,
+		shm_buffer->width, shm_buffer->height, shm_buffer->format, shm_buffer->stride);
+}
+
 static void
 create_buffer(struct wl_client *client, struct wl_resource *resource,
               uint32_t id, int32_t offset, int32_t width, int32_t height, int32_t stride, uint32_t format)
 {
 	struct pool *pool = wl_resource_get_user_data(resource);
-	struct pool_reference *reference;
+	struct shm_buffer *shm_buffer;
 	struct wld_buffer *buffer;
-	struct wl_resource *buffer_resource;
-	union wld_object object;
 
 	if (offset > pool->size || offset < 0) {
 		wl_resource_post_error(resource, WL_SHM_ERROR_INVALID_STRIDE, "offset is too big or negative");
 		return;
 	}
 
-	object.ptr = (void *)((uintptr_t)pool->data + offset);
-	buffer = wld_import_buffer(pool->shm->context, WLD_OBJECT_DATA, object, width, height, format_shm_to_wld(format), stride);
-
-	if (!buffer)
+	if (!(shm_buffer = malloc(sizeof(*shm_buffer))))
 		goto error0;
+	shm_buffer->pool = pool;
+	shm_buffer->width = width;
+	shm_buffer->height = height;
+	shm_buffer->stride = stride;
+	shm_buffer->offset = offset;
+	shm_buffer->format = format_shm_to_wld(format);
 
-	buffer_resource = wayland_buffer_create_resource(client, wl_resource_get_version(resource), id, buffer);
-
-	if (!buffer_resource)
+	buffer = new_wld_buffer(shm_buffer);
+	if (!buffer)
 		goto error1;
 
-	if (!(reference = malloc(sizeof(*reference))))
+	shm_buffer->resource = wayland_buffer_create_resource(client, wl_resource_get_version(resource), id, buffer);
+	if (!shm_buffer->resource)
 		goto error2;
 
-	reference->pool = pool;
-	reference->destructor.destroy = &handle_buffer_destroy;
-	wld_buffer_add_destructor(buffer, &reference->destructor);
-	++pool->references;
+	shm_buffer->destructor.destroy = &handle_buffer_destroy;
+	wld_buffer_add_destructor(buffer, &shm_buffer->destructor);
 
+	wl_list_insert(&pool->buffers, &shm_buffer->link);
 	return;
 
 error2:
-	wl_resource_destroy(buffer_resource);
-error1:
 	wld_buffer_unreference(buffer);
+error1:
+	free(shm_buffer);
 error0:
 	wl_resource_post_no_memory(resource);
 }
@@ -146,7 +168,9 @@ static void
 resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 {
 	struct pool *pool = wl_resource_get_user_data(resource);
-	void *data;
+	struct shm_buffer *shm_buffer;
+	struct wld_buffer *buffer;
+	unsigned char *data;
 
 	data = swc_mremap(pool->data, pool->size, size);
 	if (data == MAP_FAILED) {
@@ -155,6 +179,13 @@ resize(struct wl_client *client, struct wl_resource *resource, int32_t size)
 	}
 	pool->data = data;
 	pool->size = size;
+
+	wl_list_for_each (shm_buffer, &pool->buffers, link) {
+		buffer = wl_resource_get_user_data(shm_buffer->resource);
+		wld_buffer_unreference(buffer);
+		buffer = new_wld_buffer(shm_buffer);
+		wl_resource_set_user_data(shm_buffer->resource, buffer);
+	}
 }
 
 static const struct wl_shm_pool_interface shm_pool_impl = {
@@ -188,7 +219,7 @@ create_pool(struct wl_client *client, struct wl_resource *resource, uint32_t id,
 	}
 	close(fd);
 	pool->size = size;
-	pool->references = 1;
+	wl_list_init(&pool->buffers);
 	return;
 
 error2:
