@@ -121,7 +121,8 @@ screen_new(uint32_t crtc, struct output *output, struct plane *cursor_plane)
 		goto error2;
 	}
 
-	cursor_plane->screen = screen;
+	if (cursor_plane)
+		cursor_plane->screen = screen;
 	screen->planes.cursor = cursor_plane;
 
 	screen->handler = &null_handler;
