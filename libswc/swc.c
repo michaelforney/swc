@@ -224,11 +224,11 @@ error9:
 error8:
 	wl_global_destroy(swc.data_device_manager);
 error7:
-	wl_global_destroy(swc.subcompositor);
-error6:
 	compositor_finalize();
-error5:
+error6:
 	screens_finalize();
+error5:
+	wl_global_destroy(swc.subcompositor);
 error4:
 	bindings_finalize();
 error3:
