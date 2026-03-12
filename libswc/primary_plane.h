@@ -24,12 +24,16 @@
 #ifndef SWC_PRIMARY_PLANE_H
 #define SWC_PRIMARY_PLANE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "drm.h"
 #include "mode.h"
 #include "view.h"
 
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <wayland-server.h>
 
 struct primary_plane {
@@ -46,4 +50,8 @@ struct primary_plane {
 bool primary_plane_initialize(struct primary_plane *plane, uint32_t crtc, struct mode *mode, uint32_t *connectors, uint32_t num_connectors);
 void primary_plane_finalize(struct primary_plane *plane);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_PRIMARY_PLANE_H */

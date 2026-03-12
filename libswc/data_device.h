@@ -24,6 +24,10 @@
 #ifndef SWC_DATA_DEVICE_H
 #define SWC_DATA_DEVICE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <wayland-server.h>
 
@@ -45,4 +49,8 @@ void data_device_destroy(struct data_device *data_device);
 struct wl_resource *data_device_bind(struct data_device *data_device, struct wl_client *client, uint32_t version, uint32_t id);
 void data_device_offer_selection(struct data_device *data_device, struct wl_client *client);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_DATA_DEVICE_H */

@@ -340,6 +340,6 @@ void swc_finalize(void);
 }
 #endif
 
-#endif
+#endif /* SWC_H */
 
 /* vim: set fdm=marker : */

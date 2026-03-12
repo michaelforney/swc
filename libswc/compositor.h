@@ -24,10 +24,14 @@
 #ifndef SWC_COMPOSITOR_H
 #define SWC_COMPOSITOR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "view.h"
 
-#include <stdbool.h>
 #include <pixman.h>
+#include <stdbool.h>
 #include <wayland-server.h>
 
 struct swc_compositor {
@@ -90,4 +94,8 @@ void compositor_view_hide(struct compositor_view *view);
 void compositor_view_set_border_color(struct compositor_view *view, uint32_t color);
 void compositor_view_set_border_width(struct compositor_view *view, uint32_t width);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_COMPOSITOR_H */

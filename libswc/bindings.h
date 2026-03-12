@@ -24,6 +24,10 @@
 #ifndef SWC_BINDINGS_H
 #define SWC_BINDINGS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 struct swc_bindings {
@@ -34,4 +38,8 @@ struct swc_bindings {
 bool bindings_initialize(void);
 void bindings_finalize(void);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_BINDINGS_H */

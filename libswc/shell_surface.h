@@ -24,6 +24,10 @@
 #ifndef SWC_SHELL_SURFACE_H
 #define SWC_SHELL_SURFACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 struct surface;
@@ -31,4 +35,8 @@ struct wl_client;
 
 struct shell_surface *shell_surface_new(struct wl_client *client, uint32_t version, uint32_t id, struct surface *surface);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_SHELL_SURFACE_H */

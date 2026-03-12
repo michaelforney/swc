@@ -24,6 +24,10 @@
 #ifndef SWC_SUBSURFACE_H
 #define SWC_SUBSURFACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 struct wl_client;
@@ -34,4 +38,8 @@ struct subsurface {
 
 struct subsurface *subsurface_new(struct wl_client *client, uint32_t version, uint32_t id);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_SUBSURFACE_H */

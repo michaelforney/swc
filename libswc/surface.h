@@ -24,6 +24,10 @@
 #ifndef SWC_SURFACE_H
 #define SWC_SURFACE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "view.h"
 
 #include <pixman.h>
@@ -72,4 +76,8 @@ struct surface {
 struct surface *surface_new(struct wl_client *client, uint32_t version, uint32_t id);
 void surface_set_view(struct surface *surface, struct view *view);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_SURFACE_H */

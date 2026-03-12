@@ -24,6 +24,10 @@
 #ifndef SWC_SEAT_H
 #define SWC_SEAT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct wl_display;
 
 struct swc_seat {
@@ -35,4 +39,8 @@ struct swc_seat {
 struct swc_seat *seat_create(struct wl_display *display, const char *name);
 void seat_destroy(struct swc_seat *seat);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_SEAT_H */

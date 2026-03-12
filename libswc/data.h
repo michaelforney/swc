@@ -24,6 +24,10 @@
 #ifndef SWC_DATA_H
 #define SWC_DATA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 struct wl_client;
@@ -32,4 +36,8 @@ struct wl_resource *data_source_new(struct wl_client *client, uint32_t version, 
 struct wl_resource *data_offer_new(struct wl_client *client, struct wl_resource *source, uint32_t version);
 void data_send_mime_types(struct wl_resource *source, struct wl_resource *offer);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_DATA_H */

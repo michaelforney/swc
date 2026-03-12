@@ -24,8 +24,12 @@
 #ifndef SWC_SCREEN_H
 #define SWC_SCREEN_H
 
-#include "swc.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "primary_plane.h"
+#include "swc.h"
 
 #include <wayland-util.h>
 
@@ -78,4 +82,8 @@ screen_mask(struct screen *screen)
 
 void screen_update_usable_geometry(struct screen *screen);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_SCREEN_H */

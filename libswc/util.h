@@ -24,14 +24,18 @@
 #ifndef SWC_UTIL_H
 #define SWC_UTIL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "swc.h"
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <pixman.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
-#include <pixman.h>
 #include <wayland-util.h>
 
 #define EXPORT __attribute__((visibility("default")))
@@ -43,9 +47,9 @@
 #define MESSAGE_SOURCE
 #endif
 
-#define MESSAGE(type, format, ...) \
-	do { \
-		MESSAGE_SOURCE \
+#define MESSAGE(type, format, ...)                                \
+	do {                                                      \
+		MESSAGE_SOURCE                                    \
 		fprintf(stderr, type ": " format, ##__VA_ARGS__); \
 	} while (false)
 
@@ -105,4 +109,8 @@ array_remove(struct wl_array *array, void *item, size_t size)
 	array->size -= size;
 }
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_UTIL_H */

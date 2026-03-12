@@ -21,11 +21,15 @@
  * SOFTWARE.
  */
 
-#ifndef DEVMAJOR_H
-#define DEVMAJOR_H
+#ifndef SWC_DEVMAJOR_H
+#define SWC_DEVMAJOR_H
 
-#include <sys/stat.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
+#include <sys/stat.h>
 
 bool device_is_input(dev_t);
 
@@ -33,4 +37,8 @@ bool device_is_tty(dev_t);
 
 bool device_is_drm(dev_t);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_DEVMAJOR_H */
