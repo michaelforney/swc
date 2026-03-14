@@ -7,6 +7,7 @@ PROTOCOL_EXTENSIONS =           \
     $(dir)/server-decoration.xml\
     $(dir)/swc.xml              \
     $(dir)/wayland-drm.xml      \
+    $(dir)/wlr-screencopy-unstable-v1.xml \
     $(wayland_protocols)/stable/xdg-shell/xdg-shell.xml \
     $(wayland_protocols)/unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml \
     $(wayland_protocols)/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml
