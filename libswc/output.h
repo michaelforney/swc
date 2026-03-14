@@ -11,6 +11,7 @@ struct wl_display;
 struct output {
 	struct screen *screen;
 
+	char name[24];
 	/* The physical dimensions (in mm) of this output */
 	uint32_t physical_width, physical_height;
 
