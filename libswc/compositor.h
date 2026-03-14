@@ -24,6 +24,7 @@
 #ifndef SWC_COMPOSITOR_H
 #define SWC_COMPOSITOR_H
 
+#include "screen.h"
 #include "view.h"
 
 #include <stdbool.h>
@@ -42,6 +43,9 @@ struct swc_compositor {
 		struct wl_signal new_surface;
 	} signal;
 };
+
+void compositor_get_damage(pixman_region32_t *damage);
+void compositor_damage_all(void);
 
 bool compositor_initialize(void);
 void compositor_finalize(void);

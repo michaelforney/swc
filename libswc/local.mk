@@ -24,6 +24,7 @@ SWC_SOURCES =                       \
     launch/protocol.c               \
     libswc/bindings.c               \
     libswc/compositor.c             \
+    libswc/screencopy.c             \
     libswc/data.c                   \
     libswc/data_device.c            \
     libswc/data_device_manager.c    \
@@ -59,6 +60,7 @@ SWC_SOURCES =                       \
     protocol/server-decoration-protocol.c \
     protocol/swc-protocol.c         \
     protocol/wayland-drm-protocol.c \
+    protocol/wlr-screencopy-unstable-v1-protocol.c \
     protocol/xdg-decoration-unstable-v1-protocol.c \
     protocol/xdg-shell-protocol.c
 
@@ -93,6 +95,7 @@ $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,kde_decoration): protocol/server-decoration-server-protocol.h
 $(call objects,xdg_decoration): protocol/xdg-decoration-unstable-v1-server-protocol.h
 $(call objects,xdg_shell): protocol/xdg-shell-server-protocol.h
+$(call objects,screencopy): protocol/wlr-screencopy-unstable-v1-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 
 $(dir)/libswc-internal.o: $(SWC_STATIC_OBJECTS)

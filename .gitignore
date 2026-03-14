@@ -8,6 +8,8 @@ protocol/swc-protocol.c
 protocol/swc-server-protocol.h
 protocol/wayland-drm-protocol.c
 protocol/wayland-drm-server-protocol.h
+protocol/wlr-screencopy-unstable-v1-protocol.c
+protocol/wlr-screencopy-unstable-v1-server-protocol.h
 protocol/xdg-decoration-unstable-v1-protocol.c
 protocol/xdg-decoration-unstable-v1-server-protocol.h
 protocol/xdg-shell-protocol.c

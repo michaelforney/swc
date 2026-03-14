@@ -34,6 +34,7 @@
 #include "panel_manager.h"
 #include "pointer.h"
 #include "screen.h"
+#include "screencopy.h"
 #include "seat.h"
 #include "shell.h"
 #include "shm.h"
@@ -203,10 +204,18 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 	}
 #endif
 
+	swc.wlr_screencopy_manager = screencopy_manager_create(display);
+	if (!swc.wlr_screencopy_manager) {
+		ERROR("Could not screencopy manager\n");
+		goto error15;
+	}
+
 	setup_compositor();
 
 	return true;
 
+error15:
+	wl_global_destroy(swc.wlr_screencopy_manager);
 #ifdef ENABLE_XWAYLAND
 error14:
 	wl_global_destroy(swc.panel_manager);

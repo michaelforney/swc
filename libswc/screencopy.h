@@ -1,6 +1,6 @@
-/* swc: swc/internal.h
+/* swc: libswc/screencopy.h
  *
- * Copyright (c) 2013-2019 Michael Forney
+ * Copyright (c) 2026 sewn <sewn@disroot.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,48 +20,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+ 
+#ifndef SWC_SCREENCOPY_H
+#define SWC_SCREENCOPY_H
 
-#ifndef SWC_INTERNAL_H
-#define SWC_INTERNAL_H
+#include "swc.h"
 
-#include <wayland-server.h>
+#include <pixman.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <wayland-server.h>
 
-enum {
-	SWC_EVENT_ACTIVATED,
-	SWC_EVENT_DEACTIVATED,
+struct screencopy_frame {
+	struct wl_resource *resource;
+	struct wl_resource *client_buffer;
+	struct screen *screen;
+
+	bool with_damage;
+	bool overlay_cursor;
+
+	struct wl_listener screen_attach;
+
+	struct swc_rectangle geom;
+	uint32_t stride;
 };
 
-struct swc {
-	struct wl_display *display;
-	struct wl_event_loop *event_loop;
-	const struct swc_manager *manager;
-	struct wl_signal event_signal;
-	bool active;
-
-	struct swc_seat *seat;
-	const struct swc_bindings *const bindings;
-	struct wl_list screens;
-	struct swc_compositor *const compositor;
-	struct swc_shm *shm;
-	struct swc_drm *const drm;
-	struct wl_global *data_device_manager;
-	struct wl_global *kde_decoration_manager;
-	struct wl_global *panel_manager;
-	struct wl_global *shell;
-	struct wl_global *subcompositor;
-	struct wl_global *xdg_decoration_manager;
-	struct wl_global *xdg_shell;
-	struct wl_global *wlr_screencopy_manager;
-
-#ifdef ENABLE_XWAYLAND
-	const struct swc_xserver *const xserver;
-#endif
-};
-
-extern struct swc swc;
-
-void swc_activate(void);
-void swc_deactivate(void);
+struct wl_global *
+screencopy_manager_create(struct wl_display *display);
 
 #endif
