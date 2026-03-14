@@ -47,6 +47,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <pixman.h>
 #include <assert.h>
 #include <wld/wld.h>
 #include <wld/drm.h>
@@ -343,6 +344,26 @@ schedule_updates(uint32_t screens)
 	}
 
 	compositor.scheduled_updates |= screens;
+}
+
+void
+compositor_damage_all(void)
+{
+	struct screen *screen;
+
+	wl_list_for_each(screen, &swc.screens, link)
+		pixman_region32_union_rect(
+		    &compositor.damage, &compositor.damage, screen->base.geometry.x,
+		    screen->base.geometry.y, screen->base.geometry.width,
+		    screen->base.geometry.height);
+
+	schedule_updates(-1);
+}
+
+void
+compositor_get_damage(pixman_region32_t *damage)
+{
+	pixman_region32_copy(damage, &compositor.damage);
 }
 
 static bool
