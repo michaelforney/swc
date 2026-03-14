@@ -26,6 +26,7 @@
 
 #include "swc.h"
 
+#include <wayland-server.h>
 #include <wayland-util.h>
 
 /**
@@ -47,6 +48,7 @@ struct view {
 	struct swc_rectangle geometry;
 	uint32_t screens;
 
+	struct wl_signal attach_signal;
 	struct wld_buffer *buffer;
 };
 

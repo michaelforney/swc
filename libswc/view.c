@@ -47,6 +47,7 @@ view_initialize(struct view *view, const struct view_impl *impl)
 	view->geometry.height = 0;
 	view->buffer = NULL;
 	view->screens = 0;
+	wl_signal_init(&view->attach_signal);
 	wl_list_init(&view->handlers);
 }
 
@@ -73,6 +74,7 @@ view_attach(struct view *view, struct wld_buffer *buffer)
 		wld_buffer_reference(buffer);
 
 	view->buffer = buffer;
+	wl_signal_emit(&view->attach_signal, view->buffer);
 	HANDLE(view, handler, attach);
 
 	return 0;
