@@ -82,18 +82,13 @@ state_finalize(struct surface_state *state)
  * to manage the destroy listeners we have for the new and old buffer.
  */
 static void
-state_set_buffer(struct surface_state *state, struct wl_resource *resource)
+state_set_buffer(struct surface_state *state, struct wl_resource *buffer)
 {
-	struct wld_buffer *buffer = resource ? wayland_buffer_get(resource) : NULL;
-
 	if (state->buffer)
 		wl_list_remove(&state->buffer_destroy_listener.link);
-
 	if (buffer)
-		wl_resource_add_destroy_listener(resource, &state->buffer_destroy_listener);
-
+		wl_resource_add_destroy_listener(buffer, &state->buffer_destroy_listener);
 	state->buffer = buffer;
-	state->buffer_resource = resource;
 }
 
 static void
@@ -221,17 +216,16 @@ static void
 commit(struct wl_client *client, struct wl_resource *resource)
 {
 	struct surface *surface = wl_resource_get_user_data(resource);
-	struct wld_buffer *buffer;
 
 	/* Attach */
 	if (surface->pending.commit & SURFACE_COMMIT_ATTACH) {
 		if (surface->state.buffer && surface->state.buffer != surface->pending.state.buffer)
-			wl_buffer_send_release(surface->state.buffer_resource);
+			wl_buffer_send_release(surface->state.buffer);
 
-		state_set_buffer(&surface->state, surface->pending.state.buffer_resource);
+		state_set_buffer(&surface->state, surface->pending.state.buffer);
 	}
 
-	buffer = surface->state.buffer;
+	surface->buffer = surface->state.buffer ? wayland_buffer_get(surface->state.buffer) : NULL;
 
 	/* Damage */
 	if (surface->pending.commit & SURFACE_COMMIT_DAMAGE) {
@@ -253,12 +247,12 @@ commit(struct wl_client *client, struct wl_resource *resource)
 		wl_list_init(&surface->pending.state.frame_callbacks);
 	}
 
-	trim_region(&surface->state.damage, buffer);
-	trim_region(&surface->state.opaque, buffer);
+	trim_region(&surface->state.damage, surface->buffer);
+	trim_region(&surface->state.opaque, surface->buffer);
 
 	if (surface->view) {
 		if (surface->pending.commit & SURFACE_COMMIT_ATTACH)
-			view_attach(surface->view, buffer);
+			view_attach(surface->view, surface->buffer);
 		view_update(surface->view);
 	}
 
@@ -364,7 +358,7 @@ surface_set_view(struct surface *surface, struct view *view)
 
 	if (view) {
 		wl_list_insert(&view->handlers, &surface->view_handler.link);
-		view_attach(view, surface->state.buffer);
+		view_attach(view, surface->buffer);
 		view_update(view);
 	}
 }

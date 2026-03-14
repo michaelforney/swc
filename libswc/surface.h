@@ -38,8 +38,7 @@ enum {
 };
 
 struct surface_state {
-	struct wld_buffer *buffer;
-	struct wl_resource *buffer_resource;
+	struct wl_resource *buffer;
 	struct wl_listener buffer_destroy_listener;
 
 	/* The region that needs to be repainted. */
@@ -65,6 +64,7 @@ struct surface {
 		int32_t x, y;
 	} pending;
 
+	struct wld_buffer *buffer;
 	struct view *view;
 	struct view_handler view_handler;
 };
