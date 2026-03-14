@@ -151,6 +151,7 @@ static const struct wl_seat_interface seat_impl = {
 	.get_pointer = get_pointer,
 	.get_keyboard = get_keyboard,
 	.get_touch = get_touch,
+	.release = destroy_resource,
 };
 
 static void
