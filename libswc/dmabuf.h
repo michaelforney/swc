@@ -24,8 +24,15 @@
 #ifndef SWC_DMABUF_H
 #define SWC_DMABUF_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 struct wl_display;
 
 struct wl_global *swc_dmabuf_create(struct wl_display *display);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_DMABUF_H */

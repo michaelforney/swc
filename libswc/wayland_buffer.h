@@ -24,6 +24,10 @@
 #ifndef SWC_WAYLAND_BUFFER_H
 #define SWC_WAYLAND_BUFFER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 struct wl_client;
@@ -32,4 +36,8 @@ struct wl_resource;
 struct wld_buffer *wayland_buffer_get(struct wl_resource *resource);
 struct wl_resource *wayland_buffer_create_resource(struct wl_client *client, uint32_t version, uint32_t id, struct wld_buffer *buffer);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_WAYLAND_BUFFER_H */

@@ -24,8 +24,16 @@
 #ifndef SWC_XDG_SHELL_H
 #define SWC_XDG_SHELL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct wl_display;
 
 struct wl_global *xdg_shell_create(struct wl_display *display);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_XDG_SHELL_H */

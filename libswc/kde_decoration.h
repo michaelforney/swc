@@ -24,8 +24,16 @@
 #ifndef SWC_KDE_DECORATION_H
 #define SWC_KDE_DECORATION_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct wl_display;
 
 struct wl_global *kde_decoration_manager_create(struct wl_display *display);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_KDE_DECORATION_H */

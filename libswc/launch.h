@@ -24,6 +24,10 @@
 #ifndef SWC_LAUNCH_H
 #define SWC_LAUNCH_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 bool launch_initialize(void);
@@ -31,4 +35,8 @@ void launch_finalize(void);
 int launch_open_device(const char *path, int flags);
 bool launch_activate_vt(unsigned vt);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_LAUNCH_H */

@@ -1,4 +1,4 @@
-/* swc: drm.c
+/* swc: libswc/drm.c
  *
  * Copyright (c) 2013-2020 Michael Forney
  *
@@ -32,21 +32,21 @@
 #include "util.h"
 #include "wayland_buffer.h"
 
+#include "wayland-drm-server-protocol.h"
 #include <dirent.h>
+#include <drm.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <drm.h>
-#include <xf86drm.h>
-#include <wld/wld.h>
-#include <wld/drm.h>
 #include <wayland-server.h>
-#include "wayland-drm-server-protocol.h"
+#include <wld/drm.h>
+#include <wld/wld.h>
+#include <xf86drm.h>
 
 struct swc_drm swc_drm;
 
@@ -454,7 +454,7 @@ drm_get_framebuffer(struct wld_buffer *buffer)
 		return 0;
 
 	ret = drmModeAddFB2(swc.drm->fd, buffer->width, buffer->height, buffer->format,
-	                    (uint32_t[4]){object.u32}, (uint32_t[4]){buffer->pitch}, (uint32_t[4]){0},
+	                    (uint32_t[4]){ object.u32 }, (uint32_t[4]){ buffer->pitch }, (uint32_t[4]){ 0 },
 	                    &framebuffer->id, 0);
 	if (ret < 0) {
 		free(framebuffer);

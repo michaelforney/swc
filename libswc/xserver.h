@@ -24,6 +24,10 @@
 #ifndef SWC_XSERVER_H
 #define SWC_XSERVER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 struct swc_xserver {
@@ -33,4 +37,8 @@ struct swc_xserver {
 bool xserver_initialize(void);
 void xserver_finalize(void);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_XSERVER_H */

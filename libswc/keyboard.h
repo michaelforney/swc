@@ -24,10 +24,14 @@
 #ifndef SWC_KEYBOARD_H
 #define SWC_KEYBOARD_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "input.h"
 
-#include <xkbcommon/xkbcommon.h>
 #include <wayland-util.h>
+#include <xkbcommon/xkbcommon.h>
 
 /* Keycodes are offset by 8 in XKB. */
 #define XKB_KEY(key) ((key) + 8)
@@ -91,4 +95,8 @@ void keyboard_set_focus(struct keyboard *keyboard, struct compositor_view *view)
 struct wl_resource *keyboard_bind(struct keyboard *keyboard, struct wl_client *client, uint32_t version, uint32_t id);
 void keyboard_handle_key(struct keyboard *keyboard, uint32_t time, uint32_t key, uint32_t state);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_KEYBOARD_H */

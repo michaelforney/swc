@@ -24,8 +24,12 @@
 #ifndef SWC_WINDOW_H
 #define SWC_WINDOW_H
 
-#include "swc.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "pointer.h"
+#include "swc.h"
 
 #include <stdint.h>
 #include <wayland-server.h>
@@ -98,4 +102,8 @@ void window_set_parent(struct window *window, struct window *parent);
 void window_begin_move(struct window *window, struct button *button);
 void window_begin_resize(struct window *window, uint32_t edges, struct button *button);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_WINDOW_H */

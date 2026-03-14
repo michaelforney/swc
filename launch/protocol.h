@@ -24,6 +24,10 @@
 #ifndef SWC_LAUNCH_PROTOCOL_H
 #define SWC_LAUNCH_PROTOCOL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -68,4 +72,8 @@ struct swc_launch_event {
 ssize_t send_fd(int socket, int fd, struct iovec *iov, int iovlen);
 ssize_t receive_fd(int socket, int *fd, struct iovec *iov, int iovlen);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_LAUNCH_PROTOCOL_H */

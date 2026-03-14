@@ -24,8 +24,15 @@
 #ifndef SWC_DATA_DEVICE_MANAGER_H
 #define SWC_DATA_DEVICE_MANAGER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 struct wl_display;
 
 struct wl_global *data_device_manager_create(struct wl_display *display);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_DATA_DEVICE_MANAGER_H */

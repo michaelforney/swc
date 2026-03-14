@@ -24,6 +24,10 @@
 #ifndef SWC_SHM_H
 #define SWC_SHM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct wl_display;
 
 struct swc_shm {
@@ -35,4 +39,8 @@ struct swc_shm {
 struct swc_shm *shm_create(struct wl_display *display);
 void shm_destroy(struct swc_shm *shm);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_SHM_H */

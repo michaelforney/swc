@@ -24,6 +24,10 @@
 #ifndef SWC_PLANE_H
 #define SWC_PLANE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "plane.h"
 #include "view.h"
 
@@ -42,4 +46,8 @@ struct plane {
 struct plane *plane_new(uint32_t id);
 void plane_destroy(struct plane *plane);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_PLANE_H */

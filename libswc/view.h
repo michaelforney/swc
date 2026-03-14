@@ -24,6 +24,10 @@
 #ifndef SWC_VIEW_H
 #define SWC_VIEW_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "swc.h"
 
 #include <wayland-util.h>
@@ -129,4 +133,8 @@ void view_update_screens(struct view *view);
  */
 void view_frame(struct view *view, uint32_t time);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_VIEW_H */

@@ -24,6 +24,10 @@
 #ifndef SWC_MODE_H
 #define SWC_MODE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -41,4 +45,8 @@ struct mode {
 bool mode_initialize(struct mode *mode, drmModeModeInfo *mode_info);
 bool mode_equal(const struct mode *mode1, const struct mode *mode2);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_MODE_H */

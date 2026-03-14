@@ -24,9 +24,17 @@
 #ifndef SWC_XWM_H
 #define SWC_XWM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 
 bool xwm_initialize(int fd);
 void xwm_finalize(void);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_XWM_H */

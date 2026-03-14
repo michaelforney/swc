@@ -24,6 +24,10 @@
 #ifndef SWC_POINTER_H
 #define SWC_POINTER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "input.h"
 #include "view.h"
 
@@ -87,4 +91,8 @@ void pointer_handle_relative_motion(struct pointer *pointer, uint32_t time, wl_f
 void pointer_handle_absolute_motion(struct pointer *pointer, uint32_t time, wl_fixed_t x, wl_fixed_t y);
 void pointer_handle_frame(struct pointer *pointer);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_POINTER_H */

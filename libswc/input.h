@@ -24,6 +24,10 @@
 #ifndef SWC_INPUT_H
 #define SWC_INPUT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <wayland-server.h>
 
@@ -71,4 +75,8 @@ struct press {
 
 /* }}} */
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* SWC_INPUT_H */
