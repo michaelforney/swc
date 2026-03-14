@@ -41,6 +41,7 @@
 #include "util.h"
 #include "window.h"
 #include "xdg_decoration.h"
+#include "xdg_output.h"
 #include "xdg_shell.h"
 #ifdef ENABLE_XWAYLAND
 # include "xserver.h"
@@ -203,10 +204,18 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 	}
 #endif
 
+	swc.xdg_output_manager = xdg_output_manager_create(display);
+	if (!swc.xdg_decoration_manager) {
+		ERROR("Could not initialize XDG output manager\n");
+		goto error15;
+	}
+
 	setup_compositor();
 
 	return true;
 
+error15:
+	wl_global_destroy(swc.xdg_output_manager);
 #ifdef ENABLE_XWAYLAND
 error14:
 	wl_global_destroy(swc.panel_manager);
@@ -247,6 +256,7 @@ swc_finalize(void)
 #ifdef ENABLE_XWAYLAND
 	xserver_finalize();
 #endif
+	wl_global_destroy(swc.xdg_output_manager);
 	wl_global_destroy(swc.panel_manager);
 	wl_global_destroy(swc.xdg_decoration_manager);
 	wl_global_destroy(swc.xdg_shell);

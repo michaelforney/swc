@@ -9,6 +9,7 @@
 struct wl_display;
 
 struct output {
+	struct wl_resource *resource;
 	struct screen *screen;
 
 	char name[24];

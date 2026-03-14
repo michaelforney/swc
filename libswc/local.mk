@@ -54,12 +54,14 @@ SWC_SOURCES =                       \
     libswc/wayland_buffer.c         \
     libswc/window.c                 \
     libswc/xdg_decoration.c         \
+    libswc/xdg_output.c             \
     libswc/xdg_shell.c              \
     protocol/linux-dmabuf-unstable-v1-protocol.c \
     protocol/server-decoration-protocol.c \
     protocol/swc-protocol.c         \
     protocol/wayland-drm-protocol.c \
     protocol/xdg-decoration-unstable-v1-protocol.c \
+    protocol/xdg-output-unstable-v1-protocol.c \
     protocol/xdg-shell-protocol.c
 
 ifeq ($(shell uname),NetBSD)
@@ -92,6 +94,7 @@ $(call objects,dmabuf): protocol/linux-dmabuf-unstable-v1-server-protocol.h
 $(call objects,drm drm_buffer): protocol/wayland-drm-server-protocol.h
 $(call objects,kde_decoration): protocol/server-decoration-server-protocol.h
 $(call objects,xdg_decoration): protocol/xdg-decoration-unstable-v1-server-protocol.h
+$(call objects,xdg_output): protocol/xdg-output-unstable-v1-server-protocol.h
 $(call objects,xdg_shell): protocol/xdg-shell-server-protocol.h
 $(call objects,pointer): cursor/cursor_data.h
 
