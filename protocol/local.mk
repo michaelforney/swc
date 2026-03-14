@@ -9,7 +9,8 @@ PROTOCOL_EXTENSIONS =           \
     $(dir)/wayland-drm.xml      \
     $(wayland_protocols)/stable/xdg-shell/xdg-shell.xml \
     $(wayland_protocols)/unstable/linux-dmabuf/linux-dmabuf-unstable-v1.xml \
-    $(wayland_protocols)/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml
+    $(wayland_protocols)/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml \
+    $(wayland_protocols)/unstable/xdg-output/xdg-output-unstable-v1.xml
 
 $(dir)_PACKAGES := wayland-server
 
