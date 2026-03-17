@@ -60,10 +60,30 @@ offer_receive(struct wl_client *client, struct wl_resource *offer, const char *m
 	close(fd);
 }
 
+static void
+offer_finish(struct wl_client *client, struct wl_resource *offer)
+{
+	(void)client;
+	(void)offer;
+	/* TODO: Implement */
+}
+
+static void
+offer_set_actions(struct wl_client *client, struct wl_resource *offer, uint32_t dnd_actions, uint32_t preferred_action)
+{
+	(void)client;
+	(void)offer;
+	(void)dnd_actions;
+	(void)preferred_action;
+	/* TODO: Implement */
+}
+
 static const struct wl_data_offer_interface data_offer_impl = {
 	.accept = offer_accept,
 	.receive = offer_receive,
 	.destroy = destroy_resource,
+	.finish = offer_finish,
+	.set_actions = offer_set_actions,
 };
 
 static void
@@ -87,9 +107,19 @@ error0:
 	wl_resource_post_no_memory(source);
 }
 
+static void
+source_set_actions(struct wl_client *client, struct wl_resource *resource, uint32_t dnd_actions)
+{
+	(void)client;
+	(void)resource;
+	(void)dnd_actions;
+	/* TODO: Implement */
+}
+
 static const struct wl_data_source_interface data_source_impl = {
 	.offer = source_offer,
 	.destroy = destroy_resource,
+	.set_actions = source_set_actions,
 };
 
 static void
