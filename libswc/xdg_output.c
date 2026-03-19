@@ -48,8 +48,12 @@ get_output(struct wl_client *client, struct wl_resource *resource, uint32_t id, 
 	wl_resource_set_implementation(resource, &output_impl, NULL, NULL);
 	zxdg_output_v1_send_logical_position(resource, geom->x, geom->y);
 	zxdg_output_v1_send_logical_size(resource, geom->width, geom->height);
-	zxdg_output_v1_send_name(resource, output->name);
-	wl_output_send_done(output->resource);
+	if (wl_resource_get_version(resource) >= 2)
+		zxdg_output_v1_send_name(resource, output->name);
+	if (wl_resource_get_version(resource) < 3)
+		zxdg_output_v1_send_done(resource);
+	else
+		wl_output_send_done(output->resource);
 }
 
 static const struct zxdg_output_manager_v1_interface output_manager_impl = {
