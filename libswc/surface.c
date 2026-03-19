@@ -331,6 +331,7 @@ surface_new(struct wl_client *client, uint32_t version, uint32_t id)
 
 	/* Initialize the surface. */
 	surface->pending.commit = 0;
+	surface->buffer = NULL;
 	surface->view = NULL;
 	surface->view_handler.impl = &view_handler_impl;
 
