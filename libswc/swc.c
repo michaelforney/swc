@@ -205,7 +205,7 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 #endif
 
 	swc.xdg_output_manager = xdg_output_manager_create(display);
-	if (!swc.xdg_decoration_manager) {
+	if (!swc.xdg_output_manager) {
 		ERROR("Could not initialize XDG output manager\n");
 		goto error15;
 	}
@@ -215,11 +215,11 @@ swc_initialize(struct wl_display *display, struct wl_event_loop *event_loop, con
 	return true;
 
 error15:
-	wl_global_destroy(swc.xdg_output_manager);
 #ifdef ENABLE_XWAYLAND
+	xserver_finalize();
 error14:
-	wl_global_destroy(swc.panel_manager);
 #endif
+	wl_global_destroy(swc.panel_manager);
 error13:
 	wl_global_destroy(swc.kde_decoration_manager);
 error12:
