@@ -33,6 +33,7 @@
 #include "util.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
@@ -150,11 +151,17 @@ update_keymap(struct xkb *xkb)
 
 	unlink(keymap_path);
 
-	if (posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size) != 0 &&
-	    ftruncate(xkb->keymap.fd, xkb->keymap.size) != 0) {
+	if (ftruncate(xkb->keymap.fd, xkb->keymap.size) != 0) {
 		WARNING("Could not resize XKB keymap file\n");
 		goto error2;
 	}
+#if defined(_POSIX_ADVISORY_INFO) && _POSIX_ADVISORY_INFO >= 0
+	int err;
+	if ((err = posix_fallocate(xkb->keymap.fd, 0, xkb->keymap.size)) != 0 && err != ENOTSUP && err != EOPNOTSUPP) {
+		WARNING("Could not allocate XKB keymap file\n");
+		goto error2;
+	}
+#endif
 
 	xkb->keymap.area = mmap(NULL, xkb->keymap.size, PROT_READ | PROT_WRITE, MAP_SHARED, xkb->keymap.fd, 0);
 
