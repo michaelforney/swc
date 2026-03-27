@@ -270,8 +270,12 @@ drm_initialize(void)
 
 	drm.path = drmGetRenderDeviceNameFromFd(swc.drm->fd);
 	if (!drm.path) {
-		ERROR("Could not determine render node path\n");
-		goto error1;
+		WARNING("Could not determine render node path\n");
+		drm.path = drmGetPrimaryDeviceNameFromFd(swc.drm->fd);
+		if (!drm.path) {
+			ERROR("Could not determine primary node path\n");
+			goto error1;
+		}
 	}
 
 	if (!(swc.drm->context = wld_drm_create_context(swc.drm->fd))) {
