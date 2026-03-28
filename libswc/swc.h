@@ -180,6 +180,16 @@ void swc_window_hide(struct swc_window *window);
 void swc_window_focus(struct swc_window *window);
 
 /**
+ * Raise the specified window to the front of the stacking order.
+ */
+void swc_window_raise(struct swc_window *window);
+
+/**
+ * Lower the specified window to the back of the stacking order.
+ */
+void swc_window_lower(struct swc_window *window);
+
+/**
  * Sets the window to stacked mode.
  *
  * A window in this mode has its size specified by the client. The window's

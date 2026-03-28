@@ -163,6 +163,18 @@ swc_window_focus(struct swc_window *base)
 }
 
 EXPORT void
+swc_window_raise(struct swc_window *window)
+{
+	compositor_view_raise(INTERNAL(window)->view);
+}
+
+EXPORT void
+swc_window_lower(struct swc_window *window)
+{
+	compositor_view_lower(INTERNAL(window)->view);
+}
+
+EXPORT void
 swc_window_set_stacked(struct swc_window *base)
 {
 	struct window *window = INTERNAL(base);
