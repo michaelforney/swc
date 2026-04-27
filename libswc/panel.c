@@ -46,6 +46,7 @@ struct panel {
 	struct screen_modifier modifier;
 	uint32_t edge;
 	uint32_t offset, strut_size;
+	uint32_t y_offset;
 	bool docked;
 };
 
@@ -58,11 +59,11 @@ update_position(struct panel *panel)
 	switch (panel->edge) {
 	case SWC_PANEL_EDGE_TOP:
 		x = screen->x + panel->offset;
-		y = screen->y;
+		y = screen->y + panel->y_offset;
 		break;
 	case SWC_PANEL_EDGE_BOTTOM:
 		x = screen->x + panel->offset;
-		y = screen->y + screen->height - view->height;
+		y = screen->y + screen->height - view->height - panel->y_offset;
 		break;
 	case SWC_PANEL_EDGE_LEFT:
 		x = screen->x;
@@ -134,6 +135,16 @@ set_offset(struct wl_client *client, struct wl_resource *resource, uint32_t offs
 }
 
 static void
+set_y_offset(struct wl_client *client, struct wl_resource *resource, uint32_t offset)
+{
+	struct panel *panel = wl_resource_get_user_data(resource);
+
+	panel->y_offset = offset;
+	if (panel->docked)
+		update_position(panel);
+}
+
+static void
 set_strut(struct wl_client *client, struct wl_resource *resource, uint32_t size, uint32_t begin, uint32_t end)
 {
 	struct panel *panel = wl_resource_get_user_data(resource);
@@ -146,6 +157,7 @@ set_strut(struct wl_client *client, struct wl_resource *resource, uint32_t size,
 static const struct swc_panel_interface panel_impl = {
 	.dock = dock,
 	.set_offset = set_offset,
+	.set_y_offset = set_y_offset,
 	.set_strut = set_strut,
 };
 
@@ -242,6 +254,7 @@ panel_new(struct wl_client *client, uint32_t version, uint32_t id, struct surfac
 	panel->modifier.modify = &modify;
 	panel->screen = NULL;
 	panel->offset = 0;
+	panel->y_offset = 0;
 	panel->strut_size = 0;
 	panel->docked = false;
 	wl_list_insert(&panel->view->base.handlers, &panel->view_handler.link);
